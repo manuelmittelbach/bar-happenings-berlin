@@ -111,8 +111,6 @@ export default function EventDetail() {
                 ))}
               </div>
 
-              {/* Q&A */}
-              <QuestionThread questions={questions} />
             </div>
 
             {/* Sidebar */}
