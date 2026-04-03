@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { MapPin, Clock, Calendar, Share2, Users, Globe, Tag, X } from "lucide-react";
+import { MapPin, Clock, Calendar, Share2, Users, Globe, Tag } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import QuestionThread from "@/components/events/QuestionThread";
 import VenueBlock from "@/components/events/VenueBlock";
-import { getEventById, getVenueById, getEventsByVenue, questions } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
 
 interface EventDetailDialogProps {
   eventId: string | null;
