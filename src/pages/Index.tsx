@@ -210,7 +210,7 @@ export default function Index() {
               </div>
             </section>
           </>
-        )
+        )}
 
         {/* For Bars CTA */}
         <section className="bg-foreground text-primary-foreground noise-bg">
