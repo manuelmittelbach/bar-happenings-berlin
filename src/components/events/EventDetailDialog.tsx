@@ -117,11 +117,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
               <VenueBlock venue={venue} otherEvents={otherEvents} />
             </div>
           )}
-
-          {/* Q&A */}
-          <div className="mt-8">
-            <QuestionThread questions={questions} />
-          </div>
         </div>
       </DialogContent>
     </Dialog>
