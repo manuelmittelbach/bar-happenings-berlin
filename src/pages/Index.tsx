@@ -29,7 +29,40 @@ export default function Index() {
 
   const filtered = useMemo(() => {
     let result = [...events];
-...
+
+    result = result.filter((e) => e.date >= today);
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          e.venue.toLowerCase().includes(q) ||
+          e.neighborhood.toLowerCase().includes(q) ||
+          e.category.toLowerCase().includes(q)
+      );
+    }
+    if (activeCategory) result = result.filter((e) => e.category === activeCategory);
+    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
+    if (activeDate === "Today") result = result.filter((e) => e.date === today);
+    if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
+    if (activeDate === "This Week") {
+      const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+      result = result.filter((e) => e.date >= today && e.date <= weekEnd);
+    }
+    if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
+    if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
+
+    result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+    const seen = new Set<string>();
+    result = result.filter((e) => {
+      if (seen.has(e.parentId)) return false;
+      seen.add(e.parentId);
+      return true;
+    });
+
+    return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
   useEffect(() => {
@@ -57,7 +90,6 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Hero */}
         <section className="border-b-2 border-foreground noise-bg">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
@@ -140,7 +172,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Marquee */}
         <div className="border-b-2 border-foreground bg-accent text-accent-foreground overflow-hidden py-2">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -151,7 +182,6 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Filters Panel */}
         {showFilters && (
           <div className="border-b-2 border-foreground">
             <div className="container py-5 space-y-5">
@@ -176,7 +206,6 @@ export default function Index() {
           </div>
         )}
 
-        {/* Category pills */}
         <div className="border-b-2 border-foreground">
           <div className="container py-4">
             <div className="flex flex-wrap gap-2 overflow-x-auto">
@@ -188,7 +217,6 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Results */}
         <section className="border-b-2 border-foreground">
           <div className="container py-8">
             <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
@@ -225,11 +253,11 @@ export default function Index() {
                   const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
                   const sections: { label: string; events: typeof filtered }[] = [];
-                  const todayEvents = filtered.filter(e => e.date === today);
-                  const tomorrowEvents = filtered.filter(e => e.date === tomorrow);
-                  const thisWeekEvents = filtered.filter(e => e.date > tomorrow && e.date <= weekEnd);
-                  const laterEvents = filtered.filter(e => e.date > weekEnd && e.date <= monthEnd);
-                  const evenLaterEvents = filtered.filter(e => e.date > monthEnd);
+                  const todayEvents = filtered.filter((e) => e.date === today);
+                  const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
+                  const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
+                  const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
+                  const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
                   if (todayEvents.length) sections.push({ label: "Today", events: todayEvents });
                   if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
@@ -257,7 +285,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* For Bars CTA */}
         <section className="bg-foreground text-primary-foreground noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
             <div className="max-w-2xl">
@@ -288,11 +315,12 @@ export default function Index() {
       </main>
       <Footer />
 
-      {/* Event Detail Dialog */}
       <EventDetailDialog
         eventId={selectedEventId}
         open={!!selectedEventId}
-        onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEventId(null);
+        }}
       />
     </div>
   );
