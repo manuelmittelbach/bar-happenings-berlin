@@ -4,8 +4,7 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { label: "Today", path: "/" },
-  { label: "Explore", path: "/explore" },
+  { label: "Explore", path: "/" },
   { label: "For Bars", path: "/for-bars" },
   { label: "About", path: "/about" },
 ];
