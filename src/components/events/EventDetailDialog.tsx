@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import VenueBlock from "@/components/events/VenueBlock";
+import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
 
@@ -53,7 +53,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border mt-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
-              <p className="text-sm font-medium">{new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+              <p className="text-sm font-medium">{formatDateWithDay(event.date)}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Time</span>
@@ -121,19 +121,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => (
                   <span key={d} className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 ${d === event.date ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-muted-foreground'}`}>
-                    {d}
+                    {formatDateShort(d)}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Venue */}
-          {venue && (
-            <div className="mt-8">
-              <VenueBlock venue={venue} otherEvents={otherEvents.slice(0, 3)} />
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
