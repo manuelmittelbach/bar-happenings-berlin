@@ -106,7 +106,10 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
         el.querySelectorAll("[data-event-id]").forEach((node) => {
           (node as HTMLElement).addEventListener("click", () => {
             const id = node.getAttribute("data-event-id");
-            if (id && onEventClick) onEventClick(id);
+            if (id && onEventClick) {
+              marker.closePopup();
+              onEventClick(id);
+            }
           });
         });
       });
