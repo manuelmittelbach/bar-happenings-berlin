@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
+import { getVenueImage } from "@/assets/venues";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -37,7 +38,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
         {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
           <img
-            src={event.image || getCategoryImage(catInfo?.id || 'other')}
+            src={event.image || getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other')}
             alt={event.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
