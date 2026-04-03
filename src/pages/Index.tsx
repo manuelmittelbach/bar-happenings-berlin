@@ -1,18 +1,26 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, ArrowRight } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, ArrowRight, LayoutGrid, MapIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill from "@/components/events/CategoryPill";
+import MapView from "@/components/events/MapView";
 import { getTodayEvents, getTomorrowEvents, getThisWeekEvents, categories } from "@/data/mockData";
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const navigate = useNavigate();
   const todayEvents = getTodayEvents();
   const tomorrowEvents = getTomorrowEvents();
   const allEvents = getThisWeekEvents();
+
+  const handleMapEventClick = useCallback(
+    (eventId: string) => navigate(`/event/${eventId}`),
+    [navigate]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -55,7 +63,7 @@ export default function Index() {
                   className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 mt-4">
+              <div className="flex flex-wrap items-center gap-2 mt-4">
                 <Link to="/explore?date=today" className="inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 border-foreground hover:bg-foreground hover:text-background transition-all">
                   Today
                 </Link>
@@ -65,6 +73,22 @@ export default function Index() {
                 <Link to="/explore" className="inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 border-foreground hover:bg-foreground hover:text-background transition-all">
                   This Week
                 </Link>
+                <div className="ml-auto flex border-2 border-foreground overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Grid view"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("map")}
+                    className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Map view"
+                  >
+                    <MapIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -81,74 +105,112 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Happening Today */}
-        <section className="border-b-2 border-foreground">
-          <div className="container py-14">
-            <div className="flex items-end justify-between mb-10">
-              <div>
-                <p className="mono-label text-accent mb-2">Happening now</p>
-                <h2 className="heading-display text-3xl md:text-4xl">Today in Berlin</h2>
-              </div>
-              <Link to="/explore?date=today" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
-                All today <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {todayEvents.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Tomorrow */}
-        <section className="border-b-2 border-foreground">
-          <div className="container py-14">
-            <div className="flex items-end justify-between mb-10">
-              <h2 className="heading-display text-3xl md:text-4xl">Tomorrow</h2>
-              <Link to="/explore?date=tomorrow" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
-                All tomorrow <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tomorrowEvents.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Categories */}
-        <section className="border-b-2 border-foreground">
-          <div className="container py-14">
-            <p className="mono-label text-muted-foreground mb-3">Browse by</p>
-            <h2 className="heading-display text-3xl md:text-4xl mb-8">Category</h2>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <Link key={cat} to={`/explore?category=${encodeURIComponent(cat)}`}>
-                  <CategoryPill label={cat} />
+        {viewMode === "map" ? (
+          /* Full map view with sidebar */
+          <section className="border-b-2 border-foreground">
+            <div className="container py-6">
+              <div className="flex items-end justify-between mb-6">
+                <div>
+                  <p className="mono-label text-accent mb-2">Happening now</p>
+                  <h2 className="heading-display text-3xl md:text-4xl">Events on the map</h2>
+                </div>
+                <Link to="/explore?view=map" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
+                  Full explore <ArrowRight className="h-3 w-3" />
                 </Link>
-              ))}
+              </div>
+              <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
+                <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
+                  {allEvents.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center p-6">
+                        <p className="font-heading text-sm font-bold uppercase">No events</p>
+                        <p className="text-xs text-muted-foreground mt-1 font-mono">Check back later</p>
+                      </div>
+                    </div>
+                  ) : (
+                    allEvents.map((event, i) => (
+                      <EventCard key={event.id} event={event} index={i} layout="list" />
+                    ))
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <MapView events={allEvents} onEventClick={handleMapEventClick} />
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <>
+            {/* Happening Today */}
+            <section className="border-b-2 border-foreground">
+              <div className="container py-14">
+                <div className="flex items-end justify-between mb-10">
+                  <div>
+                    <p className="mono-label text-accent mb-2">Happening now</p>
+                    <h2 className="heading-display text-3xl md:text-4xl">Today in Berlin</h2>
+                  </div>
+                  <Link to="/explore?date=today" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
+                    All today <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {todayEvents.map((event, i) => (
+                    <EventCard key={event.id} event={event} index={i} />
+                  ))}
+                </div>
+              </div>
+            </section>
 
-        {/* This Week */}
-        <section className="border-b-2 border-foreground">
-          <div className="container py-14">
-            <div className="flex items-end justify-between mb-10">
-              <h2 className="heading-display text-3xl md:text-4xl">This Week</h2>
-              <Link to="/explore" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
-                See all <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {allEvents.slice(4).map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
-              ))}
-            </div>
-          </div>
-        </section>
+            {/* Tomorrow */}
+            <section className="border-b-2 border-foreground">
+              <div className="container py-14">
+                <div className="flex items-end justify-between mb-10">
+                  <h2 className="heading-display text-3xl md:text-4xl">Tomorrow</h2>
+                  <Link to="/explore?date=tomorrow" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
+                    All tomorrow <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {tomorrowEvents.map((event, i) => (
+                    <EventCard key={event.id} event={event} index={i} />
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* Categories */}
+            <section className="border-b-2 border-foreground">
+              <div className="container py-14">
+                <p className="mono-label text-muted-foreground mb-3">Browse by</p>
+                <h2 className="heading-display text-3xl md:text-4xl mb-8">Category</h2>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <Link key={cat} to={`/explore?category=${encodeURIComponent(cat)}`}>
+                      <CategoryPill label={cat} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* This Week */}
+            <section className="border-b-2 border-foreground">
+              <div className="container py-14">
+                <div className="flex items-end justify-between mb-10">
+                  <h2 className="heading-display text-3xl md:text-4xl">This Week</h2>
+                  <Link to="/explore" className="hidden sm:inline-flex items-center gap-1 mono-label text-muted-foreground hover:text-foreground transition-colors">
+                    See all <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {allEvents.slice(4).map((event, i) => (
+                    <EventCard key={event.id} event={event} index={i} />
+                  ))}
+                </div>
+              </div>
+            </section>
+          </>
+        )}
 
         {/* For Bars CTA */}
         <section className="bg-foreground text-primary-foreground noise-bg">
