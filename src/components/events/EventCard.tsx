@@ -101,7 +101,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {event.startTime}
+              {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {event.startTime}
             </span>
           </div>
         </div>
