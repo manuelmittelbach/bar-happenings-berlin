@@ -128,12 +128,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             </div>
           )}
 
-          {/* Venue */}
-          {venue && (
-            <div className="mt-8">
-              <VenueBlock venue={venue} otherEvents={otherEvents.slice(0, 3)} />
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

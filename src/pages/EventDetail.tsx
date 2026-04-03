@@ -134,7 +134,7 @@ export default function EventDetail() {
                   <Share2 className="h-4 w-4" /> Share event
                 </button>
 
-                {venue && <VenueBlock venue={venue} otherEvents={otherEvents} />}
+                
               </div>
             </div>
           </div>

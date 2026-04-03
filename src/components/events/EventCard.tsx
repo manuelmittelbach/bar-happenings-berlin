@@ -96,7 +96,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <Clock className="h-3 w-3" />
-              {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              {formatDateShort(event.date)}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               {event.startTime}

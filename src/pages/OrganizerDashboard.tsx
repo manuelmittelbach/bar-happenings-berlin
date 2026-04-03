@@ -87,7 +87,7 @@ export default function OrganizerDashboard() {
                       {event.title}
                     </Link>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {event.date} · {event.startTime} – {event.endTime} · {event.neighborhood}
+                      {formatDateWithDay(event.date)} · {event.startTime} – {event.endTime} · {event.neighborhood}
                     </p>
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {event.interestedCount} interested</span>
