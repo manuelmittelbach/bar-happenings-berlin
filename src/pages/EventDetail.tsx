@@ -82,7 +82,7 @@ export default function EventDetail() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 border border-border rounded-sm">
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
-                  <p className="text-sm font-medium">{event.date}</p>
+                  <p className="text-sm font-medium">{formatDateWithDay(event.date)}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Time</span>
