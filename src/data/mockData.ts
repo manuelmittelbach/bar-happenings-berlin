@@ -28,6 +28,8 @@ export interface Venue {
   image: string;
   instagram?: string;
   website?: string;
+  lat: number;
+  lng: number;
 }
 
 export interface Question {
@@ -59,14 +61,14 @@ const in4 = new Date(today); in4.setDate(today.getDate() + 4);
 const in5 = new Date(today); in5.setDate(today.getDate() + 5);
 
 export const venues: Venue[] = [
-  { id: "v1", name: "Kastanienbar", neighborhood: "Neukölln", address: "Weserstr. 42, 12045 Berlin", description: "A cozy corner bar on Weserstraße known for its eclectic live music program and handmade cocktails. Regulars and newcomers share the same worn wooden tables.", image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80" },
-  { id: "v2", name: "Trinkhalle", neighborhood: "Kreuzberg", address: "Oranienstr. 185, 10999 Berlin", description: "Part dive bar, part cultural space. Trinkhalle hosts everything from punk shows to philosophy circles. Cash only, no pretense.", image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600&q=80", instagram: "@trinkhalle_xberg" },
-  { id: "v3", name: "Nebelhorn", neighborhood: "Friedrichshain", address: "Simon-Dach-Str. 9, 10245 Berlin", description: "A dimly lit neighborhood bar with an excellent vinyl selection and a stage that's hosted some of Berlin's best emerging acts.", image: "https://images.unsplash.com/photo-1525268323446-0505b6fe7778?w=600&q=80" },
-  { id: "v4", name: "Zum Goldenen Hahn", neighborhood: "Wedding", address: "Müllerstr. 128, 13353 Berlin", description: "A Wedding institution since 2009. Equal parts kneipe and community center. They serve their own infused spirits and host a legendary quiz night.", image: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600&q=80" },
-  { id: "v5", name: "Lichtblick", neighborhood: "Prenzlauer Berg", address: "Kastanienallee 77, 10435 Berlin", description: "Small cinema-bar hybrid showing independent films and hosting thoughtful cultural events in a warm, book-lined space.", image: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=80" },
-  { id: "v6", name: "Schwarzes Café", neighborhood: "Mitte", address: "Torstr. 66, 10119 Berlin", description: "A minimalist bar with maximal taste. Known for its rotating art exhibitions on the walls and experimental music on the speakers.", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80" },
-  { id: "v7", name: "Pingpong Palast", neighborhood: "Kreuzberg", address: "Graefestr. 71, 10967 Berlin", description: "Three ping-pong tables, cheap beer, and a competitive spirit. Drop in for casual games or sign up for their weekly tournament.", image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80" },
-  { id: "v8", name: "Morgenrot", neighborhood: "Neukölln", address: "Sonnenallee 101, 12045 Berlin", description: "An anarchist-leaning café-bar with vegan food, a small library, and a calendar packed with community events and language exchanges.", image: "https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=600&q=80" },
+  { id: "v1", name: "Kastanienbar", neighborhood: "Neukölln", address: "Weserstr. 42, 12045 Berlin", description: "A cozy corner bar on Weserstraße known for its eclectic live music program and handmade cocktails. Regulars and newcomers share the same worn wooden tables.", image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80", lat: 52.4868, lng: 13.4290 },
+  { id: "v2", name: "Trinkhalle", neighborhood: "Kreuzberg", address: "Oranienstr. 185, 10999 Berlin", description: "Part dive bar, part cultural space. Trinkhalle hosts everything from punk shows to philosophy circles. Cash only, no pretense.", image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600&q=80", instagram: "@trinkhalle_xberg", lat: 52.4990, lng: 13.4240 },
+  { id: "v3", name: "Nebelhorn", neighborhood: "Friedrichshain", address: "Simon-Dach-Str. 9, 10245 Berlin", description: "A dimly lit neighborhood bar with an excellent vinyl selection and a stage that's hosted some of Berlin's best emerging acts.", image: "https://images.unsplash.com/photo-1525268323446-0505b6fe7778?w=600&q=80", lat: 52.5093, lng: 13.4540 },
+  { id: "v4", name: "Zum Goldenen Hahn", neighborhood: "Wedding", address: "Müllerstr. 128, 13353 Berlin", description: "A Wedding institution since 2009. Equal parts kneipe and community center. They serve their own infused spirits and host a legendary quiz night.", image: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600&q=80", lat: 52.5460, lng: 13.3590 },
+  { id: "v5", name: "Lichtblick", neighborhood: "Prenzlauer Berg", address: "Kastanienallee 77, 10435 Berlin", description: "Small cinema-bar hybrid showing independent films and hosting thoughtful cultural events in a warm, book-lined space.", image: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=80", lat: 52.5363, lng: 13.4020 },
+  { id: "v6", name: "Schwarzes Café", neighborhood: "Mitte", address: "Torstr. 66, 10119 Berlin", description: "A minimalist bar with maximal taste. Known for its rotating art exhibitions on the walls and experimental music on the speakers.", image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80", lat: 52.5290, lng: 13.3950 },
+  { id: "v7", name: "Pingpong Palast", neighborhood: "Kreuzberg", address: "Graefestr. 71, 10967 Berlin", description: "Three ping-pong tables, cheap beer, and a competitive spirit. Drop in for casual games or sign up for their weekly tournament.", image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80", lat: 52.4920, lng: 13.4180 },
+  { id: "v8", name: "Morgenrot", neighborhood: "Neukölln", address: "Sonnenallee 101, 12045 Berlin", description: "An anarchist-leaning café-bar with vegan food, a small library, and a calendar packed with community events and language exchanges.", image: "https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=600&q=80", lat: 52.4790, lng: 13.4410 },
 ];
 
 export const events: BarlinEvent[] = [

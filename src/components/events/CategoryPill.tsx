@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 interface CategoryPillProps {
   label: string;
   active?: boolean;
@@ -10,12 +8,11 @@ export default function CategoryPill({ label, active, onClick }: CategoryPillPro
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "inline-flex items-center px-4 py-2 text-sm font-medium rounded-sm border transition-all whitespace-nowrap",
+      className={`inline-flex items-center px-3 py-1.5 font-mono text-xs uppercase tracking-wider border-2 transition-all duration-200 ${
         active
-          ? "bg-foreground text-background border-foreground"
-          : "bg-transparent text-foreground border-border hover:bg-muted"
-      )}
+          ? "border-foreground bg-foreground text-background"
+          : "border-border bg-transparent text-muted-foreground hover:border-foreground hover:text-foreground"
+      }`}
     >
       {label}
     </button>
