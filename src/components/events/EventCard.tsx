@@ -7,9 +7,17 @@ interface EventCardProps {
   event: BarlinEvent;
   index?: number;
   layout?: "grid" | "list";
+  onClick?: (eventId: string) => void;
 }
 
-export default function EventCard({ event, index = 0, layout = "grid" }: EventCardProps) {
+export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick(event.id);
+    }
+  };
+
   if (layout === "list") {
     return (
       <motion.div
@@ -17,7 +25,7 @@ export default function EventCard({ event, index = 0, layout = "grid" }: EventCa
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: index * 0.03 }}
       >
-        <Link to={`/event/${event.id}`} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
+        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
             <img
               src={event.image}
