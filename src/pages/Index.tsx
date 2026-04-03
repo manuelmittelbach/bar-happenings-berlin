@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, Fragment } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -22,6 +22,7 @@ export default function Index() {
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [pendingMapEventId, setPendingMapEventId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -29,7 +30,6 @@ export default function Index() {
   const filtered = useMemo(() => {
     let result = [...events];
 
-    // Only keep events from today onwards
     result = result.filter((e) => e.date >= today);
 
     if (searchQuery) {
@@ -53,10 +53,8 @@ export default function Index() {
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
 
-    // Sort chronologically (soonest first)
     result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 
-    // Deduplicate recurring events: keep only the earliest occurrence per parentId
     const seen = new Set<string>();
     result = result.filter((e) => {
       if (seen.has(e.parentId)) return false;
@@ -67,15 +65,31 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
+  useEffect(() => {
+    if (viewMode !== "grid" || !pendingMapEventId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setSelectedEventId(pendingMapEventId);
+      setPendingMapEventId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [viewMode, pendingMapEventId]);
+
   const handleEventClick = useCallback((eventId: string) => {
+    if (viewMode === "map") {
+      setPendingMapEventId(eventId);
+      setViewMode("grid");
+      return;
+    }
+
     setSelectedEventId(eventId);
-  }, []);
+  }, [viewMode]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Hero */}
         <section className="border-b-2 border-foreground noise-bg">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
@@ -158,7 +172,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Marquee */}
         <div className="border-b-2 border-foreground bg-accent text-accent-foreground overflow-hidden py-2">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -169,7 +182,6 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Filters Panel */}
         {showFilters && (
           <div className="border-b-2 border-foreground">
             <div className="container py-5 space-y-5">
@@ -194,7 +206,6 @@ export default function Index() {
           </div>
         )}
 
-        {/* Category pills */}
         <div className="border-b-2 border-foreground">
           <div className="container py-4">
             <div className="flex flex-wrap gap-2 overflow-x-auto">
@@ -206,7 +217,6 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Results */}
         <section className="border-b-2 border-foreground">
           <div className="container py-8">
             <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
@@ -243,11 +253,11 @@ export default function Index() {
                   const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
                   const sections: { label: string; events: typeof filtered }[] = [];
-                  const todayEvents = filtered.filter(e => e.date === today);
-                  const tomorrowEvents = filtered.filter(e => e.date === tomorrow);
-                  const thisWeekEvents = filtered.filter(e => e.date > tomorrow && e.date <= weekEnd);
-                  const laterEvents = filtered.filter(e => e.date > weekEnd && e.date <= monthEnd);
-                  const evenLaterEvents = filtered.filter(e => e.date > monthEnd);
+                  const todayEvents = filtered.filter((e) => e.date === today);
+                  const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
+                  const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
+                  const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
+                  const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
                   if (todayEvents.length) sections.push({ label: "Today", events: todayEvents });
                   if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
@@ -275,7 +285,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* For Bars CTA */}
         <section className="bg-foreground text-primary-foreground noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
             <div className="max-w-2xl">
@@ -306,11 +315,12 @@ export default function Index() {
       </main>
       <Footer />
 
-      {/* Event Detail Dialog */}
       <EventDetailDialog
         eventId={selectedEventId}
         open={!!selectedEventId}
-        onOpenChange={(open) => { if (!open) setSelectedEventId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEventId(null);
+        }}
       />
     </div>
   );
