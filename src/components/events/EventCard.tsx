@@ -24,7 +24,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
-  const fallbackImage = getCategoryImage(catInfo?.id || 'other');
+  const fallbackImage = getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other');
 
   const EventImage = ({ className = "" }: { className?: string }) => (
     <img
