@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, ArrowRight } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, ArrowRight, LayoutGrid, MapIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill from "@/components/events/CategoryPill";
+import MapView from "@/components/events/MapView";
 import { getTodayEvents, getTomorrowEvents, getThisWeekEvents, categories } from "@/data/mockData";
 
 export default function Index() {
