@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
+import { getVenueImage } from "@/assets/venues";
 
 interface EventDetailDialogProps {
   eventId: string | null;
