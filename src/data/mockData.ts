@@ -102,7 +102,7 @@ export const categoryInfos: CategoryInfo[] = [
 
 export const categories = categoryInfos.map(c => c.label);
 
-export const neighborhoods = ["Berlin","Charlottenburg","Friedrichshain","Kreuzberg","Mitte","Mitte / Alexanderplatz","Moabit","Neukölln","Prenzlauer Berg","Schöneberg","Steglitz","Tempelhof","Wedding"];",\n    ", ": ", ": 13.4237\n  },\n  {\n    ", ": 52.5343,\n    ", "Berlin", "Charlottenburg", "Cosmic Comedy Club / Kookaburra", "Friedrichshain", "Kreuzberg", "Mitte", "Mitte / Alexanderplatz", "Moabit", "Neuk\u00f6lln", "Prenzlauer Berg", "Sch\u00f6neberg", "Sch\u00f6nhauser Allee, 10119 Berlin", "Steglitz", "Wedding", "address", "description", "id", "name", "neighborhood", "v1"];
+export const neighborhoods = ["Berlin","Charlottenburg","Friedrichshain","Kreuzberg","Mitte","Mitte / Alexanderplatz","Moabit","Neukölln","Prenzlauer Berg","Schöneberg","Steglitz","Tempelhof","Wedding"];
 
 export const venues: Venue[] = [
   {
