@@ -46,7 +46,10 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
         <div className="px-6 -mt-16 relative z-10 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <h2 className="heading-display text-2xl md:text-4xl">{event.title}</h2>
-            <p className="text-base text-muted-foreground mt-1 font-medium">{event.venue}</p>
+            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-foreground bg-background">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="font-heading text-base font-bold uppercase tracking-wide">{event.venue}</span>
+            </div>
           </motion.div>
 
           {/* Details grid */}
