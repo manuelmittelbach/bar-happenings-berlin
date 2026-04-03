@@ -42,11 +42,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       >
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
-            {event.image ? (
-              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
-            ) : (
-              <PlaceholderImage />
-            )}
+            <EventImage className="grayscale-hover" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
