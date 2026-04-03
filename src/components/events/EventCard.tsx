@@ -3,6 +3,7 @@ import { MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
+import { getCategoryImage } from "@/assets/categories";
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -21,13 +22,15 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
-  const PlaceholderImage = () => (
-    <div
-      className="absolute inset-0 w-full h-full flex items-center justify-center"
-      style={{ backgroundColor: catInfo?.color || '#666' }}
-    >
-      <span className="text-4xl">{catInfo?.emoji || '✦'}</span>
-    </div>
+  const fallbackImage = getCategoryImage(catInfo?.id || 'other');
+
+  const EventImage = ({ className = "" }: { className?: string }) => (
+    <img
+      src={event.image || fallbackImage}
+      alt={event.title}
+      className={`absolute inset-0 w-full h-full object-cover ${className}`}
+      loading="lazy"
+    />
   );
 
   if (layout === "list") {
@@ -39,11 +42,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       >
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
-            {event.image ? (
-              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
-            ) : (
-              <PlaceholderImage />
-            )}
+            <EventImage className="grayscale-hover" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
@@ -73,11 +72,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
         <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
-          {event.image ? (
-            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
-          ) : (
-            <PlaceholderImage />
-          )}
+          <EventImage className="grayscale-hover" />
           <div className="absolute top-3 left-3">
             <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
               {event.category}
