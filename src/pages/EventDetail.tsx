@@ -72,7 +72,10 @@ export default function EventDetail() {
               ))}
             </div>
             <h1 className="heading-display text-3xl md:text-5xl">{event.title}</h1>
-            <p className="text-lg text-muted-foreground mt-2 font-medium">{event.venue}</p>
+            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-foreground bg-background">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="font-heading text-lg font-bold uppercase tracking-wide">{event.venue}</span>
+            </div>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-8 pb-16">
