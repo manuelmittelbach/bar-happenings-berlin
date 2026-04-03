@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link } from "react-router-dom";
 import { Plus, Eye, Edit, Trash2, MessageCircle, Users, CalendarDays, BarChart3 } from "lucide-react";
 import Header from "@/components/layout/Header";

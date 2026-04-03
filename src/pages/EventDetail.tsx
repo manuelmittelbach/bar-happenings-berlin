@@ -4,7 +4,7 @@ import { MapPin, Clock, Calendar, Share2, ArrowLeft, Users, Globe, Tag } from "l
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import VenueBlock from "@/components/events/VenueBlock";
+import { formatDateWithDay } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
 
 export default function EventDetail() {

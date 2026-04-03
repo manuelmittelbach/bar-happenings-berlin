@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import VenueBlock from "@/components/events/VenueBlock";
+import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
 
