@@ -35,13 +35,11 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
         {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
-          {event.image ? (
-            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 w-full h-full flex items-center justify-center" style={{ backgroundColor: catInfo?.color || '#666' }}>
-              <span className="text-8xl">{catInfo?.emoji || '✦'}</span>
-            </div>
-          )}
+          <img
+            src={event.image || getCategoryImage(catInfo?.id || 'other')}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
         </div>
 
