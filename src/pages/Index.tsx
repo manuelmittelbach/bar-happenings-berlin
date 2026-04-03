@@ -22,7 +22,7 @@ export default function Index() {
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [pendingMapEventId, setPendingMapEventId] = useState<string | null>(null);
+  
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
