@@ -60,7 +60,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/event/${event.id}`} className="group block">
+      <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
         <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
           <img
             src={event.image}
