@@ -97,8 +97,8 @@ export const categoryInfos: CategoryInfo[] = [
   { id: "quiz-night", label: "Quiz Night", emoji: "🧠", color: "#2456f5" },
   { id: "promo-date-night", label: "Promo / Date Night", emoji: "🍸", color: "#ec4899" },
   { id: "screening", label: "Screening", emoji: "🎬", color: "#6366f1" },
-  { id: "sport", label: "Sport / Games", emoji: "🏆", color: "#22c55e" },
-];
+  { id: "sport", label: "Sport / Games", emoji: "🏆", color: "#22c55e" }
+  ];
 
 export const categories = categoryInfos.map(c => c.label);
 
@@ -384,36 +384,6 @@ export const venues: Venue[] = [
     "image": "",
     "lat": 52.5169,
     "lng": 13.4033
-  },
-  {
-    "id": "v29",
-    "name": "Weekend Club – 15th Floor / Rooftop 17th",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "description": "",
-    "image": "",
-    "lat": 52.5217,
-    "lng": 13.4103
-  },
-  {
-    "id": "v30",
-    "name": "Weekend Club",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "description": "",
-    "image": "",
-    "lat": 52.5216,
-    "lng": 13.4116
-  },
-  {
-    "id": "v31",
-    "name": "Weekend Club – Rooftop 17th Floor",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "description": "",
-    "image": "",
-    "lat": 52.5245,
-    "lng": 13.4136
   },
   {
     "id": "v32",
@@ -735,8 +705,8 @@ export const venues: Venue[] = [
     "image": "",
     "lat": 52.549,
     "lng": 13.359
-  },
-];
+  }
+  ];
 
 export const events: BarlinEvent[] = [
   {
@@ -5500,176 +5470,6 @@ export const events: BarlinEvent[] = [
     "url": "https://allevents.in/berlin/meetups"
   },
   {
-    "id": "EVT-031-0",
-    "parentId": "EVT-031",
-    "title": "WKND × STUCK IN SPACE – Jacques Dupont Birthday Edition",
-    "venue": "Weekend Club – 15th Floor / Rooftop 17th",
-    "venueId": "v29",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-04-17",
-    "startTime": "22:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "house",
-      "techno",
-      "rooftop",
-      "one-off",
-      "friday",
-      "18+"
-    ],
-    "description": "House and techno night above Berlin's skyline. Hosted by Jacques Dupont & Miguel for Jacques' birthday. 15th floor + rooftop 17th. 18+ only.",
-    "price": "Variable — Table booking: table@weekendclub.berlin",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-032-0",
-    "parentId": "EVT-032",
-    "title": "WKND × AURORA – Atmospheric House & Techno",
-    "venue": "Weekend Club – 15th Floor / Rooftop 17th",
-    "venueId": "v29",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-04-24",
-    "startTime": "22:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "house",
-      "techno",
-      "atmospheric",
-      "rooftop",
-      "one-off",
-      "friday",
-      "18+"
-    ],
-    "description": "Atmospheric house & techno. Hosted by Denno Matini. Progressive, fluid sound built on subtlety and intensity. 15th floor + rooftop 17th. 18+ only.",
-    "price": "Variable — 18+ only",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-033-0",
-    "parentId": "EVT-033",
-    "title": "HOUSECAT by LOVRA feat. CURBI",
-    "venue": "Weekend Club",
-    "venueId": "v30",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-04-25",
-    "startTime": "22:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "house",
-      "bass",
-      "one-off",
-      "saturday",
-      "18+",
-      "international"
-    ],
-    "description": "Berlin debut of HOUSECAT. Headliner: CURBI (UK), high-energy house and bass. Collabs with Zedd, Tchami, AC Slater. Organised by LOVRA. 18+ only.",
-    "price": "Variable — 18+ only",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-034-0",
-    "parentId": "EVT-034",
-    "title": "School of Hip Hop – Tanz in den Mai Edition",
-    "venue": "Weekend Club – 15th Floor / Rooftop 17th",
-    "venueId": "v29",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-04-30",
-    "startTime": "22:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "hip-hop",
-      "r&b",
-      "one-off",
-      "thursday",
-      "18+",
-      "tanz-in-den-mai"
-    ],
-    "description": "Hip Hop & R&B night to kick off May. Hosted by Rokit. Classic recognisable tracks and dancefloor energy. 18+ only.",
-    "price": "Variable — 18+ only",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-035-0",
-    "parentId": "EVT-035",
-    "title": "WKND × THE MICHELINS – May Day Edition",
-    "venue": "Weekend Club – 15th Floor / Rooftop 17th",
-    "venueId": "v29",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-05-01",
-    "startTime": "22:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "house",
-      "one-off",
-      "friday",
-      "may-day",
-      "18+",
-      "rooftop"
-    ],
-    "description": "Refined house music for May 1st. Hosted by Misha Svirid & Phonique. Groove and Michelins attitude above Berlin. 18+ only.",
-    "price": "Variable — 18+ only",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-036-0",
-    "parentId": "EVT-036",
-    "title": "WKND × OFFLINE – Rooftop Season Opening",
-    "venue": "Weekend Club – Rooftop 17th Floor",
-    "venueId": "v31",
-    "neighborhood": "Mitte / Alexanderplatz",
-    "address": "Alexanderplatz, 10178 Berlin",
-    "date": "2026-05-15",
-    "startTime": "18:00",
-    "category": "DJ / Music Night",
-    "categoryId": "dj-music",
-    "tags": [
-      "dj",
-      "rooftop",
-      "open-air",
-      "one-off",
-      "friday",
-      "18+",
-      "sunset",
-      "season-opening"
-    ],
-    "description": "Official opening of the rooftop season. Sunset set from 6pm + full night. Special open-air format on the rooftop. 18+ only.",
-    "price": "Variable — Sunset from 6pm. 18+ only",
-    "entryInfo": "Variable",
-    "language": "",
-    "recurrence": "One-off",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
     "id": "EVT-037-0",
     "parentId": "EVT-037",
     "title": "Trance Baby Trance – Kinky Trance Party",
@@ -6317,7 +6117,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Quiz Night Show jeden Freitag. Doors open 18:30, quiz starts 19:30. Quizmaster-hosted trivia evening.",
     "price": "10€",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://quiznightshow.de/"
@@ -6337,7 +6137,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Quiz Night Show jeden Freitag. Doors open 18:30, quiz starts 19:30. Quizmaster-hosted trivia evening.",
     "price": "10€",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://quiznightshow.de/"
@@ -6357,7 +6157,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Quiz Night Show jeden Freitag. Doors open 18:30, quiz starts 19:30. Quizmaster-hosted trivia evening.",
     "price": "10€",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://quiznightshow.de/"
@@ -6377,7 +6177,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Quiz Night Show jeden Freitag. Doors open 18:30, quiz starts 19:30. Quizmaster-hosted trivia evening.",
     "price": "10€",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://quiznightshow.de/"
@@ -6397,7 +6197,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Pub Quiz every Monday starting at 7:30 PM. Dates often fully booked weeks in advance — registration recommended.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/pubquiz/"
@@ -6417,7 +6217,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Pub Quiz every Monday starting at 7:30 PM. Dates often fully booked weeks in advance — registration recommended.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/pubquiz/"
@@ -6437,7 +6237,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Pub Quiz every Monday starting at 7:30 PM. Dates often fully booked weeks in advance — registration recommended.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/pubquiz/"
@@ -6457,7 +6257,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Pub Quiz every Monday starting at 7:30 PM. Dates often fully booked weeks in advance — registration recommended.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/pubquiz/"
@@ -6477,7 +6277,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Popular pub quiz 'More Questions Than Answers' every Sunday. Well-structured with great atmosphere. Teams often show up weekly.",
     "price": "1€ participation (goes to jackpot)",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.ratzeputzberlin.com/events/ratz-quiz"
@@ -6497,7 +6297,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Popular pub quiz 'More Questions Than Answers' every Sunday. Well-structured with great atmosphere. Teams often show up weekly.",
     "price": "1€ participation (goes to jackpot)",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.ratzeputzberlin.com/events/ratz-quiz"
@@ -6517,7 +6317,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Popular pub quiz 'More Questions Than Answers' every Sunday. Well-structured with great atmosphere. Teams often show up weekly.",
     "price": "1€ participation (goes to jackpot)",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.ratzeputzberlin.com/events/ratz-quiz"
@@ -6537,7 +6337,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Popular pub quiz 'More Questions Than Answers' every Sunday. Well-structured with great atmosphere. Teams often show up weekly.",
     "price": "1€ participation (goes to jackpot)",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.ratzeputzberlin.com/events/ratz-quiz"
@@ -6557,7 +6357,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Music quiz every Wednesday at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -6577,7 +6377,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Music quiz every Wednesday at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -6597,7 +6397,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Music quiz every Wednesday at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -6617,7 +6417,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Music quiz every Wednesday at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -6637,7 +6437,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Quiz every Monday at The Castle.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6657,7 +6457,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Quiz every Monday at The Castle.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6677,7 +6477,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Quiz every Monday at The Castle.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6697,7 +6497,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Quiz every Monday at The Castle.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6717,7 +6517,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Doors open 18:45, quiz starts 19:30. Organized via Meetup.",
     "price": "4€ per person",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.meetup.com/lets-get-quizical-quiz-in-berlin/"
@@ -6737,7 +6537,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz", "verified"],
     "description": "Doors open 17:45, quiz starts 18:30. Near Bhf. Ostkreuz.",
     "price": "4€ per person",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.meetup.com/lets-get-quizical-quiz-in-berlin/"
@@ -6757,7 +6557,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Second Tuesday of the month pub quiz at Tipsy Bear.",
     "price": "5€ per player",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://trivianearme.net/berlin-be-de"
@@ -6777,7 +6577,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Weekly Saturday pub quiz.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6797,7 +6597,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Weekly Saturday pub quiz.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6817,7 +6617,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Weekly Saturday pub quiz.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6837,7 +6637,7 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Weekly Saturday pub quiz.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/berlin/pub-quizzes-bar-trivia-games-teams-queer-news-sports-fun-games/"
@@ -6857,7 +6657,7 @@ export const events: BarlinEvent[] = [
     "tags": ["comedy"],
     "description": "Open mic night every second Tuesday of each month. Local and international acts. Presented by comedian Chris Loar.",
     "price": "free / donation",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.ratzeputzberlin.com/events"
@@ -6877,7 +6677,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open Mic every Monday. Known for live music beyond the open mic as well.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://blog.bimm.co.uk/bimm-berlins-guide-to-open-mic-nights"
@@ -6897,7 +6697,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open Mic every Monday. Known for live music beyond the open mic as well.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://blog.bimm.co.uk/bimm-berlins-guide-to-open-mic-nights"
@@ -6917,7 +6717,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open Mic every Monday. Known for live music beyond the open mic as well.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://blog.bimm.co.uk/bimm-berlins-guide-to-open-mic-nights"
@@ -6937,7 +6737,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open Mic every Monday. Known for live music beyond the open mic as well.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://blog.bimm.co.uk/bimm-berlins-guide-to-open-mic-nights"
@@ -6957,7 +6757,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Two-song Tuesday: performers can do a two-song mini set lasting up to 10 minutes.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -6977,7 +6777,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Two-song Tuesday: performers can do a two-song mini set lasting up to 10 minutes.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -6997,7 +6797,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Two-song Tuesday: performers can do a two-song mini set lasting up to 10 minutes.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7017,7 +6817,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Two-song Tuesday: performers can do a two-song mini set lasting up to 10 minutes.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7037,7 +6837,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Berlin's finest hip hop open mic night every Tuesday. Performers from all over the globe accompanied by the Swag Jam house band.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://badehaus-berlin.com/en/events/"
@@ -7057,7 +6857,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Berlin's finest hip hop open mic night every Tuesday. Performers from all over the globe accompanied by the Swag Jam house band.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://badehaus-berlin.com/en/events/"
@@ -7077,7 +6877,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Berlin's finest hip hop open mic night every Tuesday. Performers from all over the globe accompanied by the Swag Jam house band.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://badehaus-berlin.com/en/events/"
@@ -7097,7 +6897,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Berlin's finest hip hop open mic night every Tuesday. Performers from all over the globe accompanied by the Swag Jam house band.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://badehaus-berlin.com/en/events/"
@@ -7117,7 +6917,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open mic every Wednesday since 2016. Extremely popular, fills up quickly.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7137,7 +6937,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open mic every Wednesday since 2016. Extremely popular, fills up quickly.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7157,7 +6957,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open mic every Wednesday since 2016. Extremely popular, fills up quickly.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7177,7 +6977,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Open mic every Wednesday since 2016. Extremely popular, fills up quickly.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.the-berliner.com/music-clubs/best-open-mic-nights-in-berlin/"
@@ -7197,7 +6997,7 @@ export const events: BarlinEvent[] = [
     "tags": ["comedy", "verified"],
     "description": "Quatsch Comedy Club Berlin Open Mic in der BAR92. Tickets available online.",
     "price": "13€",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.berlin.de/en/tickets/comedy/quatsch-comedy-club-berlin-open-mic-in-der-bar92/"
@@ -7217,7 +7017,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7237,7 +7037,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7257,7 +7057,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7277,7 +7077,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7297,7 +7097,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7317,7 +7117,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7337,7 +7137,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7357,7 +7157,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music every Thursday and Saturday from 7-10 PM. Free admission.",
     "price": "free",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -7377,7 +7177,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Live music every Saturday evening — singer-songwriters, alternative bands, blues and rock musicians.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://swart-berlin.de/"
@@ -7397,7 +7197,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Live music every Saturday evening — singer-songwriters, alternative bands, blues and rock musicians.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://swart-berlin.de/"
@@ -7417,7 +7217,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Live music every Saturday evening — singer-songwriters, alternative bands, blues and rock musicians.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://swart-berlin.de/"
@@ -7437,7 +7237,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Live music every Saturday evening — singer-songwriters, alternative bands, blues and rock musicians.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://swart-berlin.de/"
@@ -7457,7 +7257,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7477,7 +7277,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7497,7 +7297,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7517,7 +7317,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7537,7 +7337,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7557,7 +7357,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7577,7 +7377,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7597,7 +7397,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Concerts, DJs or events every night from 7pm till late at the upside-down bar.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://madameclaude.de/events/"
@@ -7617,7 +7417,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7637,7 +7437,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7657,7 +7457,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7677,7 +7477,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7697,7 +7497,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7717,7 +7517,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7737,7 +7537,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7757,7 +7557,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7777,7 +7577,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7797,7 +7597,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7817,7 +7617,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7837,7 +7637,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7857,7 +7657,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7877,7 +7677,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7897,7 +7697,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7917,7 +7717,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7937,7 +7737,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7957,7 +7757,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7977,7 +7777,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -7997,7 +7797,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Underground DJ bar with live DJ sessions Wednesday through Sunday, 8pm-5am.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.repeatbar.com/"
@@ -8017,90 +7817,10 @@ export const events: BarlinEvent[] = [
     "tags": ["comedy", "verified"],
     "description": "Stand-up comedy showcase featuring Berlin's best comedians on Berlin life, dating, expat struggles and German culture.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.eventbrite.com/e/meanwhile-in-berlin-tickets-1984417867260"
-  },
-  {
-    "id": "EVT-IMP-88-0",
-    "parentId": "EVT-IMP-88",
-    "title": "WKND X OFFLINE – THE GOOD FRIDAY",
-    "venue": "Weekend Club",
-    "venueId": "v30",
-    "neighborhood": "Mitte",
-    "address": "Alexanderstr. 7, 10178 Berlin",
-    "date": "2026-04-03",
-    "startTime": "22:00",
-    "category": "Live Music",
-    "categoryId": "live-music",
-    "tags": ["music", "verified"],
-    "description": "Good Friday party. House & Techno across 15th Floor and Rooftop. Hosted by PayPaul.",
-    "price": "",
-    "entryInfo": "",
-    "language": "EN",
-    "recurrence": "",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-IMP-89-0",
-    "parentId": "EVT-IMP-89",
-    "title": "WKND X STUCK IN SPACE (JACQUES DUPONT BDAY EDITION)",
-    "venue": "Weekend Club",
-    "venueId": "v30",
-    "neighborhood": "Mitte",
-    "address": "Alexanderstr. 7, 10178 Berlin",
-    "date": "2026-04-17",
-    "startTime": "22:00",
-    "category": "Live Music",
-    "categoryId": "live-music",
-    "tags": ["music", "verified"],
-    "description": "DJ event on the 15th floor rooftop.",
-    "price": "",
-    "entryInfo": "",
-    "language": "EN",
-    "recurrence": "",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-IMP-90-0",
-    "parentId": "EVT-IMP-90",
-    "title": "WKND X AURORA",
-    "venue": "Weekend Club",
-    "venueId": "v30",
-    "neighborhood": "Mitte",
-    "address": "Alexanderstr. 7, 10178 Berlin",
-    "date": "2026-04-24",
-    "startTime": "22:00",
-    "category": "Live Music",
-    "categoryId": "live-music",
-    "tags": ["music", "verified"],
-    "description": "Progressive house and techno. Hosted by Denno Matini.",
-    "price": "",
-    "entryInfo": "",
-    "language": "EN",
-    "recurrence": "",
-    "url": "https://www.weekendclub.berlin/upcoming"
-  },
-  {
-    "id": "EVT-IMP-91-0",
-    "parentId": "EVT-IMP-91",
-    "title": "HOUSECAT ft. CURBI",
-    "venue": "Weekend Club",
-    "venueId": "v30",
-    "neighborhood": "Mitte",
-    "address": "Alexanderstr. 7, 10178 Berlin",
-    "date": "2026-04-25",
-    "startTime": "22:00",
-    "category": "Live Music",
-    "categoryId": "live-music",
-    "tags": ["music", "verified"],
-    "description": "High-energy house music headlined by CURBI.",
-    "price": "",
-    "entryInfo": "",
-    "language": "EN",
-    "recurrence": "",
-    "url": "https://www.weekendclub.berlin/upcoming"
   },
   {
     "id": "EVT-IMP-92-0",
@@ -8117,7 +7837,7 @@ export const events: BarlinEvent[] = [
     "tags": ["networking", "verified"],
     "description": "Social mixer to meet new people from Berlin and around the world. Language exchange event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.eventbrite.com/e/berlin-social-and-language-exchange-make-new-friends-tickets-1986009422645"
@@ -8137,7 +7857,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Live music event at Urban Spree.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ra.co/events/de/berlin"
@@ -8157,7 +7877,7 @@ export const events: BarlinEvent[] = [
     "tags": ["other", "verified"],
     "description": "Beer brewing course at the microbrewery.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://hops-and-barley-berlin.de/braukurs.html"
@@ -8177,7 +7897,7 @@ export const events: BarlinEvent[] = [
     "tags": ["other", "verified"],
     "description": "Beer brewing course at the microbrewery.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://hops-and-barley-berlin.de/braukurs.html"
@@ -8197,7 +7917,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8217,7 +7937,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8237,7 +7957,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8257,7 +7977,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8277,7 +7997,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8297,7 +8017,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8317,7 +8037,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8337,7 +8057,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJ nights every Friday and Saturday from 10pm. Happy Monday with 20% off all drinks from 9pm.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://anno64.de/"
@@ -8357,7 +8077,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Tuesday women's evenings at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8377,7 +8097,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Tuesday women's evenings at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8397,7 +8117,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Tuesday women's evenings at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8417,7 +8137,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Tuesday women's evenings at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8437,7 +8157,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Thursday gay nights at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8457,7 +8177,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Thursday gay nights at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8477,7 +8197,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Thursday gay nights at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8497,7 +8217,7 @@ export const events: BarlinEvent[] = [
     "tags": ["themed_night"],
     "description": "Thursday gay nights at Möbel Olfe. Open from 18:00.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.timeout.com/berlin/bars-and-pubs/moebel-olfe"
@@ -8517,7 +8237,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8537,7 +8257,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8557,7 +8277,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8577,7 +8297,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8597,7 +8317,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8617,7 +8337,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8637,7 +8357,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8657,7 +8377,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "Soda Club feiert jeden Donnerstag und Sonntag eine unvergleichliche Fiesta.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.soda-berlin.de/events"
@@ -8677,7 +8397,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening"],
     "description": "Tatort crime mystery viewing club every Sunday from 8:15 PM.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -8697,7 +8417,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening"],
     "description": "Tatort crime mystery viewing club every Sunday from 8:15 PM.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -8717,7 +8437,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening"],
     "description": "Tatort crime mystery viewing club every Sunday from 8:15 PM.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -8737,7 +8457,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening"],
     "description": "Tatort crime mystery viewing club every Sunday from 8:15 PM.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://celtic-cottage.de/veranstaltungen/"
@@ -8757,7 +8477,7 @@ export const events: BarlinEvent[] = [
     "tags": ["sport", "verified"],
     "description": "Monday from 9 PM: Ruth's Backhand Round-robin table tennis event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ruthgoldammer.de/"
@@ -8777,7 +8497,7 @@ export const events: BarlinEvent[] = [
     "tags": ["sport", "verified"],
     "description": "Monday from 9 PM: Ruth's Backhand Round-robin table tennis event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ruthgoldammer.de/"
@@ -8797,7 +8517,7 @@ export const events: BarlinEvent[] = [
     "tags": ["sport", "verified"],
     "description": "Monday from 9 PM: Ruth's Backhand Round-robin table tennis event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ruthgoldammer.de/"
@@ -8817,7 +8537,7 @@ export const events: BarlinEvent[] = [
     "tags": ["sport", "verified"],
     "description": "Monday from 9 PM: Ruth's Backhand Round-robin table tennis event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ruthgoldammer.de/"
@@ -8837,7 +8557,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8857,7 +8577,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8877,7 +8597,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8897,7 +8617,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8917,7 +8637,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8937,7 +8657,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8957,7 +8677,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8977,7 +8697,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -8997,7 +8717,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -9017,7 +8737,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -9037,7 +8757,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -9057,7 +8777,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music"],
     "description": "DJs playing Friday through Sunday. Hip-Hop on Fridays, Reggae on weekends. Beach bar vibe.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.tip-berlin.de/essen-trinken/bars/strandbars-beach-bars-berlin/"
@@ -9077,7 +8797,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "New extended set series launch with Chlär booked for the first event.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://ra.co/news/84910"
@@ -9097,7 +8817,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening", "verified"],
     "description": "Film screening at Wolf Cinema Berlin.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://wolfberlin.org/"
@@ -9117,7 +8837,7 @@ export const events: BarlinEvent[] = [
     "tags": ["screening", "verified"],
     "description": "Film screening at Wolf Cinema Berlin.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://wolfberlin.org/"
@@ -9137,7 +8857,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Ati242 live performance at Festsaal Kreuzberg.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.songkick.com/venues/79681-festsaal-kreuzberg"
@@ -9157,7 +8877,7 @@ export const events: BarlinEvent[] = [
     "tags": ["music", "verified"],
     "description": "Papooz live performance at Festsaal Kreuzberg.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.songkick.com/venues/79681-festsaal-kreuzberg"
@@ -9177,12 +8897,12 @@ export const events: BarlinEvent[] = [
     "tags": ["quiz"],
     "description": "Music quiz event at 800A Bar & Cabaret in Wedding.",
     "price": "",
-    "entryInfo": "",
+    "entryInfo": "Ask venue",
     "language": "EN",
     "recurrence": "",
     "url": "https://www.eventbrite.com/e/music-quiz-in-berlin-wedding-tickets-1982636768947"
-  },
-];
+  }
+  ];
 
 export const getCategoryInfo = (categoryId: string) => categoryInfos.find(c => c.id === categoryId);
 export const getCategoryInfoByLabel = (label: string) => categoryInfos.find(c => c.label === label);
