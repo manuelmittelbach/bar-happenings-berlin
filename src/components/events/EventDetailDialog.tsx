@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { MapPin, Clock, Calendar, Share2, Users, Globe, Tag } from "lucide-react";
+import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VenueBlock from "@/components/events/VenueBlock";
-import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -16,9 +16,10 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
-  // Reset state when event changes
   const venue = event ? getVenueById(event.venueId) : null;
-  const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id) : [];
+  const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
+  const siblingDates = event ? getEventsByParent(event.parentId).map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort() : [];
+  const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
 
   if (!event) return null;
 
@@ -31,22 +32,20 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 border-2 border-foreground gap-0">
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
-        {/* Hero image */}
+        {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          {event.image ? (
+            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center" style={{ backgroundColor: catInfo?.color || '#666' }}>
+              <span className="text-8xl">{catInfo?.emoji || '✦'}</span>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
         </div>
 
         <div className="px-6 -mt-16 relative z-10 pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="flex flex-wrap gap-2 mb-2">
               {event.tags.map(tag => (
                 <span key={tag} className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-muted border border-border">
@@ -66,21 +65,22 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Time</span>
-              <p className="text-sm font-medium">{event.startTime} – {event.endTime}</p>
+              <p className="text-sm font-medium">{event.startTime}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</span>
               <p className="text-sm font-medium">{event.neighborhood}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Entry</span>
-              <p className="text-sm font-medium">{event.entryInfo}</p>
+              <span className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Price</span>
+              <p className="text-sm font-medium">{event.price}</p>
             </div>
           </div>
 
           <div className="space-y-1 mt-4">
-            <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.address}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> {event.language}</p>
+            {event.address && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.address}</p>}
+            {event.language && <p className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> {event.language}</p>}
+            {event.recurrence && <p className="text-xs text-muted-foreground flex items-center gap-1"><RotateCw className="h-3 w-3" /> {event.recurrence}</p>}
           </div>
 
           {/* Actions */}
@@ -95,13 +95,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             >
               {joined ? "✓ Interested" : "I want to join"}
             </button>
+            {event.url && (
+              <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
             <button className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
               <Share2 className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2 flex items-center justify-center gap-1">
-            <Users className="h-3 w-3" /> {interestedCount || event.interestedCount} interested
-          </p>
 
           {/* Description */}
           <div className="mt-8 space-y-3">
@@ -111,10 +113,24 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             ))}
           </div>
 
+          {/* Upcoming dates */}
+          {siblingDates.length > 1 && (
+            <div className="mt-8">
+              <h3 className="font-heading text-base font-bold uppercase mb-3">Upcoming dates</h3>
+              <div className="flex flex-wrap gap-2">
+                {siblingDates.map(d => (
+                  <span key={d} className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 ${d === event.date ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-muted-foreground'}`}>
+                    {d}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Venue */}
           {venue && (
             <div className="mt-8">
-              <VenueBlock venue={venue} otherEvents={otherEvents} />
+              <VenueBlock venue={venue} otherEvents={otherEvents.slice(0, 3)} />
             </div>
           )}
         </div>

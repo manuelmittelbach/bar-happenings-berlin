@@ -46,8 +46,8 @@ export default function Index() {
       const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
       result = result.filter((e) => e.date >= today && e.date <= weekEnd);
     }
-    if (activeEntry === "Free Entry") result = result.filter((e) => e.entryInfo === "Free Entry");
-    if (activeEntry === "Pay at Venue") result = result.filter((e) => e.entryInfo !== "Free Entry");
+    if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
+    if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
