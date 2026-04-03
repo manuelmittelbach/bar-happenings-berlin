@@ -525,7 +525,7 @@ export const venues: Venue[] = [
     "image": "",
     "lat": 52.5200,
     "lng": 13.4050
-  }
+  },
   {
     "id": "v-imp-100",
     "name": "Celtic Cottage",
