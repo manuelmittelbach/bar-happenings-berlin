@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw, Navigation } from "lucide-react";
+import { MapPin, Clock, Calendar, Globe, Tag, ExternalLink, RotateCw, Navigation } from "lucide-react";
+import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -104,9 +105,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
                 <ExternalLink className="h-4 w-4" />
               </a>
             )}
-            <button className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-            </button>
+            <ShareMenu eventTitle={event.title} eventId={event.id} />
           </div>
 
           {/* Description */}
