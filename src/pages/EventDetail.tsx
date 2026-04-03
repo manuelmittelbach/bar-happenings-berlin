@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
-import { MapPin, Clock, Calendar, Share2, ArrowLeft, Users, Globe, Tag } from "lucide-react";
+import { MapPin, Clock, Calendar, ArrowLeft, Users, Globe, Tag } from "lucide-react";
+import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
