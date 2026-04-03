@@ -63,7 +63,7 @@ export default function Index() {
                   className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 mt-4">
+              <div className="flex flex-wrap items-center gap-2 mt-4">
                 <Link to="/explore?date=today" className="inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 border-foreground hover:bg-foreground hover:text-background transition-all">
                   Today
                 </Link>
@@ -73,6 +73,22 @@ export default function Index() {
                 <Link to="/explore" className="inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 border-foreground hover:bg-foreground hover:text-background transition-all">
                   This Week
                 </Link>
+                <div className="ml-auto flex border-2 border-foreground overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Grid view"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("map")}
+                    className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Map view"
+                  >
+                    <MapIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
