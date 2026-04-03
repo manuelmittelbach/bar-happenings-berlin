@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { formatDateShort } from "@/lib/dateFormat";
 import { MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
@@ -53,7 +54,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             <h3 className="font-heading text-base font-bold uppercase tracking-tight group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {event.startTime}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
@@ -96,7 +97,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <Clock className="h-3 w-3" />
-              {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              {formatDateShort(event.date)}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               {event.startTime}

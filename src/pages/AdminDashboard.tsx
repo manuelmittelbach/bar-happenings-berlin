@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateShort } from "@/lib/dateFormat";
 import { Link } from "react-router-dom";
 import { Eye, Edit, Trash2, Check, X, Users, CalendarDays, Building2, BarChart3, Shield } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -85,7 +86,7 @@ export default function AdminDashboard() {
                     <Link to={`/event/${event.id}`} className="font-heading text-sm font-semibold hover:text-accent transition-colors">
                       {event.title}
                     </Link>
-                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {event.date}</p>
+                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {formatDateShort(event.date)}</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <Link to={`/event/${event.id}`} className="p-1.5 hover:bg-muted rounded-sm"><Eye className="h-4 w-4 text-muted-foreground" /></Link>
@@ -120,7 +121,7 @@ export default function AdminDashboard() {
                 <div key={event.id} className="border border-border rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-heading text-sm font-semibold">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {event.date}</p>
+                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {formatDateShort(event.date)}</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button

@@ -4,7 +4,7 @@ import { MapPin, Clock, Calendar, Share2, ArrowLeft, Users, Globe, Tag } from "l
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import VenueBlock from "@/components/events/VenueBlock";
+import { formatDateWithDay } from "@/lib/dateFormat";
 import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
 
 export default function EventDetail() {
@@ -82,7 +82,7 @@ export default function EventDetail() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 border border-border rounded-sm">
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
-                  <p className="text-sm font-medium">{event.date}</p>
+                  <p className="text-sm font-medium">{formatDateWithDay(event.date)}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Time</span>
@@ -134,7 +134,7 @@ export default function EventDetail() {
                   <Share2 className="h-4 w-4" /> Share event
                 </button>
 
-                {venue && <VenueBlock venue={venue} otherEvents={otherEvents} />}
+                
               </div>
             </div>
           </div>
