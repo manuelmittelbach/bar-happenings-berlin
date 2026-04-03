@@ -133,9 +133,7 @@ export default function EventDetail() {
                   <Users className="h-4 w-4" /> {interestedCount} people interested
                 </p>
 
-                <button className="w-full h-10 rounded-sm border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
-                  <Share2 className="h-4 w-4" /> Share event
-                </button>
+                <ShareMenu eventTitle={event.title} eventId={event.id} variant="full" />
 
                 
               </div>
