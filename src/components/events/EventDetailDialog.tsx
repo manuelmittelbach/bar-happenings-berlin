@@ -104,9 +104,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
                 <ExternalLink className="h-4 w-4" />
               </a>
             )}
-            <button className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-            </button>
+            <ShareMenu eventTitle={event.title} eventId={event.id} />
           </div>
 
           {/* Description */}
