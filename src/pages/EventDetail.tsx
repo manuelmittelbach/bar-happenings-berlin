@@ -4,9 +4,8 @@ import { MapPin, Clock, Calendar, Share2, ArrowLeft, Users, Globe, Tag } from "l
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import QuestionThread from "@/components/events/QuestionThread";
 import VenueBlock from "@/components/events/VenueBlock";
-import { getEventById, getVenueById, getEventsByVenue, questions } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -112,8 +111,6 @@ export default function EventDetail() {
                 ))}
               </div>
 
-              {/* Q&A */}
-              <QuestionThread questions={questions} />
             </div>
 
             {/* Sidebar */}
