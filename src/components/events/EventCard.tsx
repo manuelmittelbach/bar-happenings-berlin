@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
+import { getCategoryInfoByLabel } from "@/data/mockData";
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -11,12 +12,23 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
+  const catInfo = getCategoryInfoByLabel(event.category);
+  
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
       e.preventDefault();
       onClick(event.id);
     }
   };
+
+  const PlaceholderImage = () => (
+    <div
+      className="absolute inset-0 w-full h-full flex items-center justify-center"
+      style={{ backgroundColor: catInfo?.color || '#666' }}
+    >
+      <span className="text-4xl">{catInfo?.emoji || '✦'}</span>
+    </div>
+  );
 
   if (layout === "list") {
     return (
@@ -27,12 +39,11 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       >
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
-            <img
-              src={event.image}
-              alt={event.title}
-              className="absolute inset-0 w-full h-full object-cover grayscale-hover"
-              loading="lazy"
-            />
+            {event.image ? (
+              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
+            ) : (
+              <PlaceholderImage />
+            )}
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
@@ -44,7 +55,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {event.startTime}</p>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.summary}</p>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
             <span className="stamp text-accent border-accent text-[10px]">{event.entryInfo}</span>
@@ -62,12 +73,11 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
         <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover grayscale-hover"
-            loading="lazy"
-          />
+          {event.image ? (
+            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
+          ) : (
+            <PlaceholderImage />
+          )}
           <div className="absolute top-3 left-3">
             <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
               {event.category}

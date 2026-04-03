@@ -1,4 +1,10 @@
-import type { Question } from "@/data/mockData";
+export interface Question {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+  replies: { author: string; text: string; date: string; isVenue?: boolean }[];
+}
 import { MessageCircle } from "lucide-react";
 
 interface QuestionThreadProps {
