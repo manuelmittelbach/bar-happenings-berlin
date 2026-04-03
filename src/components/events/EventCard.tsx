@@ -54,7 +54,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             <h3 className="font-heading text-base font-bold uppercase tracking-tight group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {event.startTime}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
