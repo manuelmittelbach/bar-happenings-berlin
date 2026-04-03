@@ -2,47 +2,48 @@ import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t-2 border-foreground bg-foreground text-primary-foreground">
       <div className="container py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div>
-            <Link to="/" className="font-heading text-xl font-bold tracking-tighter">
-              barlin<span className="text-accent">.</span>
+        <div className="flex flex-col md:flex-row justify-between gap-10">
+          <div className="max-w-xs">
+            <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
+              barlin
             </Link>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              Discover what's happening tonight in Berlin's best small bars.
+            <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
+              What's on tonight in Berlin's independent bars. Not a ticketing platform — just good bars doing good things.
             </p>
           </div>
-          <div>
-            <h4 className="font-heading text-sm font-semibold mb-3">Discover</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/" className="hover:text-foreground transition-colors">Today</Link></li>
-              <li><Link to="/explore" className="hover:text-foreground transition-colors">Explore Events</Link></li>
-              <li><Link to="/explore?category=Live+Music" className="hover:text-foreground transition-colors">Live Music</Link></li>
-              <li><Link to="/explore?category=Quiz+Nights" className="hover:text-foreground transition-colors">Quiz Nights</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-heading text-sm font-semibold mb-3">For Venues</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/for-bars" className="hover:text-foreground transition-colors">For Bars</Link></li>
-              <li><Link to="/publish" className="hover:text-foreground transition-colors">Publish an Event</Link></li>
-              <li><Link to="/login" className="hover:text-foreground transition-colors">Venue Login</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-heading text-sm font-semibold mb-3">Barlin</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
-              <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Instagram</a></li>
-              <li><a href="mailto:hello@barlin.berlin" className="hover:text-foreground transition-colors">Contact</a></li>
-              <li><span className="cursor-default">Legal</span></li>
-            </ul>
+          <div className="flex flex-wrap gap-12">
+            <div>
+              <h4 className="mono-label text-primary-foreground/40 mb-4">Discover</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Today</Link></li>
+                <li><Link to="/explore" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Explore</Link></li>
+                <li><Link to="/explore?category=Live+Music" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Live Music</Link></li>
+                <li><Link to="/explore?category=Quiz+Nights" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Quiz Nights</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mono-label text-primary-foreground/40 mb-4">Venues</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/for-bars" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">For Bars</Link></li>
+                <li><Link to="/publish" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Publish Event</Link></li>
+                <li><Link to="/login" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Login</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mono-label text-primary-foreground/40 mb-4">Info</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/about" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">About</Link></li>
+                <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Instagram</a></li>
+                <li><a href="mailto:hello@barlin.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
+              </ul>
+            </div>
           </div>
         </div>
-        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© 2026 barlin. Made in Berlin.</p>
-          <p className="text-xs text-muted-foreground">Not a ticketing platform. Just good bars doing good things.</p>
+        <div className="mt-10 pt-6 border-t border-primary-foreground/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="mono-label text-primary-foreground/30">© 2026 barlin — Made in Berlin</p>
+          <p className="text-xs text-primary-foreground/30 font-mono">No algorithms. No sponsors. Just bars.</p>
         </div>
       </div>
     </footer>

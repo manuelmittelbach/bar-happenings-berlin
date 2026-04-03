@@ -6,9 +6,46 @@ import type { BarlinEvent } from "@/data/mockData";
 interface EventCardProps {
   event: BarlinEvent;
   index?: number;
+  layout?: "grid" | "list";
 }
 
-export default function EventCard({ event, index = 0 }: EventCardProps) {
+export default function EventCard({ event, index = 0, layout = "grid" }: EventCardProps) {
+  if (layout === "list") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.03 }}
+      >
+        <Link to={`/event/${event.id}`} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
+          <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
+            <img
+              src={event.image}
+              alt={event.title}
+              className="absolute inset-0 w-full h-full object-cover grayscale-hover"
+              loading="lazy"
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="mono-label text-accent">{event.category}</span>
+              <span className="mono-label text-muted-foreground">·</span>
+              <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
+            </div>
+            <h3 className="font-heading text-base font-bold uppercase tracking-tight group-hover:text-accent transition-colors truncate">
+              {event.title}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {event.startTime}</p>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.summary}</p>
+          </div>
+          <div className="hidden sm:flex flex-col items-end justify-center gap-1">
+            <span className="stamp text-accent border-accent text-[10px]">{event.entryInfo}</span>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -16,30 +53,30 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
       <Link to={`/event/${event.id}`} className="group block">
-        <div className="relative overflow-hidden rounded-sm aspect-[4/3] bg-muted">
+        <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
           <img
             src={event.image}
             alt={event.title}
             className="absolute inset-0 w-full h-full object-cover grayscale-hover"
             loading="lazy"
           />
-          <div className="absolute top-3 left-3 flex gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-background/90 backdrop-blur-sm rounded-sm text-foreground">
+          <div className="absolute top-3 left-3">
+            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
               {event.category}
             </span>
           </div>
           <div className="absolute bottom-3 right-3">
-            <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-sm">
+            <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
               {event.entryInfo}
             </span>
           </div>
         </div>
-        <div className="mt-3 space-y-1.5">
-          <h3 className="font-heading text-base font-semibold leading-tight group-hover:text-accent transition-colors line-clamp-2">
+        <div className="mt-3 space-y-1">
+          <h3 className="font-heading text-sm font-bold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
             {event.title}
           </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               {event.neighborhood}
@@ -49,9 +86,6 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
               {event.startTime}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mt-1">
-            {event.summary}
-          </p>
         </div>
       </Link>
     </motion.div>
