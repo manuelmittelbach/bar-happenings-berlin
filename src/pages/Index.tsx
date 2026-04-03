@@ -65,26 +65,9 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
-  useEffect(() => {
-    if (viewMode !== "grid" || !pendingMapEventId) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedEventId(pendingMapEventId);
-      setPendingMapEventId(null);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [viewMode, pendingMapEventId]);
-
   const handleEventClick = useCallback((eventId: string) => {
-    if (viewMode === "map") {
-      setPendingMapEventId(eventId);
-      setViewMode("grid");
-      return;
-    }
-
     setSelectedEventId(eventId);
-  }, [viewMode]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
