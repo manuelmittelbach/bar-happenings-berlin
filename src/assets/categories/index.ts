@@ -10,11 +10,14 @@ import other from './other.jpg';
 export const categoryImages: Record<string, string> = {
   'comedy': comedy,
   'pub-quiz': pubQuiz,
+  'quiz-night': pubQuiz,
   'language-exchange': languageExchange,
   'social': social,
   'singles': singles,
   'dj-music': djMusic,
   'live-music': liveMusic,
+  'open-mic': comedy,
+  'promo-date-night': singles,
   'other': other,
 };
 
