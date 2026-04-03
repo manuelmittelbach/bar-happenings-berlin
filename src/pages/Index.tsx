@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
@@ -22,7 +22,7 @@ export default function Index() {
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [pendingMapEventId, setPendingMapEventId] = useState<string | null>(null);
+  
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -65,26 +65,9 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
-  useEffect(() => {
-    if (viewMode !== "grid" || !pendingMapEventId) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedEventId(pendingMapEventId);
-      setPendingMapEventId(null);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [viewMode, pendingMapEventId]);
-
   const handleEventClick = useCallback((eventId: string) => {
-    if (viewMode === "map") {
-      setPendingMapEventId(eventId);
-      setViewMode("grid");
-      return;
-    }
-
     setSelectedEventId(eventId);
-  }, [viewMode]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
