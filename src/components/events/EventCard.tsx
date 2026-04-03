@@ -89,19 +89,22 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </span>
           </div>
         </div>
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-2">
           <h3 className="font-heading text-sm font-bold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
             {event.title}
           </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
-            <span className="inline-flex items-center gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <MapPin className="h-3 w-3" />
               {event.neighborhood}
             </span>
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <Clock className="h-3 w-3" />
-              {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {event.startTime}
+              {new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+              {event.startTime}
             </span>
           </div>
         </div>
