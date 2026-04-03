@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw } from "lucide-react";
+import { MapPin, Clock, Calendar, Share2, Globe, Tag, ExternalLink, RotateCw, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import VenueBlock from "@/components/events/VenueBlock";
@@ -46,13 +46,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
 
         <div className="px-6 -mt-16 relative z-10 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {event.tags.map(tag => (
-                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium bg-muted border border-border">
-                  {tag}
-                </span>
-              ))}
-            </div>
             <h2 className="heading-display text-2xl md:text-4xl">{event.title}</h2>
             <p className="text-base text-muted-foreground mt-1 font-medium">{event.venue}</p>
           </motion.div>
@@ -61,7 +54,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border mt-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
-              <p className="text-sm font-medium">{event.date}</p>
+              <p className="text-sm font-medium">{new Date(event.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Time</span>
@@ -69,7 +62,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</span>
-              <p className="text-sm font-medium">{event.neighborhood}</p>
+              <p className="text-sm font-medium">{event.address || event.neighborhood}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Price</span>
@@ -77,10 +70,19 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             </div>
           </div>
 
-          <div className="space-y-1 mt-4">
-            {event.address && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {event.address}</p>}
-            {event.language && <p className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> {event.language}</p>}
-            {event.recurrence && <p className="text-xs text-muted-foreground flex items-center gap-1"><RotateCw className="h-3 w-3" /> {event.recurrence}</p>}
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            {event.address && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
+              >
+                <Navigation className="h-3 w-3" /> Open in Google Maps
+              </a>
+            )}
+            {event.language && <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground font-mono bg-muted border border-border"><Globe className="h-3 w-3" /> {event.language}</span>}
+            {event.recurrence && <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground font-mono bg-muted border border-border"><RotateCw className="h-3 w-3" /> {event.recurrence}</span>}
           </div>
 
           {/* Actions */}
