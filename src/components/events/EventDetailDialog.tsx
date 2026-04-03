@@ -121,7 +121,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => (
                   <span key={d} className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 ${d === event.date ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-muted-foreground'}`}>
-                    {d}
+                    {formatDateShort(d)}
                   </span>
                 ))}
               </div>
