@@ -11,9 +11,16 @@ import { getTodayEvents, getTomorrowEvents, getThisWeekEvents, categories } from
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const navigate = useNavigate();
   const todayEvents = getTodayEvents();
   const tomorrowEvents = getTomorrowEvents();
   const allEvents = getThisWeekEvents();
+
+  const handleMapEventClick = useCallback(
+    (eventId: string) => navigate(`/event/${eventId}`),
+    [navigate]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
