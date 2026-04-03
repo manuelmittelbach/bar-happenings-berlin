@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, Fragment } from "react";
 import { Link } from "react-router-dom";
 import { Search, ArrowRight, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
@@ -237,10 +237,39 @@ export default function Index() {
                 <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filtered.map((event, i) => (
-                  <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} />
-                ))}
+              <div className="space-y-12">
+                {(() => {
+                  const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+                  const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+
+                  const sections: { label: string; events: typeof filtered }[] = [];
+                  const todayEvents = filtered.filter(e => e.date === today);
+                  const tomorrowEvents = filtered.filter(e => e.date === tomorrow);
+                  const thisWeekEvents = filtered.filter(e => e.date > tomorrow && e.date <= weekEnd);
+                  const laterEvents = filtered.filter(e => e.date > weekEnd && e.date <= monthEnd);
+                  const evenLaterEvents = filtered.filter(e => e.date > monthEnd);
+
+                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents });
+                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
+                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents });
+                  if (laterEvents.length) sections.push({ label: "This month", events: laterEvents });
+                  if (evenLaterEvents.length) sections.push({ label: "Coming up", events: evenLaterEvents });
+
+                  return sections.map((section) => (
+                    <div key={section.label}>
+                      <div className="flex items-center gap-4 mb-5">
+                        <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
+                        <div className="flex-1 border-t-2 border-border" />
+                        <span className="mono-label text-muted-foreground">{section.events.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {section.events.map((event, i) => (
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} />
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
             )}
           </div>
