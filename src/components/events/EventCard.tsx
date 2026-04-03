@@ -80,11 +80,13 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               {event.category}
             </span>
           </div>
-          <div className="absolute bottom-3 right-3">
-            <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
-              {event.entryInfo}
-            </span>
-          </div>
+          {event.entryInfo && (
+            <div className="absolute bottom-3 right-3">
+              <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
+                {event.entryInfo}
+              </span>
+            </div>
+          )}
         </div>
         <div className="mt-3 space-y-2">
           <h3 className="font-heading text-sm font-bold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
