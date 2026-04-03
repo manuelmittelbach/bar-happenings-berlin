@@ -55,45 +55,41 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
       venueEvents.set(event.venueId, existing);
     });
 
-    venueEvents.forEach((evts, venueId) => {
-      const venue = venues.find((v) => v.id === venueId);
+    // Add individual event markers with category emojis
+    events.forEach((event) => {
+      const venue = venues.find((v) => v.id === event.venueId);
       if (!venue) return;
+
+      const catInfo = categoryInfos.find((c) => c.label === event.category || c.id === event.categoryId);
+      const emoji = catInfo?.emoji || "✦";
 
       const icon = L.divIcon({
         className: "custom-marker",
         html: `<div style="
-          width: 32px; height: 32px;
-          background: hsl(18, 85%, 52%);
-          border: 2px solid hsl(40, 20%, 97%);
+          width: 36px; height: 36px;
+          background: hsl(0, 0%, 10%);
+          border: 2px solid hsl(40, 20%, 93%);
           border-radius: 0;
           display: flex; align-items: center; justify-content: center;
-          color: white; font-family: 'Space Mono', monospace;
-          font-size: 11px; font-weight: bold;
-          box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
-          transform: rotate(-3deg);
+          font-size: 18px;
+          box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+          transform: rotate(-2deg);
           cursor: pointer;
-        ">${evts.length}</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+          transition: transform 0.15s, background 0.15s;
+        " onmouseenter="this.style.background='hsl(18,85%,52%)';this.style.transform='rotate(0deg) scale(1.15)'"
+           onmouseleave="this.style.background='hsl(0,0%,10%)';this.style.transform='rotate(-2deg) scale(1)'"
+        >${emoji}</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
       });
-
-      const popupContent = evts
-        .map(
-          (e) =>
-            `<div style="margin-bottom:8px;cursor:pointer;" data-event-id="${e.id}">
-              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">${e.title}</div>
-              <div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px;">${e.startTime} · ${e.category}</div>
-            </div>`
-        )
-        .join("");
 
       const marker = L.marker([venue.lat, venue.lng], { icon }).addTo(map);
 
       marker.bindPopup(
         `<div style="min-width:180px;">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #333;">${venue.name}</div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#666;margin-bottom:8px;">${venue.neighborhood}</div>
-          ${popupContent}
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${event.title}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-bottom:6px;">${venue.name} · ${event.startTime}</div>
+          <div style="cursor:pointer;font-family:'Space Mono',monospace;font-size:10px;color:hsl(18,85%,52%);text-transform:uppercase;letter-spacing:0.5px;" data-event-id="${event.id}">→ View details</div>
         </div>`,
         { className: "barlin-popup" }
       );
