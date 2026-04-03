@@ -22,13 +22,15 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
-  const PlaceholderImage = () => (
-    <div
-      className="absolute inset-0 w-full h-full flex items-center justify-center"
-      style={{ backgroundColor: catInfo?.color || '#666' }}
-    >
-      <span className="text-4xl">{catInfo?.emoji || '✦'}</span>
-    </div>
+  const fallbackImage = getCategoryImage(catInfo?.id || 'other');
+
+  const EventImage = ({ className = "" }: { className?: string }) => (
+    <img
+      src={event.image || fallbackImage}
+      alt={event.title}
+      className={`absolute inset-0 w-full h-full object-cover ${className}`}
+      loading="lazy"
+    />
   );
 
   if (layout === "list") {
