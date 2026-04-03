@@ -28,6 +28,10 @@ export default function Index() {
 
   const filtered = useMemo(() => {
     let result = [...events];
+
+    // Only keep events from today onwards
+    result = result.filter((e) => e.date >= today);
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -48,6 +52,18 @@ export default function Index() {
     }
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
+
+    // Sort chronologically (soonest first)
+    result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+    // Deduplicate recurring events: keep only the earliest occurrence per parentId
+    const seen = new Set<string>();
+    result = result.filter((e) => {
+      if (seen.has(e.parentId)) return false;
+      seen.add(e.parentId);
+      return true;
+    });
+
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
