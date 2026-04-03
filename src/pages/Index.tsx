@@ -253,7 +253,7 @@ export default function Index() {
                   if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
                   if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents });
                   if (laterEvents.length) sections.push({ label: "This month", events: laterEvents });
-                  if (evenLaterEvents.length) sections.push({ label: "Coming up", events: evenLaterEvents });
+                  if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents });
 
                   return sections.map((section) => (
                     <div key={section.label}>
