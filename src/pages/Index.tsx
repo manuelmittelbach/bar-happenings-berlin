@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, Fragment } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -22,54 +22,36 @@ export default function Index() {
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [pendingMapEventId, setPendingMapEventId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
     let result = [...events];
-
-    // Only keep events from today onwards
-    result = result.filter((e) => e.date >= today);
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.venue.toLowerCase().includes(q) ||
-          e.neighborhood.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q)
-      );
-    }
-    if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
-    if (activeDate === "Today") result = result.filter((e) => e.date === today);
-    if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    if (activeDate === "This Week") {
-      const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-      result = result.filter((e) => e.date >= today && e.date <= weekEnd);
-    }
-    if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
-    if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
-
-    // Sort chronologically (soonest first)
-    result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-
-    // Deduplicate recurring events: keep only the earliest occurrence per parentId
-    const seen = new Set<string>();
-    result = result.filter((e) => {
-      if (seen.has(e.parentId)) return false;
-      seen.add(e.parentId);
-      return true;
-    });
-
-    return result;
+...
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
+  useEffect(() => {
+    if (viewMode !== "grid" || !pendingMapEventId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setSelectedEventId(pendingMapEventId);
+      setPendingMapEventId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [viewMode, pendingMapEventId]);
+
   const handleEventClick = useCallback((eventId: string) => {
+    if (viewMode === "map") {
+      setPendingMapEventId(eventId);
+      setViewMode("grid");
+      return;
+    }
+
     setSelectedEventId(eventId);
-  }, []);
+  }, [viewMode]);
 
   return (
     <div className="min-h-screen flex flex-col">
