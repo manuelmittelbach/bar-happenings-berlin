@@ -18,6 +18,8 @@ export const categoryImages: Record<string, string> = {
   'live-music': liveMusic,
   'open-mic': comedy,
   'promo-date-night': singles,
+  'screening': other,
+  'sport': other,
   'other': other,
 };
 
