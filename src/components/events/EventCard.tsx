@@ -72,11 +72,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
         <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
-          {event.image ? (
-            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
-          ) : (
-            <PlaceholderImage />
-          )}
+          <EventImage className="grayscale-hover" />
           <div className="absolute top-3 left-3">
             <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
               {event.category}
