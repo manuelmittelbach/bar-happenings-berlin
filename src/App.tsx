@@ -3,8 +3,16 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import Index from "./pages/Index";
+import Explore from "./pages/Explore";
+import EventDetail from "./pages/EventDetail";
+import PublishEvent from "./pages/PublishEvent";
+import Login from "./pages/Login";
+import OrganizerDashboard from "./pages/OrganizerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ForBars from "./pages/ForBars";
+import About from "./pages/About";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +24,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/event/:id" element={<EventDetail />} />
+          <Route path="/publish" element={<PublishEvent />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<OrganizerDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/for-bars" element={<ForBars />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
