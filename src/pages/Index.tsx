@@ -250,10 +250,10 @@ export default function Index() {
 
                   return sections.map((section) => (
                     <div key={section.label}>
-                      <div className="flex items-center gap-4 mb-5">
-                        <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
+                      <div className="flex items-center gap-4 mb-6 mt-4">
+                        <h2 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight">{section.label}</h2>
                         <div className="flex-1 border-t-2 border-border" />
-                        <span className="mono-label text-muted-foreground">{section.events.length}</span>
+                        <span className="mono-label text-lg text-muted-foreground">{section.events.length}</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {section.events.map((event, i) => (
