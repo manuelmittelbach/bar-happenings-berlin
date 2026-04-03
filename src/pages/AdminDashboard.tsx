@@ -121,7 +121,7 @@ export default function AdminDashboard() {
                 <div key={event.id} className="border border-border rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-heading text-sm font-semibold">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {event.date}</p>
+                    <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {formatDateShort(event.date)}</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
