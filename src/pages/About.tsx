@@ -24,7 +24,7 @@ export default function About() {
             </p>
 
             <p>
-              We built Barlin to change that. Not by creating another generic event marketplace, but by building a platform
+              We built Tipsy Tiger to change that. Not by creating another generic event marketplace, but by building a platform
               that feels local, curated, and true to the spirit of Berlin's independent bar culture.
             </p>
 
