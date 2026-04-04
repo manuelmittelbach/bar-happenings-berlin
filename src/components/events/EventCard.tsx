@@ -73,7 +73,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.4, delay: index * 0.05 + 0.2, type: "spring", stiffness: 200 }}
-          className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 px-4 py-1 bg-tiger-gold text-primary-foreground font-heading text-xs tracking-[0.15em] uppercase border-2 border-background shadow-lg whitespace-nowrap"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-5 py-1.5 bg-tiger-gold text-primary-foreground font-heading text-sm tracking-[0.15em] uppercase border-2 border-background shadow-lg whitespace-nowrap"
         >
           🐯 Tiger Pick
         </motion.div>
