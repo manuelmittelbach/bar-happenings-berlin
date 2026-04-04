@@ -80,7 +80,7 @@ export default function Index() {
                 <span className="text-tiger-smoke">in Berlin bars</span>
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Live music, quiz nights, open mics, and community events in the kind of bars where everyone becomes a regular.
+                Live music, quiz nights, open mics, and community events in small independent bars across the city.
               </p>
             </motion.div>
 
