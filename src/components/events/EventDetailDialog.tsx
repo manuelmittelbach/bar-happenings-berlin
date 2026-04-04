@@ -132,11 +132,27 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             <div className="mt-8">
               <h3 className="font-heading text-base font-bold uppercase mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
-                {siblingDates.map(d => (
-                  <span key={d} className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 ${d === event.date ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-muted-foreground'}`}>
-                    {formatDateShort(d)}
-                  </span>
-                ))}
+                {siblingDates.map(d => {
+                  const siblingEvent = siblings.find(e => e.date === d);
+                  const isActive = d === event.date;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => {
+                        if (!isActive && siblingEvent && onEventChange) {
+                          onEventChange(siblingEvent.id);
+                        }
+                      }}
+                      className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 transition-colors ${
+                        isActive
+                          ? 'border-accent bg-accent text-accent-foreground'
+                          : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
+                      }`}
+                    >
+                      {formatDateShort(d)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
