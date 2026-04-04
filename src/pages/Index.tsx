@@ -3,7 +3,7 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
-import tigerStamp from "@/assets/tiger-stamp.png";
+
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
