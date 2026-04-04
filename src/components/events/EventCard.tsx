@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
-import { getVenueImage } from "@/assets/venues";
+
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -24,11 +24,11 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
-  const fallbackImage = getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other');
+  const illustrationImage = getCategoryImage(catInfo?.id || 'other');
 
   const EventImage = ({ className = "" }: { className?: string }) => (
     <img
-      src={event.image || fallbackImage}
+      src={illustrationImage}
       alt={event.title}
       className={`absolute inset-0 w-full h-full object-cover ${className}`}
       loading="lazy"
