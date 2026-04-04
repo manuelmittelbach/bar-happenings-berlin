@@ -173,7 +173,7 @@ export default function Explore() {
                   </div>
                 ) : (
                   filtered.map((event, i) => (
-                    <EventCard key={event.id} event={event} index={i} layout="grid" />
+                    <EventCard key={event.id} event={event} index={i} layout="compact" />
                   ))
                 )}
               </div>
