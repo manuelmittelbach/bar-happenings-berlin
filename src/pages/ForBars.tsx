@@ -71,7 +71,7 @@ export default function ForBars() {
               {[
                 { step: "01", title: "Create your venue account", desc: "Sign up with your bar name and basic details. Takes 2 minutes." },
                 { step: "02", title: "Publish an event", desc: "Fill in the event details — title, date, category, description. Done." },
-                { step: "03", title: "Reach your audience", desc: "Your event appears on Barlin and locals discover it when browsing." },
+                { step: "03", title: "Reach your audience", desc: "Your event appears on Tipsy Tiger and locals discover it when browsing." },
               ].map((s) => (
                 <div key={s.step} className="space-y-3">
                   <span className="font-heading text-4xl font-bold text-muted-foreground/30">{s.step}</span>
