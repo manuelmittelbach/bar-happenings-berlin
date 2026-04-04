@@ -8,7 +8,7 @@ export default function About() {
       <main className="flex-1">
         <div className="container max-w-2xl py-16">
           <h1 className="heading-display text-4xl md:text-5xl mb-8">
-            About barlin<span className="text-accent">.</span>
+            About tipsy tiger<span className="text-accent">.</span>
           </h1>
 
           <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
