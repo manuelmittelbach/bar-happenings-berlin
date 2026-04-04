@@ -47,8 +47,8 @@ export default function About() {
 
             <p>
               Questions, ideas, feedback? Drop us a line at{" "}
-              <a href="mailto:hello@barlin.berlin" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
-                hello@barlin.berlin
+              <a href="mailto:hello@tipsytiger.berlin" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                hello@tipsytiger.berlin
               </a>
             </p>
           </div>
