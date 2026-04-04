@@ -161,28 +161,18 @@ export default function Index() {
                 "SOLO NIGHT OUT? WE GOT YOU",
                 "LESS SCROLLING, MORE CLINKING",
               ];
-              const grassVariants = [
-                { h: 22, r: -12 },
-                { h: 28, r: 8 },
-                { h: 18, r: -5 },
-                { h: 26, r: 15 },
-                { h: 20, r: -18 },
-                { h: 30, r: 6 },
-                { h: 16, r: -10 },
-                { h: 24, r: 12 },
-              ];
+              const rotations = [-10, 5, -15, 12, -8, 18, -5, 10];
               return (
                 <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
                   {phrases.map((phrase, j) => (
                     <span key={j} className="flex items-center gap-6">
                       {phrase}
-                      <span className="inline-flex items-end gap-[2px]" style={{ transform: `rotate(${grassVariants[j].r}deg)` }}>
-                        {[0.7, 1, 0.6].map((scale, k) => (
-                          <svg key={k} width="4" height={grassVariants[j].h * scale} viewBox="0 0 4 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-90">
-                            <path d="M2 30C2 30 0 15 1 5C1.5 0 2.5 0 3 5C4 15 2 30 2 30Z" fill="#4ade80" />
-                          </svg>
-                        ))}
-                      </span>
+                      <img
+                        src={grassCluster}
+                        alt=""
+                        className="inline h-10 w-10 object-contain"
+                        style={{ transform: `rotate(${rotations[j]}deg)` }}
+                      />
                     </span>
                   ))}
                 </span>
