@@ -17,7 +17,8 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-foreground bg-background/95 backdrop-blur-sm">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="font-heading text-xl font-extrabold uppercase tracking-tight">
+        <Link to="/" className="flex items-center gap-2 font-heading text-xl font-extrabold uppercase tracking-tight">
+          <img src={logoTiger} alt="Tipsy Tiger" className="h-8 w-8" />
           tipsy tiger
         </Link>
 
