@@ -42,24 +42,24 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: index * 0.03 }}
       >
-        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
+        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-tiger-gold transition-colors">
           <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
             <EventImage className="grayscale-hover" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
-              <span className="mono-label text-accent">{event.category}</span>
+              <span className="mono-label text-tiger-pink">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
-            <h3 className="font-heading text-lg md:text-xl font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors truncate">
+            <h3 className="font-heading text-lg md:text-xl tracking-wide leading-tight group-hover:text-tiger-gold transition-colors truncate">
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
-            {event.entryInfo && <span className="stamp text-accent border-accent text-[10px]">{event.entryInfo}</span>}
+            {event.entryInfo && <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>}
           </div>
         </Link>
       </motion.div>
@@ -73,23 +73,23 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
-        <div className="relative overflow-hidden aspect-[16/9] md:aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
+        <div className="relative overflow-hidden aspect-[16/9] md:aspect-[4/3] bg-muted retro-card">
           <EventImage className="grayscale-hover" />
           <div className="absolute top-3 left-3">
-            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
+            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-tiger-pink">
               {event.category}
             </span>
           </div>
           {event.entryInfo && (
             <div className="absolute bottom-3 right-3">
-              <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
+              <span className="stamp text-tiger-gold border-tiger-gold bg-background/80 backdrop-blur-sm text-[10px]">
                 {event.entryInfo}
               </span>
             </div>
           )}
         </div>
         <div className="mt-3 space-y-2">
-          <h3 className="font-heading text-base md:text-lg font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
+          <h3 className="font-heading text-base md:text-lg tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2">
             {event.title}
           </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>

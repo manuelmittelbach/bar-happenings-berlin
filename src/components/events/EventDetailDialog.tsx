@@ -40,14 +40,14 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-foreground gap-0" fullscreenMobile>
+      <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-border gap-0 bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
         {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
           {/* Mobile back button */}
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider hover:bg-background transition-colors"
+            className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-border text-foreground text-xs font-heading tracking-wider hover:bg-background transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -62,15 +62,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
         <div className="px-6 -mt-16 relative z-10 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h2 className="heading-display text-2xl md:text-4xl">{event.title}</h2>
-            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-foreground bg-background">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="font-heading text-base font-bold uppercase tracking-wide">{event.venue}</span>
+            <h2 className="heading-display text-2xl md:text-4xl gradient-tiger-text">{event.title}</h2>
+            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-tiger-gold bg-card">
+              <MapPin className="h-4 w-4 flex-shrink-0 text-tiger-gold" />
+              <span className="font-heading text-base tracking-wide">{event.venue}</span>
             </div>
           </motion.div>
 
           {/* Details grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border bg-card mt-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
               <p className="text-sm font-medium">{formatDateWithDay(event.date)}</p>
@@ -95,7 +95,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border-2 border-border hover:border-tiger-gold hover:text-tiger-gold transition-colors"
               >
                 <Navigation className="h-3 w-3" /> Open in Google Maps
               </a>
@@ -108,16 +108,16 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           <div className="flex gap-3 mt-6">
             <button
               onClick={handleJoin}
-              className={`flex-1 h-11 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+              className={`flex-1 h-11 text-sm tracking-wider font-heading transition-all ${
                 joined
-                  ? "bg-accent text-accent-foreground border-2 border-accent"
-                  : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
+                  ? "bg-tiger-pink text-accent-foreground border-2 border-tiger-pink"
+                  : "bg-tiger-gold text-primary-foreground border-2 border-tiger-gold hover:bg-transparent hover:text-tiger-gold"
               }`}
             >
-              {joined ? "✓ Interested" : "I want to join"}
+              {joined ? "✓ I'm going!" : "I want to join 🐯"}
             </button>
             {event.url && (
-              <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
+              <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border-2 border-border text-sm hover:border-tiger-gold hover:text-tiger-gold transition-colors flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />
               </a>
             )}
@@ -126,7 +126,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
           {/* Description */}
           <div className="mt-8 space-y-3">
-            <h3 className="font-heading text-base font-bold uppercase">About this event</h3>
+            <h3 className="font-heading text-base tracking-wide text-tiger-gold">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
               <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
             ))}
@@ -135,7 +135,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           {/* Upcoming dates */}
           {siblingDates.length > 1 && (
             <div className="mt-8">
-              <h3 className="font-heading text-base font-bold uppercase mb-3">Upcoming dates</h3>
+              <h3 className="font-heading text-base tracking-wide text-tiger-gold mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => {
                   const siblingEvent = siblings.find(e => e.date === d);
@@ -150,8 +150,8 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                       }}
                       className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 transition-colors ${
                         isActive
-                          ? 'border-accent bg-accent text-accent-foreground'
-                          : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
+                          ? 'border-tiger-pink bg-tiger-pink text-accent-foreground'
+                          : 'border-border text-muted-foreground hover:border-tiger-gold hover:text-tiger-gold cursor-pointer'
                       }`}
                     >
                       {formatDateShort(d)}
