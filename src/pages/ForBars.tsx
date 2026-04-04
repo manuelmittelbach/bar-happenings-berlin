@@ -48,7 +48,7 @@ export default function ForBars() {
         {/* Benefits */}
         <section className="border-b border-border">
           <div className="container py-16">
-            <h2 className="heading-display text-2xl md:text-3xl mb-10">Why venues use Barlin</h2>
+            <h2 className="heading-display text-2xl md:text-3xl mb-10">Why venues use Tipsy Tiger</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {benefits.map((b) => (
                 <div key={b.title} className="space-y-3">
