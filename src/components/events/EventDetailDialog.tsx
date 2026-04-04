@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Clock, Calendar, Globe, Tag, ExternalLink, RotateCw, Navigation, ArrowLeft } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
@@ -19,6 +19,11 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const event = eventId ? getEventById(eventId) : null;
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
+
+  useEffect(() => {
+    setJoined(false);
+    setInterestedCount(0);
+  }, [eventId]);
 
   const venue = event ? getVenueById(event.venueId) : null;
   const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
