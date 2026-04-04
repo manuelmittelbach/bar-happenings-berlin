@@ -51,7 +51,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             Back
           </button>
           <img
-            src={event.image || getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other')}
+            src={getCategoryImage(catInfo?.id || 'other')}
             alt={event.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
