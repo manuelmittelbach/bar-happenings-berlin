@@ -1,24 +1,13 @@
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
-import { MapPin, Clock, Flame, Star, Zap } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
 
-const BADGE_LABELS = [
-  { text: "🔥 Trending", icon: Flame },
-  { text: "⭐ Recommandé", icon: Star },
-  { text: "⚡ Exclusif", icon: Zap },
-  { text: "🐯 Tiger Pick", icon: Star },
-  { text: "✨ À ne pas rater", icon: Flame },
-];
-
-function getFeaturedBadge(eventId: string, index: number): typeof BADGE_LABELS[number] | null {
-  // Deterministic pseudo-random: only ~1 in 5 cards get a badge
+function isTigerPick(eventId: string, index: number): boolean {
   const hash = eventId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const val = (hash * 31 + index * 13) % 100;
-  if (val > 20) return null; // ~20% chance
-  return BADGE_LABELS[val % BADGE_LABELS.length];
+  return ((hash * 31 + index * 13) % 100) < 8; // ~8%
 }
 
 interface EventCardProps {
@@ -30,7 +19,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
-  const badge = layout === "grid" ? getFeaturedBadge(event.id, index) : null;
+  const featured = layout === "grid" && isTigerPick(event.id, index);
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -39,7 +28,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
-  // Deterministic pseudo-random rotation & offset based on index
   const seed = index * 7 + (event.id.charCodeAt(event.id.length - 1) || 0);
   const rotation = ((seed % 5) - 2) * 0.6;
   const translateY = ((seed % 3) - 1) * 6;
@@ -62,7 +50,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} &mdash; {formatDateShort(event.date)} &middot; {event.startTime}</p>
-            
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
             {event.entryInfo && <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>}
@@ -79,26 +66,25 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       transition={{ duration: 0.4, delay: index * 0.05 }}
       style={{ rotate: `${rotation}deg`, translateY: `${translateY}px` }}
       whileHover={{ rotate: 0, translateY: 0, scale: 1.02 }}
-      className="relative"
+      className={`relative ${featured ? "sm:col-span-2 z-10" : ""}`}
     >
-      {badge && (
+      {featured && (
         <motion.div
-          initial={{ scale: 0.8, rotate: -3 }}
-          animate={{ scale: 1, rotate: 2 }}
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
           transition={{ duration: 0.4, delay: index * 0.05 + 0.2, type: "spring", stiffness: 200 }}
-          className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-tiger-gold text-primary-foreground font-heading text-[11px] tracking-wider uppercase border-2 border-background shadow-lg"
-          style={{ rotate: "3deg" }}
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 px-4 py-1 bg-tiger-gold text-primary-foreground font-heading text-xs tracking-[0.15em] uppercase border-2 border-background shadow-lg whitespace-nowrap"
         >
-          {badge.text}
+          🐯 Tiger Pick
         </motion.div>
       )}
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`group block p-5 border-2 bg-card transition-colors ${
-          badge
-            ? "border-tiger-gold/60 hover:border-tiger-gold shadow-[0_0_20px_-5px_hsl(var(--tiger-gold)/0.3)]"
-            : "border-border hover:border-tiger-gold"
+        className={`group block bg-card transition-colors ${
+          featured
+            ? "p-6 md:p-8 border-[3px] border-tiger-gold shadow-[0_0_30px_-5px_hsl(var(--tiger-gold)/0.4)] hover:shadow-[0_0_40px_-5px_hsl(var(--tiger-gold)/0.6)]"
+            : "p-5 border-2 border-border hover:border-tiger-gold"
         }`}
       >
         <div className="flex items-center gap-2 mb-2">
@@ -110,10 +96,12 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </>
           )}
         </div>
-        <h3 className="font-heading text-lg md:text-xl tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2">
+        <h3 className={`font-heading tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2 ${
+          featured ? "text-xl md:text-2xl" : "text-lg md:text-xl"
+        }`}>
           {event.title}
         </h3>
-        <p className="text-sm text-muted-foreground font-medium mt-2">{event.venue}</p>
+        <p className={`text-muted-foreground font-medium mt-2 ${featured ? "text-base" : "text-sm"}`}>{event.venue}</p>
         <div className="flex items-center gap-2 flex-wrap mt-3">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
             <MapPin className="h-3 w-3" />
