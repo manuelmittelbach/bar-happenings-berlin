@@ -2,7 +2,6 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logoTiger from "@/assets/logo-tiger.png";
 
 const navItems = [
   { label: "Explore", path: "/" },
@@ -17,8 +16,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-foreground bg-background/95 backdrop-blur-sm">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-heading text-xl font-extrabold uppercase tracking-tight">
-          <img src={logoTiger} alt="Tipsy Tiger" className="h-8 w-8" />
+        <Link to="/" className="font-heading text-xl font-extrabold uppercase tracking-tight">
           tipsy tiger
         </Link>
 
