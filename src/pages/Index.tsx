@@ -149,11 +149,44 @@ export default function Index() {
 
         <div className="border-y-2 border-border gradient-warm overflow-hidden py-3">
           <div className="flex animate-marquee whitespace-nowrap">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
-                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> YOUR COUCH WILL MISS YOU TONIGHT <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> MAKE FRIENDS, NOT PLANS <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> TIPSY IS A VIBE, TIGER IS A LIFESTYLE <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> FIND YOUR NEW FAVORITE BAR <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> SOLO NIGHT OUT? WE GOT YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> LESS SCROLLING, MORE CLINKING <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" />
-              </span>
-            ))}
+            {Array.from({ length: 3 }).map((_, i) => {
+              const phrases = [
+                "DRINK RESPONSIBLY, PARTY IRRESPONSIBLY",
+                "YOUR COUCH WILL MISS YOU TONIGHT",
+                "MAKE FRIENDS, NOT PLANS",
+                "BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU",
+                "TIPSY IS A VIBE, TIGER IS A LIFESTYLE",
+                "FIND YOUR NEW FAVORITE BAR",
+                "SOLO NIGHT OUT? WE GOT YOU",
+                "LESS SCROLLING, MORE CLINKING",
+              ];
+              const grassVariants = [
+                { h: 22, r: -12 },
+                { h: 28, r: 8 },
+                { h: 18, r: -5 },
+                { h: 26, r: 15 },
+                { h: 20, r: -18 },
+                { h: 30, r: 6 },
+                { h: 16, r: -10 },
+                { h: 24, r: 12 },
+              ];
+              return (
+                <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
+                  {phrases.map((phrase, j) => (
+                    <span key={j} className="flex items-center gap-6">
+                      {phrase}
+                      <span className="inline-flex items-end gap-[2px]" style={{ transform: `rotate(${grassVariants[j].r}deg)` }}>
+                        {[0.7, 1, 0.6].map((scale, k) => (
+                          <svg key={k} width="4" height={grassVariants[j].h * scale} viewBox="0 0 4 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-90">
+                            <path d="M2 30C2 30 0 15 1 5C1.5 0 2.5 0 3 5C4 15 2 30 2 30Z" fill="#4ade80" />
+                          </svg>
+                        ))}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              );
+            })}
           </div>
         </div>
 
