@@ -73,7 +73,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
-        <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
+        <div className="relative overflow-hidden aspect-[16/9] md:aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
           <EventImage className="grayscale-hover" />
           <div className="absolute top-3 left-3">
             <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
