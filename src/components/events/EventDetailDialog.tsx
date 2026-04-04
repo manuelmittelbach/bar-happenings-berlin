@@ -33,7 +33,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 border-2 border-foreground gap-0">
+      <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-foreground gap-0" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
         {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
