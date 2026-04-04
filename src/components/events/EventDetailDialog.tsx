@@ -52,7 +52,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           </button>
         </div>
 
-        <div className="px-6 -mt-16 relative z-10 pb-8">
+        <div className="px-6 pt-6 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <h2 className="heading-display text-2xl md:text-4xl gradient-warm-text">{event.title}</h2>
             <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-tiger-gold bg-card">
