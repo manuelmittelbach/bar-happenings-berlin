@@ -79,9 +79,9 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
     const map = mapInstance.current;
     if (!map) return;
 
-    // Clear existing markers
+    // Clear existing event markers (preserve GPS blue dot & accuracy circle)
     map.eachLayer((layer) => {
-      if (layer instanceof L.Marker) map.removeLayer(layer);
+      if (layer instanceof L.Marker && layer !== gpsMarkerRef.current) map.removeLayer(layer);
     });
 
     // Group events by venue
