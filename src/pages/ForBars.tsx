@@ -25,7 +25,7 @@ export default function ForBars() {
                 <span className="font-light opacity-70">Let people know about it.</span>
               </h1>
               <p className="mt-6 text-lg text-background/60 leading-relaxed max-w-lg">
-                Barlin helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
+                Tipsy Tiger helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
@@ -48,7 +48,7 @@ export default function ForBars() {
         {/* Benefits */}
         <section className="border-b border-border">
           <div className="container py-16">
-            <h2 className="heading-display text-2xl md:text-3xl mb-10">Why venues use Barlin</h2>
+            <h2 className="heading-display text-2xl md:text-3xl mb-10">Why venues use Tipsy Tiger</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {benefits.map((b) => (
                 <div key={b.title} className="space-y-3">
@@ -71,7 +71,7 @@ export default function ForBars() {
               {[
                 { step: "01", title: "Create your venue account", desc: "Sign up with your bar name and basic details. Takes 2 minutes." },
                 { step: "02", title: "Publish an event", desc: "Fill in the event details — title, date, category, description. Done." },
-                { step: "03", title: "Reach your audience", desc: "Your event appears on Barlin and locals discover it when browsing." },
+                { step: "03", title: "Reach your audience", desc: "Your event appears on Tipsy Tiger and locals discover it when browsing." },
               ].map((s) => (
                 <div key={s.step} className="space-y-3">
                   <span className="font-heading text-4xl font-bold text-muted-foreground/30">{s.step}</span>

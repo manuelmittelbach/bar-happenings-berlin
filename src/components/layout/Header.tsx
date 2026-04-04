@@ -17,7 +17,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b-2 border-foreground bg-background/95 backdrop-blur-sm">
       <div className="container flex h-14 items-center justify-between">
         <Link to="/" className="font-heading text-xl font-extrabold uppercase tracking-tight">
-          barlin
+          tipsy tiger
         </Link>
 
         {/* Desktop nav */}

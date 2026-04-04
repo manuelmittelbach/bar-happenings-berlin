@@ -8,12 +8,12 @@ export default function About() {
       <main className="flex-1">
         <div className="container max-w-2xl py-16">
           <h1 className="heading-display text-4xl md:text-5xl mb-8">
-            About barlin<span className="text-accent">.</span>
+            About tipsy tiger<span className="text-accent">.</span>
           </h1>
 
           <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
             <p className="text-base text-foreground">
-              Barlin is a simple idea: make it easy to find out what's happening tonight in Berlin's small, independent bars.
+              Tipsy Tiger is a simple idea: make it easy to find out what's happening tonight in Berlin's small, independent bars.
             </p>
 
             <p>
@@ -24,7 +24,7 @@ export default function About() {
             </p>
 
             <p>
-              We built Barlin to change that. Not by creating another generic event marketplace, but by building a platform
+              We built Tipsy Tiger to change that. Not by creating another generic event marketplace, but by building a platform
               that feels local, curated, and true to the spirit of Berlin's independent bar culture.
             </p>
 
@@ -41,14 +41,14 @@ export default function About() {
             <h2 className="font-heading text-xl font-semibold text-foreground pt-4">Who's behind this</h2>
 
             <p>
-              Barlin is an independent project built by a small team in Berlin. We're regulars at the kind of bars
+              Tipsy Tiger is an independent project built by a small team in Berlin. We're regulars at the kind of bars
               we built this platform for — and we think they deserve more visibility.
             </p>
 
             <p>
               Questions, ideas, feedback? Drop us a line at{" "}
-              <a href="mailto:hello@barlin.berlin" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
-                hello@barlin.berlin
+              <a href="mailto:hello@tipsytiger.berlin" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                hello@tipsytiger.berlin
               </a>
             </p>
           </div>
