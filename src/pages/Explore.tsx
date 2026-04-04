@@ -163,7 +163,7 @@ export default function Explore() {
           {viewMode === "map" ? (
             <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
               {/* Event list sidebar */}
-              <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
+              <div className="w-[380px] shrink-0 overflow-y-auto p-4 space-y-4 border-2 border-border hidden lg:block">
                 {filtered.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center p-6">
@@ -173,7 +173,7 @@ export default function Explore() {
                   </div>
                 ) : (
                   filtered.map((event, i) => (
-                    <EventCard key={event.id} event={event} index={i} layout="list" />
+                    <EventCard key={event.id} event={event} index={i} layout="grid" />
                   ))
                 )}
               </div>
