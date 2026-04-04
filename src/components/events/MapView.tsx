@@ -24,7 +24,6 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Grayscale tiles for the B&W aesthetic
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
       maxZoom: 19,
@@ -32,7 +31,45 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
 
     mapInstance.current = map;
 
+    // GPS blue dot
+    let gpsMarker: L.Marker | null = null;
+    let gpsCircle: L.Circle | null = null;
+    let watchId: number | null = null;
+
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+          const latlng: L.LatLngExpression = [latitude, longitude];
+
+          if (!gpsMarker) {
+            const blueDotIcon = L.divIcon({
+              className: "gps-blue-dot",
+              html: `<div class="gps-dot"><div class="gps-dot-pulse"></div></div>`,
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
+            });
+            gpsMarker = L.marker(latlng, { icon: blueDotIcon, zIndexOffset: 1000 }).addTo(map);
+            gpsCircle = L.circle(latlng, {
+              radius: accuracy,
+              color: "rgba(66,133,244,0.3)",
+              fillColor: "rgba(66,133,244,0.1)",
+              fillOpacity: 0.3,
+              weight: 1,
+            }).addTo(map);
+          } else {
+            gpsMarker.setLatLng(latlng);
+            gpsCircle?.setLatLng(latlng);
+            gpsCircle?.setRadius(accuracy);
+          }
+        },
+        () => { /* permission denied or error — do nothing */ },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
+      );
+    }
+
     return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       map.remove();
       mapInstance.current = null;
     };
