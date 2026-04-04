@@ -22,6 +22,11 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
+  // Deterministic pseudo-random rotation & offset based on index
+  const seed = index * 7 + (event.id.charCodeAt(event.id.length - 1) || 0);
+  const rotation = ((seed % 5) - 2) * 0.6; // -1.2 to 1.2 deg
+  const translateY = ((seed % 3) - 1) * 6; // -6 to 6 px
+
   if (layout === "list") {
     return (
       <motion.div
