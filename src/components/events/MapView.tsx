@@ -169,6 +169,28 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
   return (
     <>
       <style>{`
+        .gps-blue-dot { background: none !important; border: none !important; }
+        .gps-dot {
+          width: 16px; height: 16px;
+          background: #4285F4;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 8px rgba(66,133,244,0.6);
+          position: relative;
+        }
+        .gps-dot-pulse {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 16px; height: 16px;
+          border-radius: 50%;
+          border: 2px solid rgba(66,133,244,0.5);
+          animation: gps-pulse 2s ease-out infinite;
+        }
+        @keyframes gps-pulse {
+          0% { width: 16px; height: 16px; opacity: 1; }
+          100% { width: 40px; height: 40px; opacity: 0; }
+        }
         .barlin-popup .leaflet-popup-content-wrapper {
           background: hsl(0, 0%, 6%);
           color: hsl(40, 20%, 93%);
