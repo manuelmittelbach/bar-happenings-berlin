@@ -20,6 +20,11 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
+  useEffect(() => {
+    setJoined(false);
+    setInterestedCount(0);
+  }, [eventId]);
+
   const venue = event ? getVenueById(event.venueId) : null;
   const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
   const siblings = event ? getEventsByParent(event.parentId) : [];
