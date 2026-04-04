@@ -60,6 +60,8 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
+      style={{ rotate: `${rotation}deg`, translateY: `${translateY}px` }}
+      whileHover={{ rotate: 0, translateY: 0, scale: 1.02 }}
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block p-5 border-2 border-border bg-card hover:border-tiger-gold transition-colors">
         <div className="flex items-center gap-2 mb-2">
