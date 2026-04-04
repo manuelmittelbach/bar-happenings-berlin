@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
             <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
-              barlin
+              tipsy tiger
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               What's on tonight in Berlin's independent bars. Not a ticketing platform — just good bars doing good things.
