@@ -193,12 +193,6 @@ export default function Index() {
 
         <section className="border-b-2 border-border">
           <div className="container py-8 relative">
-            <img
-              src={tigerStamp}
-              alt=""
-              className="hidden lg:block absolute -right-4 top-4 w-40 opacity-15 rotate-12 pointer-events-none select-none"
-              aria-hidden="true"
-            />
             <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
 
             {viewMode === "map" ? (
