@@ -7,7 +7,7 @@ import { getCategoryInfoByLabel } from "@/data/mockData";
 
 function isTigerPick(eventId: string, index: number): boolean {
   const hash = eventId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return ((hash * 31 + index * 13) % 100) < 8; // ~8%
+  return ((hash * 31 + index * 13) % 100) < 5; // ~5%
 }
 
 interface EventCardProps {
@@ -66,7 +66,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       transition={{ duration: 0.4, delay: index * 0.05 }}
       style={{ rotate: `${rotation}deg`, translateY: `${translateY}px` }}
       whileHover={{ rotate: 0, translateY: 0, scale: 1.02 }}
-      className={`relative ${featured ? "sm:col-span-2 z-10" : ""}`}
+      className={`relative ${featured ? "col-span-1 sm:col-span-2 z-10" : ""}`}
     >
       {featured && (
         <motion.div
