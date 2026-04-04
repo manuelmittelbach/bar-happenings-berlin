@@ -41,7 +41,7 @@ export default function About() {
             <h2 className="font-heading text-xl font-semibold text-foreground pt-4">Who's behind this</h2>
 
             <p>
-              Barlin is an independent project built by a small team in Berlin. We're regulars at the kind of bars
+              Tipsy Tiger is an independent project built by a small team in Berlin. We're regulars at the kind of bars
               we built this platform for — and we think they deserve more visibility.
             </p>
 
