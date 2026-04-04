@@ -1,21 +1,26 @@
 
 
-# Fix: Reset "I want to join" state when switching event dates
+## GPS-Standort als blauer Punkt auf der Karte
 
-## Problem
-The `joined` and `interestedCount` states in `EventDetailDialog` are initialized once with `useState` and **never reset** when `eventId` changes. When a user clicks a different date in "Upcoming dates", the component re-renders with new event data (title, time, price update correctly because they come from `getEventById`), but the join button state carries over from the previous event. This means:
+### Was passiert
+Die Karte zeigt den aktuellen Standort des Nutzers als pulsierenden blauen Punkt an — genau wie bei Google Maps. Beim Öffnen der Kartenansicht wird der Browser nach der Standortberechtigung fragen.
 
-- If you click "I want to join" on Monday's quiz, then switch to Thursday's quiz, the button still shows "✓ Interested" even though it's a different event occurrence.
-- The interested count also carries over incorrectly.
+### Technische Umsetzung
 
-## Solution
-Add a `useEffect` that resets `joined` and `interestedCount` whenever `eventId` changes. This ensures each event occurrence has its own clean state. For future backend integration (Supabase), this is the correct place to fetch the real join status per event ID.
+**Datei: `src/components/events/MapView.tsx`**
 
-## Changes
+1. Im ersten `useEffect` (Karten-Initialisierung), nach dem Erstellen der Map, die Browser Geolocation API nutzen:
+   - `navigator.geolocation.watchPosition()` aufrufen, um den Standort in Echtzeit zu verfolgen
+   - Einen blauen `L.circleMarker` erstellen (Radius ~8px, blau gefüllt, weiße Border, leichter Schatten)
+   - Einen zweiten, größeren halbtransparenten `L.circle` als Genauigkeitsradius darum legen
+   - CSS-Animation `@keyframes pulse` für den blauen Punkt hinzufügen
+   - Position bei jedem Update aktualisieren (`setLatLng`)
+   - `watchPosition` im Cleanup der useEffect-Funktion mit `clearWatch` aufräumen
 
-**`src/components/events/EventDetailDialog.tsx`**:
-- Add `useEffect` import
-- Add effect watching `eventId` that resets `joined` to `false` and `interestedCount` to `0` (or the event's stored count when a backend exists)
+2. Styling des blauen Punkts:
+   - `L.divIcon` mit einem blauen Kreis (12px), weißer Border (3px), `box-shadow` für Glow
+   - Pulsierender Ring-Effekt via CSS-Animation
+   - Kein Popup nötig, nur visueller Marker
 
-This is a ~5-line fix that ensures the join action always applies to the currently displayed event.
+3. Fehlerbehandlung: Falls der Nutzer die Berechtigung verweigert oder GPS nicht verfügbar ist, passiert einfach nichts (kein Punkt wird angezeigt, kein Fehler).
 
