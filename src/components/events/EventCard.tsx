@@ -52,7 +52,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
-            <h3 className="font-heading text-base font-bold uppercase tracking-tight group-hover:text-accent transition-colors truncate">
+            <h3 className="font-heading text-lg md:text-xl font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
@@ -89,7 +89,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           )}
         </div>
         <div className="mt-3 space-y-2">
-          <h3 className="font-heading text-base md:text-sm font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
+          <h3 className="font-heading text-base md:text-lg font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
             {event.title}
           </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
