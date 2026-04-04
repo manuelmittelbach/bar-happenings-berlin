@@ -8,7 +8,7 @@ import { getCategoryInfoByLabel } from "@/data/mockData";
 interface EventCardProps {
   event: BarlinEvent;
   index?: number;
-  layout?: "grid" | "list";
+  layout?: "grid" | "list" | "compact";
   onClick?: (eventId: string) => void;
 }
 
