@@ -3,15 +3,18 @@ import { formatDateShort } from "@/lib/dateFormat";
 import { MapPin, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
+import { getCategoryInfoByLabel } from "@/data/mockData";
 
 interface EventCardProps {
   event: BarlinEvent;
   index?: number;
-  layout?: "grid" | "list" | "compact";
+  layout?: "grid" | "list";
   onClick?: (eventId: string) => void;
 }
 
 export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
+  const catInfo = getCategoryInfoByLabel(event.category);
+  
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
       e.preventDefault();
@@ -19,10 +22,10 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     }
   };
 
+  // Deterministic pseudo-random rotation & offset based on index
   const seed = index * 7 + (event.id.charCodeAt(event.id.length - 1) || 0);
-  const rotation = ((seed % 5) - 2) * (layout === "compact" ? 1.0 : 0.6);
-  const translateY = ((seed % 3) - 1) * (layout === "compact" ? 10 : 6);
-  const translateX = ((seed % 4) - 2) * (layout === "compact" ? 4 : 0);
+  const rotation = ((seed % 5) - 2) * 0.6; // -1.2 to 1.2 deg
+  const translateY = ((seed % 3) - 1) * 6; // -6 to 6 px
 
   if (layout === "list") {
     return (
@@ -47,31 +50,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
             {event.entryInfo && <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>}
           </div>
-        </Link>
-      </motion.div>
-    );
-  }
-
-  if (layout === "compact") {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.04 }}
-        style={{ rotate: `${rotation}deg`, translateY: `${translateY}px`, translateX: `${translateX}px` }}
-        whileHover={{ rotate: 0, translateY: 0, translateX: 0, scale: 1.03 }}
-      >
-        <Link to={`/event/${event.id}`} onClick={handleClick} className="group block p-4 border-2 border-border bg-card hover:border-tiger-gold transition-colors">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="mono-label text-tiger-warm text-[10px]">{event.neighborhood}</span>
-            <span className="mono-label text-muted-foreground text-[10px]">{event.category}</span>
-            <span className="mono-label text-muted-foreground text-[10px]">Berlin</span>
-          </div>
-          <h3 className="font-heading text-sm tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2 mt-2">
-            {event.title}
-          </h3>
-          <p className="text-xs text-foreground font-medium mt-2 line-clamp-1">{event.venue}</p>
-          <p className="text-xs text-muted-foreground font-mono mt-1">{formatDateShort(event.date)}</p>
         </Link>
       </motion.div>
     );
