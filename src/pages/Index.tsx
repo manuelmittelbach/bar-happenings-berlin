@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import tigerLogo from "@/assets/tiger-logo.png";
-import grassCluster from "@/assets/grass-cluster.png";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
@@ -150,34 +149,11 @@ export default function Index() {
 
         <div className="border-y-2 border-border gradient-warm overflow-hidden py-3">
           <div className="flex animate-marquee whitespace-nowrap">
-            {Array.from({ length: 3 }).map((_, i) => {
-              const phrases = [
-                "DRINK RESPONSIBLY, PARTY IRRESPONSIBLY",
-                "YOUR COUCH WILL MISS YOU TONIGHT",
-                "MAKE FRIENDS, NOT PLANS",
-                "BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU",
-                "TIPSY IS A VIBE, TIGER IS A LIFESTYLE",
-                "FIND YOUR NEW FAVORITE BAR",
-                "SOLO NIGHT OUT? WE GOT YOU",
-                "LESS SCROLLING, MORE CLINKING",
-              ];
-              const rotations = [-10, 5, -15, 12, -8, 18, -5, 10];
-              return (
-                <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
-                  {phrases.map((phrase, j) => (
-                    <span key={j} className="flex items-center gap-6">
-                      {phrase}
-                      <img
-                        src={grassCluster}
-                        alt=""
-                        className="inline h-10 w-10 object-contain"
-                        style={{ transform: `rotate(${rotations[j]}deg)` }}
-                      />
-                    </span>
-                  ))}
-                </span>
-              );
-            })}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
+                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> YOUR COUCH WILL MISS YOU TONIGHT <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> MAKE FRIENDS, NOT PLANS <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> TIPSY IS A VIBE, TIGER IS A LIFESTYLE <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> FIND YOUR NEW FAVORITE BAR <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> SOLO NIGHT OUT? WE GOT YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> LESS SCROLLING, MORE CLINKING <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" />
+              </span>
+            ))}
           </div>
         </div>
 
