@@ -54,9 +54,9 @@ export default {
         },
         tiger: {
           gold: "hsl(var(--tiger-gold))",
-          pink: "hsl(var(--tiger-pink))",
-          green: "hsl(var(--tiger-green))",
-          purple: "hsl(var(--tiger-purple))",
+          warm: "hsl(var(--tiger-warm))",
+          leather: "hsl(var(--tiger-leather))",
+          smoke: "hsl(var(--tiger-smoke))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -91,17 +91,12 @@ export default {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "marquee": "marquee 30s linear infinite",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },

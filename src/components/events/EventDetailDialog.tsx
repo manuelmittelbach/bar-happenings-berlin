@@ -42,9 +42,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-border gap-0 bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
-        {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
-          {/* Mobile back button */}
           <button
             onClick={() => onOpenChange(false)}
             className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-border text-foreground text-xs font-heading tracking-wider hover:bg-background transition-colors"
@@ -62,14 +60,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
         <div className="px-6 -mt-16 relative z-10 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h2 className="heading-display text-2xl md:text-4xl gradient-tiger-text">{event.title}</h2>
+            <h2 className="heading-display text-2xl md:text-4xl gradient-warm-text">{event.title}</h2>
             <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-tiger-gold bg-card">
               <MapPin className="h-4 w-4 flex-shrink-0 text-tiger-gold" />
               <span className="font-heading text-base tracking-wide">{event.venue}</span>
             </div>
           </motion.div>
 
-          {/* Details grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border bg-card mt-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
@@ -104,17 +101,16 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             {event.recurrence && <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground font-mono bg-muted border border-border"><RotateCw className="h-3 w-3" /> {event.recurrence}</span>}
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3 mt-6">
             <button
               onClick={handleJoin}
               className={`flex-1 h-11 text-sm tracking-wider font-heading transition-all ${
                 joined
-                  ? "bg-tiger-pink text-accent-foreground border-2 border-tiger-pink"
+                  ? "bg-tiger-warm text-accent-foreground border-2 border-tiger-warm"
                   : "bg-tiger-gold text-primary-foreground border-2 border-tiger-gold hover:bg-transparent hover:text-tiger-gold"
               }`}
             >
-              {joined ? "✓ I'm going!" : "I want to join 🐯"}
+              {joined ? "Count me in" : "I want to join"}
             </button>
             {event.url && (
               <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border-2 border-border text-sm hover:border-tiger-gold hover:text-tiger-gold transition-colors flex items-center gap-2">
@@ -124,7 +120,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             <ShareMenu eventTitle={event.title} eventId={event.id} />
           </div>
 
-          {/* Description */}
           <div className="mt-8 space-y-3">
             <h3 className="font-heading text-base tracking-wide text-tiger-gold">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
@@ -132,7 +127,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             ))}
           </div>
 
-          {/* Upcoming dates */}
           {siblingDates.length > 1 && (
             <div className="mt-8">
               <h3 className="font-heading text-base tracking-wide text-tiger-gold mb-3">Upcoming dates</h3>
@@ -150,7 +144,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                       }}
                       className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 transition-colors ${
                         isActive
-                          ? 'border-tiger-pink bg-tiger-pink text-accent-foreground'
+                          ? 'border-tiger-warm bg-tiger-warm text-accent-foreground'
                           : 'border-border text-muted-foreground hover:border-tiger-gold hover:text-tiger-gold cursor-pointer'
                       }`}
                     >
@@ -161,7 +155,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               </div>
             </div>
           )}
-
         </div>
       </DialogContent>
     </Dialog>
