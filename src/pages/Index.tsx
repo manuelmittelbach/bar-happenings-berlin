@@ -234,7 +234,7 @@ export default function Index() {
                   const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                   const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-                  if (todayEvents.length) sections.push({ label: "Tonight", events: todayEvents });
+                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents });
                   if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
                   if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents });
                   if (laterEvents.length) sections.push({ label: "This month", events: laterEvents });
