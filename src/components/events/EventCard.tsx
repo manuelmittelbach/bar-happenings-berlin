@@ -89,7 +89,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           )}
         </div>
         <div className="mt-3 space-y-2">
-          <h3 className="font-heading text-base md:text-sm font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
+          <h3 className="font-heading text-base md:text-lg font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
             {event.title}
           </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
