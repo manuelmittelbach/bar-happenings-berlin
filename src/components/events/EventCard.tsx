@@ -51,9 +51,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} &mdash; {formatDateShort(event.date)} &middot; {event.startTime}</p>
           </div>
-          <div className="hidden sm:flex flex-col items-end justify-center gap-1">
-            {event.entryInfo && <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>}
-          </div>
+          <div className="hidden sm:flex flex-col items-end justify-center gap-1" />
         </Link>
       </motion.div>
     );
@@ -89,12 +87,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       >
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-tiger-warm">{event.category}</span>
-          {event.entryInfo && (
-            <>
-              <span className="mono-label text-muted-foreground">&middot;</span>
-              <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>
-            </>
-          )}
         </div>
         <h3 className={`font-heading tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2 ${
           featured ? "text-xl md:text-2xl" : "text-lg md:text-xl"
