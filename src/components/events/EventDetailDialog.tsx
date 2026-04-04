@@ -15,14 +15,15 @@ interface EventDetailDialogProps {
   onEventChange?: (eventId: string) => void;
 }
 
-export default function EventDetailDialog({ eventId, open, onOpenChange }: EventDetailDialogProps) {
+export default function EventDetailDialog({ eventId, open, onOpenChange, onEventChange }: EventDetailDialogProps) {
   const event = eventId ? getEventById(eventId) : null;
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
   const venue = event ? getVenueById(event.venueId) : null;
   const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
-  const siblingDates = event ? getEventsByParent(event.parentId).map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort() : [];
+  const siblings = event ? getEventsByParent(event.parentId) : [];
+  const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
   const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
 
   if (!event) return null;
