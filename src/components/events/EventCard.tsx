@@ -48,14 +48,14 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
-              <span className="mono-label text-tiger-pink">{event.category}</span>
-              <span className="mono-label text-muted-foreground">·</span>
+              <span className="mono-label text-tiger-warm">{event.category}</span>
+              <span className="mono-label text-muted-foreground">&middot;</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
             <h3 className="font-heading text-lg md:text-xl tracking-wide leading-tight group-hover:text-tiger-gold transition-colors truncate">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} &mdash; {formatDateShort(event.date)} &middot; {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
@@ -76,7 +76,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
         <div className="relative overflow-hidden aspect-[16/9] md:aspect-[4/3] bg-muted retro-card">
           <EventImage className="grayscale-hover" />
           <div className="absolute top-3 left-3">
-            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-tiger-pink">
+            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-tiger-warm">
               {event.category}
             </span>
           </div>

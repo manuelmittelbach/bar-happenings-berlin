@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
-import { Search, LayoutGrid, MapIcon, SlidersHorizontal, Zap } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -23,16 +23,13 @@ export default function Index() {
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
     let result = [...events];
-
     result = result.filter((e) => e.date >= today);
-
     if (searchQuery) {
       result = result.filter(
         (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], searchQuery)
@@ -48,16 +45,13 @@ export default function Index() {
     }
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
-
     result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-
     const seen = new Set<string>();
     result = result.filter((e) => {
       if (seen.has(e.parentId)) return false;
       seen.add(e.parentId);
       return true;
     });
-
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
@@ -76,19 +70,16 @@ export default function Index() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="h-4 w-4 text-tiger-gold" />
-                <p className="mono-label text-tiger-gold">Berlin's wildest bar guide</p>
-              </div>
+              <p className="mono-label text-tiger-gold mb-4">Berlin's independent bar guide</p>
               <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
-                <span className="gradient-tiger-text">What's on</span>
+                <span className="gradient-warm-text">What's on</span>
                 <br />
                 <span className="text-foreground">tonight</span>
                 <br />
-                <span className="text-muted-foreground">in Berlin bars</span>
+                <span className="text-tiger-smoke">in Berlin bars</span>
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Live music, quiz nights, open mics, and more — discover what's happening tonight in Berlin's coolest bars. No FOMO. 🐯
+                Live music, quiz nights, open mics, and community events in the kind of bars where everyone becomes a regular.
               </p>
             </motion.div>
 
@@ -154,11 +145,11 @@ export default function Index() {
           </div>
         </section>
 
-        <div className="border-y-2 border-border gradient-tiger overflow-hidden py-2">
+        <div className="border-y-2 border-border gradient-warm overflow-hidden py-2">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
               <span key={i} className="mono-label text-[11px] mx-8 text-primary-foreground">
-                🎸 Live Music · 🧠 Quiz Nights · 🎤 Open Mic · ✍️ Poetry · 🎧 DJ Sets · 🌍 Language Exchange · 😂 Comedy · 🎬 Film Screenings · 🎲 Board Games · 🔧 Workshops ·
+                Live Music · Quiz Nights · Open Mic · Poetry · DJ Sets · Language Exchange · Comedy · Film Screenings · Board Games · Workshops · Community Events · Social Hangouts ·
               </span>
             ))}
           </div>
@@ -234,26 +225,23 @@ export default function Index() {
                   const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
                   const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
-                  const sections: { label: string; emoji: string; events: typeof filtered }[] = [];
+                  const sections: { label: string; events: typeof filtered }[] = [];
                   const todayEvents = filtered.filter((e) => e.date === today);
                   const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
                   const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
                   const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                   const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-                  if (todayEvents.length) sections.push({ label: "Tonight", emoji: "🔥", events: todayEvents });
-                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", emoji: "⚡", events: tomorrowEvents });
-                  if (thisWeekEvents.length) sections.push({ label: "This week", emoji: "🎯", events: thisWeekEvents });
-                  if (laterEvents.length) sections.push({ label: "This month", emoji: "📅", events: laterEvents });
-                  if (evenLaterEvents.length) sections.push({ label: "Later", emoji: "🔮", events: evenLaterEvents });
+                  if (todayEvents.length) sections.push({ label: "Tonight", events: todayEvents });
+                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
+                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents });
+                  if (laterEvents.length) sections.push({ label: "This month", events: laterEvents });
+                  if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents });
 
                   return sections.map((section) => (
                     <div key={section.label}>
                       <div className="flex items-center gap-4 mb-6 mt-4">
-                        <h2 className="font-heading text-3xl md:text-4xl tracking-wide">
-                          <span className="mr-2">{section.emoji}</span>
-                          <span className="gradient-tiger-text">{section.label}</span>
-                        </h2>
+                        <h2 className="font-heading text-3xl md:text-4xl tracking-wide gradient-warm-text">{section.label}</h2>
                         <div className="flex-1 border-t-2 border-border" />
                         <span className="mono-label text-lg text-tiger-gold">{section.events.length}</span>
                       </div>
@@ -273,13 +261,13 @@ export default function Index() {
         <section className="bg-card noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
             <div className="max-w-2xl">
-              <p className="mono-label text-tiger-pink mb-3">🍺 For venues</p>
+              <p className="mono-label text-tiger-warm mb-3">For venues</p>
               <h2 className="font-heading text-4xl md:text-5xl tracking-wide">
-                <span className="gradient-tiger-text">Run a bar</span><br />
+                <span className="gradient-warm-text">Run a bar</span><br />
                 <span className="text-foreground">in Berlin?</span>
               </h2>
               <p className="mt-5 text-muted-foreground text-lg leading-relaxed max-w-md">
-                Publish your events and reach locals & travelers looking for something to do tonight. Free, simple, no bullsh*t.
+                Publish your events and reach locals and travelers looking for a good night out. Free, simple, made for real bars.
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link

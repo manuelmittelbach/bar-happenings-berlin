@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
@@ -16,14 +16,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-border bg-background/95 backdrop-blur-sm">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="font-heading text-xl tracking-wide gradient-tiger-text">
-            TIPSY TIGER
-          </span>
-          <span className="text-lg">🐯</span>
+        <Link to="/" className="font-heading text-xl tracking-wide gradient-warm-text">
+          TIPSY TIGER
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
             <Link
@@ -57,7 +53,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile nav */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div

@@ -6,14 +6,11 @@ export default function Footer() {
       <div className="container py-12">
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="font-heading text-2xl tracking-wide gradient-tiger-text">
-                TIPSY TIGER
-              </span>
-              <span className="text-xl">🐯</span>
+            <Link to="/" className="font-heading text-2xl tracking-wide gradient-warm-text">
+              TIPSY TIGER
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              Your wild guide to Berlin's bar scene. Find tonight's best events — no FOMO allowed.
+              Your guide to Berlin's bar scene. Real bars, real people, real nights out.
             </p>
           </div>
           <div className="flex flex-wrap gap-12">
@@ -45,7 +42,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="mono-label text-muted-foreground/50">© 2026 Tipsy Tiger — Made in Berlin 🐯</p>
+          <p className="mono-label text-muted-foreground/50">&copy; 2026 Tipsy Tiger &mdash; Made in Berlin</p>
           <p className="text-xs text-muted-foreground/50 font-mono">No algorithms. No sponsors. Just bars.</p>
         </div>
       </div>
