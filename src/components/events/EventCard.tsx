@@ -45,7 +45,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} &mdash; {formatDateShort(event.date)} &middot; {event.startTime}</p>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
+            
           </div>
           <div className="hidden sm:flex flex-col items-end justify-center gap-1">
             {event.entryInfo && <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>}
