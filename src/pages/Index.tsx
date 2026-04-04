@@ -33,13 +33,8 @@ export default function Index() {
     result = result.filter((e) => e.date >= today);
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
       result = result.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.venue.toLowerCase().includes(q) ||
-          e.neighborhood.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q)
+        (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], searchQuery)
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
