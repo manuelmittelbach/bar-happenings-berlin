@@ -145,11 +145,11 @@ export default function Index() {
           </div>
         </section>
 
-        <div className="border-y-2 border-border gradient-warm overflow-hidden py-2">
+        <div className="border-y-2 border-border gradient-warm overflow-hidden py-3">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className="mono-label text-[11px] mx-8 text-primary-foreground">
-                Live Music · Quiz Nights · Open Mic · Poetry · DJ Sets · Language Exchange · Comedy · Film Screenings · Board Games · Workshops · Community Events · Social Hangouts ·
+              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide">
+                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY ★ YOUR COUCH WILL MISS YOU TONIGHT ★ MAKE FRIENDS, NOT PLANS ★ BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU ★ TIPSY IS A VIBE, TIGER IS A LIFESTYLE ★ FIND YOUR NEW FAVORITE BAR ★ SOLO NIGHT OUT? WE GOT YOU ★ LESS SCROLLING, MORE CLINKING ★
               </span>
             ))}
           </div>
