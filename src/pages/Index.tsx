@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import tigerLogo from "@/assets/tiger-logo.png";
+import grassCluster from "@/assets/grass-cluster.png";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
