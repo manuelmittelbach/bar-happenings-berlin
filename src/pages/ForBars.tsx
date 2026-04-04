@@ -25,7 +25,7 @@ export default function ForBars() {
                 <span className="font-light opacity-70">Let people know about it.</span>
               </h1>
               <p className="mt-6 text-lg text-background/60 leading-relaxed max-w-lg">
-                Barlin helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
+                Tipsy Tiger helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
