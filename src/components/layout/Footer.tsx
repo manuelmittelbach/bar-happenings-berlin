@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
             <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
-              barlin
+              tipsy tiger
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               What's on tonight in Berlin's independent bars. Not a ticketing platform — just good bars doing good things.
@@ -36,13 +36,13 @@ export default function Footer() {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/about" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">About</Link></li>
                 <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Instagram</a></li>
-                <li><a href="mailto:hello@barlin.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
+                <li><a href="mailto:hello@tipsytiger.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-primary-foreground/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="mono-label text-primary-foreground/30">© 2026 barlin — Made in Berlin</p>
+          <p className="mono-label text-primary-foreground/30">© 2026 Tipsy Tiger — Made in Berlin</p>
           <p className="text-xs text-primary-foreground/30 font-mono">No algorithms. No sponsors. Just bars.</p>
         </div>
       </div>
