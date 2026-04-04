@@ -12,16 +12,18 @@ interface EventDetailDialogProps {
   eventId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEventChange?: (eventId: string) => void;
 }
 
-export default function EventDetailDialog({ eventId, open, onOpenChange }: EventDetailDialogProps) {
+export default function EventDetailDialog({ eventId, open, onOpenChange, onEventChange }: EventDetailDialogProps) {
   const event = eventId ? getEventById(eventId) : null;
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
   const venue = event ? getVenueById(event.venueId) : null;
   const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
-  const siblingDates = event ? getEventsByParent(event.parentId).map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort() : [];
+  const siblings = event ? getEventsByParent(event.parentId) : [];
+  const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
   const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
 
   if (!event) return null;
@@ -130,11 +132,27 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
             <div className="mt-8">
               <h3 className="font-heading text-base font-bold uppercase mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
-                {siblingDates.map(d => (
-                  <span key={d} className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 ${d === event.date ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-muted-foreground'}`}>
-                    {formatDateShort(d)}
-                  </span>
-                ))}
+                {siblingDates.map(d => {
+                  const siblingEvent = siblings.find(e => e.date === d);
+                  const isActive = d === event.date;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => {
+                        if (!isActive && siblingEvent && onEventChange) {
+                          onEventChange(siblingEvent.id);
+                        }
+                      }}
+                      className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 transition-colors ${
+                        isActive
+                          ? 'border-accent bg-accent text-accent-foreground'
+                          : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
+                      }`}
+                    >
+                      {formatDateShort(d)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
