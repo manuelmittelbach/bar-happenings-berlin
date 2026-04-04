@@ -12,6 +12,7 @@ interface EventDetailDialogProps {
   eventId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEventChange?: (eventId: string) => void;
 }
 
 export default function EventDetailDialog({ eventId, open, onOpenChange }: EventDetailDialogProps) {
