@@ -7,7 +7,7 @@ import { getCategoryInfoByLabel } from "@/data/mockData";
 
 function isTigerPick(eventId: string, index: number): boolean {
   const hash = eventId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return ((hash * 31 + index * 13) % 100) < 8; // ~8%
+  return ((hash * 31 + index * 13) % 100) < 5; // ~5%
 }
 
 interface EventCardProps {
