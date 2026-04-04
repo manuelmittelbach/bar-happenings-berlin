@@ -41,25 +41,13 @@ export default function EventDetail() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Hero image */}
-        <div className="relative h-[40vh] md:h-[50vh] bg-muted overflow-hidden">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
-          <div className="absolute top-4 left-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 text-sm bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-sm hover:bg-background transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back
-            </Link>
-          </div>
-        </div>
-
-        <div className="container -mt-20 relative z-10">
+        <div className="container pt-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-sm hover:bg-background transition-colors mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Link>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

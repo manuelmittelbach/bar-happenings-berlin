@@ -42,23 +42,17 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-border gap-0 bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
-        <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
+        <div className="relative py-3 px-6 md:hidden">
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-border text-foreground text-xs font-heading tracking-wider hover:bg-background transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-border text-foreground text-xs font-heading tracking-wider hover:bg-background transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <img
-            src={getCategoryImage(catInfo?.id || 'other')}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
         </div>
 
-        <div className="px-6 -mt-16 relative z-10 pb-8">
+        <div className="px-6 pt-6 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <h2 className="heading-display text-2xl md:text-4xl gradient-warm-text">{event.title}</h2>
             <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-tiger-gold bg-card">
