@@ -89,12 +89,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       >
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-tiger-warm">{event.category}</span>
-          {event.entryInfo && (
-            <>
-              <span className="mono-label text-muted-foreground">&middot;</span>
-              <span className="stamp text-tiger-gold border-tiger-gold text-[10px]">{event.entryInfo}</span>
-            </>
-          )}
         </div>
         <h3 className={`font-heading tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-2 ${
           featured ? "text-xl md:text-2xl" : "text-lg md:text-xl"
