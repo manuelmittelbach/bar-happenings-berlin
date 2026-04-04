@@ -37,6 +37,14 @@ export default function EventDetailDialog({ eventId, open, onOpenChange }: Event
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
         {/* Hero */}
         <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
+          {/* Mobile back button */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider hover:bg-background transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
           <img
             src={event.image || getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other')}
             alt={event.title}
