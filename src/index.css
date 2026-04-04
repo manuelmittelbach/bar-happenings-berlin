@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Righteous&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,69 +6,48 @@
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 0 0% 6%;
-    --card: 40 15% 95%;
-    --card-foreground: 0 0% 6%;
-    --popover: 40 20% 97%;
-    --popover-foreground: 0 0% 6%;
-    --primary: 0 0% 6%;
-    --primary-foreground: 40 20% 97%;
-    --secondary: 40 10% 90%;
-    --secondary-foreground: 0 0% 12%;
-    --muted: 40 10% 91%;
-    --muted-foreground: 0 0% 42%;
-    --accent: 18 85% 52%;
+    --background: 20 20% 5%;
+    --foreground: 42 30% 90%;
+    --card: 20 18% 8%;
+    --card-foreground: 42 30% 90%;
+    --popover: 20 18% 8%;
+    --popover-foreground: 42 30% 90%;
+    --primary: 42 100% 50%;
+    --primary-foreground: 20 25% 5%;
+    --secondary: 20 12% 13%;
+    --secondary-foreground: 42 20% 80%;
+    --muted: 20 10% 14%;
+    --muted-foreground: 30 12% 50%;
+    --accent: 340 82% 58%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 82%;
-    --input: 40 10% 82%;
-    --ring: 0 0% 6%;
+    --border: 25 10% 18%;
+    --input: 25 10% 18%;
+    --ring: 42 100% 50%;
     --radius: 0px;
 
-    --sidebar-background: 40 15% 95%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 0 0% 10%;
-    --sidebar-primary-foreground: 40 20% 97%;
-    --sidebar-accent: 40 10% 90%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 40 10% 85%;
-    --sidebar-ring: 18 85% 52%;
+    --sidebar-background: 20 18% 7%;
+    --sidebar-foreground: 42 20% 80%;
+    --sidebar-primary: 42 100% 50%;
+    --sidebar-primary-foreground: 20 25% 5%;
+    --sidebar-accent: 20 12% 13%;
+    --sidebar-accent-foreground: 42 20% 80%;
+    --sidebar-border: 25 10% 16%;
+    --sidebar-ring: 42 100% 50%;
 
-    --font-heading: 'Syne', sans-serif;
+    --font-heading: 'Righteous', cursive;
     --font-body: 'DM Sans', sans-serif;
     --font-mono: 'Space Mono', monospace;
+
+    --tiger-gold: 42 100% 50%;
+    --tiger-pink: 340 82% 58%;
+    --tiger-green: 160 70% 45%;
+    --tiger-purple: 270 60% 55%;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 40 20% 93%;
-    --card: 0 0% 7%;
-    --card-foreground: 40 20% 93%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 40 20% 93%;
-    --primary: 40 20% 93%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 40 10% 88%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 52%;
-    --accent: 18 85% 52%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 40 20% 93%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 40 10% 88%;
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 40 10% 88%;
-    --sidebar-primary: 18 85% 52%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 40 10% 88%;
-    --sidebar-border: 0 0% 14%;
-    --sidebar-ring: 18 85% 52%;
+    /* same as root — site is dark-first */
   }
 }
 
@@ -88,30 +67,48 @@
 @layer components {
   .heading-display {
     font-family: var(--font-heading);
-    @apply font-extrabold tracking-tight uppercase;
+    @apply tracking-tight;
+    letter-spacing: 0.02em;
   }
   .heading-editorial {
     font-family: var(--font-heading);
-    @apply font-normal tracking-tight;
+    @apply tracking-tight;
   }
   .mono-label {
     font-family: var(--font-mono);
     @apply text-xs uppercase tracking-widest;
   }
   .stamp {
-    @apply inline-block border-2 border-current px-3 py-1 font-heading font-bold uppercase text-xs tracking-wider;
+    @apply inline-block border-2 border-current px-3 py-1 font-heading text-xs tracking-wider;
     transform: rotate(-3deg);
+  }
+  .glow-text {
+    text-shadow: 0 0 20px hsl(var(--tiger-gold) / 0.4), 0 0 40px hsl(var(--tiger-gold) / 0.2);
+  }
+  .glow-pink {
+    text-shadow: 0 0 20px hsl(var(--tiger-pink) / 0.5), 0 0 40px hsl(var(--tiger-pink) / 0.25);
+  }
+  .retro-border {
+    border: 3px solid hsl(var(--tiger-gold) / 0.3);
+  }
+  .retro-card {
+    @apply border-2 transition-all duration-300;
+    border-color: hsl(var(--border));
+  }
+  .retro-card:hover {
+    border-color: hsl(var(--tiger-gold));
+    box-shadow: 0 0 20px hsl(var(--tiger-gold) / 0.15), inset 0 0 20px hsl(var(--tiger-gold) / 0.05);
   }
 }
 
 @layer utilities {
   .grayscale-hover {
-    filter: grayscale(100%) contrast(1.1);
-    transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: grayscale(60%) contrast(1.1) brightness(0.9);
+    transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .group:hover .grayscale-hover,
   .grayscale-hover:hover {
-    filter: grayscale(0%) contrast(1);
+    filter: grayscale(0%) contrast(1) brightness(1);
   }
   .text-balance {
     text-wrap: balance;
@@ -123,9 +120,18 @@
     content: '';
     position: absolute;
     inset: 0;
-    opacity: 0.03;
+    opacity: 0.04;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 1;
+  }
+  .gradient-tiger {
+    background: linear-gradient(135deg, hsl(var(--tiger-gold)), hsl(var(--tiger-pink)));
+  }
+  .gradient-tiger-text {
+    background: linear-gradient(135deg, hsl(var(--tiger-gold)), hsl(var(--tiger-pink)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
