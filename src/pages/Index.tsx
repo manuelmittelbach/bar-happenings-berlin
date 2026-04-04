@@ -150,8 +150,8 @@ export default function Index() {
         <div className="border-y-2 border-border gradient-warm overflow-hidden py-3">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide">
-                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY ★ YOUR COUCH WILL MISS YOU TONIGHT ★ MAKE FRIENDS, NOT PLANS ★ BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU ★ TIPSY IS A VIBE, TIGER IS A LIFESTYLE ★ FIND YOUR NEW FAVORITE BAR ★ SOLO NIGHT OUT? WE GOT YOU ★ LESS SCROLLING, MORE CLINKING ★
+              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
+                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> YOUR COUCH WILL MISS YOU TONIGHT <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> MAKE FRIENDS, NOT PLANS <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> TIPSY IS A VIBE, TIGER IS A LIFESTYLE <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> FIND YOUR NEW FAVORITE BAR <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> SOLO NIGHT OUT? WE GOT YOU <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" /> LESS SCROLLING, MORE CLINKING <img src={tigerLogo} alt="" className="inline h-5 w-5 opacity-80" />
               </span>
             ))}
           </div>
