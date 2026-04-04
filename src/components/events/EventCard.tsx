@@ -56,6 +56,26 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
     );
   }
 
+  if (layout === "compact") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.04 }}
+        style={{ rotate: `${rotation}deg`, translateY: `${translateY}px`, translateX: `${translateX}px` }}
+        whileHover={{ rotate: 0, translateY: 0, translateX: 0, scale: 1.03 }}
+      >
+        <Link to={`/event/${event.id}`} onClick={handleClick} className="group block p-4 border-2 border-border bg-card hover:border-tiger-gold transition-colors">
+          <span className="mono-label text-tiger-warm text-[10px]">{event.category}</span>
+          <h3 className="font-heading text-sm tracking-wide leading-tight group-hover:text-tiger-gold transition-colors line-clamp-1 mt-1">
+            {event.title}
+          </h3>
+          <p className="text-xs text-muted-foreground font-mono mt-1">{event.venue} · {event.startTime}</p>
+        </Link>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
