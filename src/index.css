@@ -129,3 +129,9 @@
     background-clip: text;
   }
 }
+
+@media (max-width: 767px) {
+  .animate-marquee {
+    animation-duration: 12s !important;
+  }
+}
