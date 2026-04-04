@@ -304,6 +304,7 @@ export default function Index() {
         onOpenChange={(open) => {
           if (!open) setSelectedEventId(null);
         }}
+        onEventChange={(id) => setSelectedEventId(id)}
       />
     </div>
   );
