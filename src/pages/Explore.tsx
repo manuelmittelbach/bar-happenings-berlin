@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -33,13 +34,8 @@ export default function Explore() {
   const filtered = useMemo(() => {
     let result = [...events];
     if (search) {
-      const q = search.toLowerCase();
       result = result.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.venue.toLowerCase().includes(q) ||
-          e.neighborhood.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q)
+        (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], search)
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
