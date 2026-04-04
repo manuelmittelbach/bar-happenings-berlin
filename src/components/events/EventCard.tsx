@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
-import { getVenueImage } from "@/assets/venues";
+
 
 interface EventCardProps {
   event: BarlinEvent;
