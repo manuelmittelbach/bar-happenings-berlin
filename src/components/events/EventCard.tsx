@@ -1,9 +1,25 @@
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Flame, Star, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
+
+const BADGE_LABELS = [
+  { text: "🔥 Trending", icon: Flame },
+  { text: "⭐ Recommandé", icon: Star },
+  { text: "⚡ Exclusif", icon: Zap },
+  { text: "🐯 Tiger Pick", icon: Star },
+  { text: "✨ À ne pas rater", icon: Flame },
+];
+
+function getFeaturedBadge(eventId: string, index: number): typeof BADGE_LABELS[number] | null {
+  // Deterministic pseudo-random: only ~1 in 5 cards get a badge
+  const hash = eventId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const val = (hash * 31 + index * 13) % 100;
+  if (val > 20) return null; // ~20% chance
+  return BADGE_LABELS[val % BADGE_LABELS.length];
+}
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -14,6 +30,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
+  const badge = layout === "grid" ? getFeaturedBadge(event.id, index) : null;
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -24,8 +41,8 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
 
   // Deterministic pseudo-random rotation & offset based on index
   const seed = index * 7 + (event.id.charCodeAt(event.id.length - 1) || 0);
-  const rotation = ((seed % 5) - 2) * 0.6; // -1.2 to 1.2 deg
-  const translateY = ((seed % 3) - 1) * 6; // -6 to 6 px
+  const rotation = ((seed % 5) - 2) * 0.6;
+  const translateY = ((seed % 3) - 1) * 6;
 
   if (layout === "list") {
     return (
@@ -62,8 +79,28 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       transition={{ duration: 0.4, delay: index * 0.05 }}
       style={{ rotate: `${rotation}deg`, translateY: `${translateY}px` }}
       whileHover={{ rotate: 0, translateY: 0, scale: 1.02 }}
+      className="relative"
     >
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group block p-5 border-2 border-border bg-card hover:border-tiger-gold transition-colors">
+      {badge && (
+        <motion.div
+          initial={{ scale: 0.8, rotate: -3 }}
+          animate={{ scale: 1, rotate: 2 }}
+          transition={{ duration: 0.4, delay: index * 0.05 + 0.2, type: "spring", stiffness: 200 }}
+          className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-tiger-gold text-primary-foreground font-heading text-[11px] tracking-wider uppercase border-2 border-background shadow-lg"
+          style={{ rotate: "3deg" }}
+        >
+          {badge.text}
+        </motion.div>
+      )}
+      <Link
+        to={`/event/${event.id}`}
+        onClick={handleClick}
+        className={`group block p-5 border-2 bg-card transition-colors ${
+          badge
+            ? "border-tiger-gold/60 hover:border-tiger-gold shadow-[0_0_20px_-5px_hsl(var(--tiger-gold)/0.3)]"
+            : "border-border hover:border-tiger-gold"
+        }`}
+      >
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-tiger-warm">{event.category}</span>
           {event.entryInfo && (
