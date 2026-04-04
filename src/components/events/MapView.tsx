@@ -147,7 +147,7 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
           font-family: 'DM Sans', sans-serif;
         }
       `}</style>
-      <div ref={mapRef} className="w-full h-full min-h-[500px] border-2 border-foreground" />
+      <div ref={mapRef} className="w-full h-full min-h-[500px] border-2 border-primary" />
     </>
   );
 }
