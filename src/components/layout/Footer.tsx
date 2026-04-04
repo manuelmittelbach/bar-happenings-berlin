@@ -36,7 +36,7 @@ export default function Footer() {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/about" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">About</Link></li>
                 <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Instagram</a></li>
-                <li><a href="mailto:hello@barlin.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
+                <li><a href="mailto:hello@tipsytiger.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>
