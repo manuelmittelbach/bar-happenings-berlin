@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import logoTiger from "@/assets/logo-tiger.png";
 
 export default function Footer() {
   return (
@@ -7,8 +6,7 @@ export default function Footer() {
       <div className="container py-12">
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
-            <Link to="/" className="flex items-center gap-2 font-heading text-2xl font-extrabold uppercase tracking-tight">
-              <img src={logoTiger} alt="Tipsy Tiger" className="h-9 w-9 invert" />
+            <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
               tipsy tiger
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
