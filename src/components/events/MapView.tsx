@@ -12,6 +12,8 @@ interface MapViewProps {
 export default function MapView({ events, onEventClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const gpsMarkerRef = useRef<L.Marker | null>(null);
+  const gpsCircleRef = useRef<L.Circle | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
