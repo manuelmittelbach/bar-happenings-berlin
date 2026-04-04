@@ -92,7 +92,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
           <h3 className="font-heading text-base md:text-sm font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
             {event.title}
           </h3>
-          </h3>
           <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
