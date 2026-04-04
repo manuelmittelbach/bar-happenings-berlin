@@ -12,6 +12,8 @@ interface MapViewProps {
 export default function MapView({ events, onEventClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const gpsMarkerRef = useRef<L.Marker | null>(null);
+  const gpsCircleRef = useRef<L.Circle | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -32,8 +34,6 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
     mapInstance.current = map;
 
     // GPS blue dot
-    let gpsMarker: L.Marker | null = null;
-    let gpsCircle: L.Circle | null = null;
     let watchId: number | null = null;
 
     if (navigator.geolocation) {
@@ -42,15 +42,15 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
           const { latitude, longitude, accuracy } = pos.coords;
           const latlng: L.LatLngExpression = [latitude, longitude];
 
-          if (!gpsMarker) {
+          if (!gpsMarkerRef.current) {
             const blueDotIcon = L.divIcon({
               className: "gps-blue-dot",
               html: `<div class="gps-dot"><div class="gps-dot-pulse"></div></div>`,
               iconSize: [20, 20],
               iconAnchor: [10, 10],
             });
-            gpsMarker = L.marker(latlng, { icon: blueDotIcon, zIndexOffset: 1000 }).addTo(map);
-            gpsCircle = L.circle(latlng, {
+            gpsMarkerRef.current = L.marker(latlng, { icon: blueDotIcon, zIndexOffset: 1000 }).addTo(map);
+            gpsCircleRef.current = L.circle(latlng, {
               radius: accuracy,
               color: "rgba(66,133,244,0.3)",
               fillColor: "rgba(66,133,244,0.1)",
@@ -58,9 +58,9 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
               weight: 1,
             }).addTo(map);
           } else {
-            gpsMarker.setLatLng(latlng);
-            gpsCircle?.setLatLng(latlng);
-            gpsCircle?.setRadius(accuracy);
+            gpsMarkerRef.current.setLatLng(latlng);
+            gpsCircleRef.current?.setLatLng(latlng);
+            gpsCircleRef.current?.setRadius(accuracy);
           }
         },
         () => { /* permission denied or error — do nothing */ },
@@ -79,9 +79,9 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
     const map = mapInstance.current;
     if (!map) return;
 
-    // Clear existing markers
+    // Clear existing event markers (preserve GPS blue dot & accuracy circle)
     map.eachLayer((layer) => {
-      if (layer instanceof L.Marker) map.removeLayer(layer);
+      if (layer instanceof L.Marker && layer !== gpsMarkerRef.current) map.removeLayer(layer);
     });
 
     // Group events by venue
