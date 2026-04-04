@@ -16,10 +16,10 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b-2 border-border bg-background/95 backdrop-blur-sm">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src={tigerLogo} alt="Tipsy Tiger" className="h-9 w-9" />
-          <span className="font-heading text-2xl tracking-wide gradient-warm-text">TIPSY TIGER</span>
+      <div className="container flex h-20 items-center justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <img src={tigerLogo} alt="Tipsy Tiger" className="h-12 w-12" />
+          <span className="font-heading text-3xl tracking-wide gradient-warm-text">TIPSY TIGER</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
