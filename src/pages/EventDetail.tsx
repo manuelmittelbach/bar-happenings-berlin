@@ -53,16 +53,20 @@ export default function EventDetail() {
         Events
       </button>
 
-      {/* Hero image */}
-      {hasRealImage && (
-        <div className="relative h-[200px] bg-muted overflow-hidden">
+      {/* Hero image — always visible, placeholder when no image */}
+      <div className="relative h-[180px] bg-muted overflow-hidden">
+        {hasRealImage ? (
           <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-        </div>
-      )}
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-muted-foreground/20 font-mono text-xs uppercase tracking-widest">No image</span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      </div>
 
       {/* Content */}
-      <div className={`${hasRealImage ? '-mt-10' : 'pt-6'} relative z-10`}>
+      <div className="-mt-8 relative z-10">
 
         {/* Header */}
         <div className="px-4 pb-5">
