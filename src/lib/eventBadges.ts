@@ -33,26 +33,30 @@ export function getEventBadge(
   interestedCount: number
 ): EventBadge | null {
   const now = new Date();
+  const hasTime = Boolean(event.startTime && event.startTime.trim());
 
-  // 1. Happening Now — event started but not ended
-  const start = parseEventDateTime(event.date, event.startTime);
-  const end = event.endTime
-    ? parseEventDateTime(event.date, event.endTime)
-    : new Date(start.getTime() + 3 * 60 * 60 * 1000); // default 3h duration
+  // Temporal badges require a specified start time
+  if (hasTime) {
+    // 1. Happening Now — event started but not ended
+    const start = parseEventDateTime(event.date, event.startTime);
+    const end = event.endTime
+      ? parseEventDateTime(event.date, event.endTime)
+      : new Date(start.getTime() + 3 * 60 * 60 * 1000); // default 3h duration
 
-  // Handle end times past midnight
-  if (end <= start) end.setDate(end.getDate() + 1);
+    // Handle end times past midnight
+    if (end <= start) end.setDate(end.getDate() + 1);
 
-  if (now >= start && now <= end) {
-    return { label: "Happening Now", variant: "live", icon: Radio };
-  }
+    if (now >= start && now <= end) {
+      return { label: "Happening Now", variant: "live", icon: Radio };
+    }
 
-  // 2. Starting Soon — today, within 3 hours
-  const diffMs = start.getTime() - now.getTime();
-  if (diffMs > 0 && diffMs <= 3 * 60 * 60 * 1000) {
-    const diffH = Math.ceil(diffMs / (60 * 60 * 1000));
-    const label = diffH <= 1 ? "Starts in <1h" : `Starts in ${diffH}h`;
-    return { label, variant: "soon", icon: Clock };
+    // 2. Starting Soon — today, within 3 hours
+    const diffMs = start.getTime() - now.getTime();
+    if (diffMs > 0 && diffMs <= 3 * 60 * 60 * 1000) {
+      const diffH = Math.ceil(diffMs / (60 * 60 * 1000));
+      const label = diffH <= 1 ? "Starts in <1h" : `Starts in ${diffH}h`;
+      return { label, variant: "soon", icon: Clock };
+    }
   }
 
   // 3. Popular — but NOT if featured (Team Pick already signals quality)
