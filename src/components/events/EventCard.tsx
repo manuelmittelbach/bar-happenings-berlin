@@ -164,6 +164,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           ) : (
             <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
           )}
+          {badge && (
+            <span className={`absolute top-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+              <badge.icon className="h-2.5 w-2.5" />
+              {badge.label}
+            </span>
+          )}
         </div>
         <div className="p-3 md:p-4 flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
