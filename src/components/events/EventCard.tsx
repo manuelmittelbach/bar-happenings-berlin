@@ -88,35 +88,45 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group block relative p-6 bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)]"
+          className="group flex relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
         >
-          <div className="absolute -top-3 left-4 inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
-            <Star className="h-3 w-3" />
-            Team Pick
+          {/* Image thumbnail — 4:3 ratio */}
+          <div className="relative w-32 md:w-48 shrink-0 bg-muted flex items-center justify-center self-stretch">
+            {event.image ? (
+              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            ) : (
+              <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
+            )}
           </div>
-          <div className="flex items-center gap-2 mb-3 mt-1">
-            <span className="mono-label text-accent font-bold">{event.category}</span>
-          </div>
-          <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
-            {event.title}
-          </h3>
-          <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                <MapPin className="h-3 w-3" />
-                {event.neighborhood}
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                <Clock className="h-3 w-3" />
-                {formatDateShort(event.date)}
+          <div className="p-6 flex-1 min-w-0">
+            <div className="inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md mb-3">
+              <Star className="h-3 w-3" />
+              Team Pick
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="mono-label text-accent font-bold">{event.category}</span>
+            </div>
+            <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
+              {event.title}
+            </h3>
+            <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+                  <MapPin className="h-3 w-3" />
+                  {event.neighborhood}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+                  <Clock className="h-3 w-3" />
+                  {formatDateShort(event.date)}
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+                <Users className="h-3.5 w-3.5" />
+                {interestedCount}
               </span>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
-              <Users className="h-3.5 w-3.5" />
-              {interestedCount}
-            </span>
           </div>
         </Link>
       </motion.div>
@@ -130,8 +140,8 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
-        {/* Image thumbnail */}
-        <div className="relative w-24 md:w-32 shrink-0 bg-muted flex items-center justify-center">
+        {/* Image thumbnail — 4:3 ratio */}
+        <div className="relative w-28 md:w-40 shrink-0 aspect-[4/3] bg-muted flex items-center justify-center self-stretch">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
