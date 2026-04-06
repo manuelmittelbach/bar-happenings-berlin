@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import tigerLogo from "@/assets/tiger-logo.png";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
-import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, SlidersHorizontal, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 import Header from "@/components/layout/Header";
@@ -70,22 +69,22 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="noise-bg overflow-hidden">
+        <section className="bg-background">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <p className="mono-label text-tiger-gold mb-4">Berlin's independent bar guide</p>
-              <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
-                <span className="gradient-warm-text">What's on</span>
+              <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
+              <h1 className="heading-display text-6xl md:text-8xl lg:text-9xl leading-[0.9] max-w-4xl">
+                What's on
                 <br />
-                <span className="text-foreground">tonight</span>
+                <span className="heading-editorial text-muted-foreground normal-case">tonight</span>
                 <br />
-                <span className="text-tiger-smoke">in Berlin bars</span>
+                in Berlin bars
               </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
+              <p className="mt-8 text-lg text-muted-foreground max-w-lg leading-relaxed font-body">
                 Live music, quiz nights, open mics, and community events in small independent bars across the city.
               </p>
             </motion.div>
@@ -103,7 +102,7 @@ export default function Index() {
                   placeholder="Search by bar, neighborhood, or event..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 bg-card border-2 border-border text-sm font-mono placeholder:text-muted-foreground outline-none focus:border-tiger-gold transition-colors"
+                  className="w-full h-12 pl-10 pr-4 bg-card border border-border text-sm font-body placeholder:text-muted-foreground outline-none focus:border-foreground transition-colors"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-2 mt-4">
@@ -111,10 +110,10 @@ export default function Index() {
                   <button
                     key={d}
                     onClick={() => setActiveDate(d)}
-                    className={`inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 transition-all ${
+                    className={`inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border transition-all ${
                       activeDate === d
-                        ? "border-tiger-gold bg-tiger-gold text-primary-foreground"
-                        : "border-border hover:border-tiger-gold hover:text-tiger-gold"
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border hover:border-foreground"
                     }`}
                   >
                     {d}
@@ -123,24 +122,24 @@ export default function Index() {
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 border-2 transition-colors ${
-                      showFilters ? "border-tiger-gold bg-tiger-gold text-primary-foreground" : "border-border hover:border-tiger-gold"
+                    className={`p-2.5 border transition-colors ${
+                      showFilters ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"
                     }`}
                     aria-label="Toggle filters"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
                   </button>
-                  <div className="flex border-2 border-border overflow-hidden">
+                  <div className="flex border border-border overflow-hidden">
                     <button
                       onClick={() => setViewMode("grid")}
-                      className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-tiger-gold text-primary-foreground" : "hover:bg-muted"}`}
+                      className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                       aria-label="Grid view"
                     >
                       <LayoutGrid className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setViewMode("map")}
-                      className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-tiger-gold text-primary-foreground" : "hover:bg-muted"}`}
+                      className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                       aria-label="Map view"
                     >
                       <MapIcon className="h-4 w-4" />
@@ -152,21 +151,21 @@ export default function Index() {
           </div>
         </section>
 
-        <div className="border-y-2 border-border gradient-warm overflow-hidden py-3">
+        <div className="border-y border-border bg-foreground overflow-hidden py-3">
           <div className="flex animate-marquee whitespace-nowrap">
             {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-primary-foreground tracking-wide flex items-center gap-6">
-                DRINK RESPONSIBLY, PARTY IRRESPONSIBLY <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> YOUR COUCH WILL MISS YOU TONIGHT <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> MAKE FRIENDS, NOT PLANS <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> BERLIN DOESN'T SLEEP AND NEITHER SHOULD YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> TIPSY IS A VIBE, TIGER IS A LIFESTYLE <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> FIND YOUR NEW FAVORITE BAR <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> SOLO NIGHT OUT? WE GOT YOU <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" /> LESS SCROLLING, MORE CLINKING <img src={tigerLogo} alt="" className="inline h-7 w-7 opacity-80" />
+              <span key={i} className="font-heading text-lg md:text-xl mx-10 text-background tracking-wide flex items-center gap-6 uppercase">
+                Drink responsibly, party irresponsibly ✦ Your couch will miss you tonight ✦ Make friends, not plans ✦ Berlin doesn't sleep and neither should you ✦ Find your new favorite bar ✦ Solo night out? We got you ✦ Less scrolling, more clinking ✦
               </span>
             ))}
           </div>
         </div>
 
         {showFilters && (
-          <div className="border-b-2 border-border">
+          <div className="border-b border-border">
             <div className="container py-5 space-y-5">
               <div>
-                <label className="mono-label text-tiger-gold mb-2 block">Neighborhood</label>
+                <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
                 <div className="flex flex-wrap gap-2">
                   <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
                   {neighborhoods.map((n) => (
@@ -175,7 +174,7 @@ export default function Index() {
                 </div>
               </div>
               <div>
-                <label className="mono-label text-tiger-gold mb-2 block">Entry</label>
+                <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
                 <div className="flex flex-wrap gap-2">
                   {entryFilters.map((e) => (
                     <CategoryPill key={e} label={e} active={activeEntry === e} onClick={() => setActiveEntry(e)} />
@@ -186,7 +185,7 @@ export default function Index() {
           </div>
         )}
 
-        <div className="border-b-2 border-border">
+        <div className="border-b border-border">
           <div className="container py-4">
             <div className="flex flex-wrap gap-2 overflow-x-auto">
               <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
@@ -197,17 +196,17 @@ export default function Index() {
           </div>
         </div>
 
-        <section className="border-b-2 border-border">
+        <section className="border-b border-border">
           <div className="container py-8 relative">
             <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
 
             {viewMode === "map" ? (
               <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-                <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-border hidden lg:block">
+                <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border border-border hidden lg:block">
                   {filtered.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center p-6">
-                        <p className="font-heading text-sm">No events</p>
+                        <p className="font-heading text-sm uppercase">No events</p>
                         <p className="text-xs text-muted-foreground mt-1 font-mono">Try adjusting filters</p>
                       </div>
                     </div>
@@ -222,8 +221,8 @@ export default function Index() {
                 </div>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-20 border-2 border-border">
-                <p className="font-heading text-lg">No events found</p>
+              <div className="text-center py-20 border border-border">
+                <p className="font-heading text-lg uppercase">No events found</p>
                 <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
               </div>
             ) : (
@@ -248,9 +247,9 @@ export default function Index() {
                   return sections.map((section) => (
                     <div key={section.label}>
                       <div className="flex items-center gap-4 mb-6 mt-4">
-                        <h2 className="font-heading text-3xl md:text-4xl tracking-wide gradient-warm-text">{section.label}</h2>
-                        <div className="flex-1 border-t-2 border-border" />
-                        <span className="mono-label text-lg text-tiger-gold">{section.events.length}</span>
+                        <h2 className="font-heading text-3xl md:text-4xl tracking-wide uppercase">{section.label}</h2>
+                        <div className="flex-1 border-t border-border" />
+                        <span className="mono-label text-lg text-accent">{section.events.length}</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {section.events.map((event, i) => (
@@ -265,27 +264,27 @@ export default function Index() {
           </div>
         </section>
 
-        <section className="bg-card noise-bg">
+        <section className="bg-foreground text-background">
           <div className="container py-20 md:py-28 relative z-10">
             <div className="max-w-2xl">
-              <p className="mono-label text-tiger-warm mb-3">For venues</p>
-              <h2 className="font-heading text-4xl md:text-5xl tracking-wide">
-                <span className="gradient-warm-text">Run a bar</span><br />
-                <span className="text-foreground">in Berlin?</span>
+              <p className="mono-label text-accent mb-3">For venues</p>
+              <h2 className="font-heading text-4xl md:text-5xl tracking-wide uppercase">
+                Run a bar<br />
+                <span className="text-background/60">in Berlin?</span>
               </h2>
-              <p className="mt-5 text-muted-foreground text-lg leading-relaxed max-w-md">
+              <p className="mt-5 text-background/60 text-lg leading-relaxed max-w-md">
                 Publish your events and reach locals and travelers looking for a good night out. Free, simple, made for real bars.
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
                   to="/publish"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-tiger-gold bg-tiger-gold text-primary-foreground font-heading text-xs tracking-wider transition-all hover:bg-transparent hover:text-tiger-gold"
+                  className="inline-flex h-12 px-8 items-center justify-center gap-2 bg-accent text-accent-foreground font-heading text-xs tracking-wider uppercase transition-all hover:bg-accent/90"
                 >
-                  Publish an event
+                  Publish an event <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/for-bars"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-border text-foreground font-heading text-xs tracking-wider transition-all hover:border-tiger-gold hover:text-tiger-gold"
+                  className="inline-flex h-12 px-8 items-center justify-center border border-background/20 text-background font-heading text-xs tracking-wider uppercase transition-all hover:bg-background/10"
                 >
                   Learn more
                 </Link>

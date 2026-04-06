@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Righteous", "cursive"],
-        body: ["DM Sans", "sans-serif"],
+        heading: ["Anton", "sans-serif"],
+        body: ["Inter", "sans-serif"],
         mono: ["Space Mono", "monospace"],
+        editorial: ["Playfair Display", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
