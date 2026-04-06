@@ -265,18 +265,32 @@ export default function Index() {
                 const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
                 const interested = (hash % 42) + 1;
                 const isPopular = interested > 30;
+                const rowBadge = getEventBadge(event, interested);
+                const isLive = rowBadge?.variant === "live";
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
-                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isPopular ? "bg-accent/[0.03]" : ""}`}
+                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isLive ? "bg-[hsl(0,72%,51%)]/[0.04]" : ""}`}
                   >
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-center gap-2">
                       <span className="shrink-0 font-mono text-[11px] text-accent uppercase tracking-wider w-[52px]">
                         {event.startTime}
                       </span>
                       <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate min-w-0">
                         {cleanEventTitle(event.title, event.venue)}
                       </span>
+                      {rowBadge && (
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide ${
+                          rowBadge.variant === "live"
+                            ? "bg-[hsl(0,72%,51%)] text-white animate-pulse"
+                            : rowBadge.variant === "popular"
+                              ? "border border-accent/40 text-accent bg-accent/10"
+                              : "bg-muted text-foreground border border-border"
+                        }`}>
+                          <rowBadge.icon className="h-2.5 w-2.5" />
+                          {rowBadge.label}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 pl-[60px]">
                       <span className="text-xs text-muted-foreground font-mono truncate">
