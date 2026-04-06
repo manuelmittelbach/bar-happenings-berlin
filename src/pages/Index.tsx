@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
+import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal, Users } from "lucide-react";
 import { motion } from "framer-motion";
@@ -329,7 +330,7 @@ export default function Index() {
                       style={{ backgroundColor: catInfo?.color || "hsl(var(--accent))" }}
                     />
                     <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate flex-1 min-w-0">
-                      {event.title}
+                      {cleanEventTitle(event.title, event.venue)}
                     </span>
                     <span className="hidden sm:block text-xs text-muted-foreground font-mono truncate max-w-[200px]">
                       {event.venue} · {event.neighborhood}
