@@ -10,7 +10,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
-import MapView from "@/components/events/MapView";
+
 import EventDetailDialog from "@/components/events/EventDetailDialog";
 import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
