@@ -4,7 +4,7 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
-import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { useEventById, useEventsByVenue, useEventsByParent, useCategories } from "@/hooks/useSupabaseData";
 import { getCategoryImage } from "@/assets/categories";
 
 
