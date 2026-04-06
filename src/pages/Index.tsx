@@ -127,14 +127,9 @@ export default function Index() {
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
                 Live music, quiz nights, open mics, and community events in small independent bars across the city.
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-10 max-w-lg"
-            >
+            <div className="mt-10 max-w-lg">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
