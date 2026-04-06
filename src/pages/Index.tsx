@@ -83,7 +83,7 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="border-b-2 border-foreground noise-bg">
+        <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -190,7 +190,7 @@ export default function Index() {
           </div>
         )}
 
-        <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-foreground">
+        <div className="sticky top-[57px] z-40 bg-card/95 backdrop-blur-sm border-b-2 border-foreground">
           {/* Category row */}
           <div className="container py-3">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1">
@@ -315,9 +315,17 @@ export default function Index() {
                     );
                   };
 
-                  return sections.map((section) => (
-                    <div key={section.label}>
-                      <div className="flex items-center gap-4 mb-6 mt-4">
+                  const sectionBgs = [
+                    "bg-background",
+                    "bg-muted/25",
+                    "bg-muted/40",
+                    "bg-muted/25",
+                    "bg-background",
+                  ];
+
+                  return sections.map((section, si) => (
+                    <div key={section.label} className={`-mx-4 md:-mx-8 px-4 md:px-8 py-8 ${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}>
+                      <div className="flex items-center gap-4 mb-6">
                         <h2 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight">{section.label}</h2>
                         <div className="flex-1 border-t-2 border-border" />
                         <span className="mono-label text-lg text-muted-foreground">{section.events.length}</span>
