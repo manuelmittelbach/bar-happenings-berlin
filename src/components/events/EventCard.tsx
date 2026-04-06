@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
@@ -11,10 +11,11 @@ interface EventCardProps {
   event: BarlinEvent;
   index?: number;
   layout?: "grid" | "list";
+  featured?: boolean;
   onClick?: (eventId: string) => void;
 }
 
-export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
+export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
   
   const handleClick = (e: React.MouseEvent) => {
@@ -57,6 +58,42 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  if (featured) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: index * 0.05 }}
+        className="col-span-1 sm:col-span-2"
+      >
+        <Link to={`/event/${event.id}`} onClick={handleClick} className="group block border-2 border-accent hover:border-foreground transition-colors p-5 relative">
+          <div className="absolute -top-3 left-4 inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-0.5 text-xs font-mono font-bold uppercase tracking-wider">
+            <Star className="h-3 w-3" />
+            Team Pick
+          </div>
+          <div className="flex items-center gap-2 mb-3 mt-1">
+            <span className="mono-label text-accent">{event.category}</span>
+          </div>
+          <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
+            {event.title}
+          </h3>
+          <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+              <MapPin className="h-3 w-3" />
+              {event.neighborhood}
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+              <Clock className="h-3 w-3" />
+              {formatDateShort(event.date)}
+            </span>
           </div>
         </Link>
       </motion.div>
