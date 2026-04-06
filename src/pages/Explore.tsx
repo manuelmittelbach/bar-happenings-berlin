@@ -25,7 +25,7 @@ export default function Explore() {
   );
   const [activeEntry, setActiveEntry] = useState("All");
   const [sortBy, setSortBy] = useState("Recommended");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
