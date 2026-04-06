@@ -52,7 +52,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
-            <h3 className="font-heading text-xl md:text-2xl font-extrabold tracking-normal leading-snug group-hover:text-accent transition-colors truncate">
+            <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
