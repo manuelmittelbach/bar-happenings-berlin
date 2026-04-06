@@ -4,13 +4,13 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, LayoutGrid, MapIcon, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
-import MapView from "@/components/events/MapView";
+
 import EventDetailDialog from "@/components/events/EventDetailDialog";
 import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
@@ -22,7 +22,7 @@ export default function Index() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  
   const [activeCategory, setActiveCategory] = useState("");
   const [activeNeighborhood, setActiveNeighborhood] = useState("");
   const [activeDate, setActiveDate] = useState("All");
@@ -219,31 +219,7 @@ export default function Index() {
           </div>
         </div>
 
-        {viewMode === "map" ? (
-          <section className="bg-background">
-            <div className="container py-8">
-              <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-                <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
-                  {filtered.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center p-6">
-                        <p className="font-heading text-sm font-bold uppercase">No events</p>
-                        <p className="text-xs text-muted-foreground mt-1 font-mono">Try adjusting filters</p>
-                      </div>
-                    </div>
-                  ) : (
-                    filtered.map((event, i) => (
-                      <EventCard key={event.id} event={event} index={i} layout="list" onClick={handleEventClick} />
-                    ))
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <MapView events={filtered} onEventClick={handleEventClick} />
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <section className="bg-background">
             <div className="container py-20">
               <div className="text-center py-20 border-2 border-border">
@@ -433,18 +409,6 @@ export default function Index() {
         onEventChange={(id) => setSelectedEventId(id)}
       />
 
-      {/* Floating view toggle */}
-      <button
-        onClick={() => setViewMode(viewMode === "grid" ? "map" : "grid")}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-background/90 backdrop-blur-sm border-2 border-accent text-accent font-mono text-xs uppercase tracking-wider shadow-[0_2px_12px_hsl(18_85%_52%/0.15)] hover:bg-accent hover:text-white transition-all"
-        aria-label={viewMode === "grid" ? "Switch to map" : "Switch to grid"}
-      >
-        {viewMode === "grid" ? (
-          <><MapIcon className="h-4 w-4" /> Map</>
-        ) : (
-          <><LayoutGrid className="h-4 w-4" /> Grid</>
-        )}
-      </button>
     </div>
   );
 }
