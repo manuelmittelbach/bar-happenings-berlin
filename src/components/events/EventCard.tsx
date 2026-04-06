@@ -70,6 +70,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
+              {badge && (
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+                  <badge.icon className="h-3 w-3" />
+                  {badge.label}
+                </span>
+              )}
             </div>
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {displayTitle}
