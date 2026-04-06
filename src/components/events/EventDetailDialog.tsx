@@ -119,7 +119,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="font-heading text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-3"
+              className="font-body text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-3"
             >
               {displayTitle}
             </motion.h2>
