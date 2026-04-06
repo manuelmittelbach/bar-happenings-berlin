@@ -394,7 +394,6 @@ export default function Index() {
             })()}
           </>
         )}
-        </section>
 
         <section className="bg-foreground text-primary-foreground noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
