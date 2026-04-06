@@ -53,7 +53,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 z-20 md:hidden flex items-center gap-1 text-foreground/80 hover:text-foreground text-xs font-heading font-bold uppercase tracking-wider transition-colors"
+          className="absolute top-3 right-3 z-20 md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm text-foreground/80 hover:text-foreground transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
