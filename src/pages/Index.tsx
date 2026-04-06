@@ -115,11 +115,7 @@ export default function Index() {
       <main className="flex-1">
         <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-12 md:py-16 lg:py-20 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <div>
               <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
               <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
                 What's on
