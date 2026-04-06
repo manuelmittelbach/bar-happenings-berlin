@@ -5,16 +5,16 @@ type: design
 ---
 
 ## Colors
-- Background: 0 0% 97% (near white)
+- Background: 30 20% 96% (warm off-white)
 - Foreground: 0 0% 7% (near black)
 - Card: 0 0% 100% (white)
-- Accent/Orange: 20 85% 52%
-- Muted: 0 0% 94%
-- Border: 0 0% 87%
+- Accent/Orange: 18 80% 50% (burnt orange)
+- Muted: 30 10% 93%
+- Border: 0 0% 85%
 
 ## Typography
-- Headings: Anton (condensed, uppercase)
-- Body: Inter
+- Headings: Bebas Neue (condensed, uppercase, italic via CSS)
+- Body: DM Sans
 - Mono/Labels: Space Mono
 - Editorial/Italic: Playfair Display (used for "tonight" style accents)
 
@@ -24,3 +24,4 @@ type: design
 - Pills/Filters: font-mono uppercase, active = bg-foreground text-background
 - No rounded corners anywhere (--radius: 0px)
 - Marquee banner: bg-foreground text-background
+- heading-display class: font-heading + uppercase + italic
