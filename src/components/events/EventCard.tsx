@@ -86,7 +86,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
         </Link>
-      </motion.div>
+      </div>
     );
   }
 
