@@ -167,7 +167,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Badge strip — flush with card top */}
         {badge && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-heading font-bold uppercase tracking-wide ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
             <badge.icon className="h-3 w-3" />
             {badge.label}
           </div>
