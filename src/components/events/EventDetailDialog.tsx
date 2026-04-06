@@ -4,7 +4,7 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
-import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { useEventById, useEventsByVenue, useEventsByParent, useCategories } from "@/hooks/useSupabaseData";
 import { getCategoryImage } from "@/assets/categories";
 
 
@@ -16,7 +16,10 @@ interface EventDetailDialogProps {
 }
 
 export default function EventDetailDialog({ eventId, open, onOpenChange, onEventChange }: EventDetailDialogProps) {
-  const event = eventId ? getEventById(eventId) : null;
+  const { data: event } = useEventById(eventId ?? undefined);
+  const { data: allVenueEvents = [] } = useEventsByVenue(event?.venueId);
+  const { data: siblings = [] } = useEventsByParent(event?.parentId);
+  const { data: categoryInfos = [] } = useCategories();
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
@@ -25,11 +28,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     setInterestedCount(0);
   }, [eventId]);
 
-  const venue = event ? getVenueById(event.venueId) : null;
-  const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
-  const siblings = event ? getEventsByParent(event.parentId) : [];
+  const otherEvents = allVenueEvents.filter(e => e.id !== event?.id && e.parentId !== event?.parentId);
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
-  const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
+  const catInfo = event ? categoryInfos.find(c => c.label === event.category) : null;
 
   if (!event) return null;
 
