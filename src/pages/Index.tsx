@@ -143,22 +143,6 @@ export default function Index() {
                     {d}
                   </button>
                 ))}
-                <div className="flex border-2 border-foreground overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                    aria-label="Grid view"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("map")}
-                    className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                    aria-label="Map view"
-                  >
-                    <MapIcon className="h-4 w-4" />
-                  </button>
-                </div>
               </div>
             </motion.div>
           </div>
