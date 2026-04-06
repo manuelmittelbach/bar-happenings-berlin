@@ -81,8 +81,12 @@ export default function Index() {
   }, [filtered]);
 
   const handleEventClick = useCallback((eventId: string) => {
-    setSelectedEventId(eventId);
-  }, []);
+    if (isMobile) {
+      navigate(`/event/${eventId}`);
+    } else {
+      setSelectedEventId(eventId);
+    }
+  }, [isMobile, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
