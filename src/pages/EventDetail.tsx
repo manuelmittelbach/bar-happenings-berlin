@@ -54,7 +54,7 @@ export default function EventDetail() {
       {/* Sticky back button */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none"
         >
           <ArrowLeft className="h-4 w-4" />
