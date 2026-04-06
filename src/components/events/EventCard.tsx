@@ -75,7 +75,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group block relative p-6 bg-foreground text-background border-2 border-foreground transition-all hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)]"
+          className="group block relative p-6 bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)]"
         >
           <div className="absolute -top-3 left-4 inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
             <Star className="h-3 w-3" />
@@ -87,14 +87,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
             {event.title}
           </h3>
-          <p className="text-sm text-background/60 font-medium mb-1">{event.venue}</p>
-          <p className="text-sm text-background/50 mb-3 line-clamp-2">{event.description}</p>
+          <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-background/10 border border-background/20 text-xs text-background/70 font-mono">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <MapPin className="h-3 w-3" />
               {event.neighborhood}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-background/10 border border-background/20 text-xs text-background/70 font-mono">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
               <Clock className="h-3 w-3" />
               {formatDateShort(event.date)}
             </span>
