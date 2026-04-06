@@ -18,6 +18,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const event = eventId ? getEventById(eventId) : null;
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
+  const [datesOpen, setDatesOpen] = useState(false);
 
   const baseCount = useMemo(() => {
     if (!eventId) return 0;
