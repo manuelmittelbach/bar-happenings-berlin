@@ -73,7 +73,7 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-accent">{event.category}</span>
         </div>
-        <h3 className="font-heading text-lg md:text-xl font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-2">
+        <h3 className="font-heading text-xl md:text-2xl font-extrabold tracking-normal leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
           {event.title}
         </h3>
         <p className="text-sm text-muted-foreground font-medium mb-2">{event.venue}</p>
