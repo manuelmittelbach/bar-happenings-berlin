@@ -9,7 +9,7 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import EventDetailDialog from "@/components/events/EventDetailDialog";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { events, categories } from "@/data/mockData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
