@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { MapPin, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users } from "lucide-react";
+import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -132,7 +132,7 @@ export default function EventDetail() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 px-4 mb-5 overflow-x-auto">
+        <div className="flex items-center gap-2 px-4 mb-5">
           {event.url && (
             <a
               href={event.url}
@@ -143,18 +143,8 @@ export default function EventDetail() {
               <ExternalLink className="h-3.5 w-3.5" /> Website
             </a>
           )}
-          {event.address && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
-            >
-              <Navigation className="h-3.5 w-3.5" /> Directions
-            </a>
-          )}
-          <div className="ml-auto shrink-0">
-            <ShareMenu eventTitle={displayTitle} eventId={event.id} />
+          <div className="flex-1">
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
           </div>
         </div>
 
@@ -170,11 +160,19 @@ export default function EventDetail() {
 
         {/* Venue card */}
         {event.address && (
-          <div className="mx-4 mb-5 p-4 bg-card border-2 border-border">
-            <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-            <p className="font-heading font-bold text-sm">{event.venue}</p>
-            <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
-          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mx-4 mb-5 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer"
+          >
+            <div className="min-w-0">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
+              <p className="font-heading font-bold text-sm">{event.venue}</p>
+              <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
+          </a>
         )}
 
         {/* Upcoming dates */}
