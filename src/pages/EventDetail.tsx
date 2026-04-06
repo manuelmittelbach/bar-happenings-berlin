@@ -126,20 +126,8 @@ export default function EventDetail() {
         <div className="border-t border-border mx-4" />
 
         {/* Actions row */}
-        <div className="flex items-center gap-2 px-4 py-4">
-          {event.url && (
-            <a
-              href={event.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> Website
-            </a>
-          )}
-          <div className="flex-1">
-            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
-          </div>
+        <div className="px-4 py-4">
+          <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
         </div>
 
         <div className="border-t border-border mx-4" />
