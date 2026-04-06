@@ -18,11 +18,17 @@ interface EventCardProps {
   onClick?: (eventId: string) => void;
 }
 
+/* Compact chip styles per badge variant */
+const badgeChipClasses: Record<EventBadge["variant"], string> = {
+  live: "bg-[hsl(0,72%,51%)] text-white",
+  soon: "bg-muted text-foreground border border-border",
+  popular: "border border-accent/40 text-accent bg-accent/10",
+};
+
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
 
-  // Deterministic pseudo-random interested count based on event id
   const interestedCount = useMemo(() => {
     const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
     return (hash % 42) + 1;
@@ -30,12 +36,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
-  const badgeVariantClasses: Record<EventBadge["variant"], string> = {
-    live: "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_0_12px_hsl(0_72%_51%/0.5)]",
-    soon: "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]",
-    popular: "bg-gradient-to-r from-[hsl(var(--accent))] to-pink-500 text-white shadow-[0_0_10px_hsl(var(--accent)/0.4)]",
-  };
-  
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
       e.preventDefault();
@@ -45,33 +45,30 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   const fallbackImage = getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other');
 
-  const EventImage = ({ className = "" }: { className?: string }) => (
-    <img
-      src={event.image || fallbackImage}
-      alt={event.title}
-      className={`absolute inset-0 w-full h-full object-cover ${className}`}
-      loading="lazy"
-    />
-  );
+  const BadgeChip = () => {
+    if (!badge) return null;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-bold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+        <badge.icon className="h-2.5 w-2.5" />
+        {badge.label}
+      </span>
+    );
+  };
 
+  /* ─── LIST layout ─── */
   if (layout === "list") {
     return (
       <div>
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-24 sm:w-28 shrink-0 self-stretch overflow-hidden bg-muted">
-            <EventImage className="grayscale-hover" />
+            <img src={event.image || fallbackImage} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
-              {badge && (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
-                  <badge.icon className="h-3 w-3" />
-                  {badge.label}
-                </span>
-              )}
+              <BadgeChip />
             </div>
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {displayTitle}
@@ -90,6 +87,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     );
   }
 
+  /* ─── FEATURED layout ─── */
   if (featured) {
     return (
       <div className="col-span-1">
@@ -98,7 +96,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           onClick={handleClick}
           className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
         >
-          {/* Image — square on desktop side, 16:9 banner on mobile top */}
           <div className="relative w-full aspect-[16/9] md:w-48 md:h-auto md:aspect-square shrink-0 bg-muted flex items-center justify-center">
             {event.image ? (
               <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
@@ -112,12 +109,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
                 <Star className="h-3 w-3" />
                 Team Pick
               </div>
-              {badge && (
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
-                  <badge.icon className="h-3 w-3" />
-                  {badge.label}
-                </div>
-              )}
+              <BadgeChip />
             </div>
             <div className="flex items-center gap-2 mb-2">
               <span className="mono-label text-accent font-bold">{event.category}</span>
@@ -149,16 +141,20 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     );
   }
 
+  /* ─── DEFAULT GRID card ─── */
+  const isLive = badge?.variant === "live";
+
   return (
     <div>
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col border-2 border-border hover:border-foreground transition-colors overflow-hidden">
-        {/* Badge strip — flush with card top */}
-        {badge && (
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-heading font-bold uppercase tracking-wide ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
-            <badge.icon className="h-3 w-3" />
-            {badge.label}
-          </div>
-        )}
+      <Link
+        to={`/event/${event.id}`}
+        onClick={handleClick}
+        className={`group flex flex-col border-2 transition-colors overflow-hidden ${
+          isLive
+            ? "border-[hsl(0,72%,51%)]/40 hover:border-[hsl(0,72%,51%)]"
+            : "border-border hover:border-foreground"
+        }`}
+      >
         <div className="flex flex-1">
           {/* Image thumbnail */}
           <div className="relative w-24 sm:w-32 md:w-40 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
@@ -169,8 +165,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             )}
           </div>
           <div className="p-3 md:p-4 flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
+              <BadgeChip />
             </div>
             <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
               {displayTitle}
