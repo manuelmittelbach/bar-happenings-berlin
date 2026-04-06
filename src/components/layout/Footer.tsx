@@ -42,7 +42,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-primary-foreground/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="mono-label text-primary-foreground/30">© 2026 Tipsy Tiger — Made in Berlin</p>
+          <p className="mono-label text-primary-foreground/30">© 2026 Inside Bars — Made in Berlin</p>
           <p className="text-xs text-primary-foreground/30 font-mono">No algorithms. No sponsors. Just bars.</p>
         </div>
       </div>
