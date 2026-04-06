@@ -37,15 +37,6 @@ export default function EventDetail() {
     return () => cancelAnimationFrame(raf);
   }, [id]);
 
-  // Similar events — must be before early return (hooks order)
-  const similarEvents = useMemo(() => {
-    if (!event) return [];
-    const today = new Date().toISOString().split("T")[0];
-    return allEvents
-      .filter(e => e.category === event.category && e.id !== event.id && e.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(0, 4);
-  }, [event]);
 
   if (!event) {
     return (
