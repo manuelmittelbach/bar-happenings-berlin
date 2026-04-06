@@ -177,15 +177,6 @@ export default function Explore() {
                 </div>
               </div>
               <div>
-                <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Neighborhood</label>
-                <div className="flex flex-wrap gap-1.5">
-                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                  {neighborhoods.map((n) => (
-                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
-                  ))}
-                </div>
-              </div>
-              <div>
                 <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Entry</label>
                 <div className="flex flex-wrap gap-1.5">
                   {entryFilters.map((e) => (
