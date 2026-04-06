@@ -226,19 +226,21 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           {/* Sticky bottom bar */}
           <div className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border mt-6">
             <div className="flex items-center justify-between px-4 md:px-8 py-3">
-              <div className="min-w-0">
-                {(() => {
-                  const parts = event.price.split(" — ");
-                  const mainPrice = parts[0] || "Free";
-                  const extra = parts[1];
-                  return (
-                    <>
-                      <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
-                      {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
-                    </>
-                  );
-                })()}
-              </div>
+              {event.price ? (
+                <div className="min-w-0">
+                  {(() => {
+                    const parts = event.price.split(" — ");
+                    const mainPrice = parts[0];
+                    const extra = parts[1];
+                    return (
+                      <>
+                        <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                        {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : <div />}
               <button
                 onClick={handleJoin}
                 className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
