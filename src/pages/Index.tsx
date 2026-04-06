@@ -189,21 +189,52 @@ export default function Index() {
           </div>
         )}
 
-        <div className="border-b-2 border-foreground">
-          <div className="container py-4">
-            {/* Mobile: icon scroller */}
-            <div className="md:hidden">
-              <CategoryIconBar
-                categories={categories}
-                activeCategory={activeCategory}
-                onSelect={setActiveCategory}
-              />
+        <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-foreground">
+          {/* Category row */}
+          <div className="container py-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1">
+              {/* Mobile: icon scroller */}
+              <div className="md:hidden flex gap-1">
+                <CategoryIconBar
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onSelect={setActiveCategory}
+                />
+              </div>
+              {/* Desktop: pill row (no wrap) */}
+              <div className="hidden md:flex gap-2">
+                <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
+                {categories.map((cat) => (
+                  <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
+                ))}
+              </div>
             </div>
-            {/* Desktop: pill labels */}
-            <div className="hidden md:flex flex-wrap gap-2">
-              <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
-              {categories.map((cat) => (
-                <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
+          </div>
+          {/* Neighborhood row */}
+          <div className="container pb-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap">
+              <button
+                onClick={() => setActiveNeighborhood("")}
+                className={`shrink-0 inline-flex items-center px-3 py-1 font-mono text-[10px] uppercase tracking-wider border transition-all ${
+                  !activeNeighborhood
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                }`}
+              >
+                All Areas
+              </button>
+              {neighborhoods.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setActiveNeighborhood(n)}
+                  className={`shrink-0 inline-flex items-center px-3 py-1 font-mono text-[10px] uppercase tracking-wider border transition-all ${
+                    activeNeighborhood === n
+                      ? "border-accent bg-accent/15 text-accent"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {n}
+                </button>
               ))}
             </div>
           </div>
