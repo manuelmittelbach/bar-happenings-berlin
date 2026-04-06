@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-rea
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
-import CategoryPill from "@/components/events/CategoryPill";
+import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import { events, categories, neighborhoods } from "@/data/mockData";
 
