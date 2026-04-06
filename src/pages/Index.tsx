@@ -60,7 +60,7 @@ export default function Index() {
       return true;
     });
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
+  }, [allEvents, searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
   const handleEventClick = useCallback((eventId: string) => {
     setSelectedEventId(eventId);
