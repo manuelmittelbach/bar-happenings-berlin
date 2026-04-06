@@ -132,7 +132,7 @@ export default function EventDetail() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 px-4 mb-5 overflow-x-auto">
+        <div className="flex items-center gap-2 px-4 mb-5">
           {event.url && (
             <a
               href={event.url}
@@ -143,18 +143,8 @@ export default function EventDetail() {
               <ExternalLink className="h-3.5 w-3.5" /> Website
             </a>
           )}
-          {event.address && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
-            >
-              <Navigation className="h-3.5 w-3.5" /> Directions
-            </a>
-          )}
-          <div className="ml-auto shrink-0">
-            <ShareMenu eventTitle={displayTitle} eventId={event.id} />
+          <div className="flex-1">
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
           </div>
         </div>
 
