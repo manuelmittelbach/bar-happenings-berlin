@@ -31,9 +31,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
   const badgeVariantClasses: Record<EventBadge["variant"], string> = {
-    live: "bg-destructive text-destructive-foreground",
-    soon: "border border-accent text-accent bg-accent/10",
-    popular: "bg-pink-600 text-white",
+    live: "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_0_12px_hsl(0_72%_51%/0.5)]",
+    soon: "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]",
+    popular: "bg-gradient-to-r from-[hsl(var(--accent))] to-pink-500 text-white shadow-[0_0_10px_hsl(var(--accent)/0.4)]",
   };
   
   const handleClick = (e: React.MouseEvent) => {
