@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { MapPin, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users } from "lucide-react";
+import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
