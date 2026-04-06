@@ -14,13 +14,14 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center">
-          <span className="font-heading text-2xl md:text-3xl tracking-wide text-foreground uppercase">Barlin</span>
+    <header className="sticky top-0 z-50 border-b-2 border-foreground bg-background/95 backdrop-blur-sm">
+      <div className="container flex h-14 items-center justify-between">
+        <Link to="/" className="font-heading text-xl font-extrabold uppercase tracking-tight">
+          tipsy tiger
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -39,13 +40,13 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <Link
             to="/publish"
-            className="hidden sm:inline-flex h-9 px-5 items-center justify-center bg-foreground text-background font-heading text-xs tracking-wider uppercase transition-all hover:bg-foreground/85"
+            className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
           >
             Publish Event
           </Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-foreground"
+            className="md:hidden p-2"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -53,6 +54,7 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Mobile nav */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -60,7 +62,7 @@ export default function Header() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-border overflow-hidden"
+            className="md:hidden border-t-2 border-foreground overflow-hidden"
           >
             <nav className="container flex flex-col gap-4 py-6">
               {navItems.map((item) => (
@@ -78,7 +80,7 @@ export default function Header() {
               <Link
                 to="/publish"
                 onClick={() => setMobileOpen(false)}
-                className="inline-flex h-11 w-full items-center justify-center bg-foreground text-background font-heading text-xs tracking-wider uppercase"
+                className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
               >
                 Publish Event
               </Link>

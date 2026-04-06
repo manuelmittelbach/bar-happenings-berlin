@@ -14,10 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Bebas Neue", "sans-serif"],
+        heading: ["Syne", "sans-serif"],
         body: ["DM Sans", "sans-serif"],
         mono: ["Space Mono", "monospace"],
-        editorial: ["Playfair Display", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -52,12 +51,6 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
-        },
-        tiger: {
-          gold: "hsl(var(--tiger-gold))",
-          warm: "hsl(var(--tiger-warm))",
-          leather: "hsl(var(--tiger-leather))",
-          smoke: "hsl(var(--tiger-smoke))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

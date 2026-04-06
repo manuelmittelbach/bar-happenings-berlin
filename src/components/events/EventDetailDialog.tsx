@@ -4,8 +4,9 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
-import { useEventById, useEventsByVenue, useEventsByParent, useCategories } from "@/hooks/useSupabaseData";
-
+import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { getCategoryImage } from "@/assets/categories";
+import { getVenueImage } from "@/assets/venues";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -15,10 +16,7 @@ interface EventDetailDialogProps {
 }
 
 export default function EventDetailDialog({ eventId, open, onOpenChange, onEventChange }: EventDetailDialogProps) {
-  const { data: event } = useEventById(eventId ?? undefined);
-  const { data: allVenueEvents = [] } = useEventsByVenue(event?.venueId);
-  const { data: siblings = [] } = useEventsByParent(event?.parentId);
-  const { data: categoryInfos = [] } = useCategories();
+  const event = eventId ? getEventById(eventId) : null;
   const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
 
@@ -27,9 +25,11 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     setInterestedCount(0);
   }, [eventId]);
 
-  const otherEvents = allVenueEvents.filter(e => e.id !== event?.id && e.parentId !== event?.parentId);
+  const venue = event ? getVenueById(event.venueId) : null;
+  const otherEvents = event ? getEventsByVenue(event.venueId).filter(e => e.id !== event.id && e.parentId !== event.parentId) : [];
+  const siblings = event ? getEventsByParent(event.parentId) : [];
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
-  const catInfo = event ? categoryInfos.find(c => c.label === event.category) : null;
+  const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
 
   if (!event) return null;
 
@@ -40,28 +40,37 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border border-border gap-0 bg-background" fullscreenMobile>
+      <DialogContent className="max-w-3xl md:max-h-[90vh] p-0 md:border-2 md:border-foreground gap-0" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
-        <div className="relative py-3 px-6 md:hidden">
+        {/* Hero */}
+        <div className="relative h-[240px] md:h-[300px] bg-muted overflow-hidden">
+          {/* Mobile back button */}
           <button
             onClick={() => onOpenChange(false)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border border-border text-foreground text-xs font-heading tracking-wider uppercase hover:bg-muted transition-colors"
+            className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider hover:bg-background transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
+          <img
+            src={event.image || getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other')}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
         </div>
 
-        <div className="px-6 pt-6 pb-8">
+        <div className="px-6 -mt-16 relative z-10 pb-8">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h2 className="heading-display text-2xl md:text-4xl text-foreground">{event.title}</h2>
-            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border border-foreground bg-card">
-              <MapPin className="h-4 w-4 flex-shrink-0 text-accent" />
-              <span className="font-heading text-base tracking-wide uppercase">{event.venue}</span>
+            <h2 className="heading-display text-2xl md:text-4xl">{event.title}</h2>
+            <div className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 border-2 border-foreground bg-background">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="font-heading text-base font-bold uppercase tracking-wide">{event.venue}</span>
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border border-border bg-card mt-6">
+          {/* Details grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 border-2 border-border mt-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
               <p className="text-sm font-medium">{formatDateWithDay(event.date)}</p>
@@ -86,7 +95,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-border hover:border-foreground hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
               >
                 <Navigation className="h-3 w-3" /> Open in Google Maps
               </a>
@@ -95,35 +104,38 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             {event.recurrence && <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground font-mono bg-muted border border-border"><RotateCw className="h-3 w-3" /> {event.recurrence}</span>}
           </div>
 
+          {/* Actions */}
           <div className="flex gap-3 mt-6">
             <button
               onClick={handleJoin}
-              className={`flex-1 h-11 text-sm tracking-wider font-heading uppercase transition-all ${
+              className={`flex-1 h-11 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
                 joined
-                  ? "bg-accent text-accent-foreground border border-accent"
-                  : "bg-foreground text-background border border-foreground hover:bg-foreground/85"
+                  ? "bg-accent text-accent-foreground border-2 border-accent"
+                  : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
               }`}
             >
-              {joined ? "Count me in" : "I want to join"}
+              {joined ? "✓ Interested" : "I want to join"}
             </button>
             {event.url && (
-              <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border border-border text-sm hover:border-foreground transition-colors flex items-center gap-2">
+              <a href={event.url} target="_blank" rel="noopener noreferrer" className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />
               </a>
             )}
             <ShareMenu eventTitle={event.title} eventId={event.id} />
           </div>
 
+          {/* Description */}
           <div className="mt-8 space-y-3">
-            <h3 className="font-heading text-base tracking-wide uppercase text-foreground">About this event</h3>
+            <h3 className="font-heading text-base font-bold uppercase">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
               <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
             ))}
           </div>
 
+          {/* Upcoming dates */}
           {siblingDates.length > 1 && (
             <div className="mt-8">
-              <h3 className="font-heading text-base tracking-wide uppercase text-foreground mb-3">Upcoming dates</h3>
+              <h3 className="font-heading text-base font-bold uppercase mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => {
                   const siblingEvent = siblings.find(e => e.date === d);
@@ -136,9 +148,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                           onEventChange(siblingEvent.id);
                         }
                       }}
-                      className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border transition-colors ${
+                      className={`inline-flex items-center px-3 py-1.5 text-xs font-mono border-2 transition-colors ${
                         isActive
-                          ? 'border-foreground bg-foreground text-background'
+                          ? 'border-accent bg-accent text-accent-foreground'
                           : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
                       }`}
                     >
@@ -149,6 +161,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               </div>
             </div>
           )}
+
         </div>
       </DialogContent>
     </Dialog>

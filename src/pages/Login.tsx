@@ -26,7 +26,7 @@ export default function Login() {
           <div className="text-center mb-8">
             <h1 className="heading-display text-2xl">{isLogin ? "Welcome back" : "Create account"}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? "Sign in to manage your venue and events" : "Start publishing events on Tipsy Tiger"}
+              {isLogin ? "Sign in to manage your venue and events" : "Start publishing events on Barlin"}
             </p>
           </div>
 
