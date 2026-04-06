@@ -31,9 +31,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
   const badgeVariantClasses: Record<EventBadge["variant"], string> = {
-    live: "bg-destructive text-destructive-foreground",
-    soon: "border border-accent text-accent bg-accent/10",
-    popular: "bg-pink-600 text-white",
+    live: "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_0_12px_hsl(0_72%_51%/0.5)]",
+    soon: "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]",
+    popular: "bg-gradient-to-r from-[hsl(var(--accent))] to-pink-500 text-white shadow-[0_0_10px_hsl(var(--accent)/0.4)]",
   };
   
   const handleClick = (e: React.MouseEvent) => {
@@ -71,7 +71,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
               {badge && (
-                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
                   <badge.icon className="h-3 w-3" />
                   {badge.label}
                 </span>
@@ -122,7 +122,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
                 Team Pick
               </div>
               {badge && (
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
                   <badge.icon className="h-3 w-3" />
                   {badge.label}
                 </div>
@@ -167,7 +167,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Badge strip — flush with card top */}
         {badge && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-heading font-bold uppercase tracking-wide ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
             <badge.icon className="h-3 w-3" />
             {badge.label}
           </div>
