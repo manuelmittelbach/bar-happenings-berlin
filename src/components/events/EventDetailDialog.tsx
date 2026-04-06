@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Clock, Calendar, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users, X } from "lucide-react";
+import { MapPin, Clock, Calendar, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
