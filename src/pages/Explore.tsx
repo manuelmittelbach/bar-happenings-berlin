@@ -49,6 +49,20 @@ export default function Explore() {
     return result;
   }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow]);
 
+  // Deterministic ~5% featured picks based on event id hash
+  const featuredIds = useMemo(() => {
+    const set = new Set<string>();
+    filtered.forEach((e) => {
+      const hash = e.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      if (hash % 20 === 0) set.add(e.id);
+    });
+    // Ensure at least 1 featured if enough events
+    if (set.size === 0 && filtered.length >= 5) {
+      set.add(filtered[Math.floor(filtered.length / 3)].id);
+    }
+    return set;
+  }, [filtered]);
+
   const handleMapEventClick = useCallback(
     (eventId: string) => {
       navigate(`/event/${eventId}`);
