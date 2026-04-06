@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users, CalendarPlus, CalendarDays, ChevronDown } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
@@ -27,9 +27,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     return (hash % 42) + 1;
   }, [eventId]);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setJoined(false);
     setInterestedCount(baseCount);
+    // Scroll dialog content to top when switching events
+    setTimeout(() => {
+      contentRef.current?.scrollTo({ top: 0 });
+    }, 0);
   }, [eventId, baseCount]);
 
   const venue = event ? getVenueById(event.venueId) : null;
@@ -56,7 +62,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
+      <DialogContent ref={contentRef} className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{displayTitle}</DialogTitle>
 
         {/* Mobile back */}
