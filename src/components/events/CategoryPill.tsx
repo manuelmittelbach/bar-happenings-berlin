@@ -141,6 +141,72 @@ export function CategoryIconBar({
   activeCategory: string;
   onSelect: (cat: string) => void;
 }) {
+  // Same sort order as desktop
+  const sorted = [...categories].sort((a, b) => {
+    const ai = desktopCategoryOrder.indexOf(a);
+    const bi = desktopCategoryOrder.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+      {/* All */}
+      <button
+        onClick={() => onSelect("")}
+        className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
+          !activeCategory ? "text-accent" : "text-muted-foreground"
+        }`}
+      >
+        <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+          !activeCategory
+            ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)]"
+            : "bg-muted border-2 border-border"
+        }`}>
+          <LayoutGrid className="h-5 w-5" />
+        </div>
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider">All</span>
+      </button>
+
+      {sorted.map((cat) => {
+        const info = getCategoryInfoByLabel(cat);
+        const Icon = info ? categoryIcons[info.id] : Sparkles;
+        const I = Icon || Sparkles;
+        const isActive = activeCategory === cat;
+        const shortLabel = desktopShortLabels[cat] || cat;
+        return (
+          <button
+            key={cat}
+            onClick={() => onSelect(cat)}
+            className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
+              isActive ? "text-accent" : "text-muted-foreground"
+            }`}
+          >
+            <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+              isActive
+                ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)] scale-105"
+                : "bg-muted border-2 border-border"
+            }`}>
+              <I className="h-5 w-5" />
+            </div>
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
+              isActive ? "text-accent" : ""
+            }`}>
+              {shortLabel}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+  categories,
+  activeCategory,
+  onSelect,
+}: {
+  categories: string[];
+  activeCategory: string;
+  onSelect: (cat: string) => void;
+}) {
   return (
     <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
       {/* All */}
