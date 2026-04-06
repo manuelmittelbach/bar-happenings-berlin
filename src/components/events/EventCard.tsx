@@ -162,44 +162,47 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
-        {/* Image thumbnail */}
-        <div className="relative w-24 sm:w-32 md:w-40 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
-          {event.image ? (
-            <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-          ) : (
-            <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
-          )}
-          {badge && (
-            <span className={`absolute top-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
-              <badge.icon className="h-2.5 w-2.5" />
-              {badge.label}
-            </span>
-          )}
-        </div>
-        <div className="p-3 md:p-4 flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
+      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col border-2 border-border hover:border-foreground transition-colors overflow-hidden">
+        {/* Badge strip — flush with card top */}
+        {badge && (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+            <badge.icon className="h-3 w-3" />
+            {badge.label}
           </div>
-          <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
-            {displayTitle}
-          </h3>
-          <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-muted border border-border text-[10px] md:text-xs text-muted-foreground font-mono">
-                <MapPin className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                {event.neighborhood}
-              </span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                <Clock className="h-3 w-3" />
-                {formatDateShort(event.date)}
+        )}
+        <div className="flex flex-1">
+          {/* Image thumbnail */}
+          <div className="relative w-24 sm:w-32 md:w-40 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
+            {event.image ? (
+              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            ) : (
+              <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
+            )}
+          </div>
+          <div className="p-3 md:p-4 flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
+            </div>
+            <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
+              {displayTitle}
+            </h3>
+            <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-muted border border-border text-[10px] md:text-xs text-muted-foreground font-mono">
+                  <MapPin className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  {event.neighborhood}
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+                  <Clock className="h-3 w-3" />
+                  {formatDateShort(event.date)}
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
+                <Users className="h-3 w-3" />
+                {interestedCount}
               </span>
             </div>
-            <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
-              <Users className="h-3 w-3" />
-              {interestedCount}
-            </span>
           </div>
         </div>
       </Link>
