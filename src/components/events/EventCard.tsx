@@ -53,7 +53,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         transition={{ duration: 0.3, delay: index * 0.03 }}
       >
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
-          <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 overflow-hidden bg-muted">
             <EventImage className="grayscale-hover" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
