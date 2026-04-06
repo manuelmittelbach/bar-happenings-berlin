@@ -218,21 +218,6 @@ export default function EventDetail() {
           )}
         </div>
 
-        {/* Social proof — enhanced */}
-        <div className="px-4 pb-4">
-          <div className={`flex items-center gap-2 px-3 py-2 text-[12px] font-medium border transition-colors ${
-            socialProof.highlight
-              ? 'bg-accent/10 border-accent/30 text-accent'
-              : 'bg-muted border-border text-muted-foreground'
-          }`}>
-            {socialProof.highlight ? (
-              <Flame className="h-3.5 w-3.5 shrink-0" />
-            ) : (
-              <Users className="h-3.5 w-3.5 shrink-0" />
-            )}
-            <span>{socialProof.text}</span>
-          </div>
-        </div>
 
         {/* Primary CTA + secondary actions */}
         <div className="px-4 pb-4 space-y-3">
