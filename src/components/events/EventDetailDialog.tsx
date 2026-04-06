@@ -53,10 +53,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider"
+          className="absolute top-4 right-4 z-20 md:hidden flex items-center gap-1 text-foreground/80 hover:text-foreground text-xs font-heading font-bold uppercase tracking-wider transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+          <X className="h-5 w-5" />
         </button>
 
         {/* Hero image - only real images */}
