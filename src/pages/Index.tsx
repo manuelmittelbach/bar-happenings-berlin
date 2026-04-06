@@ -256,9 +256,9 @@ export default function Index() {
                   const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                   const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-4" });
-                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-4" });
-                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "grid-2" });
+                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
+                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
+                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
                   if (laterEvents.length) sections.push({ label: "This month", events: laterEvents, layout: "list" });
                   if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
 
@@ -378,7 +378,7 @@ export default function Index() {
                           ))}
                         </>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           {section.events.map((event, i) => (
                             <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
                           ))}
