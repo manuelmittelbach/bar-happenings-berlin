@@ -82,81 +82,94 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="border-b-2 border-foreground noise-bg">
-          <div className="container py-16 md:py-24 lg:py-32 relative z-10">
+        <section className="border-b-2 border-foreground noise-bg max-h-[40vh] overflow-hidden">
+          <div className="container py-8 md:py-10 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
+              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6"
             >
-              <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
-              <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
-                What's on
-                <br />
-                <span className="heading-editorial lowercase italic">tonight</span>
-                <br />
-                in Berlin bars
-              </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Live music, quiz nights, open mics, and community events in small independent bars across the city.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-10 max-w-lg"
-            >
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by bar, neighborhood, or event..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
-                />
+              <div>
+                <p className="mono-label text-accent mb-2">Berlin's independent bar guide</p>
+                <h1 className="heading-display text-3xl md:text-[48px] leading-[1] max-w-2xl">
+                  What's on
+                  {" "}
+                  <span className="heading-editorial lowercase italic">tonight</span>
+                  {" "}
+                  in Berlin bars
+                </h1>
               </div>
-              <div className="flex flex-wrap items-center gap-2 mt-4">
-                {dateFilters.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setActiveDate(d)}
-                    className={`inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 transition-all ${
-                      activeDate === d
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-foreground hover:bg-foreground hover:text-background"
-                    }`}
+
+              <div className="flex-1 max-w-lg">
+                <div className="relative flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search by bar, neighborhood, or event..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-11 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
+                    />
+                  </div>
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 border border-accent/30 text-accent text-xs font-mono font-bold whitespace-nowrap"
                   >
-                    {d}
-                  </button>
-                ))}
-                <div className="ml-auto flex gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 border-2 transition-colors ${
-                      showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
-                    }`}
-                    aria-label="Toggle filters"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </button>
-                  <div className="flex border-2 border-foreground overflow-hidden">
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                      aria-label="Grid view"
+                    <motion.span
+                      key={filtered.length}
+                      initial={{ y: -8, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
-                      <LayoutGrid className="h-4 w-4" />
-                    </button>
+                      {filtered.length}
+                    </motion.span>
+                    {" "}events this week
+                  </motion.span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  {dateFilters.map((d) => (
                     <button
-                      onClick={() => setViewMode("map")}
-                      className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                      aria-label="Map view"
+                      key={d}
+                      onClick={() => setActiveDate(d)}
+                      className={`inline-flex items-center px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
+                        activeDate === d
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-foreground hover:bg-foreground hover:text-background"
+                      }`}
                     >
-                      <MapIcon className="h-4 w-4" />
+                      {d}
                     </button>
+                  ))}
+                  <div className="ml-auto flex gap-1.5">
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={`p-2 border-2 transition-colors ${
+                        showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
+                      }`}
+                      aria-label="Toggle filters"
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="flex border-2 border-foreground overflow-hidden">
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                        aria-label="Grid view"
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode("map")}
+                        className={`p-2 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                        aria-label="Map view"
+                      >
+                        <MapIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
