@@ -32,10 +32,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   useEffect(() => {
     setJoined(false);
     setInterestedCount(baseCount);
-    // Scroll dialog content to top when switching events
-    setTimeout(() => {
+    // Scroll dialog content to top when switching events — use multiple frames to ensure DOM is ready
+    const raf = requestAnimationFrame(() => {
       contentRef.current?.scrollTo({ top: 0 });
-    }, 0);
+      // Double-ensure after layout settles (mobile Safari)
+      setTimeout(() => {
+        contentRef.current?.scrollTo({ top: 0 });
+      }, 50);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [eventId, baseCount]);
 
   const venue = event ? getVenueById(event.venueId) : null;
