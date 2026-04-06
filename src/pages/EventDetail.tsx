@@ -148,7 +148,7 @@ export default function EventDetail() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="font-heading text-[22px] md:text-3xl font-extrabold leading-[1.1] tracking-tight"
+            className="font-body text-[22px] md:text-3xl font-extrabold leading-[1.1] tracking-tight"
           >
             {displayTitle}
           </motion.h1>
