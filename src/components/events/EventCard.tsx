@@ -94,7 +94,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
+          className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden card-hover-lift"
         >
           <div className="relative w-full aspect-[16/9] md:w-48 md:h-auto md:aspect-square shrink-0 bg-muted flex items-center justify-center">
             {event.image ? (
