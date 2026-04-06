@@ -22,7 +22,7 @@ export default function Index() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  
   const [activeCategory, setActiveCategory] = useState("");
   const [activeNeighborhood, setActiveNeighborhood] = useState("");
   const [activeDate, setActiveDate] = useState("All");
