@@ -8,9 +8,9 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel, events as allEvents } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getEventBadge } from "@/lib/eventBadges";
-import { getTimingLabel, getSocialProofText, getMomentLine } from "@/lib/timingContext";
+import { getTimingLabel } from "@/lib/timingContext";
 
 export default function EventDetail() {
   const { id } = useParams();
