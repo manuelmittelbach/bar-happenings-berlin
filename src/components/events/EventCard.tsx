@@ -59,7 +59,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   if (layout === "list") {
     return (
       <div>
-        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
+        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift">
           <div className="relative w-24 sm:w-28 shrink-0 self-stretch overflow-hidden bg-muted">
             <img src={event.image || fallbackImage} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
           </div>
