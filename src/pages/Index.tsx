@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Link } from "react-router-dom";
-import { Search, LayoutGrid, MapIcon, SlidersHorizontal } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, SlidersHorizontal, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -9,7 +9,8 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import EventDetailDialog from "@/components/events/EventDetailDialog";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
+import type { BarlinEvent } from "@/data/mockData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
