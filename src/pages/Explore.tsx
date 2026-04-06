@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
