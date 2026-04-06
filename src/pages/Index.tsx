@@ -39,7 +39,7 @@ export default function Index() {
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
+    
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeDate === "This Week") {
