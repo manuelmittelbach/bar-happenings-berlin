@@ -63,7 +63,13 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+            <div className="flex items-center gap-3 mt-0.5">
+              <p className="text-sm text-muted-foreground">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+              <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+                <Users className="h-3.5 w-3.5" />
+                {interestedCount}
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
         </Link>
