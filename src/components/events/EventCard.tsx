@@ -92,12 +92,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   if (featured) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: index * 0.05 }}
-        className="col-span-1"
-      >
+      <div className="col-span-1">
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
