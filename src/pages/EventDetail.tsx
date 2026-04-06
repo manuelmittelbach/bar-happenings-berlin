@@ -59,10 +59,6 @@ export default function EventDetail() {
 
   const hookLine = event.summary || event.description.split("\n\n")[0].slice(0, 100) + (event.description.split("\n\n")[0].length > 100 ? "…" : "");
 
-  const handleJoin = () => {
-    setJoined(!joined);
-    setInterestedCount(prev => joined ? prev - 1 : prev + 1);
-  };
 
   const handleCalendar = () => {
     const startDate = event.date.replace(/-/g, '');
