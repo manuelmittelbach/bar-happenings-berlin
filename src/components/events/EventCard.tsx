@@ -31,7 +31,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
   const badgeVariantClasses: Record<EventBadge["variant"], string> = {
-    live: "bg-accent text-accent-foreground animate-pulse",
+    live: "bg-destructive text-destructive-foreground",
     soon: "border border-accent text-accent bg-accent/10",
     popular: "bg-pink-600 text-white",
   };
