@@ -73,11 +73,6 @@ export default function EventDetail() {
   // Timing context
   const timingLabel = getTimingLabel(event.date, event.startTime);
 
-  // Social proof
-  const socialProof = getSocialProofText(interestedCount);
-
-  // Moment line
-  const momentLine = getMomentLine(event.category, event.venue, event.neighborhood, event.recurrence);
 
 
   const handleCalendar = () => {
