@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
+    --background: 30 20% 96%;
     --foreground: 0 0% 7%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 7%;
@@ -16,33 +16,33 @@
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 93%;
     --secondary-foreground: 0 0% 35%;
-    --muted: 0 0% 94%;
+    --muted: 30 10% 93%;
     --muted-foreground: 0 0% 45%;
-    --accent: 20 85% 52%;
+    --accent: 18 80% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 87%;
-    --input: 0 0% 87%;
-    --ring: 20 85% 52%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 18 80% 50%;
     --radius: 0px;
 
     --sidebar-background: 0 0% 95%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 20 85% 52%;
+    --sidebar-primary: 18 80% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 93%;
     --sidebar-accent-foreground: 0 0% 35%;
     --sidebar-border: 0 0% 87%;
-    --sidebar-ring: 20 85% 52%;
+    --sidebar-ring: 18 80% 50%;
 
-    --font-heading: 'Anton', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    --font-heading: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
     --font-mono: 'Space Mono', monospace;
     --font-editorial: 'Playfair Display', serif;
 
-    --tiger-gold: 20 85% 52%;
-    --tiger-warm: 20 80% 45%;
+    --tiger-gold: 18 80% 50%;
+    --tiger-warm: 18 75% 42%;
     --tiger-leather: 0 0% 80%;
     --tiger-smoke: 0 0% 55%;
   }
@@ -69,11 +69,13 @@
   .heading-display {
     font-family: var(--font-heading);
     @apply uppercase tracking-tight;
+    font-style: italic;
     letter-spacing: 0.01em;
   }
   .heading-editorial {
     font-family: var(--font-editorial);
     @apply italic;
+    font-style: italic;
   }
   .mono-label {
     font-family: var(--font-mono);
