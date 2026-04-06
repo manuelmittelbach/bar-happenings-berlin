@@ -2,15 +2,15 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useLayoutEffect } from "react";
 import {
   MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users,
-  CalendarPlus, ChevronDown, Bookmark, BookmarkCheck, Clock, Flame
+  CalendarPlus, ChevronDown, Bookmark, BookmarkCheck, Clock
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel, events as allEvents } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getEventBadge } from "@/lib/eventBadges";
-import { getTimingLabel, getSocialProofText, getMomentLine } from "@/lib/timingContext";
+import { getTimingLabel } from "@/lib/timingContext";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -37,15 +37,6 @@ export default function EventDetail() {
     return () => cancelAnimationFrame(raf);
   }, [id]);
 
-  // Similar events — must be before early return (hooks order)
-  const similarEvents = useMemo(() => {
-    if (!event) return [];
-    const today = new Date().toISOString().split("T")[0];
-    return allEvents
-      .filter(e => e.category === event.category && e.id !== event.id && e.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(0, 4);
-  }, [event]);
 
   if (!event) {
     return (
@@ -73,11 +64,6 @@ export default function EventDetail() {
   // Timing context
   const timingLabel = getTimingLabel(event.date, event.startTime);
 
-  // Social proof
-  const socialProof = getSocialProofText(interestedCount);
-
-  // Moment line
-  const momentLine = getMomentLine(event.category, event.venue, event.neighborhood, event.recurrence);
 
 
   const handleCalendar = () => {
@@ -167,10 +153,6 @@ export default function EventDetail() {
             {displayTitle}
           </motion.h1>
 
-          {/* Moment line — editorial hook */}
-          <p className="text-muted-foreground/70 text-[13px] italic mt-2 font-body">
-            {momentLine}
-          </p>
 
           <p className="text-muted-foreground text-sm mt-2 leading-snug line-clamp-2">
             {hookLine}
@@ -220,23 +202,12 @@ export default function EventDetail() {
               <Globe className="h-3 w-3" /> {event.language}
             </span>
           )}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 text-accent text-[11px] font-medium">
+            <Users className="h-3 w-3" />
+            <strong>{interestedCount}</strong> interested
+          </span>
         </div>
 
-        {/* Social proof — enhanced */}
-        <div className="px-4 pb-4">
-          <div className={`flex items-center gap-2 px-3 py-2 text-[12px] font-medium border transition-colors ${
-            socialProof.highlight
-              ? 'bg-accent/10 border-accent/30 text-accent'
-              : 'bg-muted border-border text-muted-foreground'
-          }`}>
-            {socialProof.highlight ? (
-              <Flame className="h-3.5 w-3.5 shrink-0" />
-            ) : (
-              <Users className="h-3.5 w-3.5 shrink-0" />
-            )}
-            <span>{socialProof.text}</span>
-          </div>
-        </div>
 
         {/* Primary CTA + secondary actions */}
         <div className="px-4 pb-4 space-y-3">
@@ -253,11 +224,6 @@ export default function EventDetail() {
               {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
               {saved ? "Saved to my plan ✓" : "Save to my plan"}
             </button>
-            {!saved && (
-              <p className="text-center text-muted-foreground/60 text-[10px] font-mono mt-1.5 tracking-wide">
-                Don't forget this one
-              </p>
-            )}
           </div>
 
           {/* Secondary actions row */}
@@ -392,46 +358,6 @@ export default function EventDetail() {
         </div>
 
         {/* You might also like */}
-        {similarEvents.length > 0 && (
-          <>
-            <div className="border-t border-border mx-4 mt-2" />
-            <div className="px-4 py-5">
-              <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-4">You might also like</h2>
-              <div className="space-y-1 divide-y divide-border">
-                {similarEvents.map(se => {
-                  const seTitle = cleanEventTitle(se.title, se.venue);
-                  const seTimingLabel = getTimingLabel(se.date, se.startTime);
-                  return (
-                    <Link
-                      key={se.id}
-                      to={`/event/${se.id}`}
-                      className="flex items-start justify-between gap-3 py-3 group hover:bg-muted/30 -mx-2 px-2 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-heading font-bold text-sm truncate group-hover:text-accent transition-colors">
-                          {seTitle}
-                        </p>
-                        <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                          <span className="font-mono text-accent">{se.startTime}</span>
-                          <span>·</span>
-                          <span>{se.venue}</span>
-                          <span>·</span>
-                          <span>{se.neighborhood}</span>
-                        </p>
-                        {seTimingLabel && (
-                          <p className="text-[10px] text-accent/70 font-heading font-bold uppercase tracking-wider mt-1">{seTimingLabel}</p>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground font-mono shrink-0 mt-1">
-                        {formatDateShort(se.date)}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
 
         <div className="h-6" />
       </div>
