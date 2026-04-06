@@ -9,7 +9,7 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import EventDetailDialog from "@/components/events/EventDetailDialog";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { events, categories } from "@/data/mockData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
@@ -18,7 +18,7 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [activeCategory, setActiveCategory] = useState("");
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
+  
   const [activeDate, setActiveDate] = useState("All");
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
@@ -39,7 +39,7 @@ export default function Index() {
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
+    
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeDate === "This Week") {
@@ -59,7 +59,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
+  }, [searchQuery, activeCategory, activeDate, activeEntry, today, tomorrow]);
 
   // Deterministic ~12% featured picks
   const featuredIds = useMemo(() => {
@@ -181,15 +181,6 @@ export default function Index() {
         {showFilters && (
           <div className="border-b-2 border-foreground">
             <div className="container py-5 space-y-5">
-              <div>
-                <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
-                <div className="flex flex-wrap gap-2">
-                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                  {neighborhoods.map((n) => (
-                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
-                  ))}
-                </div>
-              </div>
               <div>
                 <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
                 <div className="flex flex-wrap gap-2">
