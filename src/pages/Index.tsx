@@ -17,6 +17,11 @@ const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Index() {
+  const { data: allEvents = [], isLoading } = useEvents();
+  const { data: categoryInfos = [] } = useCategories();
+  const categories = categoryInfos.map(c => c.label);
+  const neighborhoods = [...new Set(allEvents.map(e => e.neighborhood))].sort();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [activeCategory, setActiveCategory] = useState("");
