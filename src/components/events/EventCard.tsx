@@ -20,7 +20,7 @@ interface EventCardProps {
 
 /* Compact chip styles per badge variant */
 const badgeChipClasses: Record<EventBadge["variant"], string> = {
-  live: "bg-[hsl(0,72%,51%)] text-white",
+  live: "bg-[hsl(0,72%,51%)] text-white shadow-[0_0_8px_hsl(0_72%_51%/0.4)]",
   soon: "bg-muted text-foreground border border-border",
   popular: "border border-accent/40 text-accent bg-accent/10",
 };
