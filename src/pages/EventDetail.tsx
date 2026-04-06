@@ -15,7 +15,6 @@ export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = getEventById(id || "");
-  const [joined, setJoined] = useState(false);
   const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
 
