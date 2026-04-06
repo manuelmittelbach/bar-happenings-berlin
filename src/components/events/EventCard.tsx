@@ -15,7 +15,7 @@ interface EventCardProps {
   onClick?: (eventId: string) => void;
 }
 
-export default function EventCard({ event, index = 0, layout = "grid", onClick }: EventCardProps) {
+export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
   
   const handleClick = (e: React.MouseEvent) => {
