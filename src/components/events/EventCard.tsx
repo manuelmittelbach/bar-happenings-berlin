@@ -195,6 +195,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
