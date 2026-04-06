@@ -305,18 +305,21 @@ export default function Index() {
                     </div>
 
                     {section.layout === "list" ? (
-                      <div className="border-2 border-border divide-y divide-border bg-background">
+                      <div className="space-y-6">
                         {groupByDate(section.events).map((group, gi) => (
-                          <div key={group.date}>
-                            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30">
-                              <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                          <div key={group.date} className="border-2 border-border bg-background">
+                            <div className="sticky top-[112px] z-10 flex items-center gap-3 px-4 py-3 bg-muted/60 backdrop-blur-sm border-b-2 border-border">
+                              <span className="font-heading text-sm font-extrabold uppercase tracking-tight">
                                 {formatDaySeparator(group.date)}
                               </span>
                               <div className="flex-1 border-t border-border" />
+                              <span className="font-mono text-[11px] text-muted-foreground">{group.events.length}</span>
                             </div>
-                            {group.events.map((event) => (
-                              <CompactRow key={event.id} event={event} />
-                            ))}
+                            <div className="divide-y divide-border/50">
+                              {group.events.map((event) => (
+                                <CompactRow key={event.id} event={event} />
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
