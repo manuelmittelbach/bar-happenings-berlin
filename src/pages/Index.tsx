@@ -384,7 +384,7 @@ export default function Index() {
                 </Link>
                 <Link
                   to="/for-bars"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-primary-foreground/30 text-primary-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all hover:border-primary-foreground"
+                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-primary-foreground/30 text-primary-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:border-primary-foreground"
                 >
                   Learn more
                 </Link>
