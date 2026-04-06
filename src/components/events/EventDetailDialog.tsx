@@ -53,9 +53,10 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute top-3 right-3 z-20 md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm text-foreground/80 hover:text-foreground transition-colors"
+          className="md:hidden flex items-center gap-1.5 px-4 pt-14 pb-2 text-muted-foreground hover:text-foreground text-xs font-medium tracking-wide transition-colors"
         >
-          <X className="h-5 w-5" />
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Events
         </button>
 
         {/* Hero image - only real images */}
