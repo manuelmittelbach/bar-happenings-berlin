@@ -72,40 +72,34 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group block">
-        <div className="relative overflow-hidden aspect-[4/3] bg-muted border-2 border-transparent group-hover:border-foreground transition-colors">
-          <EventImage className="grayscale-hover" />
-          <div className="absolute top-3 left-3">
-            <span className="mono-label bg-background/90 backdrop-blur-sm px-2 py-1 text-foreground">
-              {event.category}
-            </span>
-          </div>
+      <Link to={`/event/${event.id}`} onClick={handleClick} className="group block border-2 border-border hover:border-foreground transition-colors p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="mono-label text-accent">{event.category}</span>
           {event.entryInfo && (
-            <div className="absolute bottom-3 right-3">
+            <>
+              <span className="mono-label text-muted-foreground">·</span>
               <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
                 {event.entryInfo}
               </span>
-            </div>
+            </>
           )}
         </div>
-        <div className="mt-3 space-y-2">
-          <h3 className="font-heading text-base md:text-lg font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2">
-            {event.title}
-          </h3>
-          <p className="text-sm text-muted-foreground font-medium">{event.venue}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-              <MapPin className="h-3 w-3" />
-              {event.neighborhood}
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-              <Clock className="h-3 w-3" />
-              {formatDateShort(event.date)}
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-              {event.startTime}
-            </span>
-          </div>
+        <h3 className="font-heading text-lg md:text-xl font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-2">
+          {event.title}
+        </h3>
+        <p className="text-sm text-muted-foreground font-medium mb-2">{event.venue}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+            <MapPin className="h-3 w-3" />
+            {event.neighborhood}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+            <Clock className="h-3 w-3" />
+            {formatDateShort(event.date)}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+            {event.startTime}
+          </span>
         </div>
       </Link>
     </motion.div>
