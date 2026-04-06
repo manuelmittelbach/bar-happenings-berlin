@@ -408,14 +408,6 @@ export default function Index() {
       </main>
       <Footer />
 
-      <EventDetailDialog
-        eventId={selectedEventId}
-        open={!!selectedEventId}
-        onOpenChange={(open) => {
-          if (!open) setSelectedEventId(null);
-        }}
-        onEventChange={(id) => setSelectedEventId(id)}
-      />
 
     </div>
   );
