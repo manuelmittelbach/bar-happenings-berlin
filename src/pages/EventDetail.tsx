@@ -160,11 +160,19 @@ export default function EventDetail() {
 
         {/* Venue card */}
         {event.address && (
-          <div className="mx-4 mb-5 p-4 bg-card border-2 border-border">
-            <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-            <p className="font-heading font-bold text-sm">{event.venue}</p>
-            <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
-          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mx-4 mb-5 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer"
+          >
+            <div className="min-w-0">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
+              <p className="font-heading font-bold text-sm">{event.venue}</p>
+              <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
+          </a>
         )}
 
         {/* Upcoming dates */}
