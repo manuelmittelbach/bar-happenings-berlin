@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
+import { cleanEventTitle } from "@/lib/cleanTitle";
 import { MapPin, Clock, Star, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
@@ -18,6 +19,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
+  const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
 
   // Deterministic pseudo-random interested count based on event id
   const interestedCount = useMemo(() => {
@@ -61,7 +63,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
-              {event.title}
+              {displayTitle}
             </h3>
             <div className="flex items-center gap-3 mt-0.5">
               <p className="text-sm text-muted-foreground">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
@@ -107,7 +109,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-accent font-bold">{event.category}</span>
             </div>
             <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
-              {event.title}
+              {displayTitle}
             </h3>
             <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
@@ -153,7 +155,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
           </div>
           <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
-            {event.title}
+            {displayTitle}
           </h3>
           <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
           <div className="flex items-center justify-between gap-2">
