@@ -39,9 +39,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const badge = useMemo(() => event ? getEventBadge(event, interestedCount) : null, [event, interestedCount]);
 
   const badgeVariantClasses: Record<EventBadge["variant"], string> = {
-    live: "bg-destructive text-destructive-foreground",
-    soon: "border border-accent text-accent bg-accent/10",
-    popular: "bg-pink-600 text-white",
+    live: "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_0_12px_hsl(0_72%_51%/0.5)]",
+    soon: "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]",
+    popular: "bg-gradient-to-r from-[hsl(var(--accent))] to-pink-500 text-white shadow-[0_0_10px_hsl(var(--accent)/0.4)]",
   };
 
   if (!event) return null;
@@ -97,8 +97,8 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                 </span>
               )}
               {badge && (
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
-                  <badge.icon className="h-3 w-3" />
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[12px] font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+                  <badge.icon className="h-3.5 w-3.5" />
                   {badge.label}
                 </span>
               )}
