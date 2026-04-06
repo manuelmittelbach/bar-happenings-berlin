@@ -15,7 +15,7 @@ const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Explore() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  
   const initialCategory = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(initialCategory);
