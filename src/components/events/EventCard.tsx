@@ -86,9 +86,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             <Clock className="h-3 w-3" />
             {formatDateShort(event.date)}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-            {event.startTime}
-          </span>
         </div>
       </Link>
     </motion.div>
