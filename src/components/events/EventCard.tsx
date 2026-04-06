@@ -139,9 +139,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col sm:flex-row border-2 border-border hover:border-foreground transition-colors overflow-hidden">
+      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Image thumbnail */}
-        <div className="relative w-full h-28 sm:w-40 sm:h-auto shrink-0 bg-muted flex items-center justify-center">
+        <div className="relative w-28 h-20 sm:w-40 sm:h-28 shrink-0 bg-muted flex items-center justify-center">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
