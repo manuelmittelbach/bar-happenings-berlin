@@ -251,22 +251,39 @@ export default function EventDetail() {
 
         <div className="border-t border-border mx-4" />
 
-        {/* Venue detail card */}
-        {event.address && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group mx-4 my-4 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 block"
-          >
-            <div className="min-w-0">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-              <p className="font-heading font-bold text-sm">{event.venue}</p>
-              <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
+        {/* Practical info */}
+        <div className="px-4 py-5 space-y-3">
+          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
+          {event.address && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between gap-3 py-2 text-sm hover:text-accent transition-colors"
+            >
+              <div className="flex items-start gap-2.5 min-w-0">
+                <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">{event.address}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.neighborhood}</p>
+                </div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent shrink-0 transition-colors" />
+            </a>
+          )}
+          {event.startTime && (
+            <div className="flex items-center gap-2.5 py-2 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span>Doors at <strong>{event.startTime}</strong>{event.endTime ? ` · Ends ${event.endTime}` : ''}</span>
             </div>
-            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
-          </a>
-        )}
+          )}
+          {event.price && (
+            <div className="flex items-center gap-2.5 py-2 text-sm">
+              <span className="h-4 w-4 text-muted-foreground shrink-0 text-center text-xs font-bold">€</span>
+              <span>{event.price}</span>
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-border mx-4" />
 
