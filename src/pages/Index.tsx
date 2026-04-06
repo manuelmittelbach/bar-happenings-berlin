@@ -409,18 +409,6 @@ export default function Index() {
         onEventChange={(id) => setSelectedEventId(id)}
       />
 
-      {/* Floating view toggle */}
-      <button
-        onClick={() => setViewMode(viewMode === "grid" ? "map" : "grid")}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-background/90 backdrop-blur-sm border-2 border-accent text-accent font-mono text-xs uppercase tracking-wider shadow-[0_2px_12px_hsl(18_85%_52%/0.15)] hover:bg-accent hover:text-white transition-all"
-        aria-label={viewMode === "grid" ? "Switch to map" : "Switch to grid"}
-      >
-        {viewMode === "grid" ? (
-          <><MapIcon className="h-4 w-4" /> Map</>
-        ) : (
-          <><LayoutGrid className="h-4 w-4" /> Grid</>
-        )}
-      </button>
     </div>
   );
 }
