@@ -61,6 +61,19 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
 
+  // Deterministic ~12% featured picks
+  const featuredIds = useMemo(() => {
+    const set = new Set<string>();
+    filtered.forEach((e, i) => {
+      const hash = e.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      if ((hash + i) % 8 === 0) set.add(e.id);
+    });
+    if (set.size === 0 && filtered.length >= 3) {
+      set.add(filtered[0].id);
+    }
+    return set;
+  }, [filtered]);
+
   const handleEventClick = useCallback((eventId: string) => {
     setSelectedEventId(eventId);
   }, []);
