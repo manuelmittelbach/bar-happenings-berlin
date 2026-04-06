@@ -138,7 +138,7 @@ export default function EventDetail() {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.25 }}
-              className="text-accent text-[11px] font-heading font-bold uppercase tracking-wider mb-2"
+              className="text-accent text-[11px] font-body font-semibold uppercase tracking-wider mb-2"
             >
               ⏤ {timingLabel}
             </motion.p>
