@@ -130,8 +130,8 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
-        {/* Image thumbnail */}
-        <div className="relative w-24 md:w-32 shrink-0 bg-muted flex items-center justify-center">
+        {/* Image thumbnail — 4:3 ratio */}
+        <div className="relative w-28 md:w-40 shrink-0 aspect-[4/3] bg-muted flex items-center justify-center self-stretch">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
