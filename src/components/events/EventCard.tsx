@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
+import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { MapPin, Clock, Star, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
@@ -26,6 +27,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
     return (hash % 42) + 1;
   }, [event.id]);
+
+  const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
+
+  const badgeVariantClasses: Record<EventBadge["variant"], string> = {
+    live: "bg-accent text-accent-foreground animate-pulse",
+    soon: "border border-accent text-accent bg-accent/10",
+    popular: "bg-pink-600 text-white",
+  };
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -61,6 +70,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
+              {badge && (
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+                  <badge.icon className="h-3 w-3" />
+                  {badge.label}
+                </span>
+              )}
             </div>
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {displayTitle}
@@ -98,6 +113,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
               <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
+            )}
+            {badge && (
+              <span className={`absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+                <badge.icon className="h-3 w-3" />
+                {badge.label}
+              </span>
             )}
           </div>
           <div className="p-4 md:p-6 flex-1 min-w-0">
@@ -148,6 +169,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
             <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
+          )}
+          {badge && (
+            <span className={`absolute top-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+              <badge.icon className="h-2.5 w-2.5" />
+              {badge.label}
+            </span>
           )}
         </div>
         <div className="p-3 md:p-4 flex-1 min-w-0">
