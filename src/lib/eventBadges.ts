@@ -55,7 +55,7 @@ export function getEventBadge(
     return { label, variant: "soon", icon: Clock };
   }
 
-  // 3. Popular — but NOT if featured (Team Pick)
+  // 3. Popular — but NOT if featured (Team Pick already signals quality)
   if (interestedCount > 30 && !event.featured) {
     return { label: "Popular", variant: "popular", icon: TrendingUp };
   }
