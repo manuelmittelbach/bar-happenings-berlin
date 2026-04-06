@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Clock, Calendar, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users } from "lucide-react";
+import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users, CalendarPlus } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -59,20 +59,23 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           Events
         </button>
 
-        {/* Hero image - only real images */}
-        {hasRealImage && (
-          <div className="relative h-[200px] md:h-[260px] bg-muted overflow-hidden">
+        {/* Hero image */}
+        <div className={`relative ${hasRealImage ? 'h-[200px] md:h-[260px]' : 'h-[120px] md:h-[160px]'} bg-muted overflow-hidden`}>
+          {hasRealImage ? (
             <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-          </div>
-        )}
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-muted-foreground/20 font-mono text-xs uppercase tracking-widest">No image</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        </div>
 
         {/* Content */}
-        <div className={`${hasRealImage ? '-mt-10' : 'pt-6 md:pt-10'} relative z-10`}>
+        <div className="-mt-8 relative z-10">
 
-          {/* ── HEADER SECTION ── */}
-          <div className="px-4 md:px-8 pb-5">
-            {/* Category pill + recurrence — no emoji */}
+          {/* Header */}
+          <div className="px-4 md:px-8 pb-4">
             <div className="flex items-center gap-2 flex-wrap mb-3">
               {catInfo && (
                 <span className="inline-flex items-center px-2.5 py-1 bg-accent/15 text-accent text-[11px] font-bold uppercase tracking-wider">
@@ -86,25 +89,20 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               )}
             </div>
 
-            {/* Title */}
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="font-heading text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-4"
+              className="font-heading text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-3"
             >
               {displayTitle}
             </motion.h2>
 
-            {/* Date — accent color */}
             <p className="text-accent font-heading font-bold text-base md:text-lg mb-1">
               {formatDateWithDay(event.date)}, {event.startTime}
             </p>
-
-            {/* Venue name */}
             <p className="text-foreground font-medium text-sm md:text-base mb-2">{event.venue}</p>
 
-            {/* Info pills row */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {event.neighborhood && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
@@ -123,76 +121,43 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             </div>
           </div>
 
-          {/* ── PRICE + CTA BAR ── */}
-          <div className="mx-4 md:mx-8 mb-5">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-card border-2 border-border">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-0.5">Entry</p>
-                <p className="text-base md:text-lg font-heading font-bold">{event.price}</p>
-              </div>
-              <button
-                onClick={handleJoin}
-                className={`w-full sm:w-auto shrink-0 px-6 h-11 text-xs font-bold uppercase tracking-wider font-heading transition-all ${
-                  joined
-                    ? "bg-accent text-accent-foreground border-2 border-accent"
-                    : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
-                }`}
-              >
-                {joined ? "✓ Interested" : "I want to join"}
-              </button>
-            </div>
-          </div>
-
-          {/* ── ACTIONS ROW ── */}
-          <div className="flex items-center gap-2 px-4 md:px-8 mb-5 overflow-x-auto">
-            {event.url && (
-              <a
-                href={event.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
-              >
-                <ExternalLink className="h-3.5 w-3.5" /> Website
-              </a>
-            )}
-            {event.address && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
-              >
-                <Navigation className="h-3.5 w-3.5" /> Directions
-              </a>
-            )}
-            <div className="ml-auto shrink-0">
-              <ShareMenu eventTitle={displayTitle} eventId={event.id} />
-            </div>
-          </div>
-
-          {/* ── DIVIDER ── */}
-          <div className="border-t-2 border-border mx-4 md:mx-8" />
-
-          {/* ── ABOUT ── */}
-          <div className="px-4 md:px-8 py-5 space-y-2.5">
+          {/* About — directly after header */}
+          <div className="px-4 md:px-8 py-4 space-y-2.5">
             <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
               <p key={i} className="text-sm md:text-[15px] text-muted-foreground leading-relaxed">{p}</p>
             ))}
           </div>
 
-          {/* ── VENUE CARD ── */}
+          <div className="border-t border-border mx-4 md:mx-8" />
+
+          {/* Share button */}
+          <div className="px-4 md:px-8 py-4">
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
+          </div>
+
+          <div className="border-t border-border mx-4 md:mx-8" />
+
+          {/* Venue card */}
           {event.address && (
-            <div className="mx-4 md:mx-8 mb-5 p-4 bg-card border-2 border-border">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-              <p className="font-heading font-bold text-sm md:text-base">{event.venue}</p>
-              <p className="text-xs md:text-sm text-muted-foreground mt-1">{event.address}</p>
-            </div>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mx-4 md:mx-8 my-4 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer block"
+            >
+              <div className="min-w-0">
+                <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
+                <p className="font-heading font-bold text-sm md:text-base">{event.venue}</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">{event.address}</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
+            </a>
           )}
 
-          {/* ── UPCOMING DATES ── */}
+          {/* Upcoming dates */}
           {siblingDates.length > 1 && (
-            <div className="px-4 md:px-8 pb-6">
+            <div className="px-4 md:px-8 pb-4">
               <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => {
@@ -219,6 +184,55 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               </div>
             </div>
           )}
+
+          <div className="border-t border-border mx-4 md:mx-8" />
+
+          {/* Utility rows */}
+          <div className="px-4 md:px-8">
+            <button
+              className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
+              onClick={() => {
+                const startDate = event.date.replace(/-/g, '');
+                const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate}/${startDate}&location=${encodeURIComponent(event.address || event.venue)}&details=${encodeURIComponent(event.description.slice(0, 200))}`;
+                window.open(calUrl, '_blank');
+              }}
+            >
+              <span className="font-medium">Add to calendar</span>
+              <CalendarPlus className="h-4 w-4 text-muted-foreground" />
+            </button>
+
+            {event.url && (
+              <a
+                href={event.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
+              >
+                <span className="font-medium">Visit organizer</span>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </a>
+            )}
+          </div>
+
+          {/* Sticky bottom bar */}
+          <div className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border mt-6">
+            <div className="flex items-center justify-between px-4 md:px-8 py-3">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Entry</p>
+                <p className="text-lg font-heading font-extrabold text-foreground">{event.price}</p>
+              </div>
+              <button
+                onClick={handleJoin}
+                className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+                  joined
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
+                }`}
+              >
+                {joined ? "✓ Interested" : "I want to join"}
+              </button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
