@@ -2,14 +2,15 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useLayoutEffect } from "react";
 import {
   MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users,
-  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Clock
+  CalendarPlus, ChevronDown, Bookmark, BookmarkCheck, Clock, Flame
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel, events as allEvents } from "@/data/mockData";
 import { getEventBadge } from "@/lib/eventBadges";
+import { getTimingLabel, getSocialProofText, getMomentLine } from "@/lib/timingContext";
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -59,6 +60,23 @@ export default function EventDetail() {
 
   const hookLine = event.summary || event.description.split("\n\n")[0].slice(0, 100) + (event.description.split("\n\n")[0].length > 100 ? "…" : "");
 
+  // Timing context
+  const timingLabel = getTimingLabel(event.date, event.startTime);
+
+  // Social proof
+  const socialProof = getSocialProofText(interestedCount);
+
+  // Moment line
+  const momentLine = getMomentLine(event.category, event.venue, event.neighborhood, event.recurrence);
+
+  // Similar events (same category, different event, future dates)
+  const similarEvents = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return allEvents
+      .filter(e => e.category === event.category && e.id !== event.id && e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 4);
+  }, [event.category, event.id]);
 
   const handleCalendar = () => {
     const startDate = event.date.replace(/-/g, '');
@@ -68,6 +86,11 @@ export default function EventDetail() {
 
   const handleMaps = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`, '_blank');
+  };
+
+  const handleSave = () => {
+    setSaved(!saved);
+    setInterestedCount(prev => saved ? prev - 1 : prev + 1);
   };
 
   return (
@@ -120,7 +143,19 @@ export default function EventDetail() {
         </div>
 
         {/* Core info block */}
-        <div className="px-4 pt-4 pb-3">
+        <div className="px-4 pt-4 pb-1">
+          {/* Timing context label */}
+          {timingLabel && (
+            <motion.p
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.25 }}
+              className="text-accent text-[11px] font-heading font-bold uppercase tracking-wider mb-2"
+            >
+              ⏤ {timingLabel}
+            </motion.p>
+          )}
+
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -130,13 +165,18 @@ export default function EventDetail() {
             {displayTitle}
           </motion.h1>
 
+          {/* Moment line — editorial hook */}
+          <p className="text-muted-foreground/70 text-[13px] italic mt-2 font-body">
+            {momentLine}
+          </p>
+
           <p className="text-muted-foreground text-sm mt-2 leading-snug line-clamp-2">
             {hookLine}
           </p>
         </div>
 
         {/* Key details grid — scannable */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pt-3 pb-3">
           <div className="grid grid-cols-2 gap-2">
             {/* When */}
             <div className="bg-card border-2 border-border p-3">
@@ -164,12 +204,12 @@ export default function EventDetail() {
         </div>
 
         {/* Info pills row */}
-        <div className="px-4 pb-4 flex items-center gap-2 flex-wrap">
+        <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center px-3 py-1.5 bg-accent/15 text-accent text-[12px] font-heading font-bold border border-accent/30">
             {priceLabel}
           </span>
           {event.recurrence && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[11px] font-mono border border-border">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 text-primary text-[11px] font-mono font-bold border border-primary/30">
               <RotateCw className="h-3 w-3" /> {event.recurrence}
             </span>
           )}
@@ -178,26 +218,45 @@ export default function EventDetail() {
               <Globe className="h-3 w-3" /> {event.language}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[11px] font-medium border border-border">
-            <Users className="h-3 w-3 text-accent" />
-            <strong className="text-foreground">{interestedCount}</strong> interested
-          </span>
+        </div>
+
+        {/* Social proof — enhanced */}
+        <div className="px-4 pb-4">
+          <div className={`flex items-center gap-2 px-3 py-2 text-[12px] font-medium border transition-colors ${
+            socialProof.highlight
+              ? 'bg-accent/10 border-accent/30 text-accent'
+              : 'bg-muted border-border text-muted-foreground'
+          }`}>
+            {socialProof.highlight ? (
+              <Flame className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <Users className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span>{socialProof.text}</span>
+          </div>
         </div>
 
         {/* Primary CTA + secondary actions */}
         <div className="px-4 pb-4 space-y-3">
-          {/* Primary CTA — Save oriented */}
-          <button
-            onClick={() => setSaved(!saved)}
-            className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 ${
-              saved
-                ? "bg-accent text-accent-foreground border-2 border-accent"
-                : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(18_85%_52%/0.4)]"
-            }`}
-          >
-            {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
-            {saved ? "Saved to my plan ✓" : "Save to my plan"}
-          </button>
+          {/* Primary CTA — Save oriented with microcopy */}
+          <div>
+            <button
+              onClick={handleSave}
+              className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 active:scale-[0.98] ${
+                saved
+                  ? "bg-accent text-accent-foreground border-2 border-accent shadow-[0_0_20px_hsl(var(--accent)/0.3)]"
+                  : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(var(--accent)/0.4)] hover:scale-[1.01]"
+              }`}
+            >
+              {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+              {saved ? "Saved to my plan ✓" : "Save to my plan"}
+            </button>
+            {!saved && (
+              <p className="text-center text-muted-foreground/60 text-[10px] font-mono mt-1.5 tracking-wide">
+                Don't forget this one
+              </p>
+            )}
+          </div>
 
           {/* Secondary actions row */}
           <div className="grid grid-cols-2 gap-2">
@@ -205,7 +264,7 @@ export default function EventDetail() {
 
             <button
               onClick={handleCalendar}
-              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
+              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground active:scale-[0.97] transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
             >
               <CalendarPlus className="h-5 w-5" />
               Calendar
@@ -217,17 +276,17 @@ export default function EventDetail() {
 
         {/* === BELOW THE FOLD: Details === */}
 
-        {/* About */}
-        <div className="px-4 py-5 space-y-2.5">
+        {/* About — improved readability */}
+        <div className="px-4 py-5 space-y-4">
           <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
           {event.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+            <p key={i} className="text-sm text-muted-foreground leading-[1.75] font-body">{p}</p>
           ))}
         </div>
 
         <div className="border-t border-border mx-4" />
 
-        {/* Practical info */}
+        {/* Practical info — venue more prominent */}
         <div className="px-4 py-5 space-y-3">
           <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
           {event.address && (
@@ -240,8 +299,9 @@ export default function EventDetail() {
               <div className="flex items-start gap-2.5 min-w-0">
                 <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">{event.address}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.neighborhood}</p>
+                  <p className="font-heading font-bold">{event.venue}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">{event.address}</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">{event.neighborhood}</p>
                 </div>
               </div>
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent shrink-0 transition-colors" />
@@ -265,6 +325,19 @@ export default function EventDetail() {
 
         {/* Utility rows */}
         <div className="px-4">
+          {/* Recurring hint */}
+          {event.recurrence && (
+            <div className="py-3.5 border-b border-border flex items-center gap-2.5 text-sm">
+              <RotateCw className="h-4 w-4 text-primary shrink-0" />
+              <div>
+                <span className="font-medium text-foreground">{event.recurrence}</span>
+                {siblingDates.length > 1 && (
+                  <span className="text-muted-foreground ml-1.5">· {siblingDates.length} upcoming dates</span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Upcoming dates */}
           {siblingDates.length > 1 && (
             <div className="border-b border-border">
@@ -288,7 +361,7 @@ export default function EventDetail() {
                             navigate(`/event/${siblingEvent.id}`);
                           }
                         }}
-                        className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-colors ${
+                        className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-all active:scale-95 ${
                           isActive
                             ? 'bg-accent text-accent-foreground'
                             : 'border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
@@ -315,6 +388,48 @@ export default function EventDetail() {
             </a>
           )}
         </div>
+
+        {/* You might also like */}
+        {similarEvents.length > 0 && (
+          <>
+            <div className="border-t border-border mx-4 mt-2" />
+            <div className="px-4 py-5">
+              <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-4">You might also like</h2>
+              <div className="space-y-1 divide-y divide-border">
+                {similarEvents.map(se => {
+                  const seTitle = cleanEventTitle(se.title, se.venue);
+                  const seTimingLabel = getTimingLabel(se.date, se.startTime);
+                  return (
+                    <Link
+                      key={se.id}
+                      to={`/event/${se.id}`}
+                      className="flex items-start justify-between gap-3 py-3 group hover:bg-muted/30 -mx-2 px-2 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-heading font-bold text-sm truncate group-hover:text-accent transition-colors">
+                          {seTitle}
+                        </p>
+                        <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                          <span className="font-mono text-accent">{se.startTime}</span>
+                          <span>·</span>
+                          <span>{se.venue}</span>
+                          <span>·</span>
+                          <span>{se.neighborhood}</span>
+                        </p>
+                        {seTimingLabel && (
+                          <p className="text-[10px] text-accent/70 font-heading font-bold uppercase tracking-wider mt-1">{seTimingLabel}</p>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground font-mono shrink-0 mt-1">
+                        {formatDateShort(se.date)}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="h-6" />
       </div>
