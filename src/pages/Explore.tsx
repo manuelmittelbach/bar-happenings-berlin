@@ -164,13 +164,21 @@ export default function Explore() {
             </div>
           )}
 
-          {/* Category filters — icon bar */}
-          <div className="mb-6">
+          {/* Category filters */}
+          {/* Mobile: icon scroller */}
+          <div className="md:hidden mb-6">
             <CategoryIconBar
               categories={categories}
               activeCategory={activeCategory}
               onSelect={setActiveCategory}
             />
+          </div>
+          {/* Desktop: pill labels */}
+          <div className="hidden md:flex flex-wrap gap-2 mb-6">
+            <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
+            {categories.map((cat) => (
+              <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
+            ))}
           </div>
 
           {/* Results */}
