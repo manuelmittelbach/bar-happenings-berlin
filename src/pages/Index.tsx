@@ -35,7 +35,7 @@ export default function Index() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
-    let result = [...events];
+    let result = [...allEvents];
     result = result.filter((e) => e.date >= today);
     if (searchQuery) {
       result = result.filter(
