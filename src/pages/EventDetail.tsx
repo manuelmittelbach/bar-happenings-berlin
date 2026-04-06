@@ -165,7 +165,7 @@ export default function EventDetail() {
             {/* When */}
             <div className="bg-card border-2 border-border p-3">
               <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">When</p>
-              <p className="font-heading font-bold text-sm">{formatDateWithDay(event.date)}</p>
+              <p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
               {event.startTime && (
                 <p className="text-accent font-mono font-bold text-sm mt-0.5">
                   {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
