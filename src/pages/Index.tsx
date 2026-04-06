@@ -19,6 +19,8 @@ const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Index() {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [activeCategory, setActiveCategory] = useState("");
