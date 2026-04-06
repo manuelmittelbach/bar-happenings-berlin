@@ -150,40 +150,48 @@ export default function EventDetail() {
           </a>
         )}
 
-        {/* Upcoming dates */}
-        {siblingDates.length > 1 && (
-          <div className="px-4 pb-4">
-            <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-3">Upcoming dates</h3>
-            <div className="flex flex-wrap gap-2">
-              {siblingDates.map(d => {
-                const siblingEvent = siblings.find(e => e.date === d);
-                const isActive = d === event.date;
-                return (
-                  <button
-                    key={d}
-                    onClick={() => {
-                      if (!isActive && siblingEvent) {
-                        navigate(`/event/${siblingEvent.id}`);
-                      }
-                    }}
-                    className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-colors ${
-                      isActive
-                        ? 'bg-accent text-accent-foreground'
-                        : 'border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
-                    }`}
-                  >
-                    {formatDateShort(d)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div className="border-t border-border mx-4" />
 
         {/* Utility rows */}
         <div className="px-4">
+          {/* Upcoming dates collapsible */}
+          {siblingDates.length > 1 && (
+            <div className="border-b border-border">
+              <button
+                className="w-full flex items-center justify-between py-3.5 text-sm text-foreground hover:text-accent transition-colors"
+                onClick={() => setDatesOpen(!datesOpen)}
+              >
+                <span className="font-medium">Upcoming dates</span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${datesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {datesOpen && (
+                <div className="flex flex-wrap gap-2 pb-3.5">
+                  {siblingDates.map(d => {
+                    const siblingEvent = siblings.find(e => e.date === d);
+                    const isActive = d === event.date;
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => {
+                          if (!isActive && siblingEvent) {
+                            navigate(`/event/${siblingEvent.id}`);
+                          }
+                        }}
+                        className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-colors ${
+                          isActive
+                            ? 'bg-accent text-accent-foreground'
+                            : 'border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
+                        }`}
+                      >
+                        {formatDateShort(d)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
             onClick={() => {
