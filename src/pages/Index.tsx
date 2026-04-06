@@ -11,7 +11,7 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import EventDetailDialog from "@/components/events/EventDetailDialog";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { useEvents, useCategories } from "@/hooks/useSupabaseData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
