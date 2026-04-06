@@ -13,7 +13,7 @@ export default function About() {
 
           <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
             <p className="text-base text-foreground">
-              Tipsy Tiger is a simple idea: make it easy to find out what's happening tonight in Berlin's small, independent bars.
+              Inside Bars is a simple idea: make it easy to find out what's happening tonight in Berlin's small, independent bars.
             </p>
 
             <p>
