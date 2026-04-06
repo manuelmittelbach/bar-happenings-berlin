@@ -71,7 +71,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
               {badge && (
-                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
                   <badge.icon className="h-3 w-3" />
                   {badge.label}
                 </span>
