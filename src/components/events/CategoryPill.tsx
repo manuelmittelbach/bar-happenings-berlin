@@ -50,20 +50,22 @@ export function CategoryIconRow({
   onSelect: (cat: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-3">
-      {/* All */}
+    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+      {/* All — reset button, visually separated */}
       <button
         onClick={() => onSelect("")}
-        className={`group flex items-center gap-2 px-1 py-1 transition-colors ${
-          !activeCategory ? "text-accent" : "text-muted-foreground hover:text-foreground"
+        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 mr-2 border-r-2 border-border transition-all ${
+          !activeCategory
+            ? "text-accent"
+            : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 transition-all ${
+        <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
           !activeCategory
-            ? "border-accent bg-accent/15"
-            : "border-border bg-muted group-hover:border-foreground"
+            ? "bg-accent text-background"
+            : "bg-muted border-2 border-border"
         }`}>
-          <LayoutGrid className="h-4 w-4" />
+          <LayoutGrid className="h-[18px] w-[18px]" />
         </div>
         <span className="text-[11px] font-mono font-bold uppercase tracking-wider">All</span>
       </button>
@@ -77,18 +79,22 @@ export function CategoryIconRow({
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            className={`group flex items-center gap-2 px-1 py-1 transition-colors ${
+            className={`group shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 transition-all ${
               isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 transition-all ${
+            <div className={`w-11 h-11 flex items-center justify-center rounded-full transition-all ${
               isActive
-                ? "border-accent bg-accent/15"
-                : "border-border bg-muted group-hover:border-foreground"
+                ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)]"
+                : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
             }`}>
-              <I className="h-4 w-4" />
+              <I className="h-5 w-5" />
             </div>
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider">{cat}</span>
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[72px] truncate transition-colors ${
+              isActive ? "text-accent" : ""
+            }`}>
+              {cat}
+            </span>
           </button>
         );
       })}
