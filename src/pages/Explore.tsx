@@ -64,12 +64,6 @@ export default function Explore() {
     return set;
   }, [filtered]);
 
-  const handleMapEventClick = useCallback(
-    (eventId: string) => {
-      navigate(`/event/${eventId}`);
-    },
-    [navigate]
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
