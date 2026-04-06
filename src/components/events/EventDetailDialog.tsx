@@ -68,7 +68,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         )}
 
         {/* Content */}
-        <div className={`${hasRealImage ? '-mt-10' : 'pt-16 md:pt-10'} relative z-10`}>
+        <div className={`${hasRealImage ? '-mt-10' : 'pt-2 md:pt-10'} relative z-10`}>
 
           {/* ── HEADER SECTION ── */}
           <div className="px-4 md:px-8 pb-5">
