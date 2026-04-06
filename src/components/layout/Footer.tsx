@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
             <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
-              tipsy tiger
+              Inside Bars
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               What's on tonight in Berlin's independent bars. Not a ticketing platform — just good bars doing good things.
@@ -42,7 +42,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-primary-foreground/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="mono-label text-primary-foreground/30">© 2026 Tipsy Tiger — Made in Berlin</p>
+          <p className="mono-label text-primary-foreground/30">© 2026 Inside Bars — Made in Berlin</p>
           <p className="text-xs text-primary-foreground/30 font-mono">No algorithms. No sponsors. Just bars.</p>
         </div>
       </div>
