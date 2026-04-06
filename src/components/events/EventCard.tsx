@@ -141,7 +141,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Image thumbnail */}
-        <div className="relative w-28 h-20 sm:w-40 sm:h-28 shrink-0 bg-muted flex items-center justify-center">
+        <div className="relative w-32 sm:w-40 md:w-44 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
