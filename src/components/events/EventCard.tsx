@@ -56,7 +56,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center px-2 py-0.5 border border-accent/30 bg-accent/8 mono-label text-accent">{event.category}</span>
+              <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
             </div>
