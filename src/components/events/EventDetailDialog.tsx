@@ -62,7 +62,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
+      <DialogContent ref={contentRef} className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{displayTitle}</DialogTitle>
 
         {/* Mobile back */}
