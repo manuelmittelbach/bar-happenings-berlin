@@ -5,7 +5,7 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Search, Users } from "lucide-react";
-import { motion } from "framer-motion";
+
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
