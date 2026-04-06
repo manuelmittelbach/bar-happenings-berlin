@@ -66,7 +66,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         )}
 
         {/* Content */}
-        <div className={`${hasRealImage ? '-mt-10' : 'pt-14 md:pt-8'} relative z-10`}>
+        <div className={`${hasRealImage ? '-mt-10' : 'pt-16 md:pt-10'} relative z-10`}>
 
           {/* ── HEADER SECTION ── */}
           <div className="px-6 md:px-8 pb-6">
@@ -121,19 +121,19 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             </div>
           </div>
 
-          {/* ── PRICE + CTA BAR — inverted for contrast ── */}
-          <div className="mx-4 md:mx-6 mb-6">
-            <div className="flex items-center gap-4 p-4 md:p-5 bg-foreground text-background rounded-none">
+          {/* ── PRICE + CTA BAR ── */}
+          <div className="mx-6 md:mx-8 mb-6">
+            <div className="flex items-center gap-4 p-4 md:p-5 bg-card border-2 border-border">
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.15em] font-mono opacity-60 mb-0.5">Entry</p>
+                <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-0.5">Entry</p>
                 <p className="text-lg md:text-xl font-heading font-bold truncate">{event.price}</p>
               </div>
               <button
                 onClick={handleJoin}
                 className={`shrink-0 px-6 md:px-8 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
                   joined
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? "bg-accent text-accent-foreground border-2 border-accent"
+                    : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
                 }`}
               >
                 {joined ? "✓ Interested" : "I want to join"}
