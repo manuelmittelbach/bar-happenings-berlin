@@ -90,17 +90,17 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group flex relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
+          className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
         >
-          {/* Image thumbnail — 4:3 ratio */}
-          <div className="relative w-36 h-36 md:w-48 md:h-48 shrink-0 bg-muted flex items-center justify-center">
+          {/* Image — square on desktop side, 16:9 banner on mobile top */}
+          <div className="relative w-full aspect-[16/9] md:w-48 md:h-auto md:aspect-square shrink-0 bg-muted flex items-center justify-center">
             {event.image ? (
               <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
               <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
             )}
           </div>
-          <div className="p-6 flex-1 min-w-0">
+          <div className="p-4 md:p-6 flex-1 min-w-0">
             <div className="inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md mb-3">
               <Star className="h-3 w-3" />
               Team Pick
