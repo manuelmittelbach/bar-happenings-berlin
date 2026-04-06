@@ -17,6 +17,12 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
+
+  // Deterministic pseudo-random interested count based on event id
+  const interestedCount = useMemo(() => {
+    const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return (hash % 42) + 1;
+  }, [event.id]);
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
