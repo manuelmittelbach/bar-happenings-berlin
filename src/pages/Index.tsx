@@ -182,15 +182,6 @@ export default function Index() {
           <div className="border-b-2 border-foreground">
             <div className="container py-5 space-y-5">
               <div>
-                <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
-                <div className="flex flex-wrap gap-2">
-                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                  {neighborhoods.map((n) => (
-                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
-                  ))}
-                </div>
-              </div>
-              <div>
                 <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
                 <div className="flex flex-wrap gap-2">
                   {entryFilters.map((e) => (
