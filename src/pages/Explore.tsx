@@ -47,7 +47,7 @@ export default function Explore() {
     if (sortBy === "Soonest")
       result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
     return result;
-  }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow]);
+  }, [search, activeCategory, activeDate, activeEntry, sortBy, today, tomorrow]);
 
   // Split into 3 tiers: featured (top ~3), standard (next ~8), secondary (rest)
   const { featuredEvents, standardEvents, secondaryEvents } = useMemo(() => {

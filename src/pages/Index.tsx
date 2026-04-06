@@ -59,7 +59,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
+  }, [searchQuery, activeCategory, activeDate, activeEntry, today, tomorrow]);
 
   // Deterministic ~12% featured picks
   const featuredIds = useMemo(() => {
