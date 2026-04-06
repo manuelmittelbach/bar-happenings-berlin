@@ -256,7 +256,7 @@ export default function EventDetail() {
 
         {/* Practical info — venue more prominent */}
         <div className="px-4 py-5 space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
+          <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
           {event.address && (
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
