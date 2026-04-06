@@ -190,7 +190,7 @@ export default function Index() {
           </div>
         )}
 
-        <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-foreground">
+        <div className="sticky top-[57px] z-40 bg-card/95 backdrop-blur-sm border-b-2 border-foreground">
           {/* Category row */}
           <div className="container py-3">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1">
