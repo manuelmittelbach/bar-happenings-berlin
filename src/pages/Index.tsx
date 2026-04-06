@@ -219,31 +219,7 @@ export default function Index() {
           </div>
         </div>
 
-        {viewMode === "map" ? (
-          <section className="bg-background">
-            <div className="container py-8">
-              <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-                <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
-                  {filtered.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center p-6">
-                        <p className="font-heading text-sm font-bold uppercase">No events</p>
-                        <p className="text-xs text-muted-foreground mt-1 font-mono">Try adjusting filters</p>
-                      </div>
-                    </div>
-                  ) : (
-                    filtered.map((event, i) => (
-                      <EventCard key={event.id} event={event} index={i} layout="list" onClick={handleEventClick} />
-                    ))
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <MapView events={filtered} onEventClick={handleEventClick} />
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <section className="bg-background">
             <div className="container py-20">
               <div className="text-center py-20 border-2 border-border">
