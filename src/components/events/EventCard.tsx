@@ -56,11 +56,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   if (layout === "list") {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.03 }}
-      >
+      <div>
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-24 sm:w-28 shrink-0 self-stretch overflow-hidden bg-muted">
             <EventImage className="grayscale-hover" />
