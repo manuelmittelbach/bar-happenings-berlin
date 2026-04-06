@@ -75,7 +75,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group block relative p-6 bg-foreground text-background border-2 border-foreground transition-all hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)]"
+          className="group block relative p-6 bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)]"
         >
           <div className="absolute -top-3 left-4 inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
             <Star className="h-3 w-3" />
