@@ -215,7 +215,7 @@ export default function EventDetail() {
           <div>
             <button
               onClick={handleSave}
-              className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 active:scale-[0.98] ${
+              className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-body transition-all duration-200 active:scale-[0.98] ${
                 saved
                   ? "bg-accent text-accent-foreground border-2 border-accent shadow-[0_0_20px_hsl(var(--accent)/0.3)]"
                   : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(var(--accent)/0.4)] hover:scale-[1.01]"
