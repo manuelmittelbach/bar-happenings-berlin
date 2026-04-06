@@ -122,7 +122,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
                 Team Pick
               </div>
               {badge && (
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
                   <badge.icon className="h-3 w-3" />
                   {badge.label}
                 </div>
