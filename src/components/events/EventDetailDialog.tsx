@@ -36,6 +36,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const siblings = event ? getEventsByParent(event.parentId) : [];
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
   const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
+  const badge = useMemo(() => event ? getEventBadge(event, interestedCount) : null, [event, interestedCount]);
+
+  const badgeVariantClasses: Record<EventBadge["variant"], string> = {
+    live: "bg-destructive text-destructive-foreground",
+    soon: "border border-accent text-accent bg-accent/10",
+    popular: "bg-pink-600 text-white",
+  };
 
   if (!event) return null;
 
