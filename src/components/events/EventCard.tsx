@@ -48,7 +48,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const BadgeChip = () => {
     if (!badge) return null;
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-bold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-extrabold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
         <badge.icon className="h-2.5 w-2.5" />
         {badge.label}
       </span>
