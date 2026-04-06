@@ -31,8 +31,7 @@ export default function EventDetail() {
     );
   }
 
-  const venue = getVenueById(event.venueId);
-  const otherEvents = getEventsByVenue(event.venueId).filter(e => e.id !== event.id);
+  const otherEvents = venueEvents.filter(e => e.id !== event?.id);
 
   const handleJoin = () => {
     setJoined(!joined);
