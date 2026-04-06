@@ -246,9 +246,9 @@ export default function EventDetail() {
 
         {/* About — improved readability */}
         <div className="px-4 py-5 space-y-4">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
+          <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
           {event.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-sm text-muted-foreground leading-[1.75] font-body">{p}</p>
+            <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{p}</p>
           ))}
         </div>
 
