@@ -129,16 +129,16 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/event/${event.id}`} onClick={handleClick} className="group block border-2 border-border hover:border-foreground transition-colors overflow-hidden">
-        {/* Image placeholder */}
-        <div className="relative w-full aspect-[16/9] bg-muted border-b border-border flex items-center justify-center">
+      <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
+        {/* Image thumbnail */}
+        <div className="relative w-24 md:w-32 shrink-0 bg-muted flex items-center justify-center">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
-            <span className="mono-label text-muted-foreground/40 text-[10px]">No image</span>
+            <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
           )}
         </div>
-        <div className="p-4">
+        <div className="p-4 flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-accent font-bold">{event.category}</span>
         </div>
