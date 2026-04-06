@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -17,6 +17,7 @@ import type { BarlinEvent } from "@/data/mockData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
+const EXPLORE_SCROLL_KEY = "tipsy-tiger-explore-scroll-y";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -80,8 +81,28 @@ export default function Index() {
     return set;
   }, [filtered]);
 
+  useLayoutEffect(() => {
+    const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
+    if (!savedScrollY) return;
+
+    const scrollY = Number(savedScrollY);
+    sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+
+    const firstFrame = requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
+      const secondFrame = requestAnimationFrame(() => {
+        window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
+      });
+
+      return () => cancelAnimationFrame(secondFrame);
+    });
+
+    return () => cancelAnimationFrame(firstFrame);
+  }, []);
+
   const handleEventClick = useCallback((eventId: string) => {
     if (isMobile) {
+      sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
       navigate(`/event/${eventId}`);
     } else {
       setSelectedEventId(eventId);
