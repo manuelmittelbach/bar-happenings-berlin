@@ -85,7 +85,7 @@ export function CategoryIconBar({
                 ? "border-accent bg-accent/15"
                 : "border-border bg-muted hover:border-foreground"
             }`}>
-              {Icon ? <Icon className="h-4.5 w-4.5" /> : <span className="text-sm">{info?.emoji}</span>}
+              {(() => { const I = Icon || Sparkles; return <I className="h-4.5 w-4.5" />; })()}
             </div>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[64px] truncate">
               {info?.id === "language-exchange" ? "Lang." : 
