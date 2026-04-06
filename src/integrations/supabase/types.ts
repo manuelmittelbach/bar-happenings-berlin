@@ -14,7 +14,162 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          color: string
+          emoji: string
+          id: string
+          label: string
+        }
+        Insert: {
+          color: string
+          emoji: string
+          id: string
+          label: string
+        }
+        Update: {
+          color?: string
+          emoji?: string
+          id?: string
+          label?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          address: string
+          category: string
+          category_id: string
+          created_at: string
+          date: string
+          description: string
+          end_time: string | null
+          entry_info: string
+          featured: boolean
+          id: string
+          image: string | null
+          interested_count: number
+          language: string
+          neighborhood: string
+          parent_id: string
+          price: string
+          recurrence: string
+          start_time: string
+          summary: string | null
+          tags: string[]
+          title: string
+          url: string
+          venue: string
+          venue_id: string
+        }
+        Insert: {
+          address: string
+          category: string
+          category_id: string
+          created_at?: string
+          date: string
+          description?: string
+          end_time?: string | null
+          entry_info?: string
+          featured?: boolean
+          id: string
+          image?: string | null
+          interested_count?: number
+          language?: string
+          neighborhood: string
+          parent_id?: string
+          price?: string
+          recurrence?: string
+          start_time: string
+          summary?: string | null
+          tags?: string[]
+          title: string
+          url?: string
+          venue: string
+          venue_id: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          category_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          end_time?: string | null
+          entry_info?: string
+          featured?: boolean
+          id?: string
+          image?: string | null
+          interested_count?: number
+          language?: string
+          neighborhood?: string
+          parent_id?: string
+          price?: string
+          recurrence?: string
+          start_time?: string
+          summary?: string | null
+          tags?: string[]
+          title?: string
+          url?: string
+          venue?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venues: {
+        Row: {
+          address: string
+          description: string
+          id: string
+          image: string
+          instagram: string | null
+          lat: number
+          lng: number
+          name: string
+          neighborhood: string
+          website: string | null
+        }
+        Insert: {
+          address: string
+          description?: string
+          id: string
+          image?: string
+          instagram?: string | null
+          lat: number
+          lng: number
+          name: string
+          neighborhood: string
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          description?: string
+          id?: string
+          image?: string
+          instagram?: string | null
+          lat?: number
+          lng?: number
+          name?: string
+          neighborhood?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
