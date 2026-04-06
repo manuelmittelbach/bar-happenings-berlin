@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users } from "lucide-react";
+import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users, CalendarPlus, Share2 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -43,7 +43,7 @@ export default function EventDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Back button */}
       <button
         onClick={() => navigate("/")}
@@ -53,8 +53,8 @@ export default function EventDetail() {
         Events
       </button>
 
-      {/* Hero image — always visible, placeholder when no image */}
-      <div className="relative h-[180px] bg-muted overflow-hidden">
+      {/* Hero image */}
+      <div className="relative h-[200px] bg-muted overflow-hidden">
         {hasRealImage ? (
           <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
@@ -69,7 +69,7 @@ export default function EventDetail() {
       <div className="-mt-8 relative z-10">
 
         {/* Header */}
-        <div className="px-4 pb-5">
+        <div className="px-4 pb-4">
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {catInfo && (
               <span className="inline-flex items-center px-2.5 py-1 bg-accent/15 text-accent text-[11px] font-bold uppercase tracking-wider">
@@ -87,7 +87,7 @@ export default function EventDetail() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="font-heading text-2xl font-extrabold leading-[1.1] tracking-tight mb-4"
+            className="font-heading text-2xl font-extrabold leading-[1.1] tracking-tight mb-3"
           >
             {displayTitle}
           </motion.h1>
@@ -115,28 +115,18 @@ export default function EventDetail() {
           </div>
         </div>
 
-        {/* Price + CTA */}
-        <div className="mx-4 mb-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-card border-2 border-border">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-0.5">Entry</p>
-              <p className="text-base font-heading font-bold">{event.price}</p>
-            </div>
-            <button
-              onClick={handleJoin}
-              className={`w-full sm:w-auto shrink-0 px-6 h-11 text-xs font-bold uppercase tracking-wider font-heading transition-all ${
-                joined
-                  ? "bg-accent text-accent-foreground border-2 border-accent"
-                  : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
-              }`}
-            >
-              {joined ? "✓ Interested" : "I want to join"}
-            </button>
-          </div>
+        {/* About — directly after header */}
+        <div className="px-4 py-4 space-y-2.5">
+          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
+          {event.description.split("\n\n").map((p, i) => (
+            <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+          ))}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 px-4 mb-5">
+        <div className="border-t border-border mx-4" />
+
+        {/* Actions row */}
+        <div className="flex items-center gap-2 px-4 py-4">
           {event.url && (
             <a
               href={event.url}
@@ -152,15 +142,7 @@ export default function EventDetail() {
           </div>
         </div>
 
-        <div className="border-t-2 border-border mx-4" />
-
-        {/* About */}
-        <div className="px-4 py-5 space-y-2.5">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
-          {event.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
-          ))}
-        </div>
+        <div className="border-t border-border mx-4" />
 
         {/* Venue card */}
         {event.address && (
@@ -168,7 +150,7 @@ export default function EventDetail() {
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="group mx-4 mb-5 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer"
+            className="group mx-4 my-4 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer block"
           >
             <div className="min-w-0">
               <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
@@ -181,7 +163,7 @@ export default function EventDetail() {
 
         {/* Upcoming dates */}
         {siblingDates.length > 1 && (
-          <div className="px-4 pb-6">
+          <div className="px-4 pb-4">
             <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-3">Upcoming dates</h3>
             <div className="flex flex-wrap gap-2">
               {siblingDates.map(d => {
@@ -208,6 +190,57 @@ export default function EventDetail() {
             </div>
           </div>
         )}
+
+        <div className="border-t border-border mx-4" />
+
+        {/* Utility rows */}
+        <div className="px-4">
+          <button
+            className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
+            onClick={() => {
+              const startDate = event.date.replace(/-/g, '');
+              const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate}/${startDate}&location=${encodeURIComponent(event.address || event.venue)}&details=${encodeURIComponent(event.description.slice(0, 200))}`;
+              window.open(calUrl, '_blank');
+            }}
+          >
+            <span className="font-medium">Add to calendar</span>
+            <CalendarPlus className="h-4 w-4 text-muted-foreground" />
+          </button>
+
+          {event.url && (
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
+            >
+              <span className="font-medium">Visit organizer</span>
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            </a>
+          )}
+        </div>
+
+        <div className="h-6" />
+      </div>
+
+      {/* Sticky bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border">
+        <div className="flex items-center justify-between px-4 py-3 max-w-screen-md mx-auto">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Entry</p>
+            <p className="text-lg font-heading font-extrabold text-foreground">{event.price}</p>
+          </div>
+          <button
+            onClick={handleJoin}
+            className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+              joined
+                ? "bg-accent text-accent-foreground"
+                : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
+            }`}
+          >
+            {joined ? "✓ Interested" : "I want to join"}
+          </button>
+        </div>
       </div>
     </div>
   );
