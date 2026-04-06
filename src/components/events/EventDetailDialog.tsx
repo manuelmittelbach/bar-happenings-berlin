@@ -53,7 +53,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="md:hidden flex items-center gap-1.5 px-4 pt-14 pb-2 text-muted-foreground hover:text-foreground text-xs font-medium tracking-wide transition-colors"
+          className="md:hidden flex items-center gap-1.5 px-4 pt-10 pb-1 text-muted-foreground hover:text-foreground text-xs font-medium tracking-wide transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Events
