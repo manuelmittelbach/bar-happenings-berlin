@@ -79,14 +79,6 @@ export default function EventDetail() {
   // Moment line
   const momentLine = getMomentLine(event.category, event.venue, event.neighborhood, event.recurrence);
 
-  // Similar events (same category, different event, future dates)
-  const similarEvents = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return allEvents
-      .filter(e => e.category === event.category && e.id !== event.id && e.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(0, 4);
-  }, [event.category, event.id]);
 
   const handleCalendar = () => {
     const startDate = event.date.replace(/-/g, '');
