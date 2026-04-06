@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
-import { MapPin, Clock, Star } from "lucide-react";
+import { MapPin, Clock, Star, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
@@ -17,6 +18,12 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
+
+  // Deterministic pseudo-random interested count based on event id
+  const interestedCount = useMemo(() => {
+    const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return (hash % 42) + 1;
+  }, [event.id]);
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -56,7 +63,13 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {event.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+            <div className="flex items-center gap-3 mt-0.5">
+              <p className="text-sm text-muted-foreground">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+              <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+                <Users className="h-3.5 w-3.5" />
+                {interestedCount}
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
         </Link>
@@ -89,14 +102,20 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           </h3>
           <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-              <MapPin className="h-3 w-3" />
-              {event.neighborhood}
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-              <Clock className="h-3 w-3" />
-              {formatDateShort(event.date)}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+                <MapPin className="h-3 w-3" />
+                {event.neighborhood}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+                <Clock className="h-3 w-3" />
+                {formatDateShort(event.date)}
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+              <Users className="h-3.5 w-3.5" />
+              {interestedCount}
             </span>
           </div>
         </Link>
@@ -118,14 +137,20 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           {event.title}
         </h3>
         <p className="text-sm text-muted-foreground font-medium mb-2">{event.venue}</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-            <MapPin className="h-3 w-3" />
-            {event.neighborhood}
-          </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-            <Clock className="h-3 w-3" />
-            {formatDateShort(event.date)}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+              <MapPin className="h-3 w-3" />
+              {event.neighborhood}
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
+              <Clock className="h-3 w-3" />
+              {formatDateShort(event.date)}
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+            <Users className="h-3.5 w-3.5" />
+            {interestedCount}
           </span>
         </div>
       </Link>
