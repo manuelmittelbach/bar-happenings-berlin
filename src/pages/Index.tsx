@@ -378,7 +378,7 @@ export default function Index() {
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
                   to="/publish"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-accent bg-accent text-accent-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-transparent hover:text-accent"
+                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-accent bg-accent text-accent-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:bg-transparent hover:text-accent"
                 >
                   Publish an event
                 </Link>
