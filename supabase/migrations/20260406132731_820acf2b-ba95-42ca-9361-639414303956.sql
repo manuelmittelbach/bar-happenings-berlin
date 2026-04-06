@@ -1,1 +1,0 @@
-INSERT INTO venues (id, name, neighborhood, address, description, image, lat, lng) VALUES ('v-ratzeputz', 'Ratzeputz Bar', 'Neukölln', 'Neukölln, Berlin', '', '', 52.4783, 13.432) ON CONFLICT (id) DO NOTHING;

@@ -19,10 +19,10 @@ export default function ForBars() {
         <section className="bg-foreground text-background">
           <div className="container py-20 md:py-28">
             <div className="max-w-2xl">
-              <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.1] uppercase">
+              <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
                 Your bar does great things.
                 <br />
-                <span className="font-editorial normal-case italic text-background/60" style={{ fontFamily: 'var(--font-editorial)' }}>Let people know about it.</span>
+                <span className="font-light opacity-70">Let people know about it.</span>
               </h1>
               <p className="mt-6 text-lg text-background/60 leading-relaxed max-w-lg">
                 Barlin helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
@@ -30,13 +30,13 @@ export default function ForBars() {
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
                   to="/publish"
-                  className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground font-heading text-sm uppercase tracking-wider hover:bg-accent/90 transition-colors"
+                  className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground rounded-sm font-medium text-sm hover:bg-accent/90 transition-colors"
                 >
                   Publish your first event <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/login"
-                  className="inline-flex items-center h-12 px-6 border border-background/20 text-background font-heading text-sm uppercase tracking-wider hover:bg-background/10 transition-colors"
+                  className="inline-flex items-center h-12 px-6 border border-background/20 text-background rounded-sm font-medium text-sm hover:bg-background/10 transition-colors"
                 >
                   Create account
                 </Link>
@@ -52,10 +52,10 @@ export default function ForBars() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {benefits.map((b) => (
                 <div key={b.title} className="space-y-3">
-                  <div className="w-10 h-10 bg-muted flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
                     <b.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="font-heading text-base uppercase">{b.title}</h3>
+                  <h3 className="font-heading text-base font-semibold">{b.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{b.description}</p>
                 </div>
               ))}
@@ -74,8 +74,8 @@ export default function ForBars() {
                 { step: "03", title: "Reach your audience", desc: "Your event appears on Barlin and locals discover it when browsing." },
               ].map((s) => (
                 <div key={s.step} className="space-y-3">
-                  <span className="font-heading text-4xl text-muted-foreground/30">{s.step}</span>
-                  <h3 className="font-heading text-base uppercase">{s.title}</h3>
+                  <span className="font-heading text-4xl font-bold text-muted-foreground/30">{s.step}</span>
+                  <h3 className="font-heading text-base font-semibold">{s.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
               ))}
@@ -90,7 +90,7 @@ export default function ForBars() {
             <p className="text-muted-foreground mb-8">It's free. It's simple. It's made for bars like yours.</p>
             <Link
               to="/publish"
-              className="inline-flex items-center gap-2 h-12 px-8 bg-foreground text-background font-heading text-sm uppercase tracking-wider hover:bg-foreground/90 transition-colors"
+              className="inline-flex items-center gap-2 h-12 px-8 bg-foreground text-background rounded-sm font-medium text-sm hover:bg-foreground/90 transition-colors"
             >
               Publish your first event <ArrowRight className="h-4 w-4" />
             </Link>

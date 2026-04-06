@@ -1,19 +1,21 @@
 
 
-## Correction : les événements ne s'affichent pas
+# Fix: Reset "I want to join" state when switching event dates
 
-### Cause du problème
-Dans `Index.tsx`, le `useMemo` qui calcule les événements filtrés oublie `allEvents` dans son tableau de dépendances (ligne 63). Quand les données arrivent de Supabase de manière asynchrone, le memo ne se recalcule pas car il ne "voit" pas le changement de `allEvents`.
+## Problem
+The `joined` and `interestedCount` states in `EventDetailDialog` are initialized once with `useState` and **never reset** when `eventId` changes. When a user clicks a different date in "Upcoming dates", the component re-renders with new event data (title, time, price update correctly because they come from `getEventById`), but the join button state carries over from the previous event. This means:
 
-### Correction
+- If you click "I want to join" on Monday's quiz, then switch to Thursday's quiz, the button still shows "✓ Interested" even though it's a different event occurrence.
+- The interested count also carries over incorrectly.
 
-**Fichier : `src/pages/Index.tsx`, ligne 63**
+## Solution
+Add a `useEffect` that resets `joined` and `interestedCount` whenever `eventId` changes. This ensures each event occurrence has its own clean state. For future backend integration (Supabase), this is the correct place to fetch the real join status per event ID.
 
-Ajouter `allEvents` au tableau de dépendances du `useMemo` :
+## Changes
 
-```typescript
-}, [allEvents, searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
-```
+**`src/components/events/EventDetailDialog.tsx`**:
+- Add `useEffect` import
+- Add effect watching `eventId` that resets `joined` to `false` and `interestedCount` to `0` (or the event's stored count when a backend exists)
 
-C'est un fix d'une seule ligne. Les données existent (356 événements futurs), elles ne sont simplement pas recalculées quand elles arrivent du réseau.
+This is a ~5-line fix that ensures the join action always applies to the currently displayed event.
 

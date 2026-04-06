@@ -6,15 +6,13 @@ import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { formatDateWithDay } from "@/lib/dateFormat";
-import { useEventById, useVenueById, useEventsByVenue } from "@/hooks/useSupabaseData";
+import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
 
 export default function EventDetail() {
   const { id } = useParams();
-  const { data: event, isLoading } = useEventById(id);
-  const { data: venue } = useVenueById(event?.venueId);
-  const { data: venueEvents = [] } = useEventsByVenue(event?.venueId);
+  const event = getEventById(id || "");
   const [joined, setJoined] = useState(false);
-  const [interestedCount, setInterestedCount] = useState(0);
+  const [interestedCount, setInterestedCount] = useState(event?.interestedCount || 0);
 
   if (!event) {
     return (
@@ -31,7 +29,8 @@ export default function EventDetail() {
     );
   }
 
-  const otherEvents = venueEvents.filter(e => e.id !== event?.id);
+  const venue = getVenueById(event.venueId);
+  const otherEvents = getEventsByVenue(event.venueId).filter(e => e.id !== event.id);
 
   const handleJoin = () => {
     setJoined(!joined);
@@ -42,13 +41,25 @@ export default function EventDetail() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <div className="container pt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1 text-sm bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-sm hover:bg-background transition-colors mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+        {/* Hero image */}
+        <div className="relative h-[40vh] md:h-[50vh] bg-muted overflow-hidden">
+          <img
+            src={event.image}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+          <div className="absolute top-4 left-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 text-sm bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-sm hover:bg-background transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Link>
+          </div>
+        </div>
+
+        <div className="container -mt-20 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
