@@ -232,7 +232,7 @@ export default function EventDetail() {
 
             <button
               onClick={handleCalendar}
-              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground active:scale-[0.97] transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
+              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground active:scale-[0.97] transition-all text-[10px] font-body font-bold uppercase tracking-wider"
             >
               <CalendarPlus className="h-5 w-5" />
               Calendar
