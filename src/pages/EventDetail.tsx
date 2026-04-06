@@ -234,11 +234,6 @@ export default function EventDetail() {
               {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
               {saved ? "Saved to my plan ✓" : "Save to my plan"}
             </button>
-            {!saved && (
-              <p className="text-center text-muted-foreground/60 text-[10px] font-mono mt-1.5 tracking-wide">
-                Don't forget this one
-              </p>
-            )}
           </div>
 
           {/* Secondary actions row */}
