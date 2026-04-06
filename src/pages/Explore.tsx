@@ -37,7 +37,7 @@ export default function Explore() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
-    let result = [...events];
+    let result = [...allEvents];
     if (search) {
       result = result.filter(
         (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], search)
