@@ -156,7 +156,7 @@ export default function Index() {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
           </div>
         </section>
 
