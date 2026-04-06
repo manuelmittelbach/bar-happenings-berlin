@@ -19,6 +19,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
+  const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
 
   // Deterministic pseudo-random interested count based on event id
   const interestedCount = useMemo(() => {
