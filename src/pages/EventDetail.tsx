@@ -368,46 +368,6 @@ export default function EventDetail() {
         </div>
 
         {/* You might also like */}
-        {similarEvents.length > 0 && (
-          <>
-            <div className="border-t border-border mx-4 mt-2" />
-            <div className="px-4 py-5">
-              <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-4">You might also like</h2>
-              <div className="space-y-1 divide-y divide-border">
-                {similarEvents.map(se => {
-                  const seTitle = cleanEventTitle(se.title, se.venue);
-                  const seTimingLabel = getTimingLabel(se.date, se.startTime);
-                  return (
-                    <Link
-                      key={se.id}
-                      to={`/event/${se.id}`}
-                      className="flex items-start justify-between gap-3 py-3 group hover:bg-muted/30 -mx-2 px-2 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-heading font-bold text-sm truncate group-hover:text-accent transition-colors">
-                          {seTitle}
-                        </p>
-                        <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                          <span className="font-mono text-accent">{se.startTime}</span>
-                          <span>·</span>
-                          <span>{se.venue}</span>
-                          <span>·</span>
-                          <span>{se.neighborhood}</span>
-                        </p>
-                        {seTimingLabel && (
-                          <p className="text-[10px] text-accent/70 font-heading font-bold uppercase tracking-wider mt-1">{seTimingLabel}</p>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground font-mono shrink-0 mt-1">
-                        {formatDateShort(se.date)}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
 
         <div className="h-6" />
       </div>
