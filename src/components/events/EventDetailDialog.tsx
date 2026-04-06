@@ -124,7 +124,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               {displayTitle}
             </motion.h2>
 
-            <p className="text-accent font-heading font-bold text-base md:text-lg mb-1">
+            <p className="text-accent font-body font-bold text-base md:text-lg mb-1">
               {formatDateWithDay(event.date)}, {event.startTime}
             </p>
             <p className="text-foreground font-medium text-sm md:text-base mb-2">{event.venue}</p>
