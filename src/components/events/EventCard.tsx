@@ -53,7 +53,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         transition={{ duration: 0.3, delay: index * 0.03 }}
       >
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
-          <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 overflow-hidden bg-muted">
             <EventImage className="grayscale-hover" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -93,7 +93,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           className="group flex relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
         >
           {/* Image thumbnail — 4:3 ratio */}
-          <div className="relative w-32 md:w-48 shrink-0 bg-muted flex items-center justify-center self-stretch">
+          <div className="relative w-36 h-36 md:w-48 md:h-48 shrink-0 bg-muted flex items-center justify-center">
             {event.image ? (
               <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
@@ -143,7 +143,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Image thumbnail */}
-        <div className="relative w-32 sm:w-40 md:w-44 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
+        <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 shrink-0 bg-muted flex items-center justify-center overflow-hidden">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
