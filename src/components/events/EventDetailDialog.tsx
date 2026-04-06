@@ -27,9 +27,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
     return (hash % 42) + 1;
   }, [eventId]);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setJoined(false);
     setInterestedCount(baseCount);
+    // Scroll dialog content to top when switching events
+    setTimeout(() => {
+      contentRef.current?.scrollTo({ top: 0 });
+    }, 0);
   }, [eventId, baseCount]);
 
   const venue = event ? getVenueById(event.venueId) : null;
