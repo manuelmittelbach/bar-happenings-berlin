@@ -223,19 +223,21 @@ export default function EventDetail() {
       {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border">
         <div className="flex items-center justify-between px-4 py-3 max-w-screen-md mx-auto">
-          <div className="min-w-0">
-            {(() => {
-              const parts = event.price.split(" — ");
-              const mainPrice = parts[0] || "Free";
-              const extra = parts[1];
-              return (
-                <>
-                  <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
-                  {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
-                </>
-              );
-            })()}
-          </div>
+          {event.price ? (
+            <div className="min-w-0">
+              {(() => {
+                const parts = event.price.split(" — ");
+                const mainPrice = parts[0];
+                const extra = parts[1];
+                return (
+                  <>
+                    <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                    {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
+                  </>
+                );
+              })()}
+            </div>
+          ) : <div />}
           <button
             onClick={handleJoin}
             className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
