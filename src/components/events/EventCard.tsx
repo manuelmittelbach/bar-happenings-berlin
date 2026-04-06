@@ -95,7 +95,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             Team Pick
           </div>
           <div className="flex items-center gap-2 mb-3 mt-1">
-            <span className="inline-flex items-center px-2 py-0.5 border border-accent/30 bg-accent/8 mono-label text-accent">{event.category}</span>
+            <span className="mono-label text-accent font-bold">{event.category}</span>
           </div>
           <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
             {event.title}
