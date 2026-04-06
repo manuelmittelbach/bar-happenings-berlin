@@ -55,8 +55,9 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
             <Share2 className="h-4 w-4" /> Share with friends
           </button>
         ) : (
-          <button className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
-            <Share2 className="h-4 w-4" />
+          <button className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
+            <Share2 className="h-5 w-5" />
+            Share
           </button>
         )}
       </PopoverTrigger>
