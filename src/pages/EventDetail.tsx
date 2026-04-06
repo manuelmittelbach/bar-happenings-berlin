@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useLayoutEffect } from "react";
 import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users, CalendarPlus, Share2, ChevronDown } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
@@ -21,6 +21,12 @@ export default function EventDetail() {
   }, [id]);
 
   const [interestedCount, setInterestedCount] = useState(baseCount);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [id]);
 
   if (!event) {
     return (
