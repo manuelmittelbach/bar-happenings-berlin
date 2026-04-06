@@ -83,7 +83,6 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Hero — clean, focused */}
         <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
@@ -103,117 +102,129 @@ export default function Index() {
                 Live music, quiz nights, open mics, and community events in small independent bars across the city.
               </p>
             </motion.div>
-          </div>
-        </section>
 
-        {/* Search & Controls bar — its own distinct section */}
-        <div className="border-b-2 border-foreground bg-card">
-          <div className="container py-5">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {/* Search input */}
-              <div className="relative flex-1 max-w-md">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-10 max-w-lg"
+            >
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search by bar, neighborhood, or event..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 bg-background border-2 border-border text-sm font-mono placeholder:text-muted-foreground outline-none focus:border-foreground transition-colors"
+                  className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
               </div>
-
-              {/* Date pills */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 mt-4">
                 {dateFilters.map((d) => (
                   <button
                     key={d}
                     onClick={() => setActiveDate(d)}
-                    className={`inline-flex items-center px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider border transition-all ${
+                    className={`inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 transition-all ${
                       activeDate === d
                         ? "border-foreground bg-foreground text-background"
-                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                        : "border-foreground hover:bg-foreground hover:text-background"
                     }`}
                   >
                     {d}
                   </button>
                 ))}
+                <div className="ml-auto flex gap-2">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`p-2.5 border-2 transition-colors ${
+                      showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
+                    }`}
+                    aria-label="Toggle filters"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </button>
+                  <div className="flex border-2 border-foreground overflow-hidden">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                      aria-label="Grid view"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("map")}
+                      className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                      aria-label="Map view"
+                    >
+                      <MapIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
+            </motion.div>
+          </div>
+        </section>
 
-              {/* View mode & filters toggle */}
-              <div className="flex items-center gap-2 md:ml-auto">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 border font-mono text-[11px] uppercase tracking-wider transition-colors ${
-                    showFilters ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  }`}
-                  aria-label="Toggle filters"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Filters</span>
-                </button>
-                <div className="flex border border-border overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-                    aria-label="Grid view"
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("map")}
-                    className={`p-2 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-                    aria-label="Map view"
-                  >
-                    <MapIcon className="h-3.5 w-3.5" />
-                  </button>
+        {showFilters && (
+          <div className="border-b-2 border-foreground bg-card">
+            <div className="container py-5 space-y-5">
+              <div>
+                <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
+                <div className="flex flex-wrap gap-2">
+                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
+                  {neighborhoods.map((n) => (
+                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
+                <div className="flex flex-wrap gap-2">
+                  {entryFilters.map((e) => (
+                    <CategoryPill key={e} label={e} active={activeEntry === e} onClick={() => setActiveEntry(e)} />
+                  ))}
                 </div>
               </div>
             </div>
-
-            {/* Expanded filters */}
-            {showFilters && (
-              <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Neighborhood</span>
-                  <div className="flex gap-1.5">
-                    <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                    {neighborhoods.map((n) => (
-                      <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Entry</span>
-                  <div className="flex gap-1.5">
-                    {entryFilters.map((e) => (
-                      <CategoryPill key={e} label={e} active={activeEntry === e} onClick={() => setActiveEntry(e)} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Sticky category bar */}
         <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="container py-2.5">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap">
-              {/* Mobile: icon scroller */}
-              <div className="md:hidden flex gap-1">
-                <CategoryIconBar
-                  categories={categories}
-                  activeCategory={activeCategory}
-                  onSelect={setActiveCategory}
-                />
-              </div>
-              {/* Desktop: pill row */}
-              <div className="hidden md:flex gap-2">
-                <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
-                {categories.map((cat) => (
-                  <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
-                ))}
-              </div>
+          <div className="container py-3">
+            {/* Mobile: icon scroller */}
+            <div className="md:hidden">
+              <CategoryIconBar
+                categories={categories}
+                activeCategory={activeCategory}
+                onSelect={setActiveCategory}
+              />
+            </div>
+            {/* Desktop: 2-row grid layout */}
+            <div className="hidden md:grid grid-cols-5 lg:grid-cols-9 gap-1.5">
+              <button
+                onClick={() => setActiveCategory("")}
+                className={`px-3 py-2 font-mono text-[11px] uppercase tracking-wider border transition-all text-center ${
+                  !activeCategory
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                }`}
+              >
+                All
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-2 font-mono text-[11px] uppercase tracking-wider border transition-all text-center truncate ${
+                    activeCategory === cat
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
         </div>
