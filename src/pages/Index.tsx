@@ -262,31 +262,33 @@ export default function Index() {
               };
 
               const CompactRow = ({ event }: { event: BarlinEvent }) => {
-                const catInfo = getCategoryInfoByLabel(event.category);
                 const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
                 const interested = (hash % 42) + 1;
+                const isPopular = interested > 30;
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
-                    className="w-full flex items-center gap-3 py-3 px-2 hover:bg-muted/50 transition-colors text-left group"
+                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isPopular ? "bg-accent/[0.03]" : ""}`}
                   >
-                    <span className="shrink-0 inline-flex items-center justify-center px-2.5 py-1 bg-muted border border-border font-mono text-[11px] text-muted-foreground uppercase tracking-wider min-w-[52px] text-center">
-                      {formatDatePill(event.date)}
-                    </span>
-                    <span
-                      className="shrink-0 w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: catInfo?.color || "hsl(var(--accent))" }}
-                    />
-                    <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate flex-1 min-w-0">
-                      {cleanEventTitle(event.title, event.venue)}
-                    </span>
-                    <span className="hidden sm:block text-xs text-muted-foreground font-mono truncate max-w-[200px]">
-                      {event.venue} · {event.neighborhood}
-                    </span>
-                    <span className="shrink-0 inline-flex items-center gap-1 text-xs text-accent font-mono">
-                      <Users className="h-3 w-3" />
-                      {interested}
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="shrink-0 font-mono text-[11px] text-accent uppercase tracking-wider w-[52px]">
+                        {event.startTime}
+                      </span>
+                      <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate min-w-0">
+                        {cleanEventTitle(event.title, event.venue)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-[60px]">
+                      <span className="text-xs text-muted-foreground font-mono truncate">
+                        {event.venue} · {event.neighborhood}
+                      </span>
+                      {interested > 5 && (
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-mono ${isPopular ? "text-accent" : "text-muted-foreground"}`}>
+                          <Users className="h-3 w-3" />
+                          {interested}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               };
