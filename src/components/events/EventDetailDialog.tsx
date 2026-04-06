@@ -4,6 +4,7 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
+import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 
 interface EventDetailDialogProps {
@@ -36,6 +37,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   if (!event) return null;
 
+  const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
 
   const handleJoin = () => {
@@ -46,7 +48,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
-        <DialogTitle className="sr-only">{event.title}</DialogTitle>
+        <DialogTitle className="sr-only">{displayTitle}</DialogTitle>
 
         {/* Mobile back */}
         <button
@@ -60,7 +62,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Hero image - only real images */}
         {hasRealImage && (
           <div className="relative h-[200px] md:h-[260px] bg-muted overflow-hidden">
-            <img src={event.image!} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
           </div>
         )}
@@ -69,16 +71,16 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         <div className={`${hasRealImage ? '-mt-10' : 'pt-16 md:pt-10'} relative z-10`}>
 
           {/* ── HEADER SECTION ── */}
-          <div className="px-6 md:px-8 pb-6">
-            {/* Category pill + recurrence */}
-            <div className="flex items-center gap-2.5 mb-4">
+          <div className="px-4 md:px-8 pb-5">
+            {/* Category pill + recurrence — no emoji */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
               {catInfo && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 text-accent text-xs font-bold uppercase tracking-wider rounded-full">
-                  {catInfo.emoji} {catInfo.label}
+                <span className="inline-flex items-center px-2.5 py-1 bg-accent/15 text-accent text-[11px] font-bold uppercase tracking-wider">
+                  {catInfo.label}
                 </span>
               )}
               {event.recurrence && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-xs font-mono rounded-full">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-[11px] font-mono">
                   <RotateCw className="h-3 w-3" /> {event.recurrence}
                 </span>
               )}
@@ -89,48 +91,48 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="font-heading text-[2rem] md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-5"
+              className="font-heading text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-4"
             >
-              {event.title}
+              {displayTitle}
             </motion.h2>
 
-            {/* Date — accent color, prominent */}
-            <p className="text-accent font-heading font-bold text-lg mb-1.5">
+            {/* Date — accent color */}
+            <p className="text-accent font-heading font-bold text-base md:text-lg mb-1">
               {formatDateWithDay(event.date)}, {event.startTime}
             </p>
 
             {/* Venue name */}
-            <p className="text-foreground font-medium text-base mb-2">{event.venue}</p>
+            <p className="text-foreground font-medium text-sm md:text-base mb-2">{event.venue}</p>
 
             {/* Info pills row */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {event.neighborhood && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                  <MapPin className="h-3 w-3" /> {event.neighborhood}
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
+                  <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
                 </span>
               )}
               {event.language && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                  <Globe className="h-3 w-3" /> {event.language}
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
+                  <Globe className="h-3 w-3 shrink-0" /> {event.language}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                <Users className="h-3 w-3 text-accent" />
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
+                <Users className="h-3 w-3 text-accent shrink-0" />
                 <strong className="text-foreground">{interestedCount}</strong> interested
               </span>
             </div>
           </div>
 
           {/* ── PRICE + CTA BAR ── */}
-          <div className="mx-6 md:mx-8 mb-6">
-            <div className="flex items-center gap-4 p-4 md:p-5 bg-card border-2 border-border">
+          <div className="mx-4 md:mx-8 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-card border-2 border-border">
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-0.5">Entry</p>
-                <p className="text-lg md:text-xl font-heading font-bold truncate">{event.price}</p>
+                <p className="text-base md:text-lg font-heading font-bold">{event.price}</p>
               </div>
               <button
                 onClick={handleJoin}
-                className={`shrink-0 px-6 md:px-8 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+                className={`w-full sm:w-auto shrink-0 px-6 h-11 text-xs font-bold uppercase tracking-wider font-heading transition-all ${
                   joined
                     ? "bg-accent text-accent-foreground border-2 border-accent"
                     : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
@@ -142,13 +144,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           </div>
 
           {/* ── ACTIONS ROW ── */}
-          <div className="flex items-center gap-2 px-6 md:px-8 mb-6">
+          <div className="flex items-center gap-2 px-4 md:px-8 mb-5 overflow-x-auto">
             {event.url && (
               <a
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Website
               </a>
@@ -158,39 +160,39 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wider border-2 border-border hover:border-foreground hover:bg-muted transition-colors whitespace-nowrap shrink-0"
               >
                 <Navigation className="h-3.5 w-3.5" /> Directions
               </a>
             )}
-            <div className="ml-auto">
-              <ShareMenu eventTitle={event.title} eventId={event.id} />
+            <div className="ml-auto shrink-0">
+              <ShareMenu eventTitle={displayTitle} eventId={event.id} />
             </div>
           </div>
 
           {/* ── DIVIDER ── */}
-          <div className="border-t-2 border-border mx-6 md:mx-8" />
+          <div className="border-t-2 border-border mx-4 md:mx-8" />
 
           {/* ── ABOUT ── */}
-          <div className="px-6 md:px-8 py-6 space-y-3">
+          <div className="px-4 md:px-8 py-5 space-y-2.5">
             <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
-              <p key={i} className="text-[15px] text-muted-foreground leading-relaxed">{p}</p>
+              <p key={i} className="text-sm md:text-[15px] text-muted-foreground leading-relaxed">{p}</p>
             ))}
           </div>
 
-          {/* ── VENUE CARD — subtle bg differentiation ── */}
+          {/* ── VENUE CARD ── */}
           {event.address && (
-            <div className="mx-6 md:mx-8 mb-6 p-5 bg-card border-2 border-border">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-2">Venue</h3>
-              <p className="font-heading font-bold text-base">{event.venue}</p>
-              <p className="text-sm text-muted-foreground mt-1">{event.address}</p>
+            <div className="mx-4 md:mx-8 mb-5 p-4 bg-card border-2 border-border">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
+              <p className="font-heading font-bold text-sm md:text-base">{event.venue}</p>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">{event.address}</p>
             </div>
           )}
 
           {/* ── UPCOMING DATES ── */}
           {siblingDates.length > 1 && (
-            <div className="px-6 md:px-8 pb-8">
+            <div className="px-4 md:px-8 pb-6">
               <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => {
@@ -204,7 +206,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                           onEventChange(siblingEvent.id);
                         }
                       }}
-                      className={`inline-flex items-center px-3.5 py-2 text-xs font-mono font-bold transition-colors ${
+                      className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-colors ${
                         isActive
                           ? 'bg-accent text-accent-foreground'
                           : 'border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
