@@ -29,7 +29,7 @@ export default function Index() {
   const [activeDate, setActiveDate] = useState("All");
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  
   
 
   const today = new Date().toISOString().split("T")[0];
