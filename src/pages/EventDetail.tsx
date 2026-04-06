@@ -6,13 +6,15 @@ import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { formatDateWithDay } from "@/lib/dateFormat";
-import { getEventById, getVenueById, getEventsByVenue } from "@/data/mockData";
+import { useEventById, useVenueById, useEventsByVenue } from "@/hooks/useSupabaseData";
 
 export default function EventDetail() {
   const { id } = useParams();
-  const event = getEventById(id || "");
+  const { data: event, isLoading } = useEventById(id);
+  const { data: venue } = useVenueById(event?.venueId);
+  const { data: venueEvents = [] } = useEventsByVenue(event?.venueId);
   const [joined, setJoined] = useState(false);
-  const [interestedCount, setInterestedCount] = useState(event?.interestedCount || 0);
+  const [interestedCount, setInterestedCount] = useState(0);
 
   if (!event) {
     return (
@@ -29,8 +31,7 @@ export default function EventDetail() {
     );
   }
 
-  const venue = getVenueById(event.venueId);
-  const otherEvents = getEventsByVenue(event.venueId).filter(e => e.id !== event.id);
+  const otherEvents = venueEvents.filter(e => e.id !== event?.id);
 
   const handleJoin = () => {
     setJoined(!joined);

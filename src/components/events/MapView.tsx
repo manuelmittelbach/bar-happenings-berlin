@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { BarlinEvent } from "@/data/mockData";
-import { venues, categoryInfos } from "@/data/mockData";
+import { useVenues, useCategories } from "@/hooks/useSupabaseData";
 
 interface MapViewProps {
   events: BarlinEvent[];
@@ -10,6 +10,8 @@ interface MapViewProps {
 }
 
 export default function MapView({ events, onEventClick }: MapViewProps) {
+  const { data: venues = [] } = useVenues();
+  const { data: categoryInfos = [] } = useCategories();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const gpsMarkerRef = useRef<L.Marker | null>(null);

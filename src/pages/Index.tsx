@@ -11,12 +11,17 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
 import EventDetailDialog from "@/components/events/EventDetailDialog";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { useEvents, useCategories } from "@/hooks/useSupabaseData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Index() {
+  const { data: allEvents = [], isLoading } = useEvents();
+  const { data: categoryInfos = [] } = useCategories();
+  const categories = categoryInfos.map(c => c.label);
+  const neighborhoods = [...new Set(allEvents.map(e => e.neighborhood))].sort();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [activeCategory, setActiveCategory] = useState("");
@@ -30,7 +35,7 @@ export default function Index() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
-    let result = [...events];
+    let result = [...allEvents];
     result = result.filter((e) => e.date >= today);
     if (searchQuery) {
       result = result.filter(

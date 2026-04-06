@@ -7,13 +7,18 @@ import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { useEvents, useCategories } from "@/hooks/useSupabaseData";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Explore() {
+  const { data: allEvents = [], isLoading } = useEvents();
+  const { data: categoryInfos = [] } = useCategories();
+  const categories = categoryInfos.map(c => c.label);
+  const neighborhoods = [...new Set(allEvents.map(e => e.neighborhood))].sort();
+
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialCategory = searchParams.get("category") || "";
@@ -32,7 +37,7 @@ export default function Explore() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const filtered = useMemo(() => {
-    let result = [...events];
+    let result = [...allEvents];
     if (search) {
       result = result.filter(
         (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], search)
