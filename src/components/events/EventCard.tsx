@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
