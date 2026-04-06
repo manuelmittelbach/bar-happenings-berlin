@@ -179,7 +179,7 @@ export default function EventDetail() {
               className="bg-card border-2 border-border p-3 text-left hover:border-accent/50 transition-colors group"
             >
               <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">Where</p>
-              <p className="font-heading font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
+              <p className="font-body font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
               <p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
                 <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
               </p>
