@@ -27,6 +27,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
     return (hash % 42) + 1;
   }, [event.id]);
+
+  const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
+
+  const badgeVariantClasses: Record<EventBadge["variant"], string> = {
+    live: "bg-accent text-accent-foreground animate-pulse",
+    soon: "border border-accent text-accent bg-accent/10",
+    popular: "bg-pink-600 text-white",
+  };
   
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
