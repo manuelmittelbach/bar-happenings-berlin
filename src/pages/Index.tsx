@@ -4,7 +4,7 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, LayoutGrid, MapIcon, SlidersHorizontal, Users } from "lucide-react";
+import { Search, LayoutGrid, MapIcon, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
