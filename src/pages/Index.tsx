@@ -1,7 +1,9 @@
 import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Search, LayoutGrid, MapIcon, SlidersHorizontal, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
