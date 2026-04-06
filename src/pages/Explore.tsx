@@ -164,8 +164,15 @@ export default function Explore() {
             </div>
           )}
 
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2 mb-8 overflow-x-auto pb-2">
+          {/* Category filters — icon bar on mobile, pills on desktop */}
+          <div className="md:hidden mb-6">
+            <CategoryIconBar
+              categories={categories}
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+            />
+          </div>
+          <div className="hidden md:flex flex-wrap gap-2 mb-8">
             <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
             {categories.map((cat) => (
               <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
