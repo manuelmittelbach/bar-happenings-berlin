@@ -14,6 +14,11 @@ const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Explore() {
+  const { data: allEvents = [], isLoading } = useEvents();
+  const { data: categoryInfos = [] } = useCategories();
+  const categories = categoryInfos.map(c => c.label);
+  const neighborhoods = [...new Set(allEvents.map(e => e.neighborhood))].sort();
+
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialCategory = searchParams.get("category") || "";
