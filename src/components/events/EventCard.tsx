@@ -58,9 +58,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
             <p className="text-sm text-muted-foreground mt-0.5">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
-          <div className="hidden sm:flex flex-col items-end justify-center gap-1">
-            {event.entryInfo && <span className="stamp text-accent border-accent text-[10px]">{event.entryInfo}</span>}
-          </div>
         </Link>
       </motion.div>
     );
@@ -75,14 +72,6 @@ export default function EventCard({ event, index = 0, layout = "grid", onClick }
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group block border-2 border-border hover:border-foreground transition-colors p-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="mono-label text-accent">{event.category}</span>
-          {event.entryInfo && (
-            <>
-              <span className="mono-label text-muted-foreground">·</span>
-              <span className="stamp text-accent-foreground bg-accent border-accent text-[10px]">
-                {event.entryInfo}
-              </span>
-            </>
-          )}
         </div>
         <h3 className="font-heading text-lg md:text-xl font-extrabold uppercase tracking-tight leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-2">
           {event.title}
