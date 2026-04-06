@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { events, categories } from "@/data/mockData";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
@@ -19,7 +19,7 @@ export default function Explore() {
   const initialCategory = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
+  
   const [activeDate, setActiveDate] = useState(
     searchParams.get("date") === "today" ? "Today" : searchParams.get("date") === "tomorrow" ? "Tomorrow" : "All"
   );
@@ -39,7 +39,7 @@ export default function Explore() {
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
+    
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry === "Free Entry") result = result.filter((e) => e.entryInfo === "Free Entry");
@@ -47,7 +47,7 @@ export default function Explore() {
     if (sortBy === "Soonest")
       result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
     return result;
-  }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow]);
+  }, [search, activeCategory, activeDate, activeEntry, sortBy, today, tomorrow]);
 
   // Split into 3 tiers: featured (top ~3), standard (next ~8), secondary (rest)
   const { featuredEvents, standardEvents, secondaryEvents } = useMemo(() => {
@@ -173,15 +173,6 @@ export default function Explore() {
                 <div className="flex flex-wrap gap-1.5 sm:hidden">
                   {dateFilters.map((d) => (
                     <CategoryPill key={d} label={d} active={activeDate === d} onClick={() => setActiveDate(d)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Neighborhood</label>
-                <div className="flex flex-wrap gap-1.5">
-                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                  {neighborhoods.map((n) => (
-                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
                   ))}
                 </div>
               </div>
