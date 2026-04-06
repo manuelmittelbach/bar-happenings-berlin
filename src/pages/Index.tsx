@@ -101,13 +101,9 @@ export default function Index() {
   }, []);
 
   const handleEventClick = useCallback((eventId: string) => {
-    if (isMobile) {
-      sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
-      navigate(`/event/${eventId}`);
-    } else {
-      setSelectedEventId(eventId);
-    }
-  }, [isMobile, navigate]);
+    sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
+    navigate(`/event/${eventId}`);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
