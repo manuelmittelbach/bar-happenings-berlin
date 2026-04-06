@@ -259,7 +259,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                     const extra = parts[1];
                     return (
                       <>
-                        <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                        <p className="text-sm font-body font-bold text-foreground">{mainPrice}</p>
                         {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
                       </>
                     );
