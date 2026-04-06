@@ -39,6 +39,27 @@ export default function CategoryPill({ label, active, onClick }: CategoryPillPro
   );
 }
 
+/* Short labels for desktop scanning */
+const desktopShortLabels: Record<string, string> = {
+  "Social / Networking": "Social",
+  "Language Exchange": "Language",
+  "DJ / Music Night": "DJ",
+  "Singles & Dating": "Dating",
+  "Promo / Date Night": "Promo",
+  "Sport / Games": "Sport",
+  "Quiz Night": "Quiz",
+  "Live Music": "Live",
+  "Open Mic": "Open Mic",
+};
+
+/* Priority order for desktop — most popular first */
+const desktopCategoryOrder: string[] = [
+  "Comedy", "Pub Quiz", "Live Music", "DJ / Music Night",
+  "Social / Networking", "Language Exchange", "Singles & Dating",
+  "Open Mic", "Quiz Night", "Promo / Date Night", "Screening",
+  "Sport / Games", "Other",
+];
+
 /* ── Desktop icon-based category row ── */
 export function CategoryIconRow({
   categories,
@@ -49,12 +70,19 @@ export function CategoryIconRow({
   activeCategory: string;
   onSelect: (cat: string) => void;
 }) {
+  // Sort categories by priority order
+  const sorted = [...categories].sort((a, b) => {
+    const ai = desktopCategoryOrder.indexOf(a);
+    const bi = desktopCategoryOrder.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
   return (
-    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+    <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
       {/* All — reset button, visually separated */}
       <button
         onClick={() => onSelect("")}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2.5 mr-2 border-r-2 border-border transition-all ${
+        className={`shrink-0 flex items-center gap-2 px-4 py-2 mr-1 border-r-2 border-border transition-all ${
           !activeCategory
             ? "text-accent"
             : "text-muted-foreground hover:text-foreground"
@@ -70,30 +98,31 @@ export function CategoryIconRow({
         <span className="text-[11px] font-mono font-bold uppercase tracking-wider">All</span>
       </button>
 
-      {categories.map((cat) => {
+      {sorted.map((cat) => {
         const info = getCategoryInfoByLabel(cat);
         const Icon = info ? categoryIcons[info.id] : Sparkles;
         const I = Icon || Sparkles;
         const isActive = activeCategory === cat;
+        const shortLabel = desktopShortLabels[cat] || cat;
         return (
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            className={`group shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 transition-all ${
+            className={`group shrink-0 flex flex-col items-center gap-1 px-2.5 py-2 transition-all ${
               isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <div className={`w-11 h-11 flex items-center justify-center rounded-full transition-all ${
+            <div className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
               isActive
-                ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)]"
+                ? "bg-accent text-background shadow-[0_0_14px_hsl(var(--accent)/0.45)] scale-105"
                 : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
             }`}>
-              <I className="h-5 w-5" />
+              <I className="h-[22px] w-[22px]" />
             </div>
             <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors ${
               isActive ? "text-accent" : ""
             }`}>
-              {cat}
+              {shortLabel}
             </span>
           </button>
         );
