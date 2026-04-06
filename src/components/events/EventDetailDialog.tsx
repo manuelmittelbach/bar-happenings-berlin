@@ -32,10 +32,15 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   useEffect(() => {
     setJoined(false);
     setInterestedCount(baseCount);
-    // Scroll dialog content to top when switching events
-    setTimeout(() => {
+    // Scroll dialog content to top when switching events — use multiple frames to ensure DOM is ready
+    const raf = requestAnimationFrame(() => {
       contentRef.current?.scrollTo({ top: 0 });
-    }, 0);
+      // Double-ensure after layout settles (mobile Safari)
+      setTimeout(() => {
+        contentRef.current?.scrollTo({ top: 0 });
+      }, 50);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [eventId, baseCount]);
 
   const venue = event ? getVenueById(event.venueId) : null;
@@ -62,7 +67,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={contentRef} className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
+      <DialogContent ref={contentRef} className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile onOpenAutoFocus={(e) => { e.preventDefault(); contentRef.current?.scrollTo({ top: 0 }); }}>
         <DialogTitle className="sr-only">{displayTitle}</DialogTitle>
 
         {/* Mobile back */}
