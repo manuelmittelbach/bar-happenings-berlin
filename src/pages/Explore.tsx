@@ -161,12 +161,13 @@ export default function Explore() {
               onSelect={setActiveCategory}
             />
           </div>
-          {/* Desktop: pill labels */}
-          <div className="hidden md:flex flex-wrap gap-2 mb-6">
-            <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
-            {categories.map((cat) => (
-              <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
-            ))}
+          {/* Desktop: icon row */}
+          <div className="hidden md:block mb-6">
+            <CategoryIconRow
+              categories={categories}
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+            />
           </div>
 
           {/* Results */}
