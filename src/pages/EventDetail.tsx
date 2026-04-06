@@ -224,8 +224,17 @@ export default function EventDetail() {
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border">
         <div className="flex items-center justify-between px-4 py-3 max-w-screen-md mx-auto">
           <div className="min-w-0">
-            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Entry</p>
-            <p className="text-lg font-heading font-extrabold text-foreground">{event.price}</p>
+            {(() => {
+              const parts = event.price.split(" — ");
+              const mainPrice = parts[0] || "Free";
+              const extra = parts[1];
+              return (
+                <>
+                  <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                  {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
+                </>
+              );
+            })()}
           </div>
           <button
             onClick={handleJoin}

@@ -227,8 +227,17 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
           <div className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border mt-6">
             <div className="flex items-center justify-between px-4 md:px-8 py-3">
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Entry</p>
-                <p className="text-lg font-heading font-extrabold text-foreground">{event.price}</p>
+                {(() => {
+                  const parts = event.price.split(" — ");
+                  const mainPrice = parts[0] || "Free";
+                  const extra = parts[1];
+                  return (
+                    <>
+                      <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                      {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
+                    </>
+                  );
+                })()}
               </div>
               <button
                 onClick={handleJoin}
