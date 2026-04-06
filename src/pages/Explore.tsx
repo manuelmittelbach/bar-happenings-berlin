@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-react";
