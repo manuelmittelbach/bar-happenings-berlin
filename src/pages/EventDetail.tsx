@@ -41,7 +41,7 @@ export default function EventDetail() {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <h1 className="font-heading text-2xl font-bold">Event not found</h1>
+        <h1 className="font-body text-2xl font-bold">Event not found</h1>
         <Link to="/" className="text-sm text-accent mt-2 inline-block">Back to home</Link>
       </div>
     );
