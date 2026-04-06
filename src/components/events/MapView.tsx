@@ -10,6 +10,8 @@ interface MapViewProps {
 }
 
 export default function MapView({ events, onEventClick }: MapViewProps) {
+  const { data: venues = [] } = useVenues();
+  const { data: categoryInfos = [] } = useCategories();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const gpsMarkerRef = useRef<L.Marker | null>(null);
