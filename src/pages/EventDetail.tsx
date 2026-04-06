@@ -41,7 +41,7 @@ export default function EventDetail() {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <h1 className="font-heading text-2xl font-bold">Event not found</h1>
+        <h1 className="font-body text-2xl font-bold">Event not found</h1>
         <Link to="/" className="text-sm text-accent mt-2 inline-block">Back to home</Link>
       </div>
     );
@@ -148,7 +148,7 @@ export default function EventDetail() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="font-heading text-[22px] md:text-3xl font-extrabold leading-[1.1] tracking-tight"
+            className="font-body text-[22px] md:text-3xl font-extrabold leading-[1.1] tracking-tight"
           >
             {displayTitle}
           </motion.h1>
@@ -165,7 +165,7 @@ export default function EventDetail() {
             {/* When */}
             <div className="bg-card border-2 border-border p-3">
               <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">When</p>
-              <p className="font-heading font-bold text-sm">{formatDateWithDay(event.date)}</p>
+              <p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
               {event.startTime && (
                 <p className="text-accent font-mono font-bold text-sm mt-0.5">
                   {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
@@ -179,7 +179,7 @@ export default function EventDetail() {
               className="bg-card border-2 border-border p-3 text-left hover:border-accent/50 transition-colors group"
             >
               <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">Where</p>
-              <p className="font-heading font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
+              <p className="font-body font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
               <p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
                 <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
               </p>
@@ -189,7 +189,7 @@ export default function EventDetail() {
 
         {/* Info pills row */}
         <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center px-3 py-1.5 bg-accent/15 text-accent text-[12px] font-heading font-bold border border-accent/30">
+          <span className="inline-flex items-center px-3 py-1.5 bg-accent/15 text-accent text-[12px] font-body font-bold border border-accent/30">
             {priceLabel}
           </span>
           {event.recurrence && (
@@ -215,7 +215,7 @@ export default function EventDetail() {
           <div>
             <button
               onClick={handleSave}
-              className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 active:scale-[0.98] ${
+              className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-body transition-all duration-200 active:scale-[0.98] ${
                 saved
                   ? "bg-accent text-accent-foreground border-2 border-accent shadow-[0_0_20px_hsl(var(--accent)/0.3)]"
                   : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(var(--accent)/0.4)] hover:scale-[1.01]"
@@ -232,7 +232,7 @@ export default function EventDetail() {
 
             <button
               onClick={handleCalendar}
-              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground active:scale-[0.97] transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
+              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground active:scale-[0.97] transition-all text-[10px] font-body font-bold uppercase tracking-wider"
             >
               <CalendarPlus className="h-5 w-5" />
               Calendar
@@ -267,7 +267,7 @@ export default function EventDetail() {
               <div className="flex items-start gap-2.5 min-w-0">
                 <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-heading font-bold">{event.venue}</p>
+                  <p className="font-body font-bold">{event.venue}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5">{event.address}</p>
                   <p className="text-[11px] text-muted-foreground/70 mt-0.5">{event.neighborhood}</p>
                 </div>

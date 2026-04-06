@@ -119,12 +119,12 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="font-heading text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-3"
+              className="font-body text-2xl md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-3"
             >
               {displayTitle}
             </motion.h2>
 
-            <p className="text-accent font-heading font-bold text-base md:text-lg mb-1">
+            <p className="text-accent font-body font-bold text-base md:text-lg mb-1">
               {formatDateWithDay(event.date)}, {event.startTime}
             </p>
             <p className="text-foreground font-medium text-sm md:text-base mb-2">{event.venue}</p>
@@ -174,7 +174,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             >
               <div className="min-w-0">
                 <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-                <p className="font-heading font-bold text-sm md:text-base">{event.venue}</p>
+                <p className="font-body font-bold text-sm md:text-base">{event.venue}</p>
                 <p className="text-xs md:text-sm text-muted-foreground mt-1">{event.address}</p>
               </div>
               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
@@ -259,7 +259,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                     const extra = parts[1];
                     return (
                       <>
-                        <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
+                        <p className="text-sm font-body font-bold text-foreground">{mainPrice}</p>
                         {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
                       </>
                     );
@@ -268,7 +268,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               ) : <div />}
               <button
                 onClick={handleJoin}
-                className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+                className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-body transition-all ${
                   joined
                     ? "bg-accent text-accent-foreground"
                     : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
