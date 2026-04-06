@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { formatDateShort } from "@/lib/dateFormat";
 import { MapPin, Clock, Star, Users } from "lucide-react";
