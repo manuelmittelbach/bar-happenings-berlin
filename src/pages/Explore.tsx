@@ -39,7 +39,7 @@ export default function Explore() {
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
+    
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry === "Free Entry") result = result.filter((e) => e.entryInfo === "Free Entry");
