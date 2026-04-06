@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useLayoutEffect } from "react";
 import {
   MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users,
-  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Navigation, Clock
+  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Clock
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
@@ -15,7 +15,6 @@ export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = getEventById(id || "");
-  const [joined, setJoined] = useState(false);
   const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
 
@@ -60,10 +59,6 @@ export default function EventDetail() {
 
   const hookLine = event.summary || event.description.split("\n\n")[0].slice(0, 100) + (event.description.split("\n\n")[0].length > 100 ? "…" : "");
 
-  const handleJoin = () => {
-    setJoined(!joined);
-    setInterestedCount(prev => joined ? prev - 1 : prev + 1);
-  };
 
   const handleCalendar = () => {
     const startDate = event.date.replace(/-/g, '');
@@ -191,32 +186,21 @@ export default function EventDetail() {
 
         {/* Primary CTA + secondary actions */}
         <div className="px-4 pb-4 space-y-3">
-          {/* Primary CTA */}
+          {/* Primary CTA — Save oriented */}
           <button
-            onClick={handleJoin}
-            className={`w-full h-14 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 ${
-              joined
+            onClick={() => setSaved(!saved)}
+            className={`w-full h-14 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 ${
+              saved
                 ? "bg-accent text-accent-foreground border-2 border-accent"
                 : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(18_85%_52%/0.4)]"
             }`}
           >
-            {joined ? "✓ I'm interested" : "I want to join"}
+            {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+            {saved ? "Saved to my plan ✓" : "Save to my plan"}
           </button>
 
           {/* Secondary actions row */}
-          <div className="grid grid-cols-4 gap-2">
-            <button
-              onClick={() => setSaved(!saved)}
-              className={`flex flex-col items-center gap-1.5 py-3 border-2 transition-all text-[10px] font-heading font-bold uppercase tracking-wider ${
-                saved
-                  ? 'border-accent bg-accent/10 text-accent'
-                  : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
-              }`}
-            >
-              {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
-              Save
-            </button>
-
+          <div className="grid grid-cols-2 gap-2">
             <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="icon" />
 
             <button
@@ -225,14 +209,6 @@ export default function EventDetail() {
             >
               <CalendarPlus className="h-5 w-5" />
               Calendar
-            </button>
-
-            <button
-              onClick={handleMaps}
-              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
-            >
-              <Navigation className="h-5 w-5" />
-              Maps
             </button>
           </div>
         </div>
