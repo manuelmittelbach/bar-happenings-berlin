@@ -122,12 +122,12 @@
   /* Subtle delayed hover lift — desktop only */
   @media (hover: hover) {
     .card-hover-lift {
-      transition: transform 0.2s ease-out 0.35s, box-shadow 0.2s ease-out 0.35s;
+      transition: transform 0.3s ease-in-out 0.5s, box-shadow 0.3s ease-in-out 0.5s;
       will-change: transform;
     }
     .card-hover-lift:hover {
-      transform: scale(1.012);
-      box-shadow: 0 4px 16px -4px hsl(var(--foreground) / 0.08);
+      transform: scale(1.006);
+      box-shadow: 0 2px 10px -4px hsl(var(--foreground) / 0.05);
     }
   }
 
