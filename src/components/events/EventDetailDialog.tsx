@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
-import { MapPin, Clock, Calendar, Globe, Tag, ExternalLink, RotateCw, Navigation, ArrowLeft, Users, Share2, Bookmark } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { MapPin, Clock, Calendar, Globe, ExternalLink, RotateCw, Navigation, ArrowLeft, Users, X } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
-import { getEventById, getVenueById, getEventsByVenue, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
-import { getCategoryImage } from "@/assets/categories";
-import { getVenueImage } from "@/assets/venues";
-import { useMemo } from "react";
+import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -39,7 +36,6 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   if (!event) return null;
 
-  // Only show image if the event has its own image (not generic)
   const hasRealImage = !!event.image;
 
   const handleJoin = () => {
@@ -49,98 +45,104 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl md:max-h-[90vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto" fullscreenMobile>
+      <DialogContent className="max-w-2xl md:max-h-[92vh] p-0 md:border-2 md:border-foreground gap-0 overflow-y-auto bg-background" fullscreenMobile>
         <DialogTitle className="sr-only">{event.title}</DialogTitle>
 
-        {/* Mobile back button - always visible */}
+        {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider hover:bg-background transition-colors"
+          className="absolute top-4 left-4 z-20 md:hidden flex items-center gap-1.5 px-3 py-2 bg-background/90 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
-        {/* Hero - only if real image */}
+        {/* Hero image - only real images */}
         {hasRealImage && (
-          <div className="relative h-[220px] md:h-[280px] bg-muted overflow-hidden">
-            <img
-              src={event.image!}
-              alt={event.title}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="relative h-[200px] md:h-[260px] bg-muted overflow-hidden">
+            <img src={event.image!} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
           </div>
         )}
 
-        <div className={`px-6 ${hasRealImage ? '-mt-14' : 'pt-14 md:pt-8'} relative z-10 pb-8`}>
-          {/* Category & Recurrence tags */}
-          <div className="flex items-center gap-2 mb-3">
-            {catInfo && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-accent uppercase tracking-wider">
-                {catInfo.emoji} {catInfo.label}
-              </span>
-            )}
-            {event.recurrence && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                <RotateCw className="h-3 w-3" /> {event.recurrence}
-              </span>
-            )}
-          </div>
+        {/* Content */}
+        <div className={`${hasRealImage ? '-mt-10' : 'pt-14 md:pt-8'} relative z-10`}>
 
-          {/* Title - big and bold */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h2 className="font-heading text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
+          {/* ── HEADER SECTION ── */}
+          <div className="px-6 md:px-8 pb-6">
+            {/* Category pill + recurrence */}
+            <div className="flex items-center gap-2.5 mb-4">
+              {catInfo && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/15 text-accent text-xs font-bold uppercase tracking-wider rounded-full">
+                  {catInfo.emoji} {catInfo.label}
+                </span>
+              )}
+              {event.recurrence && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-xs font-mono rounded-full">
+                  <RotateCw className="h-3 w-3" /> {event.recurrence}
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="font-heading text-[2rem] md:text-[2.5rem] font-extrabold leading-[1.1] tracking-tight mb-5"
+            >
               {event.title}
-            </h2>
-          </motion.div>
+            </motion.h2>
 
-          {/* Key info row - DICE style with accent date */}
-          <div className="mt-4 space-y-1.5">
-            <p className="text-accent font-heading font-bold text-base">
+            {/* Date — accent color, prominent */}
+            <p className="text-accent font-heading font-bold text-lg mb-1.5">
               {formatDateWithDay(event.date)}, {event.startTime}
             </p>
-            <p className="text-foreground font-medium text-base">{event.venue}</p>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+
+            {/* Venue name */}
+            <p className="text-foreground font-medium text-base mb-2">{event.venue}</p>
+
+            {/* Info pills row */}
+            <div className="flex items-center gap-2 flex-wrap">
               {event.neighborhood && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" /> {event.neighborhood}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                  <MapPin className="h-3 w-3" /> {event.neighborhood}
                 </span>
               )}
               {event.language && (
-                <span className="inline-flex items-center gap-1">
-                  <Globe className="h-3.5 w-3.5" /> {event.language}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                  <Globe className="h-3 w-3" /> {event.language}
                 </span>
               )}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                <Users className="h-3 w-3 text-accent" />
+                <strong className="text-foreground">{interestedCount}</strong> interested
+              </span>
             </div>
           </div>
 
-          {/* Interested count */}
-          <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-            <Users className="h-4 w-4 text-accent" />
-            <span><strong className="text-foreground">{interestedCount}</strong> people interested</span>
-          </div>
-
-          {/* Price & CTA bar - inspired by DICE bottom bar */}
-          <div className="flex items-center gap-3 mt-6 p-4 bg-card border-2 border-border">
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground uppercase font-mono tracking-wider mb-0.5">Entry</p>
-              <p className="text-lg font-heading font-bold">{event.price}</p>
+          {/* ── PRICE + CTA BAR — inverted for contrast ── */}
+          <div className="mx-4 md:mx-6 mb-6">
+            <div className="flex items-center gap-4 p-4 md:p-5 bg-foreground text-background rounded-none">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.15em] font-mono opacity-60 mb-0.5">Entry</p>
+                <p className="text-lg md:text-xl font-heading font-bold truncate">{event.price}</p>
+              </div>
+              <button
+                onClick={handleJoin}
+                className={`shrink-0 px-6 md:px-8 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+                  joined
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                }`}
+              >
+                {joined ? "✓ Interested" : "I want to join"}
+              </button>
             </div>
-            <button
-              onClick={handleJoin}
-              className={`px-6 h-11 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
-                joined
-                  ? "bg-accent text-accent-foreground border-2 border-accent"
-                  : "bg-foreground text-background border-2 border-foreground hover:bg-background hover:text-foreground"
-              }`}
-            >
-              {joined ? "✓ Interested" : "I want to join"}
-            </button>
           </div>
 
-          {/* Action row - DICE style */}
-          <div className="flex items-center gap-2 mt-4">
+          {/* ── ACTIONS ROW ── */}
+          <div className="flex items-center gap-2 px-6 md:px-8 mb-6">
             {event.url && (
               <a
                 href={event.url}
@@ -166,30 +168,30 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-border mt-6 mb-6" />
+          {/* ── DIVIDER ── */}
+          <div className="border-t-2 border-border mx-6 md:mx-8" />
 
-          {/* Description */}
-          <div className="space-y-3">
-            <h3 className="font-heading text-base font-bold uppercase tracking-wide">About this event</h3>
+          {/* ── ABOUT ── */}
+          <div className="px-6 md:px-8 py-6 space-y-3">
+            <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
-              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+              <p key={i} className="text-[15px] text-muted-foreground leading-relaxed">{p}</p>
             ))}
           </div>
 
-          {/* Address details */}
+          {/* ── VENUE CARD — subtle bg differentiation ── */}
           {event.address && (
-            <div className="mt-6 p-4 bg-card border border-border">
-              <h3 className="font-heading text-sm font-bold uppercase tracking-wide mb-2">Venue</h3>
-              <p className="text-sm font-medium">{event.venue}</p>
-              <p className="text-xs text-muted-foreground mt-1">{event.address}</p>
+            <div className="mx-6 md:mx-8 mb-6 p-5 bg-card border-2 border-border">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-2">Venue</h3>
+              <p className="font-heading font-bold text-base">{event.venue}</p>
+              <p className="text-sm text-muted-foreground mt-1">{event.address}</p>
             </div>
           )}
 
-          {/* Upcoming dates */}
+          {/* ── UPCOMING DATES ── */}
           {siblingDates.length > 1 && (
-            <div className="mt-6">
-              <h3 className="font-heading text-sm font-bold uppercase tracking-wide mb-3">Upcoming dates</h3>
+            <div className="px-6 md:px-8 pb-8">
+              <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em] mb-3">Upcoming dates</h3>
               <div className="flex flex-wrap gap-2">
                 {siblingDates.map(d => {
                   const siblingEvent = siblings.find(e => e.date === d);
@@ -202,9 +204,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                           onEventChange(siblingEvent.id);
                         }
                       }}
-                      className={`inline-flex items-center px-3 py-1.5 text-xs font-mono font-bold transition-colors ${
+                      className={`inline-flex items-center px-3.5 py-2 text-xs font-mono font-bold transition-colors ${
                         isActive
-                          ? 'bg-accent text-accent-foreground border-2 border-accent'
+                          ? 'bg-accent text-accent-foreground'
                           : 'border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground cursor-pointer'
                       }`}
                     >
