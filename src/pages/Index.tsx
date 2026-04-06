@@ -83,7 +83,7 @@ export default function Index() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="border-b-2 border-foreground noise-bg">
+        <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-16 md:py-24 lg:py-32 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
