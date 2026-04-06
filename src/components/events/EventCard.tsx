@@ -11,6 +11,7 @@ interface EventCardProps {
   event: BarlinEvent;
   index?: number;
   layout?: "grid" | "list";
+  featured?: boolean;
   onClick?: (eventId: string) => void;
 }
 
