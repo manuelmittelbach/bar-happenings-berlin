@@ -51,8 +51,8 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
     <Popover>
       <PopoverTrigger asChild>
         {variant === "full" ? (
-          <button className="w-full h-10 border-2 border-border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2 font-heading uppercase tracking-wide">
-            <Share2 className="h-4 w-4" /> Share event
+          <button className="w-full h-10 border-2 border-border text-[11px] font-mono font-bold uppercase tracking-wider hover:bg-muted hover:border-foreground transition-colors flex items-center justify-center gap-2">
+            <Share2 className="h-3.5 w-3.5" /> Share with friends
           </button>
         ) : (
           <button className="h-11 px-4 border-2 border-border text-sm hover:bg-muted transition-colors flex items-center gap-2">
