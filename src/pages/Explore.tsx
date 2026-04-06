@@ -210,7 +210,7 @@ export default function Explore() {
               }
             >
               {filtered.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} layout={viewMode} />
+                <EventCard key={event.id} event={event} index={i} layout={viewMode} featured={viewMode === "grid" && featuredIds.has(event.id)} />
               ))}
             </div>
           )}
