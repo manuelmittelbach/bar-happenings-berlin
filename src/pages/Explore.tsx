@@ -115,12 +115,6 @@ export default function Explore() {
                 >
                   <List className="h-4 w-4" />
                 </button>
-                <button
-                  onClick={() => setViewMode("map")}
-                  className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                >
-                  <MapIcon className="h-4 w-4" />
-                </button>
               </div>
             </div>
           </div>
