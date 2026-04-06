@@ -167,10 +167,6 @@ export default function EventDetail() {
             {displayTitle}
           </motion.h1>
 
-          {/* Moment line — editorial hook */}
-          <p className="text-muted-foreground/70 text-[13px] italic mt-2 font-body">
-            {momentLine}
-          </p>
 
           <p className="text-muted-foreground text-sm mt-2 leading-snug line-clamp-2">
             {hookLine}
