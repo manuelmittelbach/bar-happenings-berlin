@@ -199,8 +199,6 @@ export function CategoryIconBar({
     </div>
   );
 }
-  categories,
-  activeCategory,
   onSelect,
 }: {
   categories: string[];
