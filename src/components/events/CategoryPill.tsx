@@ -86,12 +86,12 @@ export function CategoryIconBar({
               isActive ? "text-accent" : "text-muted-foreground"
             }`}
           >
-            <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all ${
+            <div className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all ${
               isActive
                 ? "border-accent bg-accent/15"
                 : "border-border bg-muted hover:border-foreground"
             }`}>
-              {(() => { const I = Icon || Sparkles; return <I className="h-4.5 w-4.5" />; })()}
+              {(() => { const I = Icon || Sparkles; return <I className="h-5 w-5" />; })()}
             </div>
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[64px] truncate">
               {shortLabel}
