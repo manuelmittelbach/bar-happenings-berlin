@@ -9,7 +9,7 @@ import { Search, Users } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
-import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
+import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
 import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
@@ -191,31 +191,13 @@ export default function Index() {
                 onSelect={setActiveCategory}
               />
             </div>
-            {/* Desktop: 2-row grid layout */}
-            <div className="hidden md:grid grid-cols-5 lg:grid-cols-9 gap-1.5">
-              <button
-                onClick={() => setActiveCategory("")}
-                className={`px-3 py-2 font-mono text-[11px] uppercase tracking-wider border transition-all text-center ${
-                  !activeCategory
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                }`}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-2 font-mono text-[11px] uppercase tracking-wider border transition-all text-center truncate ${
-                    activeCategory === cat
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            {/* Desktop: icon row */}
+            <div className="hidden md:block">
+              <CategoryIconRow
+                categories={categories}
+                activeCategory={activeCategory}
+                onSelect={setActiveCategory}
+              />
             </div>
           </div>
         </div>
