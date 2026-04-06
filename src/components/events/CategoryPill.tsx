@@ -90,7 +90,7 @@ export function CategoryIconRow({
             }`}>
               <I className="h-5 w-5" />
             </div>
-            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[72px] truncate transition-colors ${
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors ${
               isActive ? "text-accent" : ""
             }`}>
               {cat}
