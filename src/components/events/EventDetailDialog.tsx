@@ -97,8 +97,8 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                 </span>
               )}
               {badge && (
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
-                  <badge.icon className="h-3 w-3" />
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[12px] font-heading font-bold uppercase tracking-wide -rotate-1 ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+                  <badge.icon className="h-3.5 w-3.5" />
                   {badge.label}
                 </span>
               )}
