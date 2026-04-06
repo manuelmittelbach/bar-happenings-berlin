@@ -52,13 +52,14 @@ export default function Explore() {
   // Deterministic ~5% featured picks based on event id hash
   const featuredIds = useMemo(() => {
     const set = new Set<string>();
-    filtered.forEach((e) => {
+    filtered.forEach((e, i) => {
+      // Pick roughly every 8th event (~12%)
       const hash = e.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      if (hash % 20 === 0) set.add(e.id);
+      if ((hash + i) % 8 === 0) set.add(e.id);
     });
-    // Ensure at least 1 featured if enough events
-    if (set.size === 0 && filtered.length >= 5) {
-      set.add(filtered[Math.floor(filtered.length / 3)].id);
+    // Ensure at least 1 featured if we have events
+    if (set.size === 0 && filtered.length >= 3) {
+      set.add(filtered[0].id);
     }
     return set;
   }, [filtered]);
