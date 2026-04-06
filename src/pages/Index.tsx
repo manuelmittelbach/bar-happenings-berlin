@@ -248,18 +248,72 @@ export default function Index() {
                   const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
                   const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
-                  const sections: { label: string; events: typeof filtered }[] = [];
+                  type SectionLayout = "grid-4" | "grid-2" | "list";
+                  const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
                   const todayEvents = filtered.filter((e) => e.date === today);
                   const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
                   const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
                   const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                   const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents });
-                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents });
-                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents });
-                  if (laterEvents.length) sections.push({ label: "This month", events: laterEvents });
-                  if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents });
+                  if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-4" });
+                  if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-4" });
+                  if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "grid-2" });
+                  if (laterEvents.length) sections.push({ label: "This month", events: laterEvents, layout: "list" });
+                  if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
+
+                  const formatDatePill = (dateStr: string) => {
+                    const d = new Date(dateStr + "T00:00:00");
+                    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                  };
+
+                  const formatDaySeparator = (dateStr: string) => {
+                    const d = new Date(dateStr + "T00:00:00");
+                    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+                  };
+
+                  const groupByDate = (evts: BarlinEvent[]) => {
+                    const groups: { date: string; events: BarlinEvent[] }[] = [];
+                    evts.forEach((e) => {
+                      const last = groups[groups.length - 1];
+                      if (last && last.date === e.date) {
+                        last.events.push(e);
+                      } else {
+                        groups.push({ date: e.date, events: [e] });
+                      }
+                    });
+                    return groups;
+                  };
+
+                  const CompactRow = ({ event }: { event: BarlinEvent }) => {
+                    const catInfo = getCategoryInfoByLabel(event.category);
+                    const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                    const interested = (hash % 42) + 1;
+                    return (
+                      <button
+                        onClick={() => handleEventClick(event.id)}
+                        className="w-full flex items-center gap-3 py-3 px-2 hover:bg-muted/50 transition-colors text-left group"
+                      >
+                        <span className="shrink-0 inline-flex items-center justify-center px-2.5 py-1 bg-muted border border-border font-mono text-[11px] text-muted-foreground uppercase tracking-wider min-w-[52px] text-center">
+                          {formatDatePill(event.date)}
+                        </span>
+                        <span
+                          className="shrink-0 w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: catInfo?.color || "hsl(var(--accent))" }}
+                        />
+                        <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate flex-1 min-w-0">
+                          {event.title}
+                        </span>
+                        <span className="hidden sm:block text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                          {event.venue} · {event.neighborhood}
+                        </span>
+                        <span className="shrink-0 inline-flex items-center gap-1 text-xs text-accent font-mono">
+                          <Users className="h-3 w-3" />
+                          {interested}
+                        </span>
+                      </button>
+                    );
+                  };
 
                   return sections.map((section) => (
                     <div key={section.label}>
@@ -268,11 +322,68 @@ export default function Index() {
                         <div className="flex-1 border-t-2 border-border" />
                         <span className="mono-label text-lg text-muted-foreground">{section.events.length}</span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
-                        ))}
-                      </div>
+
+                      {section.layout === "list" ? (
+                        <div className="border-2 border-border divide-y divide-border">
+                          {groupByDate(section.events).map((group, gi) => (
+                            <div key={group.date}>
+                              {gi > 0 && (
+                                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30">
+                                  <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                                    {formatDaySeparator(group.date)}
+                                  </span>
+                                  <div className="flex-1 border-t border-border" />
+                                </div>
+                              )}
+                              {gi === 0 && (
+                                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30">
+                                  <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                                    {formatDaySeparator(group.date)}
+                                  </span>
+                                  <div className="flex-1 border-t border-border" />
+                                </div>
+                              )}
+                              {group.events.map((event) => (
+                                <CompactRow key={event.id} event={event} />
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      ) : section.layout === "grid-2" ? (
+                        <>
+                          {groupByDate(section.events).map((group, gi) => (
+                            <div key={group.date}>
+                              {gi > 0 && (
+                                <div className="flex items-center gap-3 my-4">
+                                  <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                                    {formatDaySeparator(group.date)}
+                                  </span>
+                                  <div className="flex-1 border-t border-border" />
+                                </div>
+                              )}
+                              {gi === 0 && (
+                                <div className="flex items-center gap-3 mb-4">
+                                  <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                                    {formatDaySeparator(group.date)}
+                                  </span>
+                                  <div className="flex-1 border-t border-border" />
+                                </div>
+                              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+                                {group.events.map((event, i) => (
+                                  <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {section.events.map((event, i) => (
+                            <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ));
                 })()}
