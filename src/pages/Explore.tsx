@@ -19,7 +19,7 @@ export default function Explore() {
   const initialCategory = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
+  
   const [activeDate, setActiveDate] = useState(
     searchParams.get("date") === "today" ? "Today" : searchParams.get("date") === "tomorrow" ? "Tomorrow" : "All"
   );
