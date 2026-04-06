@@ -128,12 +128,13 @@ export default function Index() {
                   className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-2 mt-4">
+              {/* Date filters row */}
+              <div className="flex items-center gap-2 mt-4">
                 {dateFilters.map((d) => (
                   <button
                     key={d}
                     onClick={() => setActiveDate(d)}
-                    className={`inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider border-2 transition-all ${
+                    className={`flex-1 md:flex-none inline-flex items-center justify-center px-3 md:px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
                       activeDate === d
                         ? "border-foreground bg-foreground text-background"
                         : "border-foreground hover:bg-foreground hover:text-background"
@@ -142,32 +143,34 @@ export default function Index() {
                     {d}
                   </button>
                 ))}
-                <div className="ml-auto flex gap-2">
+              </div>
+              {/* Controls row */}
+              <div className="flex items-center justify-between gap-2 mt-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-1.5 px-3 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-colors ${
+                    showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
+                  }`}
+                  aria-label="Toggle filters"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Filters</span>
+                </button>
+                <div className="flex border-2 border-foreground overflow-hidden">
                   <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2.5 border-2 transition-colors ${
-                      showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
-                    }`}
-                    aria-label="Toggle filters"
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Grid view"
                   >
-                    <SlidersHorizontal className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" />
                   </button>
-                  <div className="flex border-2 border-foreground overflow-hidden">
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                      aria-label="Grid view"
-                    >
-                      <LayoutGrid className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode("map")}
-                      className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                      aria-label="Map view"
-                    >
-                      <MapIcon className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setViewMode("map")}
+                    className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                    aria-label="Map view"
+                  >
+                    <MapIcon className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </motion.div>
