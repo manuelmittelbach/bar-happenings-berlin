@@ -93,7 +93,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           className="group flex relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden"
         >
           {/* Image thumbnail — 4:3 ratio */}
-          <div className="relative w-32 md:w-48 shrink-0 bg-muted flex items-center justify-center self-stretch">
+          <div className="relative w-36 h-36 md:w-48 md:h-48 shrink-0 bg-muted flex items-center justify-center">
             {event.image ? (
               <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
