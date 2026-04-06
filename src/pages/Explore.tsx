@@ -172,29 +172,7 @@ export default function Explore() {
           {/* Results */}
           <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
 
-          {viewMode === "map" ? (
-            <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-              {/* Event list sidebar */}
-              <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
-                {filtered.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center p-6">
-                      <p className="font-heading text-sm font-bold uppercase">No events</p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">Try adjusting filters</p>
-                    </div>
-                  </div>
-                ) : (
-                  filtered.map((event, i) => (
-                    <EventCard key={event.id} event={event} index={i} layout="list" />
-                  ))
-                )}
-              </div>
-              {/* Map */}
-              <div className="flex-1 min-w-0">
-                <MapView events={filtered} onEventClick={handleMapEventClick} />
-              </div>
-            </div>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="text-center py-20 border-2 border-border">
               <p className="font-heading text-lg font-bold uppercase">No events found</p>
               <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
