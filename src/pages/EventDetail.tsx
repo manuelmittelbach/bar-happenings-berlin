@@ -51,14 +51,16 @@ export default function EventDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Back button */}
-      <button
-        onClick={() => navigate("/")}
-        className="flex items-center gap-1.5 px-4 pt-10 pb-1 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Events
-      </button>
+      {/* Sticky back button */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Events
+        </button>
+      </div>
 
       {/* Hero image */}
       <div className="relative h-[200px] bg-muted overflow-hidden">
