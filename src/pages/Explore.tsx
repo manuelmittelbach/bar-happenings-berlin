@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon, ChevronRight } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 import MapView from "@/components/events/MapView";
-import { events, categories } from "@/data/mockData";
+import { events, categories, neighborhoods } from "@/data/mockData";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
@@ -19,7 +19,7 @@ export default function Explore() {
   const initialCategory = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  
+  const [activeNeighborhood, setActiveNeighborhood] = useState("");
   const [activeDate, setActiveDate] = useState(
     searchParams.get("date") === "today" ? "Today" : searchParams.get("date") === "tomorrow" ? "Tomorrow" : "All"
   );
@@ -39,7 +39,7 @@ export default function Explore() {
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    
+    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry === "Free Entry") result = result.filter((e) => e.entryInfo === "Free Entry");
@@ -47,31 +47,21 @@ export default function Explore() {
     if (sortBy === "Soonest")
       result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
     return result;
-  }, [search, activeCategory, activeDate, activeEntry, sortBy, today, tomorrow]);
+  }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow]);
 
-  // Split into 3 tiers: featured (top ~3), standard (next ~8), secondary (rest)
-  const { featuredEvents, standardEvents, secondaryEvents } = useMemo(() => {
-    const featured: typeof filtered = [];
-    const standard: typeof filtered = [];
-    const secondary: typeof filtered = [];
-
+  // Deterministic ~5% featured picks based on event id hash
+  const featuredIds = useMemo(() => {
+    const set = new Set<string>();
     filtered.forEach((e, i) => {
+      // Pick roughly every 8th event (~12%)
       const hash = e.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      if (featured.length < 4 && ((hash + i) % 6 === 0 || e.featured)) {
-        featured.push(e);
-      } else if (standard.length < 8) {
-        standard.push(e);
-      } else {
-        secondary.push(e);
-      }
+      if ((hash + i) % 8 === 0) set.add(e.id);
     });
-
-    // Ensure at least 2 featured
-    while (featured.length < 2 && standard.length > 0) {
-      featured.push(standard.shift()!);
+    // Ensure at least 1 featured if we have events
+    if (set.size === 0 && filtered.length >= 3) {
+      set.add(filtered[0].id);
     }
-
-    return { featuredEvents: featured, standardEvents: standard, secondaryEvents: secondary };
+    return set;
   }, [filtered]);
 
   const handleMapEventClick = useCallback(
@@ -85,123 +75,118 @@ export default function Explore() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* ── Sticky search + categories ── */}
-        <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-border">
-          <div className="container">
-            {/* Search + controls row */}
-            <div className="flex items-center gap-2 py-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search events, bars..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-9 pl-9 pr-4 bg-muted/50 border-2 border-border text-sm font-mono outline-none focus:border-foreground transition-colors"
-                />
-              </div>
-              {/* Quick date pills */}
-              <div className="hidden sm:flex gap-1">
-                {dateFilters.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setActiveDate(d)}
-                    className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider border-2 transition-all ${
-                      activeDate === d
-                        ? "border-accent bg-accent/15 text-accent"
-                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+        <div className="container py-10">
+          <div className="mb-8">
+            <p className="mono-label text-accent mb-2">Discover</p>
+            <h1 className="heading-display text-3xl md:text-5xl">Explore Events</h1>
+          </div>
+
+          {/* Search + Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search events, bars, neighborhoods..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 bg-background border-2 border-border text-sm font-mono outline-none focus:border-foreground transition-colors"
+              />
+            </div>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-1.5 h-9 px-3 border-2 text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`inline-flex items-center gap-2 h-10 px-4 border-2 text-sm font-mono uppercase tracking-wider transition-all ${
                   showFilters ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"
                 }`}
               >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Filters</span>
+                <SlidersHorizontal className="h-4 w-4" /> Filters
               </button>
               <div className="hidden sm:flex border-2 border-border overflow-hidden">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                  className={`p-2.5 transition-colors ${viewMode === "grid" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 transition-colors ${viewMode === "list" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                  className={`p-2.5 transition-colors ${viewMode === "list" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                 >
-                  <List className="h-3.5 w-3.5" />
+                  <List className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("map")}
-                  className={`p-2 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
+                  className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                 >
-                  <MapIcon className="h-3.5 w-3.5" />
+                  <MapIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
-
-            {/* Category bar */}
-            <div className="md:hidden pb-2">
-              <CategoryIconBar
-                categories={categories}
-                activeCategory={activeCategory}
-                onSelect={setActiveCategory}
-              />
-            </div>
-            <div className="hidden md:flex gap-1.5 pb-3 overflow-x-auto scrollbar-hide">
-              <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
-              {categories.map((cat) => (
-                <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
-              ))}
-            </div>
           </div>
-        </div>
 
-        {/* ── Filters Panel (collapsible) ── */}
-        {showFilters && (
-          <div className="border-b-2 border-foreground bg-muted/30">
-            <div className="container py-4 flex flex-wrap gap-6">
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="border-2 border-foreground p-5 mb-6 space-y-5">
               <div>
-                <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Date</label>
-                <div className="flex flex-wrap gap-1.5 sm:hidden">
+                <label className="mono-label text-muted-foreground mb-2 block">Date</label>
+                <div className="flex flex-wrap gap-2">
                   {dateFilters.map((d) => (
                     <CategoryPill key={d} label={d} active={activeDate === d} onClick={() => setActiveDate(d)} />
                   ))}
                 </div>
               </div>
               <div>
-                <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Entry</label>
-                <div className="flex flex-wrap gap-1.5">
+                <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
+                <div className="flex flex-wrap gap-2">
+                  <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
+                  {neighborhoods.map((n) => (
+                    <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
+                <div className="flex flex-wrap gap-2">
                   {entryFilters.map((e) => (
                     <CategoryPill key={e} label={e} active={activeEntry === e} onClick={() => setActiveEntry(e)} />
                   ))}
                 </div>
               </div>
               <div>
-                <label className="mono-label text-muted-foreground mb-1.5 block text-[10px]">Sort</label>
-                <div className="flex flex-wrap gap-1.5">
+                <label className="mono-label text-muted-foreground mb-2 block">Sort</label>
+                <div className="flex flex-wrap gap-2">
                   {sortOptions.map((s) => (
                     <CategoryPill key={s} label={s} active={sortBy === s} onClick={() => setSortBy(s)} />
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── Content ── */}
-        <div className="container py-6">
-          <p className="mono-label text-muted-foreground mb-4 text-[10px]">{filtered.length} events found</p>
+          {/* Category filters */}
+          {/* Mobile: icon scroller */}
+          <div className="md:hidden mb-6">
+            <CategoryIconBar
+              categories={categories}
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+            />
+          </div>
+          {/* Desktop: pill labels */}
+          <div className="hidden md:flex flex-wrap gap-2 mb-6">
+            <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
+            {categories.map((cat) => (
+              <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
+            ))}
+          </div>
+
+          {/* Results */}
+          <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
 
           {viewMode === "map" ? (
             <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
+              {/* Event list sidebar */}
               <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
                 {filtered.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
@@ -216,6 +201,7 @@ export default function Explore() {
                   ))
                 )}
               </div>
+              {/* Map */}
               <div className="flex-1 min-w-0">
                 <MapView events={filtered} onEventClick={handleMapEventClick} />
               </div>
@@ -225,64 +211,18 @@ export default function Explore() {
               <p className="font-heading text-lg font-bold uppercase">No events found</p>
               <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
             </div>
-          ) : viewMode === "list" ? (
-            <div className="space-y-0">
+          ) : (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  : "space-y-0"
+              }
+            >
               {filtered.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} layout="list" />
+                <EventCard key={event.id} event={event} index={i} layout={viewMode} featured={viewMode === "grid" && featuredIds.has(event.id)} />
               ))}
             </div>
-          ) : (
-            <>
-              {/* ── TIER 1: Featured — horizontal scroll ── */}
-              {featuredEvents.length > 0 && (
-                <section className="mb-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-heading text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                      <span className="w-2 h-2 bg-accent inline-block" />
-                      Editor's Picks
-                    </h2>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
-                    {featuredEvents.map((event, i) => (
-                      <EventCard key={event.id} event={event} index={i} layout="grid" featured />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── TIER 2: Standard results — grid ── */}
-              {standardEvents.length > 0 && (
-                <section className="mb-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-heading text-sm font-bold uppercase tracking-wider">
-                      All Events
-                    </h2>
-                    <span className="text-[10px] text-muted-foreground font-mono">{standardEvents.length + secondaryEvents.length} more</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {standardEvents.map((event, i) => (
-                      <EventCard key={event.id} event={event} index={i} layout="grid" />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── TIER 3: Secondary results — compact list ── */}
-              {secondaryEvents.length > 0 && (
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-heading text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                      More Events
-                    </h2>
-                  </div>
-                  <div className="border-2 border-border divide-y divide-border">
-                    {secondaryEvents.map((event, i) => (
-                      <EventCard key={event.id} event={event} index={i} layout="compact" />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
           )}
         </div>
       </main>
