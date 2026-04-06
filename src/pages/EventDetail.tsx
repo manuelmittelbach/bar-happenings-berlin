@@ -138,7 +138,7 @@ export default function EventDetail() {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.25 }}
-              className="text-accent text-[11px] font-heading font-bold uppercase tracking-wider mb-2"
+              className="text-accent text-[11px] font-body font-semibold uppercase tracking-wider mb-2"
             >
               ⏤ {timingLabel}
             </motion.p>
@@ -246,9 +246,9 @@ export default function EventDetail() {
 
         {/* About — improved readability */}
         <div className="px-4 py-5 space-y-4">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
+          <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
           {event.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-sm text-muted-foreground leading-[1.75] font-body">{p}</p>
+            <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{p}</p>
           ))}
         </div>
 
@@ -256,7 +256,7 @@ export default function EventDetail() {
 
         {/* Practical info — venue more prominent */}
         <div className="px-4 py-5 space-y-3">
-          <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
+          <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">Practical info</h2>
           {event.address && (
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}

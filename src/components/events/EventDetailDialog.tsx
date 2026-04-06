@@ -149,9 +149,9 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
 
           {/* About — directly after header */}
           <div className="px-4 md:px-8 py-4 space-y-2.5">
-            <h3 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h3>
+            <h3 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h3>
             {event.description.split("\n\n").map((p, i) => (
-              <p key={i} className="text-sm md:text-[15px] text-muted-foreground leading-relaxed">{p}</p>
+              <p key={i} className="text-sm md:text-[15px] text-muted-foreground/80 leading-[1.75]">{p}</p>
             ))}
           </div>
 
