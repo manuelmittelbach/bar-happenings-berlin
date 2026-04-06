@@ -174,7 +174,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
             >
               <div className="min-w-0">
                 <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
-                <p className="font-heading font-bold text-sm md:text-base">{event.venue}</p>
+                <p className="font-body font-bold text-sm md:text-base">{event.venue}</p>
                 <p className="text-xs md:text-sm text-muted-foreground mt-1">{event.address}</p>
               </div>
               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent shrink-0 mt-5 transition-colors" />
