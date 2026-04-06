@@ -149,9 +149,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`group flex flex-col border-2 transition-colors overflow-hidden ${
+        className={`group relative flex flex-col border-2 transition-colors overflow-hidden ${
           isLive
-            ? "border-[hsl(0,72%,51%)]/40 hover:border-[hsl(0,72%,51%)]"
+            ? "border-[hsl(0,72%,51%)]/50 hover:border-[hsl(0,72%,51%)] bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]"
             : "border-border hover:border-foreground"
         }`}
       >
