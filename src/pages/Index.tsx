@@ -210,34 +210,6 @@ export default function Index() {
               </div>
             </div>
           </div>
-          {/* Neighborhood row */}
-          <div className="container pb-3">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap">
-              <button
-                onClick={() => setActiveNeighborhood("")}
-                className={`shrink-0 inline-flex items-center px-3 py-1 font-mono text-[10px] uppercase tracking-wider border transition-all ${
-                  !activeNeighborhood
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                }`}
-              >
-                All Areas
-              </button>
-              {neighborhoods.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setActiveNeighborhood(n)}
-                  className={`shrink-0 inline-flex items-center px-3 py-1 font-mono text-[10px] uppercase tracking-wider border transition-all ${
-                    activeNeighborhood === n
-                      ? "border-accent bg-accent/15 text-accent"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <section className="border-b-2 border-foreground">
