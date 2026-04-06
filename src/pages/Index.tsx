@@ -266,7 +266,7 @@ export default function Index() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} />
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
                         ))}
                       </div>
                     </div>
