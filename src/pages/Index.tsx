@@ -18,7 +18,7 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [activeCategory, setActiveCategory] = useState("");
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
+  
   const [activeDate, setActiveDate] = useState("All");
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
