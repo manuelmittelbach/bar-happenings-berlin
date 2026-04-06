@@ -267,7 +267,7 @@ export default function EventDetail() {
               <div className="flex items-start gap-2.5 min-w-0">
                 <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-heading font-bold">{event.venue}</p>
+                  <p className="font-body font-bold">{event.venue}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5">{event.address}</p>
                   <p className="text-[11px] text-muted-foreground/70 mt-0.5">{event.neighborhood}</p>
                 </div>
