@@ -18,7 +18,7 @@ import type { BarlinEvent } from "@/data/mockData";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
-const EXPLORE_SCROLL_KEY = "tipsy-tiger-explore-scroll-y";
+const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 export default function Index() {
   const navigate = useNavigate();
