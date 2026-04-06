@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Anton", "sans-serif"],
-        body: ["Inter", "sans-serif"],
+        heading: ["Bebas Neue", "sans-serif"],
+        body: ["DM Sans", "sans-serif"],
         mono: ["Space Mono", "monospace"],
         editorial: ["Playfair Display", "serif"],
       },
