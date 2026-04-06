@@ -5,7 +5,7 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Search, Users } from "lucide-react";
-import { motion } from "framer-motion";
+
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
@@ -115,11 +115,7 @@ export default function Index() {
       <main className="flex-1">
         <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-12 md:py-16 lg:py-20 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <div>
               <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
               <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
                 What's on
@@ -131,14 +127,9 @@ export default function Index() {
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
                 Live music, quiz nights, open mics, and community events in small independent bars across the city.
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-10 max-w-lg"
-            >
+            <div className="mt-10 max-w-lg">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -165,7 +156,7 @@ export default function Index() {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
           </div>
         </section>
 

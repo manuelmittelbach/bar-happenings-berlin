@@ -4,7 +4,7 @@ import { formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { MapPin, Clock, Star, Users } from "lucide-react";
-import { motion } from "framer-motion";
+
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
@@ -56,11 +56,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   if (layout === "list") {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.03 }}
-      >
+      <div>
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors">
           <div className="relative w-24 sm:w-28 shrink-0 self-stretch overflow-hidden bg-muted">
             <EventImage className="grayscale-hover" />
@@ -90,18 +86,13 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
         </Link>
-      </motion.div>
+      </div>
     );
   }
 
   if (featured) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: index * 0.05 }}
-        className="col-span-1"
-      >
+      <div className="col-span-1">
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
@@ -154,16 +145,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             </div>
           </div>
         </Link>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-    >
+    <div>
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex flex-col border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Badge strip — flush with card top */}
         {badge && (
@@ -208,6 +195,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
