@@ -268,7 +268,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               ) : <div />}
               <button
                 onClick={handleJoin}
-                className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
+                className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-body transition-all ${
                   joined
                     ? "bg-accent text-accent-foreground"
                     : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
