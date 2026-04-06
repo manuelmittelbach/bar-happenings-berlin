@@ -141,7 +141,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     >
       <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex border-2 border-border hover:border-foreground transition-colors overflow-hidden">
         {/* Image thumbnail */}
-        <div className="relative w-28 h-20 sm:w-40 sm:h-28 shrink-0 bg-muted flex items-center justify-center">
+        <div className="relative w-32 sm:w-40 md:w-44 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
           {event.image ? (
             <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           ) : (
@@ -152,12 +152,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           <div className="flex items-center gap-2 mb-1">
             <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
           </div>
-          <h3 className="font-body text-base md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
+          <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
             {event.title}
           </h3>
-          <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1 md:mb-2">{event.venue}</p>
-          <div className="flex items-center justify-between flex-wrap gap-1 md:gap-2">
-            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+          <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-muted border border-border text-[10px] md:text-xs text-muted-foreground font-mono">
                 <MapPin className="h-2.5 w-2.5 md:h-3 md:w-3" />
                 {event.neighborhood}
@@ -167,7 +167,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
                 {formatDateShort(event.date)}
               </span>
             </div>
-            <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono">
+            <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
               <Users className="h-3 w-3" />
               {interestedCount}
             </span>
