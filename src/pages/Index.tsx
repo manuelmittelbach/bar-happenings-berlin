@@ -128,13 +128,13 @@ export default function Index() {
                   className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
               </div>
-              {/* Date filters row */}
-              <div className="flex items-center gap-2 mt-4">
+              {/* Filters row — all aligned left */}
+              <div className="flex items-center gap-2 mt-4 flex-wrap">
                 {dateFilters.map((d) => (
                   <button
                     key={d}
                     onClick={() => setActiveDate(d)}
-                    className={`flex-1 md:flex-none inline-flex items-center justify-center px-3 md:px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
+                    className={`inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
                       activeDate === d
                         ? "border-foreground bg-foreground text-background"
                         : "border-foreground hover:bg-foreground hover:text-background"
@@ -143,19 +143,6 @@ export default function Index() {
                     {d}
                   </button>
                 ))}
-              </div>
-              {/* Controls row */}
-              <div className="flex items-center justify-between gap-2 mt-2">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 px-3 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-colors ${
-                    showFilters ? "border-foreground bg-foreground text-background" : "border-foreground hover:bg-muted"
-                  }`}
-                  aria-label="Toggle filters"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Filters</span>
-                </button>
                 <div className="flex border-2 border-foreground overflow-hidden">
                   <button
                     onClick={() => setViewMode("grid")}
