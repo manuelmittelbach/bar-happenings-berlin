@@ -162,6 +162,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             {interestedCount}
           </span>
         </div>
+        </div>
       </Link>
     </motion.div>
   );
