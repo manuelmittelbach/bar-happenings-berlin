@@ -20,7 +20,7 @@ interface EventCardProps {
 
 /* Compact chip styles per badge variant */
 const badgeChipClasses: Record<EventBadge["variant"], string> = {
-  live: "bg-[hsl(0,72%,51%)] text-white",
+  live: "bg-[hsl(0,72%,51%)] text-white shadow-[0_0_8px_hsl(0_72%_51%/0.4)]",
   soon: "bg-muted text-foreground border border-border",
   popular: "border border-accent/40 text-accent bg-accent/10",
 };
@@ -48,7 +48,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const BadgeChip = () => {
     if (!badge) return null;
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-bold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-extrabold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
         <badge.icon className="h-2.5 w-2.5" />
         {badge.label}
       </span>
@@ -149,9 +149,9 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`group flex flex-col border-2 transition-colors overflow-hidden ${
+        className={`group relative flex flex-col border-2 transition-colors overflow-hidden ${
           isLive
-            ? "border-[hsl(0,72%,51%)]/40 hover:border-[hsl(0,72%,51%)]"
+            ? "border-[hsl(0,72%,51%)]/50 hover:border-[hsl(0,72%,51%)] bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]"
             : "border-border hover:border-foreground"
         }`}
       >
