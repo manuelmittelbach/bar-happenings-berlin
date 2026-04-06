@@ -53,7 +53,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         {/* Mobile back */}
         <button
           onClick={() => onOpenChange(false)}
-          className="md:hidden flex items-center gap-1.5 px-4 pt-10 pb-1 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors"
+          className="md:hidden flex items-center gap-1.5 px-4 pt-10 pb-1 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none focus-visible:outline-none"
         >
           <ArrowLeft className="h-4 w-4" />
           Events
@@ -68,7 +68,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
         )}
 
         {/* Content */}
-        <div className={`${hasRealImage ? '-mt-10' : 'pt-2 md:pt-10'} relative z-10`}>
+        <div className={`${hasRealImage ? '-mt-10' : 'pt-6 md:pt-10'} relative z-10`}>
 
           {/* ── HEADER SECTION ── */}
           <div className="px-4 md:px-8 pb-5">
