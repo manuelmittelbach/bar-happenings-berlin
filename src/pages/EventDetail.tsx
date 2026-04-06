@@ -1,17 +1,22 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useLayoutEffect } from "react";
-import { MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users, CalendarPlus, Share2, ChevronDown } from "lucide-react";
+import {
+  MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users,
+  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Navigation, Clock
+} from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { getEventBadge } from "@/lib/eventBadges";
 
 export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = getEventById(id || "");
   const [joined, setJoined] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
 
   const baseCount = useMemo(() => {
@@ -26,6 +31,10 @@ export default function EventDetail() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+    const raf = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [id]);
 
   if (!event) {
@@ -43,16 +52,33 @@ export default function EventDetail() {
   const catInfo = getCategoryInfoByLabel(event.category);
   const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
+  const badge = getEventBadge(event, interestedCount);
+
+  const priceLabel = event.price
+    ? event.price.split(" — ")[0]
+    : "Free entry";
+
+  const hookLine = event.summary || event.description.split("\n\n")[0].slice(0, 100) + (event.description.split("\n\n")[0].length > 100 ? "…" : "");
 
   const handleJoin = () => {
     setJoined(!joined);
     setInterestedCount(prev => joined ? prev - 1 : prev + 1);
   };
 
+  const handleCalendar = () => {
+    const startDate = event.date.replace(/-/g, '');
+    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate}/${startDate}&location=${encodeURIComponent(event.address || event.venue)}&details=${encodeURIComponent(event.description.slice(0, 200))}`;
+    window.open(calUrl, '_blank');
+  };
+
+  const handleMaps = () => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`, '_blank');
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Sticky back button */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
+    <div className="min-h-screen bg-background pb-24">
+      {/* Sticky back bar */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none"
@@ -62,70 +88,161 @@ export default function EventDetail() {
         </button>
       </div>
 
-      {/* Hero image */}
-      <div className="relative h-[200px] bg-muted overflow-hidden">
-        {hasRealImage ? (
-          <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-muted-foreground/20 font-mono text-xs uppercase tracking-widest">No image</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-      </div>
+      {/* === ABOVE THE FOLD: Decision Zone === */}
+      <div className="max-w-screen-md mx-auto">
 
-      {/* Content */}
-      <div className="-mt-8 relative z-10">
+        {/* Hero image — compact */}
+        <div className="relative h-[180px] md:h-[260px] bg-muted overflow-hidden">
+          {hasRealImage ? (
+            <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-muted-foreground/20 font-mono text-xs uppercase tracking-widest">No image</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
 
-        {/* Header */}
-        <div className="px-4 pb-4">
-          <div className="flex items-center gap-2 flex-wrap mb-3">
+          {/* Floating badges on image */}
+          <div className="absolute bottom-3 left-4 flex items-center gap-2">
             {catInfo && (
-              <span className="inline-flex items-center px-2.5 py-1 bg-accent/15 text-accent text-[11px] font-bold uppercase tracking-wider">
-                {catInfo.label}
+              <span className="inline-flex items-center px-2.5 py-1 bg-background/90 backdrop-blur-sm text-accent text-[11px] font-bold uppercase tracking-wider border border-accent/30">
+                {catInfo.emoji} {catInfo.label}
               </span>
             )}
-            {event.recurrence && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-[11px] font-mono">
-                <RotateCw className="h-3 w-3" /> {event.recurrence}
+            {badge && (
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 backdrop-blur-sm text-[11px] font-bold uppercase tracking-wider border ${
+                badge.variant === 'live'
+                  ? 'bg-[hsl(0,72%,51%)]/90 text-white border-[hsl(0,72%,51%)]'
+                  : badge.variant === 'soon'
+                    ? 'bg-[hsl(42,100%,50%)]/90 text-black border-[hsl(42,100%,50%)]'
+                    : 'bg-accent/90 text-accent-foreground border-accent'
+              }`}>
+                <badge.icon className="h-3 w-3" />
+                {badge.label}
               </span>
             )}
           </div>
+        </div>
 
+        {/* Core info block */}
+        <div className="px-4 pt-4 pb-3">
           <motion.h1
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="font-heading text-2xl font-extrabold leading-[1.1] tracking-tight mb-3"
+            transition={{ duration: 0.3 }}
+            className="font-heading text-[22px] md:text-3xl font-extrabold leading-[1.1] tracking-tight"
           >
             {displayTitle}
           </motion.h1>
 
-          <p className="text-accent font-heading font-bold text-base mb-1">
-            {formatDateWithDay(event.date)}, {event.startTime}
+          <p className="text-muted-foreground text-sm mt-2 leading-snug line-clamp-2">
+            {hookLine}
           </p>
-          <p className="text-foreground font-medium text-sm mb-2">{event.venue}</p>
+        </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {event.neighborhood && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
+        {/* Key details grid — scannable */}
+        <div className="px-4 pb-3">
+          <div className="grid grid-cols-2 gap-2">
+            {/* When */}
+            <div className="bg-card border-2 border-border p-3">
+              <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">When</p>
+              <p className="font-heading font-bold text-sm">{formatDateWithDay(event.date)}</p>
+              {event.startTime && (
+                <p className="text-accent font-mono font-bold text-sm mt-0.5">
+                  {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
+                </p>
+              )}
+            </div>
+
+            {/* Where */}
+            <button
+              onClick={handleMaps}
+              className="bg-card border-2 border-border p-3 text-left hover:border-accent/50 transition-colors group"
+            >
+              <p className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1">Where</p>
+              <p className="font-heading font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
+              <p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
                 <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
-              </span>
-            )}
-            {event.language && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
-                <Globe className="h-3 w-3 shrink-0" /> {event.language}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-muted-foreground text-[11px] font-medium">
-              <Users className="h-3 w-3 text-accent shrink-0" />
-              <strong className="text-foreground">{interestedCount}</strong> interested
-            </span>
+              </p>
+            </button>
           </div>
         </div>
 
-        {/* About — directly after header */}
-        <div className="px-4 py-4 space-y-2.5">
+        {/* Info pills row */}
+        <div className="px-4 pb-4 flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center px-3 py-1.5 bg-accent/15 text-accent text-[12px] font-heading font-bold border border-accent/30">
+            {priceLabel}
+          </span>
+          {event.recurrence && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[11px] font-mono border border-border">
+              <RotateCw className="h-3 w-3" /> {event.recurrence}
+            </span>
+          )}
+          {event.language && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[11px] font-medium border border-border">
+              <Globe className="h-3 w-3" /> {event.language}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[11px] font-medium border border-border">
+            <Users className="h-3 w-3 text-accent" />
+            <strong className="text-foreground">{interestedCount}</strong> interested
+          </span>
+        </div>
+
+        {/* Primary CTA + secondary actions */}
+        <div className="px-4 pb-4 space-y-3">
+          {/* Primary CTA */}
+          <button
+            onClick={handleJoin}
+            className={`w-full h-14 text-sm font-bold uppercase tracking-wider font-heading transition-all duration-200 ${
+              joined
+                ? "bg-accent text-accent-foreground border-2 border-accent"
+                : "bg-[hsl(var(--accent))] text-accent-foreground border-2 border-accent hover:shadow-[0_0_24px_hsl(18_85%_52%/0.4)]"
+            }`}
+          >
+            {joined ? "✓ I'm interested" : "I want to join"}
+          </button>
+
+          {/* Secondary actions row */}
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              onClick={() => setSaved(!saved)}
+              className={`flex flex-col items-center gap-1.5 py-3 border-2 transition-all text-[10px] font-heading font-bold uppercase tracking-wider ${
+                saved
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+              }`}
+            >
+              {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+              Save
+            </button>
+
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="icon" />
+
+            <button
+              onClick={handleCalendar}
+              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
+            >
+              <CalendarPlus className="h-5 w-5" />
+              Calendar
+            </button>
+
+            <button
+              onClick={handleMaps}
+              className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider"
+            >
+              <Navigation className="h-5 w-5" />
+              Maps
+            </button>
+          </div>
+        </div>
+
+        <div className="border-t border-border mx-4" />
+
+        {/* === BELOW THE FOLD: Details === */}
+
+        {/* About */}
+        <div className="px-4 py-5 space-y-2.5">
           <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
           {event.description.split("\n\n").map((p, i) => (
             <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
@@ -134,20 +251,13 @@ export default function EventDetail() {
 
         <div className="border-t border-border mx-4" />
 
-        {/* Actions row */}
-        <div className="px-4 py-4">
-          <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="full" />
-        </div>
-
-        <div className="border-t border-border mx-4" />
-
-        {/* Venue card */}
+        {/* Venue detail card */}
         {event.address && (
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="group mx-4 my-4 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 cursor-pointer block"
+            className="group mx-4 my-4 p-4 bg-card border-2 border-border hover:border-foreground transition-colors flex items-start justify-between gap-3 block"
           >
             <div className="min-w-0">
               <h3 className="text-[10px] uppercase tracking-[0.15em] font-mono text-muted-foreground mb-1.5">Venue</h3>
@@ -162,7 +272,7 @@ export default function EventDetail() {
 
         {/* Utility rows */}
         <div className="px-4">
-          {/* Upcoming dates collapsible */}
+          {/* Upcoming dates */}
           {siblingDates.length > 1 && (
             <div className="border-b border-border">
               <button
@@ -200,18 +310,6 @@ export default function EventDetail() {
             </div>
           )}
 
-          <button
-            className="w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
-            onClick={() => {
-              const startDate = event.date.replace(/-/g, '');
-              const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate}/${startDate}&location=${encodeURIComponent(event.address || event.venue)}&details=${encodeURIComponent(event.description.slice(0, 200))}`;
-              window.open(calUrl, '_blank');
-            }}
-          >
-            <span className="font-medium">Add to calendar</span>
-            <CalendarPlus className="h-4 w-4 text-muted-foreground" />
-          </button>
-
           {event.url && (
             <a
               href={event.url}
@@ -226,37 +324,6 @@ export default function EventDetail() {
         </div>
 
         <div className="h-6" />
-      </div>
-
-      {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-border">
-        <div className="flex items-center justify-between px-4 py-3 max-w-screen-md mx-auto">
-          {event.price ? (
-            <div className="min-w-0">
-              {(() => {
-                const parts = event.price.split(" — ");
-                const mainPrice = parts[0];
-                const extra = parts[1];
-                return (
-                  <>
-                    <p className="text-sm font-heading font-bold text-foreground">{mainPrice}</p>
-                    {extra && <p className="text-[10px] text-muted-foreground truncate">{extra}</p>}
-                  </>
-                );
-              })()}
-            </div>
-          ) : <div />}
-          <button
-            onClick={handleJoin}
-            className={`shrink-0 px-6 h-12 text-sm font-bold uppercase tracking-wider font-heading transition-all ${
-              joined
-                ? "bg-accent text-accent-foreground"
-                : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
-            }`}
-          >
-            {joined ? "✓ Interested" : "I want to join"}
-          </button>
-        </div>
       </div>
     </div>
   );
