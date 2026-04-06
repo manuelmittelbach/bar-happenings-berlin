@@ -4,7 +4,7 @@ import { formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { MapPin, Clock, Star, Users } from "lucide-react";
-import { motion } from "framer-motion";
+
 import type { BarlinEvent } from "@/data/mockData";
 import { getCategoryInfoByLabel } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
