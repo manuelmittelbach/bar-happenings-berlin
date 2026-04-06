@@ -200,11 +200,21 @@ export default function Index() {
 
         <div className="border-b-2 border-foreground">
           <div className="container py-4">
-            <CategoryIconBar
-              categories={categories}
-              activeCategory={activeCategory}
-              onSelect={setActiveCategory}
-            />
+            {/* Mobile: icon scroller */}
+            <div className="md:hidden">
+              <CategoryIconBar
+                categories={categories}
+                activeCategory={activeCategory}
+                onSelect={setActiveCategory}
+              />
+            </div>
+            {/* Desktop: pill labels */}
+            <div className="hidden md:flex flex-wrap gap-2">
+              <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
+              {categories.map((cat) => (
+                <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
+              ))}
+            </div>
           </div>
         </div>
 

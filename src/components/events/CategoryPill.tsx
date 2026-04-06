@@ -50,29 +50,28 @@ export function CategoryIconBar({
   onSelect: (cat: string) => void;
 }) {
   return (
-    <div className="flex gap-1 md:gap-2 lg:gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide md:flex-wrap md:justify-start">
+    <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
       {/* All */}
       <button
         onClick={() => onSelect("")}
-        className={`flex flex-col items-center gap-1.5 md:gap-2 min-w-[60px] md:min-w-[72px] px-2 md:px-3 py-2 transition-colors ${
-          !activeCategory ? "text-accent" : "text-muted-foreground hover:text-foreground"
+        className={`flex flex-col items-center gap-1.5 min-w-[60px] px-2 py-2 transition-colors ${
+          !activeCategory ? "text-accent" : "text-muted-foreground"
         }`}
       >
-        <div className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border-2 transition-all ${
+        <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all ${
           !activeCategory
             ? "border-accent bg-accent/15"
             : "border-border bg-muted hover:border-foreground"
         }`}>
-          <LayoutGrid className="h-4.5 w-4.5 md:h-5 md:w-5" />
+          <LayoutGrid className="h-4.5 w-4.5" />
         </div>
-        <span className="text-[10px] md:text-[11px] font-mono font-bold uppercase tracking-wider">All</span>
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider">All</span>
       </button>
 
       {categories.map((cat) => {
         const info = getCategoryInfoByLabel(cat);
         const Icon = info ? categoryIcons[info.id] : Sparkles;
         const isActive = activeCategory === cat;
-        // Full label on desktop, short on mobile
         const shortLabel = info?.id === "language-exchange" ? "Lang." : 
                info?.id === "social" ? "Social" :
                info?.id === "dj-music" ? "DJ" :
@@ -83,22 +82,19 @@ export function CategoryIconBar({
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            className={`flex flex-col items-center gap-1.5 md:gap-2 min-w-[60px] md:min-w-[72px] px-2 md:px-3 py-2 transition-colors ${
-              isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
+            className={`flex flex-col items-center gap-1.5 min-w-[60px] px-2 py-2 transition-colors ${
+              isActive ? "text-accent" : "text-muted-foreground"
             }`}
           >
-            <div className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border-2 transition-all ${
+            <div className={`w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all ${
               isActive
                 ? "border-accent bg-accent/15"
                 : "border-border bg-muted hover:border-foreground"
             }`}>
-              {(() => { const I = Icon || Sparkles; return <I className="h-4.5 w-4.5 md:h-5 md:w-5" />; })()}
+              {(() => { const I = Icon || Sparkles; return <I className="h-4.5 w-4.5" />; })()}
             </div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[64px] truncate md:hidden">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center max-w-[64px] truncate">
               {shortLabel}
-            </span>
-            <span className="hidden md:block text-[11px] font-mono font-bold uppercase tracking-wider leading-tight text-center">
-              {cat}
             </span>
           </button>
         );
