@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useLayoutEffect } from "react";
 import {
   MapPin, Globe, ExternalLink, RotateCw, ArrowLeft, Users,
-  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Navigation, Clock
+  CalendarPlus, Share2, ChevronDown, Bookmark, BookmarkCheck, Clock
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
