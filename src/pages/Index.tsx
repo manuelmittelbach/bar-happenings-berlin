@@ -164,15 +164,6 @@ export default function Index() {
           </div>
         </section>
 
-        <div className="border-b-2 border-foreground bg-accent text-accent-foreground overflow-hidden py-2">
-          <div className="flex animate-marquee whitespace-nowrap">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span key={i} className="mono-label text-[11px] mx-8">
-                Live Music · Quiz Nights · Open Mic · Poetry · DJ Sets · Language Exchange · Comedy · Film Screenings · Board Games · Workshops · Community Events · Social Hangouts ·
-              </span>
-            ))}
-          </div>
-        </div>
 
         {showFilters && (
           <div className="border-b-2 border-foreground">
