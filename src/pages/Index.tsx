@@ -11,7 +11,7 @@ import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
 
-import EventDetailDialog from "@/components/events/EventDetailDialog";
+
 import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
 
@@ -29,7 +29,7 @@ export default function Index() {
   const [activeDate, setActiveDate] = useState("All");
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  
   
 
   const today = new Date().toISOString().split("T")[0];
@@ -101,13 +101,9 @@ export default function Index() {
   }, []);
 
   const handleEventClick = useCallback((eventId: string) => {
-    if (isMobile) {
-      sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
-      navigate(`/event/${eventId}`);
-    } else {
-      setSelectedEventId(eventId);
-    }
-  }, [isMobile, navigate]);
+    sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
+    navigate(`/event/${eventId}`);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -412,14 +408,6 @@ export default function Index() {
       </main>
       <Footer />
 
-      <EventDetailDialog
-        eventId={selectedEventId}
-        open={!!selectedEventId}
-        onOpenChange={(open) => {
-          if (!open) setSelectedEventId(null);
-        }}
-        onEventChange={(id) => setSelectedEventId(id)}
-      />
 
     </div>
   );
