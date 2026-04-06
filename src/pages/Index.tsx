@@ -227,17 +227,28 @@ export default function Index() {
 
               type SectionLayout = "grid-4" | "grid-2" | "list";
               const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
-              const todayEvents = filtered.filter((e) => e.date === today);
-              const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
-              const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
-              const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
-              const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-              if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
-              if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
-              if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
-              if (laterEvents.length) sections.push({ label: "This month", events: laterEvents, layout: "list" });
-              if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
+              // When a specific date filter is active, show a single section
+              if (activeDate === "Today") {
+                if (filtered.length) sections.push({ label: "Today", events: filtered, layout: "grid-2" });
+              } else if (activeDate === "Tomorrow") {
+                if (filtered.length) sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
+              } else if (activeDate === "This Week") {
+                if (filtered.length) sections.push({ label: "This week", events: filtered, layout: "list" });
+              } else {
+                // "All" — split into temporal sections
+                const todayEvents = filtered.filter((e) => e.date === today);
+                const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
+                const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
+                const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
+                const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
+
+                if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
+                if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
+                if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
+                if (laterEvents.length) sections.push({ label: "This month", events: laterEvents, layout: "list" });
+                if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
+              }
 
               const formatDatePill = (dateStr: string) => {
                 const d = new Date(dateStr + "T00:00:00");
