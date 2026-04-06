@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
-import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
+import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 import { events, categories, neighborhoods } from "@/data/mockData";
 
@@ -161,12 +161,13 @@ export default function Explore() {
               onSelect={setActiveCategory}
             />
           </div>
-          {/* Desktop: pill labels */}
-          <div className="hidden md:flex flex-wrap gap-2 mb-6">
-            <CategoryPill label="All" active={!activeCategory} onClick={() => setActiveCategory("")} />
-            {categories.map((cat) => (
-              <CategoryPill key={cat} label={cat} active={activeCategory === cat} onClick={() => setActiveCategory(cat)} />
-            ))}
+          {/* Desktop: icon row */}
+          <div className="hidden md:block mb-6">
+            <CategoryIconRow
+              categories={categories}
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+            />
           </div>
 
           {/* Results */}
