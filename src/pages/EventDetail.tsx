@@ -12,6 +12,7 @@ export default function EventDetail() {
   const navigate = useNavigate();
   const event = getEventById(id || "");
   const [joined, setJoined] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
 
   const baseCount = useMemo(() => {
     if (!id) return 0;
