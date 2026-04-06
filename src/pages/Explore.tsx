@@ -1,12 +1,12 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, LayoutGrid, List, MapIcon } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar } from "@/components/events/CategoryPill";
-import MapView from "@/components/events/MapView";
+
 import { events, categories, neighborhoods } from "@/data/mockData";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
@@ -15,7 +15,7 @@ const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Explore() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  
   const initialCategory = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(initialCategory);
@@ -25,7 +25,7 @@ export default function Explore() {
   );
   const [activeEntry, setActiveEntry] = useState("All");
   const [sortBy, setSortBy] = useState("Recommended");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
@@ -64,12 +64,6 @@ export default function Explore() {
     return set;
   }, [filtered]);
 
-  const handleMapEventClick = useCallback(
-    (eventId: string) => {
-      navigate(`/event/${eventId}`);
-    },
-    [navigate]
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -114,12 +108,6 @@ export default function Explore() {
                   className={`p-2.5 transition-colors ${viewMode === "list" ? "bg-foreground text-background" : "hover:bg-muted"}`}
                 >
                   <List className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("map")}
-                  className={`p-2.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "hover:bg-muted"}`}
-                >
-                  <MapIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -184,29 +172,7 @@ export default function Explore() {
           {/* Results */}
           <p className="mono-label text-muted-foreground mb-6">{filtered.length} events found</p>
 
-          {viewMode === "map" ? (
-            <div className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]">
-              {/* Event list sidebar */}
-              <div className="w-[380px] shrink-0 overflow-y-auto space-y-0 border-2 border-foreground hidden lg:block">
-                {filtered.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center p-6">
-                      <p className="font-heading text-sm font-bold uppercase">No events</p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">Try adjusting filters</p>
-                    </div>
-                  </div>
-                ) : (
-                  filtered.map((event, i) => (
-                    <EventCard key={event.id} event={event} index={i} layout="list" />
-                  ))
-                )}
-              </div>
-              {/* Map */}
-              <div className="flex-1 min-w-0">
-                <MapView events={filtered} onEventClick={handleMapEventClick} />
-              </div>
-            </div>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="text-center py-20 border-2 border-border">
               <p className="font-heading text-lg font-bold uppercase">No events found</p>
               <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
