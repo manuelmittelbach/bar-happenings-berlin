@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
+import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -35,6 +36,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const siblings = event ? getEventsByParent(event.parentId) : [];
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
   const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
+  const badge = useMemo(() => event ? getEventBadge(event, interestedCount) : null, [event, interestedCount]);
+
+  const badgeVariantClasses: Record<EventBadge["variant"], string> = {
+    live: "bg-destructive text-destructive-foreground",
+    soon: "border border-accent text-accent bg-accent/10",
+    popular: "bg-pink-600 text-white",
+  };
 
   if (!event) return null;
 
@@ -86,6 +94,12 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
               {event.recurrence && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground text-[11px] font-mono">
                   <RotateCw className="h-3 w-3" /> {event.recurrence}
+                </span>
+              )}
+              {badge && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider ${badgeVariantClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+                  <badge.icon className="h-3 w-3" />
+                  {badge.label}
                 </span>
               )}
             </div>
