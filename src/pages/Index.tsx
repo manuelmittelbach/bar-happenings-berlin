@@ -13,7 +13,7 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { events, categories, neighborhoods, getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
+import { events, categories, neighborhoods, venues, getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/distance";
@@ -171,12 +171,45 @@ export default function Index() {
     navigate(`/event/${eventId}`);
   }, [navigate]);
 
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const results: { label: string; type: "bar" | "neighborhood" }[] = [];
+    const seen = new Set<string>();
+    for (const n of neighborhoods) {
+      if (n.toLowerCase().includes(q) && !seen.has(n)) {
+        seen.add(n);
+        results.push({ label: n, type: "neighborhood" });
+      }
+    }
+    for (const v of venues) {
+      if (v.name.toLowerCase().includes(q) && !seen.has(v.name)) {
+        seen.add(v.name);
+        results.push({ label: v.name, type: "bar" });
+      }
+    }
+    return results.slice(0, 2);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
         <section className="border-b-2 border-foreground noise-bg bg-muted/40">
-          <div className="container py-12 md:py-16 lg:py-20 relative z-10">
+          <div className="container py-12 md:py-16 lg:py-20 relative z-[45]">
             <div>
               <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
               <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
@@ -192,15 +225,38 @@ export default function Index() {
             </div>
 
             <div className="mt-10 max-w-lg">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="relative" ref={searchWrapperRef}>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search by bar, neighborhood, or event..."
+                  placeholder="Search by neighborhood or bar"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
                   className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
                 />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.label}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSearchQuery(s.label);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors text-left border-b border-border last:border-b-0"
+                      >
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                          {s.type === "bar" ? "Bar" : "Area"}
+                        </span>
+                        <span className="text-sm font-body truncate">{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* Filters row — all aligned left */}
               <div className="flex items-center gap-2 mt-4 flex-wrap">
