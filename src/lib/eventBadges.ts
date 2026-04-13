@@ -37,20 +37,32 @@ export function getEventBadge(
 
   // Temporal badges require a specified start time
   if (hasTime) {
-    // 1. Happening Now — event started but not ended
     const start = parseEventDateTime(event.date, event.startTime);
-    const end = event.endTime
-      ? parseEventDateTime(event.date, event.endTime)
-      : new Date(start.getTime() + 3 * 60 * 60 * 1000); // default 3h duration
-  
-    // Handle end times past midnight
-    if (end <= start) end.setDate(end.getDate() + 1);
-  
-    if (now >= start && now <= end) {
-      return { label: "Happening Now", variant: "soon", icon: Clock };
+    const hasEndTime = Boolean(event.endTime && event.endTime.trim());
+
+    if (hasEndTime) {
+      // Known end time
+      const end = parseEventDateTime(event.date, event.endTime);
+      if (end <= start) end.setDate(end.getDate() + 1);
+
+      if (now > end) {
+        return { label: "Over", variant: "soon", icon: Clock };
+      }
+      if (now >= start) {
+        return { label: "Happening Now", variant: "soon", icon: Clock };
+      }
+    } else {
+      // No end time — "Happening Now" for 1.5h, then "Might be over"
+      const mightBeOver = new Date(start.getTime() + 1.5 * 60 * 60 * 1000);
+      if (now >= mightBeOver) {
+        return { label: "Might be over", variant: "soon", icon: Clock };
+      }
+      if (now >= start) {
+        return { label: "Happening Now", variant: "soon", icon: Clock };
+      }
     }
-  
-    // 2. Starting Soon — today, within 2 hours
+
+    // Starting Soon — within 2 hours
     const diffMs = start.getTime() - now.getTime();
     if (diffMs > 0 && diffMs <= 2 * 60 * 60 * 1000) {
       const label = diffMs <= 60 * 60 * 1000 ? "Starts in <1h" : "Starts in <2h";

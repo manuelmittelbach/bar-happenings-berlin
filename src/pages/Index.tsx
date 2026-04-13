@@ -87,11 +87,13 @@ export default function Index() {
   const userLocation = useUserLocation();
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const isLateNight = new Date().getHours() < 6;
 
   const filtered = useMemo(() => {
     let result = [...events];
 
-    result = result.filter((e) => e.date >= today);
+    result = result.filter((e) => e.date >= (isLateNight ? yesterday : today));
 
     if (searchQuery) {
       result = result.filter(
@@ -132,7 +134,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, userLocation]);
+  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation]);
 
   // Deterministic ~12% featured picks
   const featuredIds = useMemo(() => {
@@ -358,12 +360,14 @@ export default function Index() {
                 if (filtered.length) sections.push({ label: "This week", events: filtered, layout: "list" });
               } else {
                 // "All" — split into temporal sections
+                const yesterdayEvents = isLateNight ? filtered.filter((e) => e.date === yesterday) : [];
                 const todayEvents = filtered.filter((e) => e.date === today);
                 const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
                 const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
                 const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                 const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
+                if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
                 sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
                 sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
