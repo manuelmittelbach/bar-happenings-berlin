@@ -114,7 +114,7 @@ export function CategoryIconRow({
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
               isActive
-                ? "bg-accent text-background shadow-[0_0_14px_hsl(var(--accent)/0.45)] scale-105"
+                ? "bg-accent text-background  scale-105"
                 : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
             }`}>
               <I className="h-[22px] w-[22px]" />
@@ -159,7 +159,7 @@ export function CategoryIconBar({
       >
         <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
           !activeCategory
-            ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)]"
+            ? "bg-accent text-background "
             : "bg-muted border-2 border-border"
         }`}>
           <LayoutGrid className="h-5 w-5" />
@@ -183,7 +183,7 @@ export function CategoryIconBar({
           >
             <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
               isActive
-                ? "bg-accent text-background shadow-[0_0_12px_hsl(var(--accent)/0.4)] scale-105"
+                ? "bg-accent text-background  scale-105"
                 : "bg-muted border-2 border-border"
             }`}>
               <I className="h-5 w-5" />
