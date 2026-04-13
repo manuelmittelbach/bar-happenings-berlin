@@ -488,13 +488,13 @@ export default function Index() {
                     ) : section.layout === "grid-2" ? (
                       <div className="grid grid-cols-1 gap-6">
                         {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={false} />
                         ))}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
                         {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={false} />
                         ))}
                       </div>
                     )}
