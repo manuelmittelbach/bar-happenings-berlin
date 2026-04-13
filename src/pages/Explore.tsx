@@ -7,7 +7,9 @@ import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
-import { events, categories, neighborhoods } from "@/data/mockData";
+import { events, categories, neighborhoods, getVenueById } from "@/data/mockData";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineMeters } from "@/lib/distance";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
@@ -28,6 +30,7 @@ export default function Explore() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
 
+  const userLocation = useUserLocation();
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
@@ -44,10 +47,26 @@ export default function Explore() {
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry === "Free Entry") result = result.filter((e) => e.entryInfo === "Free Entry");
     if (activeEntry === "Pay at Venue") result = result.filter((e) => e.entryInfo !== "Free Entry");
-    if (sortBy === "Soonest")
+    if (sortBy === "Soonest") {
       result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    } else {
+      result.sort((a, b) => {
+        const dateCmp = a.date.localeCompare(b.date);
+        if (dateCmp !== 0) return dateCmp;
+        if (userLocation) {
+          const vA = getVenueById(a.venueId);
+          const vB = getVenueById(b.venueId);
+          if (vA?.lat && vB?.lat) {
+            const dA = haversineMeters(userLocation.lat, userLocation.lng, vA.lat, vA.lng);
+            const dB = haversineMeters(userLocation.lat, userLocation.lng, vB.lat, vB.lng);
+            return dA - dB;
+          }
+        }
+        return a.startTime.localeCompare(b.startTime);
+      });
+    }
     return result;
-  }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow]);
+  }, [search, activeCategory, activeNeighborhood, activeDate, activeEntry, sortBy, today, tomorrow, userLocation]);
 
   // Deterministic ~5% featured picks based on event id hash
   const featuredIds = useMemo(() => {

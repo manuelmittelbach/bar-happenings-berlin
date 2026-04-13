@@ -1,14 +1,16 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
-import { MapPin, Clock, Star, Users } from "lucide-react";
+import { MapPin, Star, Users } from "lucide-react";
+
 
 import type { BarlinEvent } from "@/data/mockData";
-import { getCategoryInfoByLabel } from "@/data/mockData";
+import { getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
 import { getCategoryImage } from "@/assets/categories";
 import { getVenueImage } from "@/assets/venues";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineMeters, walkingMinutes } from "@/lib/distance";
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -25,9 +27,11 @@ const badgeChipClasses: Record<EventBadge["variant"], string> = {
   popular: "border border-accent/40 text-accent bg-accent/10",
 };
 
+
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const catInfo = getCategoryInfoByLabel(event.category);
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
+  const userLocation = useUserLocation();
 
   const interestedCount = useMemo(() => {
     const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -35,6 +39,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   }, [event.id]);
 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
+
+  const walkingMins = useMemo(() => {
+    if (!userLocation) return null;
+    const venue = getVenueById(event.venueId);
+    if (!venue?.lat || !venue?.lng) return null;
+    const meters = haversineMeters(userLocation.lat, userLocation.lng, venue.lat, venue.lng);
+    return walkingMinutes(meters);
+  }, [userLocation, event.venueId]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -55,14 +67,32 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     );
   };
 
+  const LocationChip = ({ size = "sm" }: { size?: "xs" | "sm" }) => {
+    const textClass = size === "xs" ? "text-[10px] md:text-xs" : "text-xs";
+    const iconClass = size === "xs" ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5";
+    const padClass = size === "xs" ? "px-1.5 md:px-2" : "px-2";
+
+    if (walkingMins !== null && walkingMins <= 20) {
+      return (
+        <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-foreground font-mono`}>
+          <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>
+          {walkingMins} min
+        </span>
+      );
+    }
+    return (
+      <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-muted-foreground font-mono`}>
+        <MapPin className={iconClass} />
+        {event.neighborhood}
+      </span>
+    );
+  };
+
   /* ─── LIST layout ─── */
   if (layout === "list") {
     return (
       <div>
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift">
-          <div className="relative w-24 sm:w-28 shrink-0 self-stretch overflow-hidden bg-muted">
-            <img src={event.image || fallbackImage} alt={event.title} className="absolute inset-0 w-full h-full object-cover grayscale-hover" loading="lazy" />
-          </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold">{event.category}</span>
@@ -73,8 +103,8 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <h3 className="font-body text-xl md:text-2xl font-bold leading-snug group-hover:text-accent transition-colors truncate">
               {displayTitle}
             </h3>
-            <div className="flex items-center gap-3 mt-0.5">
-              <p className="text-sm text-muted-foreground">{event.venue} — {formatDateShort(event.date)} · {event.startTime}</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <LocationChip size="sm" />
               <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                 <Users className="h-3.5 w-3.5" />
                 {interestedCount}
@@ -96,13 +126,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           onClick={handleClick}
           className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden card-hover-lift"
         >
-          <div className="relative w-full aspect-[16/9] md:w-48 md:h-auto md:aspect-square shrink-0 bg-muted flex items-center justify-center">
-            {event.image ? (
-              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-            ) : (
-              <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
-            )}
-          </div>
           <div className="p-4 md:p-6 flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <div className="inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
@@ -121,14 +144,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                  <MapPin className="h-3 w-3" />
-                  {event.neighborhood}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                  <Clock className="h-3 w-3" />
-                  {formatDateShort(event.date)}
-                </span>
+                <LocationChip size="sm" />
               </div>
               <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                 <Users className="h-3.5 w-3.5" />
@@ -156,14 +172,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         }`}
       >
         <div className="flex flex-1">
-          {/* Image thumbnail */}
-          <div className="relative w-24 sm:w-32 md:w-40 shrink-0 self-stretch bg-muted flex items-center justify-center overflow-hidden">
-            {event.image ? (
-              <img src={event.image} alt={event.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-            ) : (
-              <span className="mono-label text-muted-foreground/30 text-[9px]">No img</span>
-            )}
-          </div>
           <div className="p-3 md:p-4 flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
@@ -175,14 +183,7 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-muted border border-border text-[10px] md:text-xs text-muted-foreground font-mono">
-                  <MapPin className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                  {event.neighborhood}
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-muted border border-border text-xs text-muted-foreground font-mono">
-                  <Clock className="h-3 w-3" />
-                  {formatDateShort(event.date)}
-                </span>
+                <LocationChip size="xs" />
               </div>
               <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
                 <Users className="h-3 w-3" />
