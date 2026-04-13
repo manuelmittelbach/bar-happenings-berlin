@@ -58,10 +58,10 @@ export function getEventBadge(
     }
   }
 
-  // 3. Popular — but NOT if featured (Team Pick already signals quality)
-  if (interestedCount > 30 && !event.featured) {
-    return { label: "Popular", variant: "popular", icon: TrendingUp };
-  }
+  // DISABLED — re-enable to show popular badge
+  // if (interestedCount > 30 && !event.featured) {
+  //   return { label: "Popular", variant: "popular", icon: TrendingUp };
+  // }
 
   return null;
 }

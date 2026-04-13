@@ -33,10 +33,13 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
   const userLocation = useUserLocation();
 
+  /* DISABLED — re-enable to show interested count
   const interestedCount = useMemo(() => {
     const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
     return (hash % 42) + 1;
   }, [event.id]);
+  */
+  const interestedCount = 0; // placeholder while disabled
 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
@@ -105,10 +108,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             </h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <LocationChip size="sm" />
+              {/* DISABLED — re-enable to show interested count
               <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                 <Users className="h-3.5 w-3.5" />
                 {interestedCount}
               </span>
+              */}
             </div>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
@@ -142,14 +147,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
             </h3>
             <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <LocationChip size="sm" />
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <LocationChip size="sm" />
+              {/* DISABLED — re-enable to show interested count
               <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                 <Users className="h-3.5 w-3.5" />
                 {interestedCount}
               </span>
+              */}
             </div>
           </div>
         </Link>
@@ -185,10 +190,12 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <LocationChip size="xs" />
               </div>
+              {/* DISABLED — re-enable to show interested count
               <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
                 <Users className="h-3 w-3" />
                 {interestedCount}
               </span>
+              */}
             </div>
           </div>
         </div>

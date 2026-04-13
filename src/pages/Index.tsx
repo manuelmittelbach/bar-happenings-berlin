@@ -429,12 +429,14 @@ export default function Index() {
                       <span className="text-xs text-muted-foreground font-mono truncate">
                         {event.venue} · {event.neighborhood}
                       </span>
+                      {/* DISABLED — re-enable to show interested count
                       {interested > 5 && (
                         <span className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-mono ${isPopular ? "text-accent" : "text-muted-foreground"}`}>
                           <Users className="h-3 w-3" />
                           {interested}
                         </span>
                       )}
+                      */}
                     </div>
                   </button>
                 );
