@@ -364,15 +364,13 @@ export default function Index() {
                 const todayEvents = filtered.filter((e) => e.date === today);
                 const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
                 const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
-                const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
-                const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
+                const laterEvents = filtered.filter((e) => e.date > weekEnd);
 
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
                 sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
                 sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
-                sections.push({ label: "This month", events: laterEvents, layout: "list" });
-                sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
+                sections.push({ label: "Later", events: laterEvents, layout: "list" });
               }
 
               const formatDatePill = (dateStr: string) => {
@@ -455,11 +453,10 @@ export default function Index() {
                   className={`${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}
                 >
                   {/* Sticky section header */}
-                  <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b-2 border-border" style={{ top: stickyOffset }}>
-                    <div className="container flex items-center gap-4 h-11">
+                  <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b border-border" style={{ top: stickyOffset }}>
+                    <div className="container flex items-center justify-between h-11">
                       <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
-                      <div className="flex-1 border-t-2 border-border" />
-                      <span className="mono-label text-sm text-muted-foreground">{section.events.length}</span>
+                      <span className="mono-label text-muted-foreground">{section.events.length} events found</span>
                     </div>
                   </div>
 
@@ -474,8 +471,6 @@ export default function Index() {
                               <span className="font-heading text-sm font-extrabold uppercase tracking-tight">
                                 {formatDaySeparator(group.date)}
                               </span>
-                              <div className="flex-1 border-t border-border" />
-                              <span className="font-mono text-[11px] text-muted-foreground">{group.events.length}</span>
                             </div>
                             <div className="divide-y divide-border/50">
                               {group.events.map((event) => (

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 interface ShareMenuProps {
   eventTitle: string;
   eventId: string;
-  variant?: "icon" | "full";
+  variant?: "icon" | "full" | "header";
 }
 
 const BASE_URL = "https://bar-happenings-berlin.lovable.app";
@@ -54,6 +54,11 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
           <button className="w-full h-12 bg-accent/10 border-2 border-accent/40 text-[13px] font-heading font-bold uppercase tracking-wider text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_18px_hsl(18_85%_52%/0.3)] transition-all duration-300 flex items-center justify-center gap-2">
             <Share2 className="h-4 w-4" /> Share with friends
           </button>
+        ) : variant === "header" ? (
+          <button className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none">
+            <Share2 className="h-4 w-4" />
+            Share event
+          </button>
         ) : (
           <button className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
             <Share2 className="h-5 w-5" />
@@ -61,29 +66,14 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
           </button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 border-2 border-foreground" align="end">
-        <p className="text-xs font-heading font-bold uppercase tracking-wide px-2 py-1.5 text-muted-foreground">Share on</p>
-        {shareLinks.map((link) => (
-          <a
-            key={link.name}
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-muted transition-colors"
-          >
-            {link.icon}
-            <span>{link.name}</span>
-          </a>
-        ))}
-        <div className="border-t border-border mt-1 pt-1">
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-muted transition-colors w-full"
-          >
-            {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
-            <span>{copied ? "Copied!" : "Copy link"}</span>
-          </button>
-        </div>
+      <PopoverContent className="w-48 p-2 border-2 border-foreground" align="end">
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-muted transition-colors w-full"
+        >
+          {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
+          <span>{copied ? "Copied!" : "Copy link"}</span>
+        </button>
       </PopoverContent>
     </Popover>
   );
