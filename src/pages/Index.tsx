@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useLayoutEffect } from "react";
+import { useState, useMemo, useCallback, useLayoutEffect, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -13,8 +13,10 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { events, categories, neighborhoods, getCategoryInfoByLabel } from "@/data/mockData";
+import { events, categories, neighborhoods, getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineMeters } from "@/lib/distance";
 
 const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
@@ -33,6 +35,56 @@ export default function Index() {
   
   
 
+  const categoryBarRef = useRef<HTMLDivElement>(null);
+  const [stickyOffset, setStickyOffset] = useState(160); // fallback estimate
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [targetSection, setTargetSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      if (categoryBarRef.current) {
+        // Header is sticky at top-0 with height ~58px; category bar sticky at top-[57px]
+        setStickyOffset(57 + categoryBarRef.current.offsetHeight);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // Find which time section is currently "active" at the sticky top position
+  const getCurrentVisibleSection = useCallback((): string | null => {
+    const threshold = stickyOffset + 5;
+    let active: string | null = null;
+    for (const [label, el] of Object.entries(sectionRefs.current)) {
+      if (!el) continue;
+      const { top, bottom } = el.getBoundingClientRect();
+      if (top <= threshold && bottom > threshold) {
+        active = label;
+        break;
+      }
+    }
+    return active;
+  }, [stickyOffset]);
+
+  // When switching category, preserve current time section
+  const handleCategorySelect = useCallback((cat: string) => {
+    const current = getCurrentVisibleSection();
+    if (current) setTargetSection(current);
+    setActiveCategory(cat);
+  }, [getCurrentVisibleSection]);
+
+  // After re-render, scroll to the preserved section
+  useEffect(() => {
+    if (!targetSection) return;
+    const el = sectionRefs.current[targetSection];
+    if (!el) { setTargetSection(null); return; }
+    const top = el.getBoundingClientRect().top + window.scrollY - stickyOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+    setTargetSection(null);
+  }, [targetSection, stickyOffset]);
+
+  const userLocation = useUserLocation();
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
@@ -57,7 +109,20 @@ export default function Index() {
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
 
-    result.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    result.sort((a, b) => {
+      const dateCmp = a.date.localeCompare(b.date);
+      if (dateCmp !== 0) return dateCmp;
+      if (userLocation) {
+        const vA = getVenueById(a.venueId);
+        const vB = getVenueById(b.venueId);
+        if (vA?.lat && vB?.lat) {
+          const dA = haversineMeters(userLocation.lat, userLocation.lng, vA.lat, vA.lng);
+          const dB = haversineMeters(userLocation.lat, userLocation.lng, vB.lat, vB.lng);
+          return dA - dB;
+        }
+      }
+      return a.startTime.localeCompare(b.startTime);
+    });
 
     const seen = new Set<string>();
     result = result.filter((e) => {
@@ -67,7 +132,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow]);
+  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, userLocation]);
 
   // Deterministic ~12% featured picks
   const featuredIds = useMemo(() => {
@@ -182,14 +247,14 @@ export default function Index() {
         )}
 
         {/* Sticky category bar */}
-        <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div ref={categoryBarRef} className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
           <div className="container py-3">
             {/* Mobile: icon scroller */}
             <div className="md:hidden">
               <CategoryIconBar
                 categories={categories}
                 activeCategory={activeCategory}
-                onSelect={setActiveCategory}
+                onSelect={handleCategorySelect}
               />
             </div>
             {/* Desktop: icon row */}
@@ -197,7 +262,7 @@ export default function Index() {
               <CategoryIconRow
                 categories={categories}
                 activeCategory={activeCategory}
-                onSelect={setActiveCategory}
+                onSelect={handleCategorySelect}
               />
             </div>
           </div>
@@ -210,7 +275,7 @@ export default function Index() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {activeDate !== "All" && filtered.length === 0 ? (
           <section className="bg-background">
             <div className="container py-20">
               <div className="text-center py-20 border-2 border-border">
@@ -243,11 +308,11 @@ export default function Index() {
                 const laterEvents = filtered.filter((e) => e.date > weekEnd && e.date <= monthEnd);
                 const evenLaterEvents = filtered.filter((e) => e.date > monthEnd);
 
-                if (todayEvents.length) sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
-                if (tomorrowEvents.length) sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
-                if (thisWeekEvents.length) sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
-                if (laterEvents.length) sections.push({ label: "This month", events: laterEvents, layout: "list" });
-                if (evenLaterEvents.length) sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
+                sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
+                sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
+                sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
+                sections.push({ label: "This month", events: laterEvents, layout: "list" });
+                sections.push({ label: "Later", events: evenLaterEvents, layout: "list" });
               }
 
               const formatDatePill = (dateStr: string) => {
@@ -322,19 +387,28 @@ export default function Index() {
               const sectionBgs = ["bg-background", "bg-card", "bg-background", "bg-card", "bg-background"];
 
               return sections.map((section, si) => (
-                <section key={section.label} className={`${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}>
-                  <div className="container py-10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <h2 className="font-heading text-3xl md:text-4xl font-extrabold uppercase tracking-tight">{section.label}</h2>
+                <section
+                  key={section.label}
+                  ref={(el) => { sectionRefs.current[section.label] = el; }}
+                  className={`${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}
+                >
+                  {/* Sticky section header */}
+                  <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b-2 border-border" style={{ top: stickyOffset }}>
+                    <div className="container flex items-center gap-4 h-11">
+                      <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
                       <div className="flex-1 border-t-2 border-border" />
-                      <span className="mono-label text-lg text-muted-foreground">{section.events.length}</span>
+                      <span className="mono-label text-sm text-muted-foreground">{section.events.length}</span>
                     </div>
+                  </div>
 
-                    {section.layout === "list" ? (
+                  <div className="container py-8">
+                    {section.events.length === 0 ? (
+                      <p className="font-mono text-xs text-muted-foreground py-2">No events</p>
+                    ) : section.layout === "list" ? (
                       <div className="space-y-6">
                         {groupByDate(section.events).map((group, gi) => (
                           <div key={group.date} className="border-2 border-border bg-background">
-                            <div className="sticky top-[112px] z-10 flex items-center gap-3 px-4 py-3 bg-muted/60 backdrop-blur-sm border-b-2 border-border">
+                            <div className="sticky z-20 flex items-center gap-3 px-4 py-3 bg-muted/60 backdrop-blur-sm border-b-2 border-border" style={{ top: stickyOffset + 46 }}>
                               <span className="font-heading text-sm font-extrabold uppercase tracking-tight">
                                 {formatDaySeparator(group.date)}
                               </span>
@@ -350,33 +424,11 @@ export default function Index() {
                         ))}
                       </div>
                     ) : section.layout === "grid-2" ? (
-                      <>
-                        {groupByDate(section.events).map((group, gi) => (
-                          <div key={group.date}>
-                            {gi > 0 && (
-                              <div className="flex items-center gap-3 my-4">
-                                <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
-                                  {formatDaySeparator(group.date)}
-                                </span>
-                                <div className="flex-1 border-t border-border" />
-                              </div>
-                            )}
-                            {gi === 0 && (
-                              <div className="flex items-center gap-3 mb-4">
-                                <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
-                                  {formatDaySeparator(group.date)}
-                                </span>
-                                <div className="flex-1 border-t border-border" />
-                              </div>
-                            )}
-                            <div className="grid grid-cols-1 gap-6 mb-4">
-                              {group.events.map((event, i) => (
-                                <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
-                              ))}
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-1 gap-6">
+                        {section.events.map((event, i) => (
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={featuredIds.has(event.id)} />
                         ))}
-                      </>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
                         {section.events.map((event, i) => (

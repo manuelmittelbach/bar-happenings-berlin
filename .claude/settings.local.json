@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(git -C /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin log --oneline -10)",
+      "Bash(git:*)",
+      "Bash(ls -la /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/.env*)",
+      "Bash(supabase --version)"
+    ]
+  }
+}

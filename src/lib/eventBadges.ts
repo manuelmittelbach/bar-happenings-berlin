@@ -1,4 +1,4 @@
-import { Radio, Clock, TrendingUp, type LucideIcon } from "lucide-react";
+import { Clock, TrendingUp, type LucideIcon } from "lucide-react";
 import type { BarlinEvent } from "@/data/mockData";
 
 export interface EventBadge {
@@ -42,19 +42,18 @@ export function getEventBadge(
     const end = event.endTime
       ? parseEventDateTime(event.date, event.endTime)
       : new Date(start.getTime() + 3 * 60 * 60 * 1000); // default 3h duration
-
+  
     // Handle end times past midnight
     if (end <= start) end.setDate(end.getDate() + 1);
-
+  
     if (now >= start && now <= end) {
-      return { label: "Happening Now", variant: "live", icon: Radio };
+      return { label: "Happening Now", variant: "soon", icon: Clock };
     }
-
-    // 2. Starting Soon — today, within 3 hours
+  
+    // 2. Starting Soon — today, within 2 hours
     const diffMs = start.getTime() - now.getTime();
-    if (diffMs > 0 && diffMs <= 3 * 60 * 60 * 1000) {
-      const diffH = Math.ceil(diffMs / (60 * 60 * 1000));
-      const label = diffH <= 1 ? "Starts in <1h" : `Starts in ${diffH}h`;
+    if (diffMs > 0 && diffMs <= 2 * 60 * 60 * 1000) {
+      const label = diffMs <= 60 * 60 * 1000 ? "Starts in <1h" : "Starts in <2h";
       return { label, variant: "soon", icon: Clock };
     }
   }
