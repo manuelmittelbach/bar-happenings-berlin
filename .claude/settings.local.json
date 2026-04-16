@@ -8,7 +8,15 @@
       "Bash(ls -la /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/.env*)",
       "Bash(supabase --version)",
       "mcp__supabase__list_projects",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__generate_typescript_types",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx tsc *)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "Bash(pkill -f \"vite --port 5174\")",
+      "Bash(curl -s \"http://localhost:5175/@fs/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/src/components/events/EventCard.tsx\")",
+      "Bash(pkill -f \"vite --port 5175\")"
     ]
   }
 }

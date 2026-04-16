@@ -1,14 +1,20 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useMemo, useLayoutEffect } from "react";
+import { useState, useMemo, useLayoutEffect, useEffect } from "react";
 import {
   MapPin, ExternalLink, ArrowLeft,
   ChevronDown, Plus
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
+import AuthModal from "@/components/auth/AuthModal";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { useEventById, useEventsByParentId } from "@/hooks/useEvents";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const languageLabel: Record<string, string> = {
   "EN": "in English",
@@ -22,10 +28,14 @@ const languageLabel: Record<string, string> = {
 export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: event, isLoading } = useEventById(id || "");
   const { data: siblings = [] } = useEventsByParentId(event?.parentId || "");
   const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const baseCount = useMemo(() => {
     if (!id) return 0;
@@ -34,6 +44,19 @@ export default function EventDetail() {
   }, [id]);
 
   const [interestedCount, setInterestedCount] = useState(baseCount);
+
+  // Sync interestedCount with real DB value once event loads
+  useEffect(() => {
+    if (event?.interestedCount != null) {
+      setInterestedCount(event.interestedCount);
+    }
+  }, [event?.interestedCount]);
+
+  // Restore saved state on mount / when user changes
+  useEffect(() => {
+    if (!user || !id) return;
+    checkInterest(user.id, id).then(setSaved);
+  }, [user, id]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -45,6 +68,55 @@ export default function EventDetail() {
     return () => cancelAnimationFrame(raf);
   }, [id]);
 
+  const persistInterest = async (userId: string, eventId: string) => {
+    setSaved(true);
+    setInterestedCount(prev => prev + 1);
+    setIsSaving(true);
+    try {
+      await saveInterest(userId, eventId);
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["my-events", userId] });
+    } catch {
+      setSaved(false);
+      setInterestedCount(prev => prev - 1);
+      toast.error("Couldn't save — please try again");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!event) return;
+
+    if (saved) {
+      // Un-save
+      setSaved(false);
+      setInterestedCount(prev => prev - 1);
+      if (user) {
+        deleteInterest(user.id, event.id).then(() => {
+          queryClient.invalidateQueries({ queryKey: ["event", event.id] });
+          queryClient.invalidateQueries({ queryKey: ["my-events", user.id] });
+        });
+      }
+      return;
+    }
+
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    await persistInterest(user.id, event.id);
+  };
+
+  const handleAuthenticated = async () => {
+    setShowAuthModal(false);
+    // user state from useAuth updates async via onAuthStateChange — fetch directly
+    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    if (freshUser && event) {
+      await persistInterest(freshUser.id, event.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -64,7 +136,7 @@ export default function EventDetail() {
   }
 
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
-const displayTitle = cleanEventTitle(event.title, event.venue);
+  const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
 
   const priceLabel = event.price
@@ -73,18 +145,6 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
 
   const handleMaps = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`, '_blank');
-  };
-
-  const handleSave = () => {
-    const willBeSaved = !saved;
-    setSaved(willBeSaved);
-    setInterestedCount(prev => willBeSaved ? prev + 1 : prev - 1);
-
-    if (willBeSaved) {
-      const startDate = event.date.replace(/-/g, '');
-      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate}/${startDate}&location=${encodeURIComponent(event.address || event.venue)}&details=${encodeURIComponent(event.description.slice(0, 200))}`;
-      window.open(calUrl, '_blank');
-    }
   };
 
   return (
@@ -110,12 +170,11 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
             <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-
         </div>
 
         {/* Core info block */}
         <div className="px-4 pt-4 pb-1">
-<motion.h1
+          <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -158,9 +217,7 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
           <p className="text-sm text-muted-foreground">
             {[priceLabel, event.recurrence || null, event.language ? (languageLabel[event.language] || event.language) : null].filter(Boolean).join(" · ")}
           </p>
-
         </div>
-
 
         {/* Interested row + secondary actions */}
         <div className="px-4 pb-4 space-y-3">
@@ -172,7 +229,8 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
             </div>
             <button
               onClick={handleSave}
-              className={`h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] ${
+              disabled={isSaving}
+              className={`h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
                 saved
                   ? "bg-accent text-accent-foreground border-accent shadow-[0_0_20px_hsl(var(--accent)/0.3)]"
                   : "bg-transparent text-foreground border-accent hover:bg-accent/10"
@@ -182,8 +240,6 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
               {saved ? "Interested ✓" : "Interested"}
             </button>
           </div>
-
-
         </div>
 
         <div className="border-t border-border mx-4" />
@@ -251,13 +307,17 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
               <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
             </a>
           )}
-
         </div>
-
-        {/* You might also like */}
 
         <div className="h-6" />
       </div>
+
+      <AuthModal
+        open={showAuthModal}
+        defaultTab="signup"
+        onAuthenticated={handleAuthenticated}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

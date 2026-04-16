@@ -14,6 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
+      bar_sources: {
+        Row: {
+          bar_id: string | null
+          created_at: string | null
+          id: string
+          last_scraped_at: string | null
+          platform: string
+          url: string
+        }
+        Insert: {
+          bar_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_scraped_at?: string | null
+          platform: string
+          url: string
+        }
+        Update: {
+          bar_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_scraped_at?: string | null
+          platform?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_sources_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bars: {
+        Row: {
+          address: string | null
+          area: string | null
+          created_at: string | null
+          google_types: string | null
+          id: string
+          instagram: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          num_ratings: number | null
+          opening_hours: string | null
+          phone: string | null
+          place_id: string
+          rating: number | null
+          source_type: string | null
+          telegram: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          area?: string | null
+          created_at?: string | null
+          google_types?: string | null
+          id?: string
+          instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          num_ratings?: number | null
+          opening_hours?: string | null
+          phone?: string | null
+          place_id: string
+          rating?: number | null
+          source_type?: string | null
+          telegram?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          area?: string | null
+          created_at?: string | null
+          google_types?: string | null
+          id?: string
+          instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          num_ratings?: number | null
+          opening_hours?: string | null
+          phone?: string | null
+          place_id?: string
+          rating?: number | null
+          source_type?: string | null
+          telegram?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string
@@ -39,134 +134,190 @@ export type Database = {
         Row: {
           address: string
           category: string
-          category_id: string
-          created_at: string
+          category_id: string | null
+          created_at: string | null
           date: string
-          description: string
+          description: string | null
           end_time: string | null
-          entry_info: string
-          featured: boolean
+          entry_info: string | null
+          featured: boolean | null
           id: string
           image: string | null
-          interested_count: number
-          language: string
+          interested_count: number | null
+          language: string | null
           neighborhood: string
-          parent_id: string
-          price: string
-          recurrence: string
+          parent_id: string | null
+          price: string | null
+          recurrence: string | null
           start_time: string
           summary: string | null
-          tags: string[]
+          tags: string[] | null
           title: string
-          url: string
+          url: string | null
           venue: string
-          venue_id: string
+          venue_id: string | null
         }
         Insert: {
           address: string
           category: string
-          category_id: string
-          created_at?: string
+          category_id?: string | null
+          created_at?: string | null
           date: string
-          description?: string
+          description?: string | null
           end_time?: string | null
-          entry_info?: string
-          featured?: boolean
+          entry_info?: string | null
+          featured?: boolean | null
           id: string
           image?: string | null
-          interested_count?: number
-          language?: string
+          interested_count?: number | null
+          language?: string | null
           neighborhood: string
-          parent_id?: string
-          price?: string
-          recurrence?: string
+          parent_id?: string | null
+          price?: string | null
+          recurrence?: string | null
           start_time: string
           summary?: string | null
-          tags?: string[]
+          tags?: string[] | null
           title: string
-          url?: string
+          url?: string | null
           venue: string
-          venue_id: string
+          venue_id?: string | null
         }
         Update: {
           address?: string
           category?: string
-          category_id?: string
-          created_at?: string
+          category_id?: string | null
+          created_at?: string | null
           date?: string
-          description?: string
+          description?: string | null
           end_time?: string | null
-          entry_info?: string
-          featured?: boolean
+          entry_info?: string | null
+          featured?: boolean | null
           id?: string
           image?: string | null
-          interested_count?: number
-          language?: string
+          interested_count?: number | null
+          language?: string | null
           neighborhood?: string
-          parent_id?: string
-          price?: string
-          recurrence?: string
+          parent_id?: string | null
+          price?: string | null
+          recurrence?: string | null
           start_time?: string
           summary?: string | null
-          tags?: string[]
+          tags?: string[] | null
           title?: string
-          url?: string
+          url?: string | null
           venue?: string
-          venue_id?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_name?: string
+          id: string
+          last_name?: string
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "events_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "user_interests_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "events_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
       }
       venues: {
         Row: {
+          additional: string | null
           address: string
-          description: string
+          description: string | null
+          facebook: string | null
           id: string
-          image: string
+          image: string | null
           instagram: string | null
           lat: number
           lng: number
           name: string
           neighborhood: string
+          online: string
+          opening_hours: string | null
+          phone: string | null
+          telegram: string | null
           website: string | null
+          website_events: string | null
         }
         Insert: {
+          additional?: string | null
           address: string
-          description?: string
+          description?: string | null
+          facebook?: string | null
           id: string
-          image?: string
+          image?: string | null
           instagram?: string | null
           lat: number
           lng: number
           name: string
           neighborhood: string
+          online?: string
+          opening_hours?: string | null
+          phone?: string | null
+          telegram?: string | null
           website?: string | null
+          website_events?: string | null
         }
         Update: {
+          additional?: string | null
           address?: string
-          description?: string
+          description?: string | null
+          facebook?: string | null
           id?: string
-          image?: string
+          image?: string | null
           instagram?: string | null
           lat?: number
           lng?: number
           name?: string
           neighborhood?: string
+          online?: string
+          opening_hours?: string | null
+          phone?: string | null
+          telegram?: string | null
           website?: string | null
+          website_events?: string | null
         }
         Relationships: []
       }
@@ -175,7 +326,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      truncate_staging: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

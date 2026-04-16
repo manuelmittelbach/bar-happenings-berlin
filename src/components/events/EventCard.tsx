@@ -6,9 +6,7 @@ import { MapPin, Star, Users } from "lucide-react";
 
 
 import type { BarlinEvent } from "@/data/mockData";
-import { getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
-import { getCategoryImage } from "@/assets/categories";
-import { getVenueImage } from "@/assets/venues";
+import { getVenueById } from "@/data/mockData";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 
@@ -29,14 +27,10 @@ const badgeChipClasses: Record<EventBadge["variant"], string> = {
 
 
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
-  const catInfo = getCategoryInfoByLabel(event.category);
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
   const userLocation = useUserLocation();
 
-  const interestedCount = useMemo(() => {
-    const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return (hash % 42) + 1;
-  }, [event.id]);
+  const interestedCount = event.interestedCount ?? 0;
 
   const badge = useMemo(() => getEventBadge(event, interestedCount), [event, interestedCount]);
 
@@ -55,7 +49,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     }
   };
 
-  const fallbackImage = getVenueImage(event.venueId) || getCategoryImage(catInfo?.id || 'other');
 
   const BadgeChip = () => {
     if (!badge) return null;
