@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Bookmark } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { label: "Explore", path: "/" },
@@ -12,6 +13,7 @@ const navItems = [
 export default function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b-2 border-foreground bg-background/95 backdrop-blur-sm">
@@ -38,6 +40,20 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/my-events"
+            className={`hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-bold uppercase tracking-wider transition-colors ${
+              location.pathname === "/my-events"
+                ? "text-accent"
+                : user
+                  ? "text-foreground hover:text-accent"
+                  : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="My saved events"
+          >
+            <Bookmark className={`h-4 w-4 ${user ? "fill-current" : ""}`} />
+            <span className="hidden md:inline">My Events</span>
+          </Link>
           <Link
             to="/publish"
             className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
@@ -77,6 +93,16 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                to="/my-events"
+                onClick={() => setMobileOpen(false)}
+                className={`mono-label flex items-center gap-2 ${
+                  location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <Bookmark className={`h-4 w-4 ${user ? "fill-current" : ""}`} />
+                My Events
+              </Link>
               <Link
                 to="/publish"
                 onClick={() => setMobileOpen(false)}

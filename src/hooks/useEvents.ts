@@ -4,6 +4,9 @@ import {
   fetchEventById,
   fetchEventsByParentId,
   fetchVenues,
+  fetchInterestedEvents,
+  checkInterest,
+  fetchProfile,
 } from "@/lib/supabaseQueries";
 
 export function useEvents() {
@@ -28,4 +31,28 @@ export function useEventsByParentId(parentId: string) {
 
 export function useVenues() {
   return useQuery({ queryKey: ["venues"], queryFn: fetchVenues });
+}
+
+export function useMyEvents(userId: string | null) {
+  return useQuery({
+    queryKey: ["my-events", userId],
+    queryFn: () => fetchInterestedEvents(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useCheckInterest(userId: string | null, eventId: string) {
+  return useQuery({
+    queryKey: ["interest", userId, eventId],
+    queryFn: () => checkInterest(userId!, eventId),
+    enabled: !!userId && !!eventId,
+  });
+}
+
+export function useProfile(userId: string | null) {
+  return useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile(userId!),
+    enabled: !!userId,
+  });
 }
