@@ -13,8 +13,9 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { events, categories, neighborhoods, venues, getCategoryInfoByLabel, getVenueById } from "@/data/mockData";
+import { categories, neighborhoods } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
+import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/distance";
 
@@ -84,6 +85,14 @@ export default function Index() {
     setTargetSection(null);
   }, [targetSection, stickyOffset]);
 
+  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
+  const { data: venuesData = [] } = useVenues();
+
+  const venueMap = useMemo(
+    () => Object.fromEntries(venuesData.map((v) => [v.id, v])),
+    [venuesData]
+  );
+
   const userLocation = useUserLocation();
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -91,7 +100,7 @@ export default function Index() {
   const isLateNight = new Date().getHours() < 6;
 
   const filtered = useMemo(() => {
-    let result = [...events];
+    let result = [...eventsData];
 
     result = result.filter((e) => e.date >= (isLateNight ? yesterday : today));
 
@@ -115,8 +124,8 @@ export default function Index() {
       const dateCmp = a.date.localeCompare(b.date);
       if (dateCmp !== 0) return dateCmp;
       if (userLocation) {
-        const vA = getVenueById(a.venueId);
-        const vB = getVenueById(b.venueId);
+        const vA = venueMap[a.venueId];
+        const vB = venueMap[b.venueId];
         if (vA?.lat && vB?.lat) {
           const dA = haversineMeters(userLocation.lat, userLocation.lng, vA.lat, vA.lng);
           const dB = haversineMeters(userLocation.lat, userLocation.lng, vB.lat, vB.lng);
@@ -134,7 +143,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation]);
+  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation, eventsData, venueMap]);
 
   // Deterministic ~12% featured picks
   const featuredIds = useMemo(() => {
@@ -187,14 +196,14 @@ export default function Index() {
         results.push({ label: n, type: "neighborhood" });
       }
     }
-    for (const v of venues) {
+    for (const v of venuesData) {
       if (v.name.toLowerCase().includes(q) && !seen.has(v.name)) {
         seen.add(v.name);
         results.push({ label: v.name, type: "bar" });
       }
     }
     return results.slice(0, 2);
-  }, [searchQuery]);
+  }, [searchQuery, venuesData]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -329,7 +338,9 @@ export default function Index() {
         {/* Results count */}
         <div className="bg-background border-b border-border">
           <div className="container py-4">
-            <p className="mono-label text-muted-foreground">{filtered.length} events found</p>
+            <p className="mono-label text-muted-foreground">
+              {eventsLoading ? "Loading events…" : `${filtered.length} events found`}
+            </p>
           </div>
         </div>
 

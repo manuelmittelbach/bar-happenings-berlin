@@ -6,7 +6,9 @@
       "Bash(git -C /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin log --oneline -10)",
       "Bash(git:*)",
       "Bash(ls -la /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/.env*)",
-      "Bash(supabase --version)"
+      "Bash(supabase --version)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql"
     ]
   }
 }

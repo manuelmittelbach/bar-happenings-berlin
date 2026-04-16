@@ -8,7 +8,7 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { getEventById, getEventsByParent } from "@/data/mockData";
+import { useEventById, useEventsByParentId } from "@/hooks/useEvents";
 
 const languageLabel: Record<string, string> = {
   "EN": "in English",
@@ -22,7 +22,8 @@ const languageLabel: Record<string, string> = {
 export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const event = getEventById(id || "");
+  const { data: event, isLoading } = useEventById(id || "");
+  const { data: siblings = [] } = useEventsByParentId(event?.parentId || "");
   const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
 
@@ -45,6 +46,14 @@ export default function EventDetail() {
   }, [id]);
 
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <p className="font-body text-sm text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
+
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
@@ -54,7 +63,6 @@ export default function EventDetail() {
     );
   }
 
-  const siblings = getEventsByParent(event.parentId);
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
 const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
@@ -115,15 +123,13 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
           >
             {displayTitle}
           </motion.h1>
-
-
+          <div className="border-t border-border mt-3" />
         </div>
 
         {/* Key details */}
         <div className="px-4 pt-3 pb-3 grid grid-cols-2 gap-4">
           {/* When */}
           <div>
-            <p className="text-accent text-[11px] font-bold uppercase tracking-[0.12em] mb-1">When</p>
             <p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
             {event.startTime && (
               <p className="text-foreground font-mono text-sm mt-0.5">
@@ -134,7 +140,6 @@ const displayTitle = cleanEventTitle(event.title, event.venue);
 
           {/* Where */}
           <button onClick={handleMaps} className="text-left group">
-            <p className="text-accent text-[11px] font-bold uppercase tracking-[0.12em] mb-1">Where</p>
             <div className="flex items-start justify-between gap-1">
               <p className="font-body font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent shrink-0 mt-0.5 transition-colors" />
