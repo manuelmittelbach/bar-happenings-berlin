@@ -28,8 +28,8 @@ export default function PublishEvent() {
       <Header />
       <main className="flex-1">
         <div className="container max-w-2xl py-8">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-            <ArrowLeft className="h-4 w-4" /> Back
+          <Link to="/" className="inline-flex items-center gap-1 text-base text-muted-foreground hover:text-foreground mb-6">
+            <ArrowLeft className="h-5 w-5" /> Back
           </Link>
 
           <h1 className="heading-display text-3xl mb-2">Publish an Event</h1>

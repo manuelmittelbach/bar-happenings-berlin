@@ -36,6 +36,10 @@ export function useAuth() {
       },
     });
     if (error) throw error;
+    // Supabase returns no error for duplicate emails — detect via empty identities
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      throw new Error("User already registered");
+    }
 
     // Update profile with name (trigger creates the row, we update the names)
     if (data.user) {
@@ -59,5 +63,12 @@ export function useAuth() {
     if (error) throw error;
   };
 
-  return { ...state, signUp, signIn, signOut };
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  };
+
+  return { ...state, signUp, signIn, signOut, resetPassword };
 }
