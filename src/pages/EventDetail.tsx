@@ -5,7 +5,6 @@ import {
   ChevronDown, Plus
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
-import AuthModal from "@/components/auth/AuthModal";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -34,7 +33,6 @@ export default function EventDetail() {
   const { data: siblings = [] } = useEventsByParentId(event?.parentId || "");
   const [saved, setSaved] = useState(false);
   const [datesOpen, setDatesOpen] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const baseCount = useMemo(() => {
@@ -102,21 +100,13 @@ export default function EventDetail() {
     }
 
     if (!user) {
-      setShowAuthModal(true);
+      navigate("/login", { state: { from: `/event/${event.id}` } });
       return;
     }
 
     await persistInterest(user.id, event.id);
   };
 
-  const handleAuthenticated = async () => {
-    setShowAuthModal(false);
-    // user state from useAuth updates async via onAuthStateChange — fetch directly
-    const { data: { user: freshUser } } = await supabase.auth.getUser();
-    if (freshUser && event) {
-      await persistInterest(freshUser.id, event.id);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -135,7 +125,10 @@ export default function EventDetail() {
     );
   }
 
-  const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
+  const today = new Date();
+  today.setHours(6, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+  const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i && d >= todayStr).sort();
   const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
 
@@ -152,11 +145,11 @@ export default function EventDetail() {
       {/* Sticky back bar */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border flex items-center justify-between">
         <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-sm font-medium tracking-wide transition-colors focus:outline-none"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-medium tracking-wide transition-colors focus:outline-none"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Events
+          <ArrowLeft className="h-5 w-5" />
+          Back
         </button>
         <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
       </div>
@@ -182,46 +175,10 @@ export default function EventDetail() {
           >
             {displayTitle}
           </motion.h1>
-          <div className="border-t border-border mt-3" />
         </div>
 
-        {/* Key details */}
-        <div className="px-4 pt-3 pb-3 grid grid-cols-2 gap-4">
-          {/* When */}
-          <div>
-            <p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
-            {event.startTime && (
-              <p className="text-foreground font-mono text-sm mt-0.5">
-                {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
-              </p>
-            )}
-          </div>
-
-          {/* Where */}
-          <button onClick={handleMaps} className="text-left group">
-            <div className="flex items-start justify-between gap-1">
-              <p className="font-body font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent shrink-0 mt-0.5 transition-colors" />
-            </div>
-            {event.address && (
-              <p className="text-muted-foreground text-[11px] mt-0.5">{event.address}</p>
-            )}
-            <p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
-              <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
-            </p>
-          </button>
-        </div>
-
-        {/* Info pills row */}
-        <div className="px-4 pb-3">
-          <p className="text-sm text-muted-foreground">
-            {[priceLabel, event.recurrence || null, event.language ? (languageLabel[event.language] || event.language) : null].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-
-        {/* Interested row + secondary actions */}
-        <div className="px-4 pb-4 space-y-3">
-          {/* Interested count + button */}
+        {/* Interested row */}
+        <div className="px-4 pb-4 pt-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-baseline gap-2">
               <span className="font-body text-3xl font-extrabold text-accent">{interestedCount}</span>
@@ -244,11 +201,42 @@ export default function EventDetail() {
 
         <div className="border-t border-border mx-4" />
 
+        {/* Key details */}
+        <div className="px-4 pt-3 pb-3 grid grid-cols-2 gap-4">
+          {/* When */}
+          <div>
+            <p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
+            {event.startTime && (
+              <p className="text-foreground font-mono text-sm mt-0.5">
+                {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
+              </p>
+            )}
+          </div>
+
+          {/* Where */}
+          <button onClick={handleMaps} className="text-left group">
+            <p className="font-body font-bold text-sm group-hover:text-accent transition-colors">{event.venue}</p>
+            {event.address && (
+              <p className="text-muted-foreground text-[11px] mt-0.5">{event.address}</p>
+            )}
+            <p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
+              <MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
+            </p>
+            <span className="text-xs font-mono text-accent mt-1 block">Open in Maps</span>
+          </button>
+        </div>
+
+        <div className="border-t border-border mx-4" />
+
         {/* === BELOW THE FOLD: Details === */}
 
-        {/* About — improved readability */}
+        {/* About this event */}
         <div className="px-4 py-5 space-y-4">
           <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
+          <p className="text-sm text-muted-foreground">
+            {[priceLabel, event.recurrence || null, event.language ? (languageLabel[event.language] || event.language) : null].filter(Boolean).join(" · ")}
+          </p>
+          <div />
           {event.description.split("\n\n").map((p, i) => (
             <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{p}</p>
           ))}
@@ -312,12 +300,6 @@ export default function EventDetail() {
         <div className="h-6" />
       </div>
 
-      <AuthModal
-        open={showAuthModal}
-        defaultTab="signup"
-        onAuthenticated={handleAuthenticated}
-        onClose={() => setShowAuthModal(false)}
-      />
     </div>
   );
 }

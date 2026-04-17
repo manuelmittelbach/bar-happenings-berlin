@@ -41,13 +41,10 @@ export default function Header() {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/my-events"
+            to={user ? "/my-events" : "/login"}
+            state={user ? undefined : { from: "/my-events" }}
             className={`hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-bold uppercase tracking-wider transition-colors ${
-              location.pathname === "/my-events"
-                ? "text-accent"
-                : user
-                  ? "text-foreground hover:text-accent"
-                  : "text-muted-foreground hover:text-foreground"
+              user ? "text-foreground hover:text-accent" : "text-muted-foreground hover:text-foreground"
             }`}
             title="My saved events"
           >
@@ -94,11 +91,10 @@ export default function Header() {
                 </Link>
               ))}
               <Link
-                to="/my-events"
+                to={user ? "/my-events" : "/login"}
+                state={user ? undefined : { from: "/my-events" }}
                 onClick={() => setMobileOpen(false)}
-                className={`mono-label flex items-center gap-2 ${
-                  location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
-                }`}
+                className="mono-label flex items-center gap-2 text-muted-foreground"
               >
                 <Bookmark className={`h-4 w-4 ${user ? "fill-current" : ""}`} />
                 My Events

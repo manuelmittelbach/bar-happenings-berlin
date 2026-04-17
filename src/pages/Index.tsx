@@ -137,6 +137,7 @@ export default function Index() {
 
     const seen = new Set<string>();
     result = result.filter((e) => {
+      if (!e.parentId) return true;
       if (seen.has(e.parentId)) return false;
       seen.add(e.parentId);
       return true;
