@@ -150,9 +150,10 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
 
   /* ─── DEFAULT GRID card ─── */
   const isLive = badge?.variant === "live";
+  const mightBeOver = badge?.label === "Might be over";
 
   return (
-    <div>
+    <div className={mightBeOver ? "opacity-60" : ""}>
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}

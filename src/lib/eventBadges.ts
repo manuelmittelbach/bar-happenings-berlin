@@ -33,6 +33,12 @@ export function getEventBadge(
   interestedCount: number
 ): EventBadge | null {
   const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const isLateNight = now.getHours() < 6;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const cutoff = isLateNight ? yesterday : todayStr;
+  if (event.date < cutoff) return null;
+
   const hasTime = Boolean(event.startTime && event.startTime.trim());
 
   // Temporal badges require a specified start time
@@ -54,7 +60,10 @@ export function getEventBadge(
     } else {
       // No end time — "Happening Now" for 1.5h, then "Might be over"
       const mightBeOver = new Date(start.getTime() + 1.5 * 60 * 60 * 1000);
-      if (now >= mightBeOver) {
+      const nextDay6am = new Date(start);
+      nextDay6am.setDate(nextDay6am.getDate() + 1);
+      nextDay6am.setHours(6, 0, 0, 0);
+      if (now >= mightBeOver && now < nextDay6am) {
         return { label: "Might be over", variant: "soon", icon: Clock };
       }
       if (now >= start) {

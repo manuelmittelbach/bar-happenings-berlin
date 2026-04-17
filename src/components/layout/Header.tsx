@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Bookmark } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { label: "Explore", path: "/" },
-  { label: "For Bars", path: "/for-bars" },
+  { label: "Publish Event", path: "/publish" },
   { label: "About", path: "/about" },
 ];
 
@@ -43,19 +43,10 @@ export default function Header() {
           <Link
             to={user ? "/my-events" : "/login"}
             state={user ? undefined : { from: "/my-events" }}
-            className={`hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-bold uppercase tracking-wider transition-colors ${
-              user ? "text-foreground hover:text-accent" : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
             title="My saved events"
           >
-            <Bookmark className={`h-4 w-4 ${user ? "fill-current" : ""}`} />
-            <span className="hidden md:inline">My Events</span>
-          </Link>
-          <Link
-            to="/publish"
-            className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
-          >
-            Publish Event
+            My Events
           </Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -94,17 +85,9 @@ export default function Header() {
                 to={user ? "/my-events" : "/login"}
                 state={user ? undefined : { from: "/my-events" }}
                 onClick={() => setMobileOpen(false)}
-                className="mono-label flex items-center gap-2 text-muted-foreground"
-              >
-                <Bookmark className={`h-4 w-4 ${user ? "fill-current" : ""}`} />
-                My Events
-              </Link>
-              <Link
-                to="/publish"
-                onClick={() => setMobileOpen(false)}
                 className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
               >
-                Publish Event
+                My Events
               </Link>
             </nav>
           </motion.div>
