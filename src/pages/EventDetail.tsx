@@ -146,7 +146,7 @@ export default function EventDetail() {
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-medium tracking-wide transition-colors focus:outline-none"
+          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-mono font-medium tracking-wide transition-colors focus:outline-none"
         >
           <ArrowLeft className="h-5 w-5" />
           Back

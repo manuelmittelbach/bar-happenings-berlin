@@ -106,7 +106,7 @@ export default function Index() {
 
     if (searchQuery) {
       result = result.filter(
-        (e) => fuzzyMatchAny([e.title, e.venue, e.neighborhood, e.category], searchQuery)
+        (e) => fuzzyMatchAny([e.venue, e.neighborhood], searchQuery)
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
@@ -417,7 +417,7 @@ export default function Index() {
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
-                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isLive ? "bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]" : ""}`}
+                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isLive ? "bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]" : ""} ${rowBadge?.label === "Might be over" ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="shrink-0 font-mono text-[11px] text-accent uppercase tracking-wider w-[52px]">

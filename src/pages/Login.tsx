@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const fromEvent = (location.state as { from?: string })?.from ?? null;
+  const from = (location.state as { from?: string })?.from ?? null;
+  const fromEvent = from?.startsWith("/event/") ? from : null;
   const { signIn, signUp, resetPassword } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -66,7 +67,7 @@ export default function Login() {
         <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border flex items-center px-4 py-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-base font-medium tracking-wide transition-colors focus:outline-none"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-base font-mono font-medium tracking-wide transition-colors focus:outline-none"
           >
             <ArrowLeft className="h-5 w-5" />
             Back

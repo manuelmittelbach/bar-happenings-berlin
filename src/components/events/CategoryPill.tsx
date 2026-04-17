@@ -149,7 +149,7 @@ export function CategoryIconBar({
   });
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+    <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
       {/* All */}
       <button
         onClick={() => onSelect("")}
