@@ -40,8 +40,8 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     image: row.image ?? "",
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
-    lat: row.lat,
-    lng: row.lng,
+    lat: Number(row.lat),
+    lng: Number(row.lng),
   };
 }
 

@@ -19,6 +19,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ForBars from "./pages/ForBars";
 import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
+import MapPage from "./pages/MapPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/for-bars" element={<ForBars />} />
           <Route path="/about" element={<About />} />
           <Route path="/my-events" element={<MyEvents />} />
+          <Route path="/map" element={<MapPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
