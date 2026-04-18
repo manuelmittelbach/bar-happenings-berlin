@@ -4,7 +4,7 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, Users } from "lucide-react";
+import { Search, Users, Map } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
 import Header from "@/components/layout/Header";
@@ -345,7 +345,7 @@ export default function Index() {
           </div>
         </div>
 
-        {activeDate !== "All" && filtered.length === 0 ? (
+        {(activeDate !== "All" && filtered.length === 0 ? (
           <section className="bg-background">
             <div className="container py-20">
               <div className="text-center py-20 border-2 border-border">
@@ -510,7 +510,7 @@ export default function Index() {
               ));
             })()}
           </>
-        )}
+        ))}
 
         <section className="bg-foreground text-primary-foreground noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
@@ -542,7 +542,14 @@ export default function Index() {
       </main>
       <Footer />
 
-
+      {/* Map button */}
+      <button
+        onClick={() => navigate("/map")}
+        className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
+      >
+        <Map className="h-4 w-4" />
+        Map
+      </button>
     </div>
   );
 }

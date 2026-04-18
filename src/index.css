@@ -104,6 +104,16 @@
   }
 }
 
+.map-popup-scroll::-webkit-scrollbar       { width: 4px; }
+.map-popup-scroll::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 2px; }
+.map-popup-scroll::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 2px; }
+
+@media (hover: hover) {
+  .map-popup-btn:hover p:first-child { color: white !important; }
+  .map-popup-btn:hover p:last-child  { color: rgba(255,255,255,0.75) !important; }
+  .map-popup-btn:hover               { background: #f97316 !important; }
+}
+
 @layer utilities {
   .grayscale-hover {
     filter: grayscale(100%) contrast(1.1);
@@ -141,4 +151,9 @@
     pointer-events: none;
     z-index: 1;
   }
+}
+
+.leaflet-marker-icon:hover .event-marker,
+.event-marker--active {
+  background: #f97316 !important;
 }
