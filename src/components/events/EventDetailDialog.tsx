@@ -7,6 +7,10 @@ import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventById, getVenueById, getEventsByParent, getCategoryInfoByLabel } from "@/data/mockData";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useCheckInterest } from "@/hooks/useEvents";
+import { saveInterest, deleteInterest } from "@/lib/supabaseQueries";
 
 interface EventDetailDialogProps {
   eventId: string | null;
@@ -17,21 +21,17 @@ interface EventDetailDialogProps {
 
 export default function EventDetailDialog({ eventId, open, onOpenChange, onEventChange }: EventDetailDialogProps) {
   const event = eventId ? getEventById(eventId) : null;
-  const [joined, setJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(0);
   const [datesOpen, setDatesOpen] = useState(false);
 
-  const baseCount = useMemo(() => {
-    if (!eventId) return 0;
-    const hash = eventId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return (hash % 42) + 1;
-  }, [eventId]);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: isInterested = false } = useCheckInterest(user?.id ?? null, eventId ?? "");
 
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setJoined(false);
-    setInterestedCount(baseCount);
+    setInterestedCount(event?.interestedCount ?? 0);
     // Scroll dialog content to top when switching events — use multiple frames to ensure DOM is ready
     const raf = requestAnimationFrame(() => {
       contentRef.current?.scrollTo({ top: 0 });
@@ -41,12 +41,13 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
       }, 50);
     });
     return () => cancelAnimationFrame(raf);
-  }, [eventId, baseCount]);
+  }, [eventId, event?.interestedCount]);
 
   const venue = event ? getVenueById(event.venueId) : null;
   const siblings = event ? getEventsByParent(event.parentId) : [];
   const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i).sort();
   const catInfo = event ? getCategoryInfoByLabel(event.category) : null;
+  const joined = isInterested;
   const badge = useMemo(() => event ? getEventBadge(event, interestedCount) : null, [event, interestedCount]);
 
   const badgeVariantClasses: Record<EventBadge["variant"], string> = {
@@ -60,9 +61,17 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
   const displayTitle = cleanEventTitle(event.title, event.venue);
   const hasRealImage = !!event.image;
 
-  const handleJoin = () => {
-    setJoined(!joined);
+  const handleJoin = async () => {
+    if (!user || !eventId) return;
     setInterestedCount(prev => joined ? prev - 1 : prev + 1);
+    if (joined) {
+      await deleteInterest(user.id, eventId);
+    } else {
+      await saveInterest(user.id, eventId);
+    }
+    queryClient.invalidateQueries({ queryKey: ["interest", user.id, eventId] });
+    queryClient.invalidateQueries({ queryKey: ["events"] });
+    queryClient.invalidateQueries({ queryKey: ["my-events", user.id] });
   };
 
   return (

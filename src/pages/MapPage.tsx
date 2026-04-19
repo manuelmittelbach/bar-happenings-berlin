@@ -6,6 +6,7 @@ import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
+import Header from "@/components/layout/Header";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 
@@ -39,10 +40,11 @@ export default function MapPage() {
 
   return (
     <div className="flex flex-col h-dvh overflow-hidden">
+      <Header />
       {/* Filters bar */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
         {/* Date filters */}
-        <div className="flex gap-2 px-4 py-2.5 border-b border-border overflow-x-auto scrollbar-hide">
+        <div className="border-b border-border overflow-x-auto scrollbar-hide"><div className="container flex gap-2 py-2.5">
           {dateFilters.map((d) => (
             <button
               key={d}
@@ -56,10 +58,10 @@ export default function MapPage() {
               {d}
             </button>
           ))}
-        </div>
+        </div></div>
 
         {/* Category filters */}
-        <div className="px-4 py-2">
+        <div className="container py-3">
           <div className="md:hidden">
             <CategoryIconBar
               categories={categories}
