@@ -19,7 +19,11 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).get("expired") === "1"
+      ? "Your confirmation link has expired. Please sign up again."
+      : ""
+  );
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,9 +54,7 @@ export default function Login() {
         navigate("/my-events");
       } else {
         await signUp(email, password, firstName, lastName);
-        setIsLogin(true);
-        setPassword("");
-        setSuccess("Account created! Sign in below.");
+        setSuccess("confirm-email");
       }
     } catch (err: unknown) {
       setError(friendlyError(err instanceof Error ? err.message : "Something went wrong"));
@@ -78,7 +80,19 @@ export default function Login() {
       )}
       <main className="flex-1 flex items-center justify-center py-16">
         <div className="w-full max-w-sm mx-auto px-4">
-          <div className="text-center mb-8">
+          {success === "confirm-email" ? (
+            <div className="text-center space-y-4">
+              <h1 className="heading-display text-2xl">Check your email</h1>
+              <p className="text-sm text-muted-foreground">We sent a confirmation link to <strong>{email}</strong>. Please confirm your email address before signing in.</p>
+              <button
+                onClick={() => { setSuccess(""); setIsLogin(true); setPassword(""); }}
+                className="w-full h-10 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
+              >
+                Go to sign in
+              </button>
+            </div>
+          ) : (
+          <><div className="text-center mb-8">
             <h1 className="heading-display text-2xl">
               {isForgotPassword ? "Reset password" : isLogin ? "Welcome back" : "Create account"}
             </h1>
@@ -214,6 +228,7 @@ export default function Login() {
               </>
             )}
           </p>
+          </>)}
         </div>
       </main>
       <Footer />

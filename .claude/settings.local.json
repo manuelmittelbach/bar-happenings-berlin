@@ -24,7 +24,9 @@
       "Bash(kill 92674)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['peerDependencies','dependencies'] if k in d}, indent=2\\)\\)\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('version:', d['version']\\); print\\('peerDeps:', json.dumps\\(d.get\\('peerDependencies',{}\\), indent=2\\)\\)\")",
-      "Bash(open *)"
+      "Bash(open *)",
+      "mcp__supabase__list_extensions",
+      "mcp__supabase__get_logs"
     ]
   }
 }

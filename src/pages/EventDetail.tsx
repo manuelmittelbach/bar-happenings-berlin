@@ -189,12 +189,12 @@ export default function EventDetail() {
               disabled={isSaving}
               className={`h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
                 saved
-                  ? "bg-accent text-accent-foreground border-accent shadow-[0_0_20px_hsl(var(--accent)/0.3)]"
+                  ? "bg-accent text-accent-foreground border-accent"
                   : "bg-transparent text-foreground border-accent hover:bg-accent/10"
               }`}
             >
               {!saved && <Plus className="h-4 w-4" />}
-              {saved ? "Interested ✓" : "Interested"}
+              Interested
             </button>
           </div>
         </div>

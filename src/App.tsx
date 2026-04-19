@@ -1,10 +1,37 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
+function AuthRedirectHandler() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasCode = params.has("code");
+    const hasSignupHash = window.location.hash.includes("type=signup");
+    const hasError = params.has("error") || window.location.hash.includes("error=");
+
+    if (hasError) {
+      navigate("/login?expired=1", { replace: true });
+      return;
+    }
+
+    if (!hasCode && !hasSignupHash) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        sessionStorage.setItem("email-just-confirmed", "1");
+        navigate("/my-events", { replace: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
   return null;
 }
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -20,6 +47,7 @@ import ForBars from "./pages/ForBars";
 import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
 import MapPage from "./pages/MapPage";
+import UpdatePassword from "./pages/UpdatePassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +59,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <AuthRedirectHandler />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/event/:id" element={<EventDetail />} />
@@ -42,6 +71,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/my-events" element={<MyEvents />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/reset-password" element={<UpdatePassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
