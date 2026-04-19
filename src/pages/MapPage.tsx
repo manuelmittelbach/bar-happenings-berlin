@@ -42,7 +42,7 @@ export default function MapPage() {
   }, [eventsData, activeCategory, activeDate, today, tomorrow, yesterday, isLateNight]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-dvh overflow-hidden">
       {/* Filters bar */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
         {/* Date filters */}
