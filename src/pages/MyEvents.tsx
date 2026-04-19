@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bookmark, LogOut, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,13 @@ export default function MyEvents() {
   const { data: events = [], isLoading: eventsLoading } = useMyEvents(user?.id ?? null);
   const { data: profile } = useProfile(user?.id ?? null);
   const [showPast, setShowPast] = useState(false);
+  const [justConfirmed] = useState(() => {
+    if (sessionStorage.getItem("email-just-confirmed")) {
+      sessionStorage.removeItem("email-just-confirmed");
+      return true;
+    }
+    return false;
+  });
 
   const isLateNight = new Date().getHours() < 6;
   const today = new Date().toISOString().split("T")[0];
@@ -95,7 +102,9 @@ export default function MyEvents() {
             {profile?.firstName && (
               <p className="mono-label text-muted-foreground mb-4">Hi, {profile.firstName}</p>
             )}
-            <h1 className="font-body text-2xl font-extrabold tracking-tight">Your saved events</h1>
+            {(hasAnyEvents || pastEvents.length > 0) && (
+              <h1 className="font-body text-2xl font-extrabold tracking-tight">Your saved events</h1>
+            )}
           </div>
           <button
             onClick={async () => { await signOut(); navigate("/"); }}
@@ -110,10 +119,9 @@ export default function MyEvents() {
           <p className="text-sm text-muted-foreground">Loading your events…</p>
         ) : !hasAnyEvents && pastEvents.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-4 text-center">
-            <Bookmark className="h-8 w-8 text-muted-foreground" />
-            <p className="font-body font-bold">Nothing saved yet</p>
+            <p className="font-body font-bold">{justConfirmed ? "Email confirmed!" : "Nothing saved yet"}</p>
             <p className="text-sm text-muted-foreground">Tap "Interested" on any event to save it here.</p>
-            <Link to="/" className="text-sm text-foreground font-medium hover:text-muted-foreground transition-colors">
+            <Link to="/" className="h-11 px-6 flex items-center bg-accent text-white font-body font-bold uppercase tracking-wider text-sm hover:bg-accent/90 transition-colors">
               Browse events
             </Link>
           </div>

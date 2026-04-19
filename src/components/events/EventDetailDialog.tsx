@@ -274,7 +274,7 @@ export default function EventDetailDialog({ eventId, open, onOpenChange, onEvent
                     : "bg-[hsl(25,95%,53%)] text-white hover:bg-[hsl(25,95%,45%)]"
                 }`}
               >
-                {joined ? "✓ Interested" : "I want to join"}
+                {joined ? "Interested" : "I want to join"}
               </button>
             </div>
           </div>
