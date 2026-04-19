@@ -19,11 +19,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState(() =>
-    new URLSearchParams(window.location.search).get("expired") === "1"
-      ? "Your confirmation link has expired. Please sign up again."
-      : ""
-  );
+  const [error, setError] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    const linkError = p.get("link_error");
+    if (linkError === "reset") return "Your password reset link has expired. Please request a new one.";
+    if (linkError === "confirm") return "Your confirmation link has expired. Please sign up again.";
+    return "";
+  });
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 

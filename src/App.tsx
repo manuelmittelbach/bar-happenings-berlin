@@ -18,7 +18,8 @@ function AuthRedirectHandler() {
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
-      navigate("/login?expired=1", { replace: true });
+      const isReset = window.location.pathname.includes("reset-password");
+      navigate(isReset ? "/login?link_error=reset" : "/login?link_error=confirm", { replace: true });
       return;
     }
 

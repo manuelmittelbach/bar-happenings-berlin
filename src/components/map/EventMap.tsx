@@ -216,27 +216,28 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
           JSON.parse(props.eventsJson);
 
         const popupEl = document.createElement("div");
-        popupEl.style.cssText = "min-width:190px;max-width:250px;font-family:sans-serif;";
+        popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
 
         const titleEl = document.createElement("p");
         titleEl.style.cssText =
-          "font-weight:700;font-size:13px;margin:0 0 8px;border-bottom:1px solid #eee;padding-bottom:6px;padding-right:28px;";
-        titleEl.textContent = `${props.venueName} · ${props.neighborhood}`;
+          "font-weight:700;font-size:15px;margin:0;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
+        titleEl.textContent = props.venueName;
         popupEl.appendChild(titleEl);
 
         const scrollEl = document.createElement("div");
         scrollEl.className = "map-popup-scroll";
-        scrollEl.style.cssText = "max-height:175px;overflow-y:auto;";
+        scrollEl.style.cssText = "max-height:220px;overflow-y:auto;padding:4px 12px;";
         evts.forEach((evt) => {
           const btn = document.createElement("button");
-          btn.style.cssText =
-            "display:block;width:100%;text-align:left;padding:5px 0;border:none;border-bottom:1px solid #f0f0f0;background:none;cursor:pointer;";
+          const isLast = evts.indexOf(evt) === evts.length - 1;
+          btn.className = "map-popup-btn";
+          btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
           const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
             weekday: "short", day: "numeric", month: "short",
           });
           btn.innerHTML = `
-            <p style="font-size:12px;font-weight:600;margin:0;color:#111;">${evt.title}</p>
-            <p style="font-size:11px;color:#888;margin:2px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
+            <p style="font-size:14px;font-weight:600;margin:0;color:#111;">${evt.title}</p>
+            <p style="font-size:12px;color:#888;margin:3px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
           `;
           btn.addEventListener("click", () => {
             btn.style.background = "#f97316";
@@ -320,7 +321,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
       },
       () => {
         setLocating(false);
-        alert("Bitte erlaube den Standortzugriff in deinen Browser-Einstellungen.");
+        alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
       },
       { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
     );
