@@ -12,7 +12,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/distance";
 
 const sortOptions = ["Recommended", "Today First", "Soonest", "Newly Added"];
-const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
+const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 
 export default function Explore() {

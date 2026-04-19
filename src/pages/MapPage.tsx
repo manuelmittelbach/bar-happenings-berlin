@@ -7,7 +7,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
 
-const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
+const dateFilters = ["All", "Today", "Tomorrow"];
 
 export default function MapPage() {
   const navigate = useNavigate();
@@ -34,10 +34,6 @@ export default function MapPage() {
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    if (activeDate === "This Week") {
-      const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-      result = result.filter((e) => e.date >= today && e.date <= weekEnd);
-    }
     return result;
   }, [eventsData, activeCategory, activeDate, today, tomorrow, yesterday, isLateNight]);
 

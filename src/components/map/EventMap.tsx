@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from "react";
-import L from "leaflet";
-import { getCategoryInfoByLabel } from "@/data/mockData";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { getCategoryInfoByLabel, getCategoryInfo, categoryInfos } from "@/data/mockData";
 import type { BarlinEvent, Venue } from "@/data/mockData";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 
@@ -11,7 +12,12 @@ interface EventMapProps {
   onEventClick: (id: string) => void;
 }
 
-const BERLIN_CENTER: [number, number] = [52.52, 13.405];
+const BERLIN_CENTER: [number, number] = [13.405, 52.52];
+const SOURCE_ID = "venues";
+const LAYER_ICONS = "venue-icons";
+
+const imageKey = (categoryId: string, count: number) =>
+  count > 1 ? `cat-${categoryId}-${count}` : `cat-${categoryId}`;
 
 const categoryIconPaths: Record<string, string> = {
   "comedy":           `<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>`,
@@ -29,24 +35,61 @@ const categoryIconPaths: Record<string, string> = {
   "other":            `<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>`,
 };
 
-const MARKER_DEFAULT = "#6b7280";
-const MARKER_ACTIVE  = "#f97316";
+async function buildCategoryImage(categoryId: string, color: string, count = 1): Promise<ImageData> {
+  const SIZE = 80;
+  const canvas = document.createElement("canvas");
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext("2d")!;
 
-function markerHtml(categoryId: string, color: string) {
+  // Main circle
+  ctx.beginPath();
+  ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+
+  // SVG icon — wait for onload before drawing
   const paths = categoryIconPaths[categoryId] ?? categoryIconPaths["other"];
-  const icon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
-  return `<div class="event-marker" style="width:40px;height:40px;background:${MARKER_DEFAULT};border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);transition:background 0.15s;">${icon}</div>`;
-}
+  const iconSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
+  )}`;
+  await new Promise<void>((resolve) => {
+    const iconImg = new Image();
+    iconImg.onload = () => { ctx.drawImage(iconImg, 24, 24, 32, 32); resolve(); };
+    iconImg.onerror = () => resolve();
+    iconImg.src = iconSvg;
+  });
 
-function badgeHtml(count: number) {
-  return `<span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;background:white;color:#6b7280;font-size:9px;font-weight:700;border-radius:50%;font-family:monospace;border:1.5px solid #e5e7eb;line-height:1;">${count}</span>`;
+  // Count badge
+  if (count > 1) {
+    ctx.beginPath();
+    ctx.arc(62, 20, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(62, 20, 12, 0, Math.PI * 2);
+    ctx.fillStyle = "#1f2937";
+    ctx.fill();
+    ctx.fillStyle = "white";
+    ctx.font = `bold ${count > 9 ? 11 : 14}px Arial, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(count), 62, 20);
+  }
+
+  return ctx.getImageData(0, 0, SIZE, SIZE);
 }
 
 export default function EventMap({ events, venueMap, userLocation, onEventClick }: EventMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const badgeMarkersRef = useRef<L.Marker[]>([]);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onEventClickRef = useRef(onEventClick);
+  const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
+  const sourceReadyRef = useRef(false);
   const [locating, setLocating] = useState(false);
 
   useEffect(() => { onEventClickRef.current = onEventClick; });
@@ -63,151 +106,209 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
     return map;
   }, [events, venueMap]);
 
-  // Effect 1: Initialize map once on mount
+  const geojson = useMemo((): GeoJSON.FeatureCollection => ({
+    type: "FeatureCollection",
+    features: Array.from(venueEvents.entries()).map(([venueId, evts]) => {
+      const venue = venueMap[venueId];
+      const info = getCategoryInfoByLabel(evts[0].category);
+      const categoryId = info?.id ?? "other";
+      return {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
+        properties: {
+          venueId,
+          venueName: venue.name,
+          neighborhood: venue.neighborhood,
+          categoryId,
+          count: evts.length,
+          eventsJson: JSON.stringify(
+            evts.map((e) => ({
+              id: e.id,
+              title: cleanEventTitle(e.title, e.venue),
+              date: e.date,
+              startTime: e.startTime ?? "",
+            }))
+          ),
+        },
+      };
+    }),
+  }), [venueEvents, venueMap]);
+
+  // Initialize map, load icons, add layers
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const map = L.map(container, { zoomControl: true }).setView(BERLIN_CENTER, 13);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: "abcd",
-      maxZoom: 20,
-      className: "map-tiles-dimmed",
-    }).addTo(map);
+    const map = new maplibregl.Map({
+      container,
+      style: "https://tiles.openfreemap.org/styles/positron",
+      center: BERLIN_CENTER,
+      zoom: 12,
+      minZoom: 10,
+      maxBounds: [[13.0, 52.3], [13.8, 52.75]],
+      attributionControl: { compact: true },
+    });
 
-    // Badge pane sits above the marker pane (600) so badges are never covered
-    const badgePane = map.createPane("badge-pane");
-    badgePane.style.zIndex = "610";
-    badgePane.style.pointerEvents = "none";
+    map.on("load", () => {
+      (async () => {
+      // Register base category images
+      await Promise.all([
+        ...categoryInfos.map(async (cat) => {
+          if (!map.hasImage(`cat-${cat.id}`))
+            map.addImage(`cat-${cat.id}`, await buildCategoryImage(cat.id, cat.color), { pixelRatio: 2 });
+        }),
+        (async () => {
+          if (!map.hasImage("cat-other"))
+            map.addImage("cat-other", await buildCategoryImage("other", "#6b7280"), { pixelRatio: 2 });
+        })(),
+      ]);
+
+      // Pre-register badge images for data already in ref
+      const seen = new Set<string>();
+      await Promise.all(
+        geojsonRef.current.features.map(async (f) => {
+          const { categoryId, count } = f.properties as { categoryId: string; count: number };
+          if (count <= 1) return;
+          const key = imageKey(categoryId, count);
+          if (!seen.has(key) && !map.hasImage(key)) {
+            seen.add(key);
+            const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+            map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
+          }
+        })
+      );
+
+      map.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: geojsonRef.current,
+      });
+      sourceReadyRef.current = true;
+
+      // Symbol layer — icons with badge baked in, rendered in WebGL
+      map.addLayer({
+        id: LAYER_ICONS,
+        type: "symbol",
+        source: SOURCE_ID,
+        layout: {
+          "icon-image": [
+            "case",
+            [">", ["get", "count"], 1],
+            ["concat", "cat-", ["get", "categoryId"], "-", ["to-string", ["get", "count"]]],
+            ["concat", "cat-", ["get", "categoryId"]],
+          ],
+          "icon-size": 1,
+          "icon-allow-overlap": true,
+        },
+      });
+
+      map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", LAYER_ICONS, () => { map.getCanvas().style.cursor = ""; });
+
+      map.on("click", LAYER_ICONS, (e) => {
+        if (!e.features?.length) return;
+        const props = e.features[0].properties as {
+          venueName: string;
+          neighborhood: string;
+          eventsJson: string;
+        };
+        const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+        const evts: { id: string; title: string; date: string; startTime: string }[] =
+          JSON.parse(props.eventsJson);
+
+        const popupEl = document.createElement("div");
+        popupEl.style.cssText = "min-width:190px;max-width:250px;font-family:sans-serif;";
+
+        const titleEl = document.createElement("p");
+        titleEl.style.cssText =
+          "font-weight:700;font-size:13px;margin:0 0 8px;border-bottom:1px solid #eee;padding-bottom:6px;padding-right:28px;";
+        titleEl.textContent = `${props.venueName} · ${props.neighborhood}`;
+        popupEl.appendChild(titleEl);
+
+        const scrollEl = document.createElement("div");
+        scrollEl.className = "map-popup-scroll";
+        scrollEl.style.cssText = "max-height:175px;overflow-y:auto;";
+        evts.forEach((evt) => {
+          const btn = document.createElement("button");
+          btn.style.cssText =
+            "display:block;width:100%;text-align:left;padding:5px 0;border:none;border-bottom:1px solid #f0f0f0;background:none;cursor:pointer;";
+          const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
+            weekday: "short", day: "numeric", month: "short",
+          });
+          btn.innerHTML = `
+            <p style="font-size:12px;font-weight:600;margin:0;color:#111;">${evt.title}</p>
+            <p style="font-size:11px;color:#888;margin:2px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
+          `;
+          btn.addEventListener("click", () => {
+            btn.style.background = "#f97316";
+            btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
+            btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
+            setTimeout(() => onEventClickRef.current(evt.id), 80);
+          });
+          scrollEl.appendChild(btn);
+        });
+        popupEl.appendChild(scrollEl);
+
+        new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
+          .setLngLat(coords)
+          .setDOMContent(popupEl)
+          .addTo(map);
+      });
+      })();
+    });
 
     mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+    return () => { map.remove(); mapRef.current = null; sourceReadyRef.current = false; };
   }, []);
 
-  // Effect 2: Update markers whenever data or location changes
+  // Update data when events change — register any missing badge images first
   useEffect(() => {
+    geojsonRef.current = geojson;
+    if (!sourceReadyRef.current) return;
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear all markers and overlays (keep tile layer)
-    map.eachLayer((layer) => {
-      if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
-    });
-    // Wipe badge pane DOM directly — most reliable for custom panes
-    const badgePane = map.getPane("badge-pane");
-    if (badgePane) badgePane.innerHTML = "";
-    badgeMarkersRef.current = [];
+    const needed = geojson.features
+      .map((f) => ({ categoryId: f.properties!.categoryId as string, count: f.properties!.count as number }))
+      .filter(({ categoryId, count }) => !map.hasImage(imageKey(categoryId, count)));
 
-    // User location dot
-    if (userLocation) {
-      L.marker([userLocation.lat, userLocation.lng], {
-        icon: L.divIcon({
-          className: "",
-          html: `<div style="width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.3);"></div>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-        }),
-      }).addTo(map);
-    }
+    const apply = () => {
+      (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource)?.setData(geojson);
+    };
 
-    // Event markers
-    venueEvents.forEach((venueEvts, venueId) => {
-      const venue = venueMap[venueId];
-      if (!venue?.lat || !venue?.lng) return;
+    (async () => {
+      await Promise.all(
+        needed.map(async ({ categoryId, count }) => {
+          const key = imageKey(categoryId, count);
+          if (!map.hasImage(key)) {
+            const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+            map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
+          }
+        })
+      );
+      apply();
+    })();
+  }, [geojson]);
 
-      const info = getCategoryInfoByLabel(venueEvts[0].category);
-      const categoryId = info?.id ?? "other";
-      const color = info?.color ?? "#14b8a6";
-
-      const marker = L.marker([venue.lat, venue.lng], {
-        icon: L.divIcon({
-          className: "",
-          html: markerHtml(categoryId, color),
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
-          popupAnchor: [0, -24],
-        }),
-      });
-
-      const popupEl = document.createElement("div");
-      popupEl.style.cssText = "min-width:190px;max-width:250px;font-family:sans-serif;";
-
-      const scrollEl = document.createElement("div");
-      scrollEl.className = "map-popup-scroll";
-      scrollEl.style.cssText = "max-height:175px;overflow-y:auto;";
-
-      const titleEl = document.createElement("p");
-      titleEl.style.cssText =
-        "font-weight:700;font-size:13px;margin:0 0 8px;border-bottom:1px solid #eee;padding-bottom:6px;";
-      titleEl.textContent = `${venue.name} · ${venue.neighborhood}`;
-      popupEl.appendChild(titleEl);
-
-      venueEvts.forEach((evt) => {
-        const btn = document.createElement("button");
-        btn.className = "map-popup-btn";
-        btn.style.cssText =
-          "display:block;width:100%;text-align:left;padding:5px 0;border:none;border-bottom:1px solid #f0f0f0;background:none;cursor:pointer;";
-        const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-        });
-        btn.innerHTML = `
-          <p style="font-size:12px;font-weight:600;margin:0;color:#111;">${cleanEventTitle(evt.title, evt.venue)}</p>
-          <p style="font-size:11px;color:#888;margin:2px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
-        `;
-        btn.addEventListener("click", () => {
-          btn.style.background = "#f97316";
-          btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
-          btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
-          setTimeout(() => onEventClickRef.current(evt.id), 80);
-        });
-        scrollEl.appendChild(btn);
-      });
-      popupEl.appendChild(scrollEl);
-
-      marker.bindPopup(popupEl).addTo(map);
-
-      // Badge rendered in a separate pane above all markers — never covered
-      if (venueEvts.length > 1) {
-        const bm = L.marker([venue.lat, venue.lng], {
-          icon: L.divIcon({
-            className: "",
-            html: badgeHtml(venueEvts.length),
-            iconSize: [16, 16],
-            // badge center at +17px right, -17px up from circle center → matches top:-5px;right:-5px
-            iconAnchor: [-9, 25],
-          }),
-          pane: "badge-pane",
-          interactive: false,
-        } as L.MarkerOptions).addTo(map);
-        badgeMarkersRef.current.push(bm);
-      }
-
-      const isMouseDevice = window.matchMedia("(pointer: fine)").matches;
-      if (isMouseDevice) {
-        marker.on("add", () => {
-          const d = marker.getElement()?.querySelector<HTMLElement>(".event-marker");
-          if (!d) return;
-          d.addEventListener("pointerenter", () => { d.style.background = MARKER_ACTIVE; });
-          d.addEventListener("pointerleave", () => { if (!marker.isPopupOpen()) d.style.background = MARKER_DEFAULT; });
-        });
-        marker.on("popupopen",  () => { const d = marker.getElement()?.querySelector<HTMLElement>(".event-marker"); if (d) d.style.background = MARKER_ACTIVE; });
-        marker.on("popupclose", () => { const d = marker.getElement()?.querySelector<HTMLElement>(".event-marker"); if (d) d.style.background = MARKER_DEFAULT; });
-      }
-    });
-  }, [venueEvents, venueMap, userLocation]);
+  // User location dot
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    userMarkerRef.current?.remove();
+    userMarkerRef.current = null;
+    if (!userLocation) return;
+    const el = document.createElement("div");
+    el.style.cssText =
+      "width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.3);";
+    userMarkerRef.current = new maplibregl.Marker({ element: el })
+      .setLngLat([userLocation.lng, userLocation.lat])
+      .addTo(map);
+  }, [userLocation]);
 
   function flyToUser() {
     const map = mapRef.current;
     if (!map) return;
     if (userLocation) {
-      map.flyTo([userLocation.lat, userLocation.lng], 15, { duration: 1.2 });
+      map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 1200 });
       return;
     }
     if (!navigator.geolocation) return;
@@ -215,7 +316,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocating(false);
-        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 1.2 });
+        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1200 });
       },
       () => {
         setLocating(false);
@@ -246,7 +347,6 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          opacity: 1,
         }}
       >
         <svg

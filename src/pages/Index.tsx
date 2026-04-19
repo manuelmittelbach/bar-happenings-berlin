@@ -19,7 +19,7 @@ import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/distance";
 
-const dateFilters = ["All", "Today", "Tomorrow", "This Week"];
+const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
 const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
@@ -113,10 +113,6 @@ export default function Index() {
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    if (activeDate === "This Week") {
-      const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-      result = result.filter((e) => e.date >= today && e.date <= weekEnd);
-    }
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
 
@@ -368,20 +364,16 @@ export default function Index() {
                 if (filtered.length) sections.push({ label: "Today", events: filtered, layout: "grid-2" });
               } else if (activeDate === "Tomorrow") {
                 if (filtered.length) sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
-              } else if (activeDate === "This Week") {
-                if (filtered.length) sections.push({ label: "This week", events: filtered, layout: "list" });
               } else {
                 // "All" — split into temporal sections
                 const yesterdayEvents = isLateNight ? filtered.filter((e) => e.date === yesterday) : [];
                 const todayEvents = filtered.filter((e) => e.date === today);
                 const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
-                const thisWeekEvents = filtered.filter((e) => e.date > tomorrow && e.date <= weekEnd);
-                const laterEvents = filtered.filter((e) => e.date > weekEnd);
+                const laterEvents = filtered.filter((e) => e.date > tomorrow);
 
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
                 sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
-                sections.push({ label: "This week", events: thisWeekEvents, layout: "list" });
                 sections.push({ label: "Later", events: laterEvents, layout: "list" });
               }
 
