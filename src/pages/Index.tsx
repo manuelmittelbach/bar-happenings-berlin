@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useLayoutEffect, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { Link } from "react-router-dom";
@@ -13,7 +13,7 @@ import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { categories, neighborhoods } from "@/data/mockData";
+import { categories, neighborhoods, getVenueById } from "@/data/mockData";
 import type { BarlinEvent } from "@/data/mockData";
 import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -25,12 +25,13 @@ const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 export default function Index() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const [activeCategory, setActiveCategory] = useState("");
+
+  const [activeCategory, setActiveCategory] = useState(() => searchParams.get("category") ?? "");
   const [activeNeighborhood, setActiveNeighborhood] = useState("");
-  const [activeDate, setActiveDate] = useState("All");
+  const [activeDate, setActiveDate] = useState(() => searchParams.get("date") ?? "All");
   const [activeEntry, setActiveEntry] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   
@@ -85,6 +86,27 @@ export default function Index() {
     setTargetSection(null);
   }, [targetSection, stickyOffset]);
 
+  const location = useLocation();
+  const isFirstMount = useRef(true);
+
+  useEffect(() => {
+    const cat = searchParams.get("category") ?? "";
+    const date = searchParams.get("date") ?? "All";
+    setActiveCategory(cat);
+    setActiveDate(date);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const el = sectionRefs.current["__datefilter"];
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY - 57;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }));
+  }, [location.key]);
+
+
   const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
   const { data: venuesData = [] } = useVenues();
 
@@ -116,18 +138,32 @@ export default function Index() {
     if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
     if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
 
+    const WALK_20MIN_M = 1600;
+
+    const getEventDist = (e: typeof result[0]) => {
+      if (!userLocation) return Infinity;
+      const v = getVenueById(e.venueId);
+      return v?.lat && v?.lng ? haversineMeters(userLocation.lat, userLocation.lng, v.lat, v.lng) : Infinity;
+    };
+
+    // 0 = walking distance (top), 1 = normal, 2 = might be over (always bottom)
+    const getSortGroup = (e: typeof result[0], dist: number): number => {
+      if (getEventBadge(e, 0)?.label === "Might be over") return 2;
+      if (dist <= WALK_20MIN_M) return 0;
+      return 1;
+    };
+
     result.sort((a, b) => {
       const dateCmp = a.date.localeCompare(b.date);
       if (dateCmp !== 0) return dateCmp;
-      if (userLocation) {
-        const vA = venueMap[a.venueId];
-        const vB = venueMap[b.venueId];
-        if (vA?.lat && vB?.lat) {
-          const dA = haversineMeters(userLocation.lat, userLocation.lng, vA.lat, vA.lng);
-          const dB = haversineMeters(userLocation.lat, userLocation.lng, vB.lat, vB.lng);
-          return dA - dB;
-        }
-      }
+
+      const dA = getEventDist(a);
+      const dB = getEventDist(b);
+      const groupA = getSortGroup(a, dA);
+      const groupB = getSortGroup(b, dB);
+
+      if (groupA !== groupB) return groupA - groupB;
+      if (groupA === 0) return dA - dB; // walking distance: nearest first
       return a.startTime.localeCompare(b.startTime);
     });
 
@@ -266,25 +302,28 @@ export default function Index() {
                   </div>
                 )}
               </div>
-              {/* Filters row — all aligned left */}
-              <div className="flex items-center gap-2 mt-4 flex-wrap">
-                {dateFilters.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setActiveDate(d)}
-                    className={`inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
-                      activeDate === d
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-foreground hover:bg-foreground hover:text-background"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </section>
+
+        {/* Date filter bar — Map-style with thick black border */}
+        <div ref={(el) => { sectionRefs.current["__datefilter"] = el; }} className="bg-background border-b border-border">
+          <div className="container flex gap-2 py-2.5">
+            {dateFilters.map((d) => (
+              <button
+                key={d}
+                onClick={() => setActiveDate(d)}
+                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
+                  activeDate === d
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground hover:bg-foreground hover:text-background"
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {showFilters && (
           <div className="border-b-2 border-foreground bg-card">

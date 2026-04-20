@@ -19,7 +19,7 @@ export default function PublishEvent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Event published!", { description: "Your event is now live on Barlin." });
+    toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
     navigate("/dashboard");
   };
 
