@@ -87,6 +87,7 @@ export default function Explore() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+
       <main className="flex-1">
         <div className="container py-10">
           <div className="mb-8">

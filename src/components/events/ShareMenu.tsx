@@ -14,7 +14,7 @@ const BASE_URL = "https://bar-happenings-berlin.lovable.app";
 export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: ShareMenuProps) {
   const [copied, setCopied] = useState(false);
   const url = `${BASE_URL}/event/${eventId}`;
-  const text = `Check out "${eventTitle}" on Barlin!`;
+  const text = `Check out "${eventTitle}" on Inside Bars!`;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(url);

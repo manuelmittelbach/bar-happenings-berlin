@@ -17,10 +17,8 @@ export default function Footer() {
             <div>
               <h4 className="mono-label text-primary-foreground/40 mb-4">Discover</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Today</Link></li>
-                <li><Link to="/explore" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Explore</Link></li>
-                <li><Link to="/explore?category=Live+Music" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Live Music</Link></li>
-                <li><Link to="/explore?category=Quiz+Nights" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Quiz Nights</Link></li>
+                <li><Link to="/?category=Live+Music" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Live Music</Link></li>
+                <li><Link to="/?category=Pub+Quiz" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Quiz Nights</Link></li>
               </ul>
             </div>
             <div>
@@ -28,15 +26,21 @@ export default function Footer() {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/for-bars" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">For Bars</Link></li>
                 <li><Link to="/publish" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Publish Event</Link></li>
-                <li><Link to="/login" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Login</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="mono-label text-primary-foreground/40 mb-4">Info</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/about" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">About</Link></li>
-                <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Instagram</a></li>
-                <li><a href="mailto:hello@tipsytiger.berlin" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Contact</a></li>
+                <li><span className="text-primary-foreground/70 cursor-default">Instagram</span></li>
+                <li>
+                  <a
+                    href="mailto:hello@insidebars.co"
+                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+                  >
+                    Contact
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
