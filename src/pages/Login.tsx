@@ -5,7 +5,6 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { neighborhoods } from "@/data/mockData";
-import { supabase } from "@/integrations/supabase/client";
 
 const LOCKOUT_PREFIX = "inside-bars-lockout:";
 const LOCKOUT_MS = 5 * 60 * 1000;
@@ -136,16 +135,8 @@ export default function Login() {
         const { user: signedInUser } = await signIn(email, password);
         clearLockout(email);
         setLockedUntil(null);
-        let role: string | null = null;
-        if (signedInUser) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", signedInUser.id)
-            .maybeSingle();
-          role = data?.role ?? null;
-        }
-        navigate(role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events");
+        const metaRole = signedInUser?.user_metadata?.role;
+        navigate(metaRole === "organizer" ? "/dashboard" : "/my-events");
       } else {
         await signUp(email, password, firstName, lastName, isBarOwner, isBarOwner ? { name: barName, address: barAddress, neighborhood: barNeighborhood, website: barWebsite, instagram: barInstagram, phone: barPhone } : undefined);
         setSuccess("confirm-email");
@@ -200,8 +191,8 @@ export default function Login() {
               {isForgotPassword
                 ? "We'll send you a link to reset your password"
                 : isLogin
-                ? fromMyEvents ? "Sign in to save events and publish your own." : "Sign in to see your saved events"
-                : "Sign up to save events and publish your own"}
+                ? "Sign in to save events"
+                : "Sign up to save events"}
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
+import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
@@ -118,7 +118,14 @@ export default function OrganizerDashboard() {
             ))}
           </div>
 
-          <div className="mb-8" />
+          <div className="flex justify-end mb-8">
+            <Link
+              to="/publish"
+              className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> New Event
+            </Link>
+          </div>
 
           {/* Tabs */}
           <div className="flex gap-4 border-b border-border mb-6">
@@ -140,6 +147,11 @@ export default function OrganizerDashboard() {
           {!eventsLoading && displayed.length === 0 && (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-base">No {activeTab} events yet.</p>
+              {activeTab === "upcoming" && (
+                <Link to="/publish" className="inline-block mt-3 text-sm text-accent hover:underline">
+                  Create an event →
+                </Link>
+              )}
             </div>
           )}
           {!eventsLoading && displayed.length > 0 && (
@@ -174,6 +186,12 @@ export default function OrganizerDashboard() {
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Eye className="h-4 w-4" /> View
+                    </Link>
+                    <Link
+                      to={`/edit-event/${event.id}`}
+                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" /> Edit
                     </Link>
                   </div>
                 </div>

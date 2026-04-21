@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents, useProfile } from "@/hooks/useEvents";
@@ -37,16 +37,10 @@ function groupByDate(events: BarlinEvent[]) {
 }
 
 export default function MyEvents() {
-  const navigate = useNavigate();
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
   const { data: events = [], isLoading: eventsLoading } = useMyEvents(user?.id ?? null);
   const { data: profile } = useProfile(user?.id ?? null);
   const [showPast, setShowPast] = useState(false);
-
-  useEffect(() => {
-    if (role === "admin") navigate("/admin", { replace: true });
-    else if (role === "organizer") navigate("/dashboard", { replace: true });
-  }, [role, navigate]);
 
   const [justConfirmed] = useState(() => {
     if (sessionStorage.getItem("email-just-confirmed")) {

@@ -8,6 +8,7 @@ import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 const navItems = [
   { label: "Discover", path: "/" },
   { label: "About", path: "/about" },
+  { label: "For Bars", path: "/for-bars" },
 ];
 
 export default function Header() {
@@ -80,13 +81,30 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {!loading && (
             <>
-              <Link
-                to={role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : user ? "/my-events" : "/login"}
-                state={user ? undefined : { from: "/my-events" }}
-                className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
-              >
-                {role === "admin" ? "Dashboard" : "My Events"}
-              </Link>
+              {role === "organizer" ? (
+                <>
+                  <Link
+                    to="/my-events"
+                    className="hidden sm:inline-flex mono-label transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    Saved Events
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
+                  >
+                    Manage Bar
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to={user ? "/my-events" : "/login"}
+                  state={user ? undefined : { from: "/my-events" }}
+                  className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
+                >
+                  Saved Events
+                </Link>
+              )}
               {user && (
                 <button
                   onClick={async () => { await signOut(); navigate("/login"); }}
@@ -155,14 +173,33 @@ export default function Header() {
                   </Link>
                 );
               })}
-              <Link
-                to={role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : user ? "/my-events" : "/login"}
-                state={user ? undefined : { from: "/my-events" }}
-                onClick={() => setMobileOpen(false)}
-                className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
-              >
-                {role === "admin" ? "Dashboard" : "My Events"}
-              </Link>
+              {role === "organizer" ? (
+                <>
+                  <Link
+                    to="/my-events"
+                    onClick={() => setMobileOpen(false)}
+                    className="mono-label text-muted-foreground text-left"
+                  >
+                    Saved Events
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
+                  >
+                    Manage Bar
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to={user ? "/my-events" : "/login"}
+                  state={user ? undefined : { from: "/my-events" }}
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
+                >
+                  Saved Events
+                </Link>
+              )}
               {user && (
                 <button
                   onClick={async () => { await signOut(); navigate("/login"); setMobileOpen(false); }}

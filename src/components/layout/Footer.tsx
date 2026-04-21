@@ -1,8 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
 export default function Footer() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const goToCategory = (category: string) => {
     sessionStorage.setItem("inside-bars-scroll-to-filter", "1");
@@ -10,14 +11,29 @@ export default function Footer() {
     navigate(`/?category=${encodeURIComponent(category)}`);
   };
 
+  const goHome = () => {
+    sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+    const scrollToTop = (smooth = false) => {
+      window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    if (location.pathname === "/") {
+      scrollToTop(true);
+    } else {
+      navigate("/");
+      setTimeout(() => scrollToTop(), 50);
+    }
+  };
+
   return (
     <footer className="border-t-2 border-foreground bg-foreground text-primary-foreground">
       <div className="container py-12">
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <div className="max-w-xs">
-            <Link to="/" className="font-heading text-2xl font-extrabold uppercase tracking-tight">
+            <button onClick={goHome} className="font-heading text-2xl font-extrabold uppercase tracking-tight text-left">
               Inside Bars
-            </Link>
+            </button>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               What's on tonight in Berlin's independent bars. Not a ticketing platform — just good bars doing good things.
             </p>
