@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, Megaphone, BarChart3, Users, Zap } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { useAuth } from "@/hooks/useAuth";
 
 const benefits = [
   { icon: Megaphone, title: "Reach locals", description: "Your events appear in front of people actively looking for things to do tonight in Berlin." },
@@ -11,6 +12,12 @@ const benefits = [
 ];
 
 export default function ForBars() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const handlePublishClick = () => {
+    navigate(user ? "/publish" : "/login?mode=signup");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -28,18 +35,12 @@ export default function ForBars() {
                 Inside Bars helps small independent bars and venues in Berlin share their events with people who actually care about local culture.
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
-                <Link
-                  to="/publish"
+                <button
+                  onClick={handlePublishClick}
                   className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground rounded-sm font-medium text-sm hover:bg-accent/90 transition-colors"
                 >
                   Publish your first event <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center h-12 px-6 border border-background/20 text-background rounded-sm font-medium text-sm hover:bg-background/10 transition-colors"
-                >
-                  Create account
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -88,12 +89,12 @@ export default function ForBars() {
           <div className="container py-16 text-center">
             <h2 className="heading-display text-2xl md:text-3xl mb-4">Ready to get started?</h2>
             <p className="text-muted-foreground mb-8">It's free. It's simple. It's made for bars like yours.</p>
-            <Link
-              to="/publish"
+            <button
+              onClick={handlePublishClick}
               className="inline-flex items-center gap-2 h-12 px-8 bg-foreground text-background rounded-sm font-medium text-sm hover:bg-foreground/90 transition-colors"
             >
               Publish your first event <ArrowRight className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
         </section>
       </main>

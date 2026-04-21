@@ -47,9 +47,27 @@ export default function About() {
 
             <p>
               Questions, ideas, feedback? Drop us a line at{" "}
-              <a href="mailto:hello@barlin.berlin" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
-                hello@barlin.berlin
+              <a href="mailto:hello@insidebars.co" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                hello@insidebars.co
               </a>
+            </p>
+
+            <h2 className="font-heading text-xl font-semibold text-foreground pt-4">Map data</h2>
+
+            <p className="text-xs">
+              Map tiles by{" "}
+              <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                OpenFreeMap
+              </a>
+              {" "}&copy;{" "}
+              <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                OpenMapTiles
+              </a>
+              . Map data from{" "}
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-2 hover:text-accent transition-colors">
+                OpenStreetMap
+              </a>
+              {" "}contributors.
             </p>
           </div>
         </div>

@@ -1,10 +1,11 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useMemo, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
-  MapPin, ExternalLink, ArrowLeft,
+  MapPin, ExternalLink,
   ChevronDown, Plus
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
+import Header from "@/components/layout/Header";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -56,15 +57,6 @@ export default function EventDetail() {
     checkInterest(user.id, id).then(setSaved);
   }, [user, id]);
 
-  useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const raf = requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [id]);
 
   const persistInterest = async (userId: string, eventId: string) => {
     setSaved(true);
@@ -142,17 +134,7 @@ export default function EventDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Sticky back bar */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-mono font-medium tracking-wide transition-colors focus:outline-none"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Back
-        </button>
-        <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
-      </div>
+      <Header />
 
       {/* === ABOVE THE FOLD: Decision Zone === */}
       <div className="max-w-screen-md mx-auto">
@@ -163,6 +145,9 @@ export default function EventDetail() {
             <img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <div className="absolute top-3 left-4">
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
+          </div>
         </div>
 
         {/* Core info block */}
@@ -185,16 +170,16 @@ export default function EventDetail() {
               <span className="font-body text-sm font-bold text-accent uppercase tracking-wider">Interested</span>
             </div>
             <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className={`h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
-                saved
-                  ? "bg-accent text-accent-foreground border-accent"
-                  : "bg-transparent text-foreground border-accent hover:bg-accent/10"
-              }`}
-            >
-              {!saved && <Plus className="h-4 w-4" />}
-              Interested
+                onClick={handleSave}
+                disabled={isSaving}
+                className={`h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
+                  saved
+                    ? "bg-accent text-accent-foreground border-accent"
+                    : "bg-transparent text-foreground border-accent hover:bg-accent/10"
+                }`}
+              >
+                {!saved && <Plus className="h-4 w-4" />}
+                Interested
             </button>
           </div>
         </div>

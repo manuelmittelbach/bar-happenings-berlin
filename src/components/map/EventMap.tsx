@@ -146,7 +146,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
       zoom: 12,
       minZoom: 10,
       maxBounds: [[13.0, 52.3], [13.8, 52.75]],
-      attributionControl: { compact: true },
+      attributionControl: false,
     });
 
     map.on("load", () => {
