@@ -1,11 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
   return null;
 }
 
@@ -28,7 +34,16 @@ function AuthRedirectHandler() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         sessionStorage.setItem("email-just-confirmed", "1");
-        navigate("/my-events", { replace: true });
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            const role = data?.role;
+            const destination = role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events";
+            navigate(destination, { replace: true });
+          });
       }
     });
     return () => subscription.unsubscribe();
@@ -49,6 +64,8 @@ import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
 import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
+import EditEvent from "./pages/EditEvent";
+import EditBarAccount from "./pages/EditBarAccount";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -78,6 +95,8 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/my-events" element={<MyEvents />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/edit-event/:id" element={<EditEvent />} />
+          <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
           <Route path="/reset-password" element={<UpdatePassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

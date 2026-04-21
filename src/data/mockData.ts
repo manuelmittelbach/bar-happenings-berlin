@@ -22,6 +22,8 @@ export interface BarlinEvent {
   summary?: string;
   interestedCount?: number;
   featured?: boolean;
+  status?: string;
+  createdBy?: string;
 }
 
 export interface Venue {
@@ -102,7 +104,7 @@ export const categoryInfos: CategoryInfo[] = [
 
 export const categories = categoryInfos.map(c => c.label);
 
-export const neighborhoods = ["Berlin","Charlottenburg","Friedrichshain","Kreuzberg","Mitte","Mitte / Alexanderplatz","Moabit","Neukölln","Prenzlauer Berg","Schöneberg","Steglitz","Tempelhof","Wedding"];
+export const neighborhoods = ["Charlottenburg","Friedrichshain","Kreuzberg","Lichtenberg","Mitte","Moabit","Neukölln","Pankow","Prenzlauer Berg","Schöneberg","Steglitz","Tempelhof","Wedding"];
 
 export const venues: Venue[] = [
   {

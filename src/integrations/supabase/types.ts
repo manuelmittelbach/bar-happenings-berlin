@@ -109,6 +109,66 @@ export type Database = {
         }
         Relationships: []
       }
+      bars_backup: {
+        Row: {
+          address: string | null
+          area: string | null
+          created_at: string | null
+          google_types: string | null
+          id: string
+          instagram: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          num_ratings: number | null
+          opening_hours: string | null
+          phone: string | null
+          place_id: string
+          rating: number | null
+          source_type: string | null
+          telegram: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          area?: string | null
+          created_at?: string | null
+          google_types?: string | null
+          id?: string
+          instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          num_ratings?: number | null
+          opening_hours?: string | null
+          phone?: string | null
+          place_id: string
+          rating?: number | null
+          source_type?: string | null
+          telegram?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          area?: string | null
+          created_at?: string | null
+          google_types?: string | null
+          id?: string
+          instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          num_ratings?: number | null
+          opening_hours?: string | null
+          phone?: string | null
+          place_id?: string
+          rating?: number | null
+          source_type?: string | null
+          telegram?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string
@@ -133,9 +193,12 @@ export type Database = {
       events: {
         Row: {
           address: string
+          approved_at: string | null
+          approved_by: string | null
           category: string
           category_id: string | null
           created_at: string | null
+          created_by: string | null
           date: string
           description: string | null
           end_time: string | null
@@ -150,6 +213,7 @@ export type Database = {
           price: string | null
           recurrence: string | null
           start_time: string
+          status: string
           summary: string | null
           tags: string[] | null
           title: string
@@ -159,9 +223,12 @@ export type Database = {
         }
         Insert: {
           address: string
+          approved_at?: string | null
+          approved_by?: string | null
           category: string
           category_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date: string
           description?: string | null
           end_time?: string | null
@@ -176,6 +243,7 @@ export type Database = {
           price?: string | null
           recurrence?: string | null
           start_time: string
+          status?: string
           summary?: string | null
           tags?: string[] | null
           title: string
@@ -185,9 +253,12 @@ export type Database = {
         }
         Update: {
           address?: string
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string
           category_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date?: string
           description?: string | null
           end_time?: string | null
@@ -202,6 +273,7 @@ export type Database = {
           price?: string | null
           recurrence?: string | null
           start_time?: string
+          status?: string
           summary?: string | null
           tags?: string[] | null
           title?: string
@@ -211,24 +283,245 @@ export type Database = {
         }
         Relationships: []
       }
+      events_alt: {
+        Row: {
+          area: string | null
+          bar_id: string | null
+          changed_fields: Json | null
+          cost: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          end_time: string | null
+          feedbackloop_status: string | null
+          id: string
+          name: string
+          source_platform: string | null
+          source_url: string | null
+          start_time: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name?: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events_staging: {
+        Row: {
+          area: string | null
+          bar_id: string | null
+          changed_fields: Json | null
+          cost: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          end_time: string | null
+          feedbackloop_status: string | null
+          id: string
+          name: string
+          source_platform: string | null
+          source_url: string | null
+          start_time: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name?: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      past_events: {
+        Row: {
+          area: string | null
+          bar_id: string | null
+          changed_fields: Json | null
+          cost: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          end_time: string | null
+          feedbackloop_status: string | null
+          id: string
+          name: string
+          source_platform: string | null
+          source_url: string | null
+          start_time: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area?: string | null
+          bar_id?: string | null
+          changed_fields?: Json | null
+          cost?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          feedbackloop_status?: string | null
+          id?: string
+          name?: string
+          source_platform?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           created_at: string | null
+          email: string | null
+          email_confirmed: boolean
           first_name: string
           id: string
           last_name: string
+          role: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
+          email?: string | null
+          email_confirmed?: boolean
           first_name?: string
           id: string
           last_name?: string
+          role?: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
+          email?: string | null
+          email_confirmed?: boolean
           first_name?: string
           id?: string
           last_name?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      scrape_logs: {
+        Row: {
+          bar_id: string | null
+          error_message: string | null
+          id: string
+          scanned_at: string | null
+          status: string | null
+        }
+        Insert: {
+          bar_id?: string | null
+          error_message?: string | null
+          id?: string
+          scanned_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          bar_id?: string | null
+          error_message?: string | null
+          id?: string
+          scanned_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -257,6 +550,35 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_owners: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_owners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]

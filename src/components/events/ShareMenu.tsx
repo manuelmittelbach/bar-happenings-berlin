@@ -55,9 +55,9 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
             <Share2 className="h-4 w-4" /> Share with friends
           </button>
         ) : variant === "header" ? (
-          <button className="flex items-center gap-1.5 px-4 py-3 text-muted-foreground hover:text-foreground text-base font-mono font-medium tracking-wide transition-colors focus:outline-none">
-            <Share2 className="h-5 w-5" />
-            Share event
+          <button className="flex items-center gap-2 px-3 py-2 bg-background/80 backdrop-blur-sm border-2 border-foreground text-foreground text-xs font-heading font-bold uppercase tracking-wider hover:bg-background transition-all">
+            <Share2 className="h-4 w-4" />
+            Share
           </button>
         ) : (
           <button className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">

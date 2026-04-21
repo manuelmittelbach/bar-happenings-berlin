@@ -21,7 +21,7 @@ import { haversineMeters } from "@/lib/distance";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
-const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
+export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -192,6 +192,22 @@ export default function Index() {
   }, [filtered]);
 
   useLayoutEffect(() => {
+    if (sessionStorage.getItem("inside-bars-scroll-to-filter") === "1") {
+      sessionStorage.removeItem("inside-bars-scroll-to-filter");
+      const scrollToFilter = () => {
+        const el = document.getElementById("date-filter-bar");
+        if (!el) return;
+        const top = el.getBoundingClientRect().top + window.scrollY - 56;
+        window.scrollTo({ top: Math.max(0, top), left: 0, behavior: "auto" });
+      };
+      const f1 = requestAnimationFrame(() => {
+        scrollToFilter();
+        const f2 = requestAnimationFrame(scrollToFilter);
+        return () => cancelAnimationFrame(f2);
+      });
+      return () => cancelAnimationFrame(f1);
+    }
+
     const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
     if (!savedScrollY) return;
 
@@ -307,7 +323,7 @@ export default function Index() {
         </section>
 
         {/* Date filter bar — Map-style with thick black border */}
-        <div ref={(el) => { sectionRefs.current["__datefilter"] = el; }} className="bg-background border-b border-border">
+        <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 56 }} className="bg-background border-b border-border">
           <div className="container flex gap-2 py-2.5">
             {dateFilters.map((d) => (
               <button
@@ -371,11 +387,22 @@ export default function Index() {
           </div>
         </div>
 
+        {eventsLoading ? (
+          <section className="bg-background">
+            <div className="container py-24">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                <p className="mono-label text-muted-foreground">Loading events…</p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
         {/* Results count */}
         <div className="bg-background border-b border-border">
           <div className="container py-4">
             <p className="mono-label text-muted-foreground">
-              {eventsLoading ? "Loading events…" : `${filtered.length} events found`}
+              {`${filtered.length} events found`}
             </p>
           </div>
         </div>
@@ -542,6 +569,8 @@ export default function Index() {
             })()}
           </>
         ))}
+          </>
+        )}
 
         <section className="bg-foreground text-primary-foreground noise-bg">
           <div className="container py-20 md:py-28 relative z-10">
@@ -555,14 +584,8 @@ export default function Index() {
               </p>
               <div className="flex flex-wrap gap-3 mt-8">
                 <Link
-                  to="/publish"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-accent bg-accent text-accent-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:bg-transparent hover:text-accent"
-                >
-                  Publish an event
-                </Link>
-                <Link
                   to="/for-bars"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-primary-foreground/30 text-primary-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:border-primary-foreground"
+                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-accent bg-accent text-accent-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:bg-accent/90"
                 >
                   Learn more
                 </Link>

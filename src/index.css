@@ -193,3 +193,10 @@
   justify-content: center;
   color: #374151;
 }
+
+/* Prevent iOS Safari auto-zoom on input focus */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

@@ -1,6 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
 export default function Footer() {
+  const navigate = useNavigate();
+
+  const goToCategory = (category: string) => {
+    sessionStorage.setItem("inside-bars-scroll-to-filter", "1");
+    sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+    navigate(`/?category=${encodeURIComponent(category)}`);
+  };
+
   return (
     <footer className="border-t-2 border-foreground bg-foreground text-primary-foreground">
       <div className="container py-12">
@@ -17,15 +26,14 @@ export default function Footer() {
             <div>
               <h4 className="mono-label text-primary-foreground/40 mb-4">Discover</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/?category=Live+Music" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Live Music</Link></li>
-                <li><Link to="/?category=Pub+Quiz" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Quiz Nights</Link></li>
+                <li><button onClick={() => goToCategory("Live Music")} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-left">Live Music</button></li>
+                <li><button onClick={() => goToCategory("Pub Quiz")} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-left">Quiz Nights</button></li>
               </ul>
             </div>
             <div>
               <h4 className="mono-label text-primary-foreground/40 mb-4">Venues</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/for-bars" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">For Bars</Link></li>
-                <li><Link to="/publish" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">Publish Event</Link></li>
               </ul>
             </div>
             <div>
