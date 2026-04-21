@@ -55,7 +55,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
-import PublishEvent from "./pages/PublishEvent";
 import Login from "./pages/Login";
 import OrganizerDashboard from "./pages/OrganizerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -64,7 +63,6 @@ import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
 import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
-import EditEvent from "./pages/EditEvent";
 import EditBarAccount from "./pages/EditBarAccount";
 import NotFound from "./pages/NotFound";
 
@@ -87,7 +85,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/event/:id" element={<EventDetail />} />
-          <Route path="/publish" element={<PublishEvent />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<OrganizerDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
@@ -95,7 +92,6 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/my-events" element={<MyEvents />} />
           <Route path="/map" element={<MapPage />} />
-          <Route path="/edit-event/:id" element={<EditEvent />} />
           <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
           <Route path="/reset-password" element={<UpdatePassword />} />
           <Route path="*" element={<NotFound />} />

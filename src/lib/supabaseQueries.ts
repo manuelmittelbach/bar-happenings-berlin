@@ -58,16 +58,6 @@ export async function fetchEvents(): Promise<BarlinEvent[]> {
   return data.map(mapEventRow);
 }
 
-export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data.map(mapEventRow);
-}
-
 export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[]> {
   const { data, error } = await supabase
     .from("events")
@@ -76,101 +66,6 @@ export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[
     .order("date", { ascending: false });
   if (error) throw error;
   return data.map(mapEventRow);
-}
-
-export async function updateEvent(
-  id: string,
-  formData: {
-    title: string; venue: string; address: string; neighborhood: string;
-    date: string; startTime: string; endTime: string; category: string;
-    description: string; entryInfo: string; language: string; tags: string;
-    instagram: string; website: string;
-  }
-): Promise<void> {
-  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
-  const { error } = await supabase.from("events").update({
-    title: formData.title,
-    venue: formData.venue,
-    address: formData.address,
-    neighborhood: formData.neighborhood,
-    date: formData.date,
-    start_time: formData.startTime,
-    end_time: formData.endTime || null,
-    category: formData.category,
-    description: formData.description || null,
-    entry_info: formData.entryInfo || null,
-    language: formData.language || null,
-    tags: tags.length > 0 ? tags : null,
-    url: formData.website || null,
-  }).eq("id", id);
-  if (error) throw error;
-}
-
-export async function updateEventStatus(
-  id: string,
-  status: "approved" | "rejected",
-  approverId?: string,
-): Promise<void> {
-  const patch: Record<string, unknown> = { status };
-  if (status === "approved") {
-    patch.approved_by = approverId ?? null;
-    patch.approved_at = new Date().toISOString();
-  } else {
-    patch.approved_by = null;
-    patch.approved_at = null;
-  }
-  const { error } = await supabase
-    .from("events")
-    .update(patch)
-    .eq("id", id);
-  if (error) throw error;
-}
-
-export async function fetchEventsApprovedBy(approverId: string): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("status", "approved")
-    .eq("approved_by", approverId)
-    .order("date")
-    .order("start_time");
-  if (error) throw error;
-  return data.map(mapEventRow);
-}
-
-export async function createEvent(
-  formData: {
-    title: string; venue: string; address: string; neighborhood: string;
-    date: string; startTime: string; endTime: string; category: string;
-    description: string; entryInfo: string; language: string; tags: string;
-    instagram: string; website: string;
-  },
-  userId: string,
-  role: string,
-  approvalStatus: string = "approved"
-): Promise<void> {
-  const isApprovedOrganizer = role === "organizer" && approvalStatus === "approved";
-  const status = isApprovedOrganizer || role === "admin" ? "approved" : "pending";
-  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
-  const { error } = await supabase.from("events").insert({
-    id: crypto.randomUUID(),
-    title: formData.title,
-    venue: formData.venue,
-    address: formData.address,
-    neighborhood: formData.neighborhood,
-    date: formData.date,
-    start_time: formData.startTime,
-    end_time: formData.endTime || null,
-    category: formData.category,
-    description: formData.description || null,
-    entry_info: formData.entryInfo || null,
-    language: formData.language || null,
-    tags: tags.length > 0 ? tags : null,
-    url: formData.website || null,
-    created_by: userId,
-    status,
-  });
-  if (error) throw error;
 }
 
 export async function fetchEventById(id: string): Promise<BarlinEvent | null> {

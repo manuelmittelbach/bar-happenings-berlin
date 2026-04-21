@@ -1,53 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatDateShort } from "@/lib/dateFormat";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, Check, X, Users, CalendarDays, Building2, BarChart3, Shield, Globe, Instagram, Phone, Edit } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  fetchEventsApprovedBy,
-  fetchPendingEvents,
-  updateEventStatus,
   fetchPendingOrganizers,
   fetchDecidedOrganizers,
   updateOrganizerApprovalStatus,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
-import type { BarlinEvent } from "@/data/mockData";
 
-type Section = "events" | "bars";
-type EventTab = "overview" | "pending";
 type BarTab = "pending" | "overview";
 
 export default function AdminDashboard() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeSection: Section = searchParams.get("section") === "bars" ? "bars" : "events";
-  const sharedTab: "pending" | "overview" = searchParams.get("tab") === "overview" ? "overview" : "pending";
-  const activeEventTab = sharedTab as EventTab;
-  const activeBarTab = sharedTab as BarTab;
-  const setActiveSection = (section: Section) => {
-    const next = new URLSearchParams(searchParams);
-    if (section === "bars") next.set("section", "bars");
-    else next.delete("section");
-    setSearchParams(next);
-  };
-  const setSharedTab = (tab: "pending" | "overview") => {
+  const activeBarTab: BarTab = searchParams.get("tab") === "overview" ? "overview" : "pending";
+  const setActiveBarTab = (tab: BarTab) => {
     const next = new URLSearchParams(searchParams);
     if (tab === "overview") next.set("tab", "overview");
     else next.delete("tab");
     setSearchParams(next);
   };
-  const setActiveEventTab = setSharedTab;
-  const setActiveBarTab = setSharedTab;
-
-  const [pending, setPending] = useState<BarlinEvent[]>([]);
-  const [pendingLoading, setPendingLoading] = useState(true);
-  const [approved, setApproved] = useState<BarlinEvent[]>([]);
-  const [approvedLoading, setApprovedLoading] = useState(true);
 
   const [pendingOrganizers, setPendingOrganizers] = useState<OrganizerAccount[]>([]);
   const [pendingOrganizersLoading, setPendingOrganizersLoading] = useState(true);
@@ -57,31 +35,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!loading && role !== null && role !== "admin") navigate("/", { replace: true });
   }, [role, loading, navigate]);
-
-  const loadPending = useCallback(async () => {
-    setPendingLoading(true);
-    try {
-      setPending(await fetchPendingEvents());
-    } catch {
-      toast.error("Failed to load pending events.");
-    } finally {
-      setPendingLoading(false);
-    }
-  }, []);
-
-  const loadApproved = useCallback(async () => {
-    if (!user) return;
-    setApprovedLoading(true);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const mine = await fetchEventsApprovedBy(user.id);
-      setApproved(mine.filter(e => e.date >= today));
-    } catch {
-      toast.error("Failed to load approved events.");
-    } finally {
-      setApprovedLoading(false);
-    }
-  }, [user]);
 
   const loadPendingOrganizers = useCallback(async () => {
     setPendingOrganizersLoading(true);
@@ -106,32 +59,9 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    loadPending();
-    loadApproved();
     loadPendingOrganizers();
     loadDecidedOrganizers();
-  }, [loadPending, loadApproved, loadPendingOrganizers, loadDecidedOrganizers]);
-
-  const handleApprove = async (event: BarlinEvent) => {
-    if (!user) return;
-    await updateEventStatus(event.id, "approved", user.id);
-    toast.success(`"${event.title}" approved`);
-    setPending(prev => prev.filter(e => e.id !== event.id));
-    const today = new Date().toISOString().split("T")[0];
-    if (event.date >= today) {
-      setApproved(prev => {
-        const next = [...prev, event];
-        next.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-        return next;
-      });
-    }
-  };
-
-  const handleReject = async (event: BarlinEvent) => {
-    await updateEventStatus(event.id, "rejected");
-    toast.error(`"${event.title}" rejected`);
-    setPending(prev => prev.filter(e => e.id !== event.id));
-  };
+  }, [loadPendingOrganizers, loadDecidedOrganizers]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -182,182 +112,65 @@ export default function AdminDashboard() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-              { label: "Pending Events", value: String(pending.length), icon: CalendarDays },
-              { label: "Pending Bars", value: String(pendingOrganizers.length), icon: Building2 },
-              { label: "Total Interest", value: "—", icon: Users },
-              { label: "This Week", value: "—", icon: BarChart3 },
-            ].map((stat) => (
-              <div key={stat.label} className="border border-border rounded-sm p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-medium">{stat.label}</span>
-                  <stat.icon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <p className="font-heading text-2xl font-bold">{stat.value}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-md">
+            <div className="border border-border rounded-sm p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Pending Bars</span>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
               </div>
-            ))}
+              <p className="font-heading text-2xl font-bold">{String(pendingOrganizers.length)}</p>
+            </div>
+            <div className="border border-border rounded-sm p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Total Decided</span>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <p className="font-heading text-2xl font-bold">{String(decidedOrganizers.length)}</p>
+            </div>
           </div>
 
-          {/* Section toggle */}
-          <div className="flex gap-2 mb-6">
-            {([
-              { key: "events", label: "Events" },
-              { key: "bars", label: "Bar Accounts" },
-            ] as const).map((section) => (
+          {/* Bar Accounts sub-tabs */}
+          <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
+            {(["overview", "pending"] as const).map((tab) => (
               <button
-                key={section.key}
-                onClick={() => setActiveSection(section.key)}
-                className={`h-9 px-4 rounded-sm text-sm font-heading font-bold uppercase tracking-widest transition-colors ${
-                  activeSection === section.key
-                    ? "bg-foreground text-background"
-                    : "border border-border text-muted-foreground hover:text-foreground hover:border-foreground"
+                key={tab}
+                onClick={() => setActiveBarTab(tab)}
+                className={`pb-3 text-sm font-medium capitalize transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                  activeBarTab === tab ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {section.label}
-                {section.key === "bars" && pendingOrganizers.length > 0 && (
-                  <span className="ml-2 text-xs">({pendingOrganizers.length})</span>
-                )}
-                {section.key === "events" && pending.length > 0 && (
-                  <span className="ml-2 text-xs">({pending.length})</span>
-                )}
+                {tab === "pending" ? `Pending (${pendingOrganizers.length})` : `Overview (${decidedOrganizers.length})`}
               </button>
             ))}
           </div>
 
-          {activeSection === "events" && (
-            <>
-              {/* Event sub-tabs */}
-              <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
-                {(["overview", "pending"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveEventTab(tab)}
-                    className={`pb-3 text-sm font-medium capitalize transition-colors border-b-2 -mb-px whitespace-nowrap ${
-                      activeEventTab === tab ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab === "pending" ? `Pending (${pending.length})` : `Overview (${approved.length})`}
-                  </button>
-                ))}
-              </div>
-
-              {activeEventTab === "overview" && (
-                <div className="space-y-3">
-                  {approvedLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-                  {!approvedLoading && approved.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No upcoming approved events.</p>
-                  )}
-                  {approved.map((event) => (
-                    <div key={event.id} className="border border-border rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-heading text-sm font-semibold">{event.title}</p>
-                        <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {formatDateShort(event.date)}</p>
-                        {event.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Link to={`/event/${event.id}`} className="p-1.5 hover:bg-muted rounded-sm">
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                        <Link to={`/edit-event/${event.id}`} className="p-1.5 hover:bg-muted rounded-sm" title="Edit">
-                          <Edit className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {activeBarTab === "pending" && (
+            <div className="space-y-3">
+              {pendingOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+              {!pendingOrganizersLoading && pendingOrganizers.length === 0 && (
+                <p className="text-sm text-muted-foreground">No bar accounts pending review.</p>
               )}
-
-              {activeEventTab === "pending" && (
-                <div className="space-y-3">
-                  {pendingLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-                  {!pendingLoading && pending.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No events pending review.</p>
-                  )}
-                  {pending.map((event) => (
-                    <div key={event.id} className="border border-border rounded-sm p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-heading text-sm font-semibold">{event.title}</p>
-                        <p className="text-xs text-muted-foreground">{event.venue} · {event.neighborhood} · {formatDateShort(event.date)}</p>
-                        {event.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{event.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Link to={`/event/${event.id}`} className="p-1.5 hover:bg-muted rounded-sm">
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                        <Link to={`/edit-event/${event.id}`} className="p-1.5 hover:bg-muted rounded-sm" title="Edit">
-                          <Edit className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                        <button
-                          onClick={() => handleApprove(event)}
-                          className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium"
-                        >
-                          <Check className="h-3 w-3" /> Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(event)}
-                          className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
-                        >
-                          <X className="h-3 w-3" /> Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+              {pendingOrganizers.map((organizer) => (
+                <OrganizerCard
+                  key={organizer.id}
+                  organizer={organizer}
+                  onApprove={() => handleApproveOrganizer(organizer)}
+                  onReject={() => handleRejectOrganizer(organizer)}
+                />
+              ))}
+            </div>
           )}
 
-          {activeSection === "bars" && (
-            <>
-              {/* Bar Accounts sub-tabs */}
-              <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
-                {(["overview", "pending"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveBarTab(tab)}
-                    className={`pb-3 text-sm font-medium capitalize transition-colors border-b-2 -mb-px whitespace-nowrap ${
-                      activeBarTab === tab ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab === "pending" ? `Pending (${pendingOrganizers.length})` : `Overview (${decidedOrganizers.length})`}
-                  </button>
-                ))}
-              </div>
-
-              {activeBarTab === "pending" && (
-                <div className="space-y-3">
-                  {pendingOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-                  {!pendingOrganizersLoading && pendingOrganizers.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No bar accounts pending review.</p>
-                  )}
-                  {pendingOrganizers.map((organizer) => (
-                    <OrganizerCard
-                      key={organizer.id}
-                      organizer={organizer}
-                      onApprove={() => handleApproveOrganizer(organizer)}
-                      onReject={() => handleRejectOrganizer(organizer)}
-                    />
-                  ))}
-                </div>
+          {activeBarTab === "overview" && (
+            <div className="space-y-3">
+              {decidedOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+              {!decidedOrganizersLoading && decidedOrganizers.length === 0 && (
+                <p className="text-sm text-muted-foreground">No bar accounts approved or rejected yet.</p>
               )}
-
-              {activeBarTab === "overview" && (
-                <div className="space-y-3">
-                  {decidedOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-                  {!decidedOrganizersLoading && decidedOrganizers.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No bar accounts approved or rejected yet.</p>
-                  )}
-                  {decidedOrganizers.map((organizer) => (
-                    <OrganizerCard key={organizer.id} organizer={organizer} />
-                  ))}
-                </div>
-              )}
-            </>
+              {decidedOrganizers.map((organizer) => (
+                <OrganizerCard key={organizer.id} organizer={organizer} />
+              ))}
+            </div>
           )}
         </div>
       </main>

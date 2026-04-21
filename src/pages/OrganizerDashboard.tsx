@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Eye, Edit, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
+import { Eye, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
@@ -118,12 +118,7 @@ export default function OrganizerDashboard() {
             ))}
           </div>
 
-          <Link
-            to="/publish"
-            className="flex items-center justify-center gap-2 w-full py-2.5 mb-8 border border-border text-muted-foreground font-heading text-xs font-bold uppercase tracking-widest hover:border-foreground hover:text-foreground transition-colors"
-          >
-            <Plus className="h-4 w-4" /> New Event
-          </Link>
+          <div className="mb-8" />
 
           {/* Tabs */}
           <div className="flex gap-4 border-b border-border mb-6">
@@ -145,9 +140,6 @@ export default function OrganizerDashboard() {
           {!eventsLoading && displayed.length === 0 && (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-base">No {activeTab} events yet.</p>
-              {activeTab === "upcoming" && (
-                <Link to="/publish" className="text-base text-accent mt-2 inline-block">Create an event →</Link>
-              )}
             </div>
           )}
           {!eventsLoading && displayed.length > 0 && (
@@ -182,12 +174,6 @@ export default function OrganizerDashboard() {
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Eye className="h-4 w-4" /> View
-                    </Link>
-                    <Link
-                      to={`/edit-event/${event.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Edit className="h-4 w-4" /> Edit
                     </Link>
                   </div>
                 </div>
