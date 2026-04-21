@@ -61,8 +61,8 @@ export default function AuthModal({ open, defaultTab = "signup", onAuthenticated
             </DialogTitle>
             <p className="text-sm text-muted-foreground mb-5">
               {tab === "signup"
-                ? 'Create your "Must-Attend" list'
-                : "Sign in to see your saved events"}
+                ? "Sign up to save events"
+                : "Sign in to save events"}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-3">

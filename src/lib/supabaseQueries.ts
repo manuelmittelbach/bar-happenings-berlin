@@ -78,6 +78,65 @@ export async function fetchEventById(id: string): Promise<BarlinEvent | null> {
   return mapEventRow(data);
 }
 
+export async function createEvent(
+  formData: {
+    title: string; venue: string; address: string; neighborhood: string;
+    date: string; startTime: string; endTime: string; category: string;
+    description: string; entryInfo: string; language: string; tags: string;
+    instagram: string; website: string;
+  },
+  userId: string,
+): Promise<void> {
+  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const { error } = await supabase.from("events").insert({
+    id: crypto.randomUUID(),
+    title: formData.title,
+    venue: formData.venue,
+    address: formData.address,
+    neighborhood: formData.neighborhood,
+    date: formData.date,
+    start_time: formData.startTime,
+    end_time: formData.endTime || null,
+    category: formData.category,
+    description: formData.description || null,
+    entry_info: formData.entryInfo || null,
+    language: formData.language || null,
+    tags: tags.length > 0 ? tags : null,
+    url: formData.website || null,
+    created_by: userId,
+    status: "approved",
+  });
+  if (error) throw error;
+}
+
+export async function updateEvent(
+  id: string,
+  formData: {
+    title: string; venue: string; address: string; neighborhood: string;
+    date: string; startTime: string; endTime: string; category: string;
+    description: string; entryInfo: string; language: string; tags: string;
+    instagram: string; website: string;
+  }
+): Promise<void> {
+  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const { error } = await supabase.from("events").update({
+    title: formData.title,
+    venue: formData.venue,
+    address: formData.address,
+    neighborhood: formData.neighborhood,
+    date: formData.date,
+    start_time: formData.startTime,
+    end_time: formData.endTime || null,
+    category: formData.category,
+    description: formData.description || null,
+    entry_info: formData.entryInfo || null,
+    language: formData.language || null,
+    tags: tags.length > 0 ? tags : null,
+    url: formData.website || null,
+  }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function fetchEventsByParentId(parentId: string): Promise<BarlinEvent[]> {
   const { data, error } = await supabase
     .from("events")

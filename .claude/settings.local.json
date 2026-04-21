@@ -26,7 +26,29 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('version:', d['version']\\); print\\('peerDeps:', json.dumps\\(d.get\\('peerDependencies',{}\\), indent=2\\)\\)\")",
       "Bash(open *)",
       "mcp__supabase__list_extensions",
-      "mcp__supabase__get_logs"
+      "mcp__supabase__get_logs",
+      "Bash(npm test *)",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}\\\\n' http://localhost:8081__TRACKED_VAR__)",
+      "WebFetch(domain:localhost)",
+      "mcp__playwright__browser_navigate",
+      "Bash(npx playwright *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mcpServers',{}\\).get\\('playwright',{}\\), indent=2\\)\\)\")",
+      "Read(//Users/manuelmittelbach/.config/claude/**)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); import json; print\\(json.dumps\\(d.get\\('mcpServers',{}\\), indent=2\\)\\)\")",
+      "Bash(python3 *)",
+      "Bash(touch /Applications/.test_write)",
+      "Bash(rm /Applications/.test_write)",
+      "Bash(ln -s \"/Users/manuelmittelbach/Library/Caches/ms-playwright/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app\" \"/Applications/Google Chrome.app\")",
+      "Bash(rm \"/Applications/Google Chrome.app\")",
+      "Bash(cp -R \"/Users/manuelmittelbach/Library/Caches/ms-playwright/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app\" \"/Applications/Google Chrome.app\")",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_console_messages"
     ]
   }
 }

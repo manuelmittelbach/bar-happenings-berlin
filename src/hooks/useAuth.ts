@@ -39,27 +39,29 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setState(prev => ({ ...prev, user: session?.user ?? null, session, loading: false }));
-      if (session?.user) {
-        fetchRoleAndStatus(session.user).then(({ role, approvalStatus }) =>
-          setState(prev => ({ ...prev, role, approvalStatus })));
-      }
-    });
+    let lastFetchedUserId: string | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user ?? null;
+      if (!user) {
+        lastFetchedUserId = null;
+        setState({ user: null, session: null, loading: false, role: null, approvalStatus: null });
+        return;
+      }
+      const metaRole = user.user_metadata?.role;
+      const initialRole: "user" | "organizer" | "admin" =
+        metaRole === "organizer" || metaRole === "admin" ? metaRole : "user";
       setState(prev => ({
-        ...prev,
-        user: session?.user ?? null,
+        user,
         session,
         loading: false,
-        role: session ? prev.role : null,
-        approvalStatus: session ? prev.approvalStatus : null,
+        role: prev.role ?? initialRole,
+        approvalStatus: prev.approvalStatus ?? "approved",
       }));
-      if (session?.user) {
-        fetchRoleAndStatus(session.user).then(({ role, approvalStatus }) =>
-          setState(prev => ({ ...prev, role, approvalStatus })));
-      }
+      if (lastFetchedUserId === user.id) return;
+      lastFetchedUserId = user.id;
+      fetchRoleAndStatus(user).then(({ role, approvalStatus }) =>
+        setState(prev => ({ ...prev, role, approvalStatus })));
     });
 
     return () => subscription.unsubscribe();
