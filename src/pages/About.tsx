@@ -1,12 +1,6 @@
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-
 export default function About() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="container max-w-2xl py-16">
+    <div className="container max-w-2xl py-16">
           <h1 className="heading-display text-4xl md:text-5xl mb-8">
             About <span className="heading-editorial italic lowercase font-light">inside</span> Bars<span className="text-accent">.</span>
           </h1>
@@ -70,9 +64,6 @@ export default function About() {
               {" "}contributors.
             </p>
           </div>
-        </div>
-      </main>
-      <Footer />
     </div>
   );
 }

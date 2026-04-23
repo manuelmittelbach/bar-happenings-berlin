@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
@@ -207,10 +205,8 @@ export default function Login() {
 	};
 
 	return (
-		<div className="min-h-screen flex flex-col">
-			<Header />
-			<main className="flex-1 flex items-center justify-center py-16">
-				<div className="w-full max-w-sm mx-auto px-4">
+		<div className="flex-1 flex items-center justify-center py-16">
+			<div className="w-full max-w-sm mx-auto px-4">
 					{success === "confirm-email" ? (
 						<div className="text-center space-y-4">
 							<h1 className="heading-display text-2xl">Check your email</h1>
@@ -502,9 +498,7 @@ export default function Login() {
 								)}
 							</p>
 						</>)}
-				</div>
-			</main>
-			<Footer />
+			</div>
 		</div>
 	);
 }

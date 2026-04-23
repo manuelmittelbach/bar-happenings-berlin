@@ -5,7 +5,6 @@ import {
 	ChevronDown, Plus
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
-import Header from "@/components/layout/Header";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -102,7 +101,7 @@ export default function EventDetail() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen flex flex-col items-center justify-center bg-background">
+			<div className="flex-1 flex flex-col items-center justify-center bg-background">
 				<p className="font-body text-sm text-muted-foreground">Loading…</p>
 			</div>
 		);
@@ -110,7 +109,7 @@ export default function EventDetail() {
 
 	if (!event) {
 		return (
-			<div className="min-h-screen flex flex-col items-center justify-center bg-background">
+			<div className="flex-1 flex flex-col items-center justify-center bg-background">
 				<h1 className="font-body text-2xl font-bold">Event not found</h1>
 				<Link to="/" className="text-sm text-accent mt-2 inline-block">Back to home</Link>
 			</div>
@@ -133,9 +132,7 @@ export default function EventDetail() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background pb-24">
-			<Header />
-
+		<div className="bg-background pb-24">
 			{/* === ABOVE THE FOLD: Decision Zone === */}
 			<div className="max-w-screen-md mx-auto">
 

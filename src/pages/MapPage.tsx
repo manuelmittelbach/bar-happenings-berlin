@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { List } from "lucide-react";
-import { categories } from "@/data/mockData";
+import { categories } from "@/data/categories";
 import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
-import Header from "@/components/layout/Header";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 
@@ -39,8 +38,7 @@ export default function MapPage() {
   }, [eventsData, activeCategory, activeDate, today, tomorrow, yesterday, isLateNight]);
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden">
-      <Header />
+    <div className="flex flex-col flex-1 overflow-hidden">
       {/* Filters bar */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
         {/* Date filters */}

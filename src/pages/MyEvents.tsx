@@ -4,8 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents } from "@/hooks/useEvents";
 import EventCard from "@/components/events/EventCard";
-import Header from "@/components/layout/Header";
-import type { BarlinEvent } from "@/data/mockData";
+import type { BarlinEvent } from "@/types/event";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
 function formatDateHeader(dateStr: string) {
@@ -81,7 +80,7 @@ export default function MyEvents() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background">
+			<div className="flex-1 flex items-center justify-center bg-background">
 				<p className="font-body text-sm text-muted-foreground">Loading…</p>
 			</div>
 		);
@@ -89,22 +88,19 @@ export default function MyEvents() {
 
 	if (!user) {
 		return (
-			<div className="min-h-screen flex flex-col bg-background">
-				<Header />
-				<div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center">
-					<h1 className="font-heading text-4xl font-extrabold uppercase tracking-tight">
-						Welcome back.
-					</h1>
-					<p className="text-sm text-muted-foreground max-w-xs">
-						Sign in to see your saved events.
-					</p>
-					<Link
-						to="/login"
-						className="h-11 px-6 flex items-center bg-foreground text-background font-body font-bold uppercase tracking-wider text-sm"
-					>
-						Sign in
-					</Link>
-				</div>
+			<div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center bg-background">
+				<h1 className="font-heading text-4xl font-extrabold uppercase tracking-tight">
+					Welcome back.
+				</h1>
+				<p className="text-sm text-muted-foreground max-w-xs">
+					Sign in to see your saved events.
+				</p>
+				<Link
+					to="/login"
+					className="h-11 px-6 flex items-center bg-foreground text-background font-body font-bold uppercase tracking-wider text-sm"
+				>
+					Sign in
+				</Link>
 			</div>
 		);
 	}
@@ -112,9 +108,7 @@ export default function MyEvents() {
 	const hasAnyEvents = yesterdayEvents.length > 0 || upcomingEvents.length > 0;
 
 	return (
-		<div className="min-h-screen bg-background pb-24">
-			<Header />
-
+		<div className="bg-background pb-24">
 			<div className="max-w-screen-sm mx-auto px-4 pt-6">
 				<div className="mt-12 mb-8 flex justify-center">
 					<button

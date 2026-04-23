@@ -50,7 +50,10 @@
       "mcp__playwright__browser_resize",
       "mcp__playwright__browser_console_messages",
       "Bash(git show *)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(/map)",
+      "Bash(grep -rn \"to=\\\\\"/map\\\\\"\\\\|navigate\\(\\\\\"/map\\\\\"\\\\|Link.*\\\\\"/map\\\\\"\\\\|to={`/map`}\" /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }

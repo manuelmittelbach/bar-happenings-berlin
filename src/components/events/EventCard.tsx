@@ -5,8 +5,8 @@ import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { MapPin, Star, Users } from "lucide-react";
 
 
-import type { BarlinEvent } from "@/data/mockData";
-import { getVenueById } from "@/data/mockData";
+import type { BarlinEvent } from "@/types/event";
+import { getVenueById } from "@/data/legacyVenueLookup";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 

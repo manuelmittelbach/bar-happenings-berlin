@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/useAuth";
 
 const benefits = [
@@ -71,11 +69,8 @@ export default function ForBars() {
 	};
 
 	return (
-		<div className="min-h-screen flex flex-col">
-			<Header />
-
-			<main className="flex-1 bg-muted/40 flex">
-				<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
+		<div className="bg-muted/40 flex flex-1">
+			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
 					<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
 
 					{/* Hero / Create account */}
@@ -220,10 +215,7 @@ export default function ForBars() {
 							</form>
 						</div>
 					</section>
-				</div>
-			</main>
-
-			<Footer />
+			</div>
 		</div>
 	);
 }

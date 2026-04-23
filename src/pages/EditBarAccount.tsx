@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { neighborhoods } from "@/data/mockData";
+import { neighborhoods } from "@/data/neighborhoods";
 import { fetchOrganizerById, updateOrganizerAccount } from "@/lib/supabaseQueries";
 
 export default function EditBarAccount() {
@@ -90,21 +88,14 @@ export default function EditBarAccount() {
 
 	if (notFound) {
 		return (
-			<div className="min-h-screen flex flex-col">
-				<Header />
-				<main className="flex-1 flex items-center justify-center">
-					<p className="text-muted-foreground">Bar account not found.</p>
-				</main>
-				<Footer />
+			<div className="flex-1 flex items-center justify-center">
+				<p className="text-muted-foreground">Bar account not found.</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col">
-			<Header />
-			<main className="flex-1">
-				<div className="container max-w-2xl py-8">
+		<div className="container max-w-2xl py-8">
 					<h1 className="heading-display text-3xl mb-2">Edit Bar Account</h1>
 					<p className="text-muted-foreground text-sm mb-8">
 						{email ? `Editing account for ${email}. ` : ""}Changes are saved directly.
@@ -217,9 +208,6 @@ export default function EditBarAccount() {
 							</Link>
 						</div>
 					</form>
-				</div>
-			</main>
-			<Footer />
 		</div>
 	);
 }

@@ -1,0 +1,15 @@
+export const neighborhoods = [
+  "Charlottenburg",
+  "Friedrichshain",
+  "Kreuzberg",
+  "Lichtenberg",
+  "Mitte",
+  "Moabit",
+  "Neukölln",
+  "Pankow",
+  "Prenzlauer Berg",
+  "Schöneberg",
+  "Steglitz",
+  "Tempelhof",
+  "Wedding",
+];

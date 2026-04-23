@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function UpdatePassword() {
@@ -36,10 +34,8 @@ export default function UpdatePassword() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 flex items-center justify-center py-16">
-        <div className="w-full max-w-sm mx-auto px-4">
+    <div className="flex-1 flex items-center justify-center py-16">
+      <div className="w-full max-w-sm mx-auto px-4">
           <div className="text-center mb-8">
             <h1 className="heading-display text-2xl">Set new password</h1>
             <p className="text-sm text-muted-foreground mt-1">Choose a new password for your account</p>
@@ -82,9 +78,7 @@ export default function UpdatePassword() {
               </button>
             </form>
           )}
-        </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 }

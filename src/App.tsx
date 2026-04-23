@@ -67,6 +67,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import EditEvent from "./pages/EditEvent";
 import EditBarAccount from "./pages/EditBarAccount";
 import NotFound from "./pages/NotFound";
+import Layout from "@/components/layout/Layout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,20 +86,22 @@ const App = () => (
         <ScrollToTop />
         <AuthRedirectHandler />
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/event/:id" element={<EventDetail />} />
-          <Route path="/publish" element={<PublishEvent />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<OrganizerDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/for-bars" element={<ForBars />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/my-events" element={<MyEvents />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/edit-event/:id" element={<EditEvent />} />
-          <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
-          <Route path="/reset-password" element={<UpdatePassword />} />
-          <Route path="*" element={<NotFound />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/event/:id" element={<EventDetail />} />
+            <Route path="/publish" element={<PublishEvent />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<OrganizerDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/for-bars" element={<ForBars />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/my-events" element={<MyEvents />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/edit-event/:id" element={<EditEvent />} />
+            <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
+            <Route path="/reset-password" element={<UpdatePassword />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Calendar, Clock, MapPin, Tag, Clock3, XCircle } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { categories, neighborhoods } from "@/data/mockData";
+import { categories } from "@/data/categories";
+import { neighborhoods } from "@/data/neighborhoods";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { createEvent } from "@/lib/supabaseQueries";
@@ -52,10 +51,8 @@ export default function PublishEvent() {
   if (role === "organizer" && approvalStatus !== "approved") {
     const rejected = approvalStatus === "rejected";
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center py-16">
-          <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
+      <div className="flex-1 flex items-center justify-center py-16">
+        <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
             <div className="flex justify-center">
               {rejected ? (
                 <XCircle className="h-10 w-10 text-accent" />
@@ -71,18 +68,13 @@ export default function PublishEvent() {
                 ? "Your bar account application was not approved, so you can't publish events. If you think this is a mistake, please contact us."
                 : "An admin needs to review your bar details before you can publish events. You'll be able to publish as soon as your account is approved."}
             </p>
-          </div>
-        </main>
-        <Footer />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="container max-w-2xl py-8">
+    <div className="container max-w-2xl py-8">
           <h1 className="heading-display text-3xl mb-2">Publish an Event</h1>
           <p className="text-muted-foreground text-sm mb-8">
             Share your event with Berlin. It takes less than 5 minutes.
@@ -275,9 +267,6 @@ export default function PublishEvent() {
               </button>
             </div>
           </form>
-        </div>
-      </main>
-      <Footer />
     </div>
   );
 }

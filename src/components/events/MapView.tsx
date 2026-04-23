@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { BarlinEvent } from "@/data/mockData";
-import { venues, categoryInfos } from "@/data/mockData";
+import type { BarlinEvent } from "@/types/event";
+import { venues } from "@/data/legacyVenueLookup";
+import { categoryInfos } from "@/data/categories";
 
 interface MapViewProps {
   events: BarlinEvent[];
