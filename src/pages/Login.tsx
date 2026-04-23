@@ -53,7 +53,10 @@ export default function Login() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isBarOwner, setIsBarOwner] = useState(false);
+  const [isBarOwner, setIsBarOwner] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get("bar") === "1";
+  });
   const [barName, setBarName] = useState("");
   const [barAddress, setBarAddress] = useState("");
   const [barNeighborhood, setBarNeighborhood] = useState("");
@@ -185,13 +188,15 @@ export default function Login() {
           ) : (
           <><div className="text-center mb-8">
             <h1 className="heading-display text-2xl">
-              {isForgotPassword ? "Reset password" : isLogin ? "Welcome back" : "Create account"}
+              {isForgotPassword ? "Reset password" : isLogin ? "Welcome back!" : "Create account"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {isForgotPassword
                 ? "We'll send you a link to reset your password"
                 : isLogin
                 ? "Sign in to save events"
+                : isBarOwner
+                ? "Sign up to publish events"
                 : "Sign up to save events"}
             </p>
           </div>
@@ -224,21 +229,9 @@ export default function Login() {
               </div>
             )}
 
-            {!isLogin && !isForgotPassword && (
+            {!isLogin && !isForgotPassword && isBarOwner && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setIsBarOwner(!isBarOwner)}
-                  className={`w-full h-11 border-2 font-heading text-xs font-bold uppercase tracking-widest transition-colors ${
-                    isBarOwner
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                  }`}
-                >
-                  {isBarOwner ? "✓ I run a bar or venue" : "I run a bar or venue"}
-                </button>
-                {isBarOwner && (
-                  <div className="space-y-3 border-l-2 border-foreground pl-4">
+                <div className="space-y-3 border-l-2 border-foreground pl-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium">Bar name <span className="text-accent">*</span></label>
                       <input
@@ -306,7 +299,6 @@ export default function Login() {
                       />
                     </div>
                   </div>
-                )}
               </>
             )}
 
@@ -410,7 +402,13 @@ export default function Login() {
               <>
                 Already have an account?{" "}
                 <button
-                  onClick={() => { setIsLogin(true); setError(""); setSuccess(""); }}
+                  onClick={() => {
+                    if (from === "/for-bars") {
+                      navigate("/for-bars", { state: { scrollToSignIn: true } });
+                      return;
+                    }
+                    setIsLogin(true); setError(""); setSuccess("");
+                  }}
                   className="text-foreground font-medium hover:text-accent transition-colors"
                 >
                   Sign in

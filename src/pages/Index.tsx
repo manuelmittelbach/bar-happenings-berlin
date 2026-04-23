@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useLayoutEffect, useEffect, useRef } fr
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Search, Users, Map } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
@@ -398,61 +397,39 @@ export default function Index() {
           </section>
         ) : (
           <>
-        {/* Results count */}
-        <div className="bg-background border-b border-border">
-          <div className="container py-4">
-            <p className="mono-label text-muted-foreground">
-              {`${filtered.length} events found`}
-            </p>
-          </div>
-        </div>
-
-        {(activeDate !== "All" && filtered.length === 0 ? (
-          <section className="bg-background">
-            <div className="container py-20">
-              <div className="text-center py-20 border-2 border-border">
-                <p className="font-heading text-lg font-bold uppercase">No events found</p>
-                <p className="text-sm text-muted-foreground mt-1 font-mono">Try adjusting your filters</p>
+            <div className="bg-background border-b border-border">
+              <div className="container py-4">
+                <p className="mono-label text-muted-foreground">
+                  {`${filtered.length} events found`}
+                </p>
               </div>
             </div>
-          </section>
-        ) : (
-          <>
+        
             {(() => {
-              const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
-              const monthEnd = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-
               type SectionLayout = "grid-4" | "grid-2" | "list";
               const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
-
-              // When a specific date filter is active, show a single section
+        
               if (activeDate === "Today") {
-                if (filtered.length) sections.push({ label: "Today", events: filtered, layout: "grid-2" });
+                sections.push({ label: "Today", events: filtered, layout: "grid-2" });
               } else if (activeDate === "Tomorrow") {
-                if (filtered.length) sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
+                sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
               } else {
-                // "All" — split into temporal sections
                 const yesterdayEvents = isLateNight ? filtered.filter((e) => e.date === yesterday) : [];
                 const todayEvents = filtered.filter((e) => e.date === today);
                 const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
                 const laterEvents = filtered.filter((e) => e.date > tomorrow);
-
+        
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
                 sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
                 sections.push({ label: "Later", events: laterEvents, layout: "list" });
               }
-
-              const formatDatePill = (dateStr: string) => {
-                const d = new Date(dateStr + "T00:00:00");
-                return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-              };
-
+        
               const formatDaySeparator = (dateStr: string) => {
                 const d = new Date(dateStr + "T00:00:00");
                 return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
               };
-
+        
               const groupByDate = (evts: BarlinEvent[]) => {
                 const groups: { date: string; events: BarlinEvent[] }[] = [];
                 evts.forEach((e) => {
@@ -465,13 +442,13 @@ export default function Index() {
                 });
                 return groups;
               };
-
+        
               const CompactRow = ({ event }: { event: BarlinEvent }) => {
                 const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
                 const interested = (hash % 42) + 1;
-                const isPopular = interested > 30;
                 const rowBadge = getEventBadge(event, interested);
                 const isLive = rowBadge?.variant === "live";
+        
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
@@ -501,41 +478,32 @@ export default function Index() {
                       <span className="text-xs text-muted-foreground font-mono truncate">
                         {event.venue} · {event.neighborhood}
                       </span>
-                      {/* DISABLED — re-enable to show interested count
-                      {interested > 5 && (
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-mono ${isPopular ? "text-accent" : "text-muted-foreground"}`}>
-                          <Users className="h-3 w-3" />
-                          {interested}
-                        </span>
-                      )}
-                      */}
                     </div>
                   </button>
                 );
               };
-
-              const sectionBgs = ["bg-background", "bg-card", "bg-background", "bg-card", "bg-background"];
-
+        
+              const sectionBgs = ["bg-card", "bg-card", "bg-background", "bg-card", "bg-background"];
+        
               return sections.map((section, si) => (
                 <section
                   key={section.label}
                   ref={(el) => { sectionRefs.current[section.label] = el; }}
                   className={`${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}
                 >
-                  {/* Sticky section header */}
                   <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b border-border" style={{ top: stickyOffset }}>
                     <div className="container flex items-center justify-between h-11">
                       <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
                       <span className="mono-label text-muted-foreground">{section.events.length} events found</span>
                     </div>
                   </div>
-
+        
                   <div className="container py-8">
                     {section.events.length === 0 ? (
                       <p className="font-mono text-xs text-muted-foreground py-2">No events</p>
                     ) : section.layout === "list" ? (
                       <div className="space-y-6">
-                        {groupByDate(section.events).map((group, gi) => (
+                        {groupByDate(section.events).map((group) => (
                           <div key={group.date} className="border-2 border-border bg-background">
                             <div className="sticky z-20 flex items-center gap-3 px-4 py-3 bg-muted/60 backdrop-blur-sm border-b-2 border-border" style={{ top: stickyOffset + 46 }}>
                               <span className="font-heading text-sm font-extrabold uppercase tracking-tight">
@@ -550,12 +518,6 @@ export default function Index() {
                           </div>
                         ))}
                       </div>
-                    ) : section.layout === "grid-2" ? (
-                      <div className="grid grid-cols-1 gap-6">
-                        {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={false} />
-                        ))}
-                      </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
                         {section.events.map((event, i) => (
@@ -568,31 +530,7 @@ export default function Index() {
               ));
             })()}
           </>
-        ))}
-          </>
         )}
-
-        <section className="bg-foreground text-primary-foreground noise-bg">
-          <div className="container py-20 md:py-28 relative z-10">
-            <div className="max-w-2xl">
-              <p className="mono-label text-accent mb-3">For venues</p>
-              <h2 className="font-heading text-4xl md:text-5xl font-extrabold uppercase tracking-tight">
-                Run a bar<br />in Berlin?
-              </h2>
-              <p className="mt-5 text-primary-foreground/60 text-lg leading-relaxed max-w-md">
-                Publish your events and reach locals looking for something to do tonight. Free, simple, and made for independent venues.
-              </p>
-              <div className="flex flex-wrap gap-3 mt-8">
-                <Link
-                  to="/for-bars"
-                  className="inline-flex h-12 px-8 items-center justify-center border-2 border-accent bg-accent text-accent-foreground font-body text-xs font-bold uppercase tracking-wider transition-all hover:bg-accent/90"
-                >
-                  Learn more
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
 
