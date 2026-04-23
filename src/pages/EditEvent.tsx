@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Calendar, Clock, MapPin, Tag } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { categories, neighborhoods } from "@/data/mockData";
+import { categories } from "@/data/categories";
+import { neighborhoods } from "@/data/neighborhoods";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventById, updateEvent } from "@/lib/supabaseQueries";
@@ -75,20 +74,14 @@ export default function EditEvent() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Event not found or you don't have permission to edit it.</p>
-        </main>
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-muted-foreground">Event not found or you don't have permission to edit it.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="container max-w-2xl py-8">
+    <div className="container max-w-2xl py-8">
           <h1 className="heading-display text-3xl mb-2">Edit Event</h1>
           <p className="text-muted-foreground text-sm mb-8">Changes are saved directly.</p>
 
@@ -247,9 +240,6 @@ export default function EditEvent() {
               </Link>
             </div>
           </form>
-        </div>
-      </main>
-      <Footer />
     </div>
   );
 }

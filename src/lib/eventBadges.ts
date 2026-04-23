@@ -1,5 +1,5 @@
 import { Clock, TrendingUp, type LucideIcon } from "lucide-react";
-import type { BarlinEvent } from "@/data/mockData";
+import type { BarlinEvent } from "@/types/event";
 
 export interface EventBadge {
   label: string;

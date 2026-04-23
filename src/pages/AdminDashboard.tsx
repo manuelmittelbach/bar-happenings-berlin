@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { formatDateShort } from "@/lib/dateFormat";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -102,10 +100,7 @@ export default function AdminDashboard() {
   if (role !== "admin") return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="container py-8">
+    <div className="container py-8">
           <div className="flex items-center gap-2 mb-8">
             <Shield className="h-5 w-5 text-accent" />
             <h1 className="heading-display text-3xl">Admin Dashboard</h1>
@@ -172,9 +167,6 @@ export default function AdminDashboard() {
               ))}
             </div>
           )}
-        </div>
-      </main>
-      <Footer />
     </div>
   );
 }

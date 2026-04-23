@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import type { BarlinEvent, Venue } from "@/data/mockData";
+import type { BarlinEvent, Venue } from "@/types/event";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
   return {

@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator } from "@/lib/supabaseQueries";
-import type { BarlinEvent } from "@/data/mockData";
+import type { BarlinEvent } from "@/types/event";
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "bg-green-500/10 text-green-600",
@@ -60,11 +58,9 @@ export default function OrganizerDashboard() {
   if (role === "organizer" && approvalStatus !== "approved") {
     const rejected = approvalStatus === "rejected";
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center py-16">
-          <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
-            {justConfirmed && (
+      <div className="flex-1 flex items-center justify-center py-16">
+        <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
+          {justConfirmed && (
               <div className="inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
                 <CheckCircle2 className="h-4 w-4" /> Email confirmed!
               </div>
@@ -84,18 +80,13 @@ export default function OrganizerDashboard() {
                 ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
                 : "Thanks for signing up! An admin needs to review your bar details before you can publish events. You'll get access automatically as soon as your account is approved."}
             </p>
-          </div>
-        </main>
-        <Footer />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="container py-8">
+    <div className="container py-8">
           {justConfirmed && (
             <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
               <CheckCircle2 className="h-4 w-4" /> Email confirmed!
@@ -198,9 +189,6 @@ export default function OrganizerDashboard() {
               ))}
             </div>
           )}
-        </div>
-      </main>
-      <Footer />
     </div>
   );
 }

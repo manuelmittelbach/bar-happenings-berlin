@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
-import type { Venue, BarlinEvent } from "@/data/mockData";
+import type { Venue, BarlinEvent } from "@/types/event";
 
 interface VenueBlockProps {
   venue: Venue;

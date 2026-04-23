@@ -1,4 +1,4 @@
-import { neighborhoods } from "@/data/mockData";
+import { neighborhoods } from "@/data/neighborhoods";
 
 type Neighborhood = (typeof neighborhoods)[number];
 

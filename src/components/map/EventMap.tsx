@@ -1,8 +1,8 @@
 import { useEffect, useRef, useMemo, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getCategoryInfoByLabel, getCategoryInfo, categoryInfos } from "@/data/mockData";
-import type { BarlinEvent, Venue } from "@/data/mockData";
+import { getCategoryInfoByLabel, getCategoryInfo, categoryInfos } from "@/data/categories";
+import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 
 interface EventMapProps {

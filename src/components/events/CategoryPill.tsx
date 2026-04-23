@@ -1,4 +1,4 @@
-import { getCategoryInfoByLabel, type CategoryInfo } from "@/data/mockData";
+import { getCategoryInfoByLabel, type CategoryInfo } from "@/data/categories";
 import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Wine, Film, Trophy, LayoutGrid } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 

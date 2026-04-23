@@ -6,14 +6,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Search, Users, Map } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import EventCard from "@/components/events/EventCard";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { categories, neighborhoods, getVenueById } from "@/data/mockData";
-import type { BarlinEvent } from "@/data/mockData";
+import { categories } from "@/data/categories";
+import { neighborhoods } from "@/data/neighborhoods";
+import { getVenueById } from "@/data/legacyVenueLookup";
+import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/distance";
@@ -264,9 +264,7 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
+    <>
         <section className="border-b-2 border-foreground noise-bg bg-muted/40">
           <div className="container py-12 md:py-16 lg:py-20 relative z-[45]">
             <div>
@@ -531,17 +529,18 @@ export default function Index() {
             })()}
           </>
         )}
-      </main>
-      <Footer />
 
       {/* Map button */}
       <button
-        onClick={() => navigate("/map")}
+        onClick={() => {
+          sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
+          navigate("/map");
+        }}
         className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
       >
         <Map className="h-4 w-4" />
         Map
       </button>
-    </div>
+    </>
   );
 }
