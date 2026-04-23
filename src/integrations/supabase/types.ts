@@ -63,7 +63,7 @@ export type Database = {
           num_ratings: number | null
           opening_hours: string | null
           phone: string | null
-          place_id: string
+          place_id: string | null
           rating: number | null
           source_type: string | null
           telegram: string | null
@@ -82,7 +82,7 @@ export type Database = {
           num_ratings?: number | null
           opening_hours?: string | null
           phone?: string | null
-          place_id: string
+          place_id?: string | null
           rating?: number | null
           source_type?: string | null
           telegram?: string | null
@@ -101,7 +101,7 @@ export type Database = {
           num_ratings?: number | null
           opening_hours?: string | null
           phone?: string | null
-          place_id?: string
+          place_id?: string | null
           rating?: number | null
           source_type?: string | null
           telegram?: string | null
@@ -591,6 +591,7 @@ export type Database = {
           facebook: string | null
           id: string
           image: string | null
+          inserted_at: string | null
           instagram: string | null
           lat: number
           lng: number
@@ -610,6 +611,7 @@ export type Database = {
           facebook?: string | null
           id: string
           image?: string | null
+          inserted_at?: string | null
           instagram?: string | null
           lat: number
           lng: number
@@ -629,6 +631,7 @@ export type Database = {
           facebook?: string | null
           id?: string
           image?: string | null
+          inserted_at?: string | null
           instagram?: string | null
           lat?: number
           lng?: number
@@ -641,13 +644,22 @@ export type Database = {
           website?: string | null
           website_events?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "venues_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      is_admin: { Args: never; Returns: boolean }
       truncate_staging: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -781,3 +793,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+A new version of Supabase CLI is available: v2.90.0 (currently installed v2.84.2)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

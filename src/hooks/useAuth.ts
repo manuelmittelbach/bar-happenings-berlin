@@ -73,7 +73,9 @@ export function useAuth() {
     firstName: string,
     lastName: string,
     isBarOwner = false,
-    venueData?: { name: string; address: string; neighborhood: string; website?: string; instagram?: string; phone?: string }
+    venueData?:
+      | { existingVenueId: string; website?: string; instagram?: string; phone?: string }
+      | { name: string; address: string; neighborhood?: string; website?: string; instagram?: string; phone?: string }
   ) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -100,23 +102,52 @@ export function useAuth() {
         .eq("id", data.user.id);
 
       if (isBarOwner && venueData) {
-        const venueId = crypto.randomUUID();
-        const { error: venueError } = await supabase.from("venues").insert({
-          id: venueId,
-          name: venueData.name,
-          address: venueData.address,
-          neighborhood: venueData.neighborhood,
-          website: venueData.website || null,
-          instagram: venueData.instagram || null,
-          phone: venueData.phone || null,
-          lat: 0,
-          lng: 0,
-        });
-        if (!venueError) {
+        if ("existingVenueId" in venueData) {
+          const updates: { website?: string; instagram?: string; phone?: string } = {};
+          if (venueData.website) updates.website = venueData.website;
+          if (venueData.instagram) updates.instagram = venueData.instagram;
+          if (venueData.phone) updates.phone = venueData.phone;
+          if (Object.keys(updates).length > 0) {
+            await supabase.from("venues").update(updates).eq("id", venueData.existingVenueId);
+          }
           await supabase.from("venue_owners").insert({
             user_id: data.user.id,
-            venue_id: venueId,
+            venue_id: venueData.existingVenueId,
           });
+        } else {
+          const { data: barRow, error: barError } = await supabase
+            .from("bars")
+            .insert({
+              name: venueData.name,
+              address: venueData.address,
+              website: venueData.website || null,
+              instagram: venueData.instagram || null,
+              phone: venueData.phone || null,
+              place_id: null,
+              source_type: "user_submitted",
+            })
+            .select("id")
+            .single();
+          if (!barError && barRow) {
+            const venueId = barRow.id;
+            const { error: venueError } = await supabase.from("venues").insert({
+              id: venueId,
+              name: venueData.name,
+              address: venueData.address,
+              website: venueData.website || null,
+              instagram: venueData.instagram || null,
+              phone: venueData.phone || null,
+              neighborhood: venueData.neighborhood || "",
+              lat: 0,
+              lng: 0,
+            });
+            if (!venueError) {
+              await supabase.from("venue_owners").insert({
+                user_id: data.user.id,
+                venue_id: venueId,
+              });
+            }
+          }
         }
       }
     }
