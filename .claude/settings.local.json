@@ -54,7 +54,9 @@
       "Bash(/map)",
       "Bash(grep -rn \"to=\\\\\"/map\\\\\"\\\\|navigate\\(\\\\\"/map\\\\\"\\\\|Link.*\\\\\"/map\\\\\"\\\\|to={`/map`}\" /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/src --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(awk NR>=144 && NR<=148 {print NR\": \"length\\($0\\)\" chars: [\"$0\"]\"} *)"
+      "Bash(awk NR>=144 && NR<=148 {print NR\": \"length\\($0\\)\" chars: [\"$0\"]\"} *)",
+      "Bash(npx vitest *)",
+      "Bash(npx vite *)"
     ]
   }
 }

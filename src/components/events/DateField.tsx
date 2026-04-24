@@ -10,15 +10,22 @@ interface DateFieldProps {
   onChange: (iso: string) => void;
   required?: boolean;
   min?: string;
+  max?: string;
 }
 
-export default function DateField({ value, onChange, required, min }: DateFieldProps) {
+export default function DateField({ value, onChange, required, min, max }: DateFieldProps) {
   const [open, setOpen] = useState(false);
 
   const selected = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
   const selectedValid = selected && isValid(selected) ? selected : undefined;
   const minDate = min ? parse(min, "yyyy-MM-dd", new Date()) : undefined;
   const minDateValid = minDate && isValid(minDate) ? minDate : undefined;
+  const maxDate = max ? parse(max, "yyyy-MM-dd", new Date()) : undefined;
+  const maxDateValid = maxDate && isValid(maxDate) ? maxDate : undefined;
+  const disabledMatcher = [
+    ...(minDateValid ? [{ before: minDateValid }] : []),
+    ...(maxDateValid ? [{ after: maxDateValid }] : []),
+  ];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -38,7 +45,7 @@ export default function DateField({ value, onChange, required, min }: DateFieldP
           mode="single"
           selected={selectedValid}
           defaultMonth={selectedValid}
-          disabled={minDateValid ? { before: minDateValid } : undefined}
+          disabled={disabledMatcher.length > 0 ? disabledMatcher : undefined}
           onSelect={(picked) => {
             if (picked) {
               onChange(format(picked, "yyyy-MM-dd"));

@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Upload, Calendar, Clock, Tag, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Upload, Calendar, Clock, Repeat, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { categories } from "@/data/categories";
 import DateField from "@/components/events/DateField";
+import {
+  addOneDay,
+  defaultUntil,
+  describeRule,
+  generateOccurrences,
+  type RecurrenceFreq,
+} from "@/lib/recurrence";
+import { formatDateShort } from "@/lib/dateFormat";
 
 export interface EventFormData {
   title: string;
@@ -18,7 +26,18 @@ export interface EventFormData {
   language: string;
   website: string;
   imagePosition: string;
+  recurrence: string;
+  recurrenceUntil: string;
 }
+
+const MAX_OCCURRENCES = 200;
+
+const RECURRENCE_OPTIONS: { value: "" | RecurrenceFreq; label: string }[] = [
+  { value: "", label: "Does not repeat" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Every 2 weeks" },
+  { value: "monthly_by_weekday", label: "Monthly (same weekday)" },
+];
 
 export interface EventFormImageState {
   file: File | null;
@@ -35,6 +54,7 @@ interface EventFormProps {
   onSubmit: (data: EventFormData, image: EventFormImageState) => Promise<void>;
   secondaryActions?: ReactNode;
   footer?: ReactNode;
+  recurrenceLocked?: boolean;
 }
 
 const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -47,6 +67,7 @@ const EMPTY_FORM: EventFormData = {
   startTime: "", endTime: "", category: "", description: "",
   entryInfo: "", language: "", website: "",
   imagePosition: DEFAULT_IMAGE_POSITION,
+  recurrence: "", recurrenceUntil: "",
 };
 
 const ENTRY_AMOUNTS = Array.from({ length: 100 }, (_, i) => (i + 1) * 0.5).map((n) =>
@@ -129,6 +150,7 @@ export default function EventForm({
   onSubmit,
   secondaryActions,
   footer,
+  recurrenceLocked = false,
 }: EventFormProps) {
   const [formData, setFormData] = useState<EventFormData>({ ...EMPTY_FORM, ...initialValues });
   const [submitting, setSubmitting] = useState(false);
@@ -238,6 +260,13 @@ export default function EventForm({
     dragStateRef.current = null;
   };
 
+  const occurrencePreview = useMemo(() => {
+    if (!formData.recurrence || !formData.date || !formData.recurrenceUntil) return null;
+    const freq = formData.recurrence as RecurrenceFreq;
+    const dates = generateOccurrences(formData.date, freq, formData.recurrenceUntil, MAX_OCCURRENCES + 1);
+    return { freq, dates };
+  }, [formData.recurrence, formData.date, formData.recurrenceUntil]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.date && formData.startTime) {
@@ -250,6 +279,24 @@ export default function EventForm({
     if (formData.endTime && formData.startTime === formData.endTime) {
       toast.error("End time must differ from start time.");
       return;
+    }
+    if (formData.recurrence) {
+      if (!formData.recurrenceUntil) {
+        toast.error("Pick an end date for the recurring series.");
+        return;
+      }
+      if (formData.recurrenceUntil < formData.date) {
+        toast.error("End date must be on or after the start date.");
+        return;
+      }
+      if (formData.recurrenceUntil > defaultUntil(formData.date)) {
+        toast.error("Recurring series can run for a maximum of 6 months.");
+        return;
+      }
+      if (occurrencePreview && occurrencePreview.dates.length > MAX_OCCURRENCES) {
+        toast.error(`Too many occurrences (max ${MAX_OCCURRENCES}). Pick a closer end date.`);
+        return;
+      }
     }
     setSubmitting(true);
     try {
@@ -370,6 +417,69 @@ export default function EventForm({
             )}
           </div>
         </div>
+
+        {/* Recurrence */}
+        {!recurrenceLocked && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium flex items-center gap-1">
+              <Repeat className="h-3 w-3" /> Repeats
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <select
+                value={formData.recurrence}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormData((prev) => {
+                    const next = { ...prev, recurrence: v };
+                    if (v && !prev.recurrenceUntil && prev.date) {
+                      next.recurrenceUntil = defaultUntil(prev.date);
+                    }
+                    if (!v) next.recurrenceUntil = "";
+                    return next;
+                  });
+                }}
+                className={inputClass}
+                disabled={!formData.date}
+              >
+                {RECURRENCE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {formData.recurrence && (
+                <div className="space-y-1.5">
+                  <DateField
+                    value={formData.recurrenceUntil}
+                    onChange={(iso) => update("recurrenceUntil", iso)}
+                    min={formData.date ? addOneDay(formData.date) : undefined}
+                    max={formData.date ? defaultUntil(formData.date) : undefined}
+                  />
+                </div>
+              )}
+            </div>
+            {!formData.date && (
+              <p className="text-xs text-muted-foreground">Pick a start date first to enable recurrence.</p>
+            )}
+            {formData.recurrence && formData.date && (
+              <p className="text-xs text-muted-foreground">Series can run for up to 6 months.</p>
+            )}
+            {occurrencePreview && occurrencePreview.dates.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {describeRule(formData.date, occurrencePreview.freq)} · creates{" "}
+                {occurrencePreview.dates.length > MAX_OCCURRENCES
+                  ? `${MAX_OCCURRENCES}+ events — pick a closer end date`
+                  : `${occurrencePreview.dates.length} event${occurrencePreview.dates.length === 1 ? "" : "s"}`}
+                {occurrencePreview.dates.length > 1 && occurrencePreview.dates.length <= MAX_OCCURRENCES && (
+                  <>
+                    {" "}·{" "}
+                    {formatDateShort(occurrencePreview.dates[0])}
+                    {" → "}
+                    {formatDateShort(occurrencePreview.dates[occurrencePreview.dates.length - 1])}
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Category & Entry */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

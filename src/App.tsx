@@ -67,6 +67,7 @@ import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
 import EditEvent from "./pages/EditEvent";
 import EditBarAccount from "./pages/EditBarAccount";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/layout/Layout";
 
@@ -102,6 +103,7 @@ const App = () => (
             <Route path="/edit-event/:id" element={<EditEvent />} />
             <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
             <Route path="/reset-password" element={<UpdatePassword />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

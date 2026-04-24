@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchEvents,
   fetchEventById,
-  fetchEventsByParentId,
+  fetchEventSeries,
   fetchVenues,
   fetchInterestedEvents,
   checkInterest,
@@ -21,11 +21,11 @@ export function useEventById(id: string) {
   });
 }
 
-export function useEventsByParentId(parentId: string) {
+export function useEventSeries(seriesId: string) {
   return useQuery({
-    queryKey: ["events", "parent", parentId],
-    queryFn: () => fetchEventsByParentId(parentId),
-    enabled: !!parentId,
+    queryKey: ["events", "series", seriesId],
+    queryFn: () => fetchEventSeries(seriesId),
+    enabled: !!seriesId,
   });
 }
 

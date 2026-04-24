@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { createEvent, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
+import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
 export default function PublishEvent() {
   const navigate = useNavigate();
@@ -41,7 +42,12 @@ export default function PublishEvent() {
       try {
         const imageUrl = image.file ? await uploadEventImage(image.file, user.id) : undefined;
         await createEvent(data, user.id, imageUrl);
-        toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
+        if (data.recurrence && data.recurrenceUntil) {
+          const count = generateOccurrences(data.date, data.recurrence as RecurrenceFreq, data.recurrenceUntil).length;
+          toast.success("Series published!", { description: `${count} events are now live on Inside Bars.` });
+        } else {
+          toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
+        }
         navigate("/dashboard");
       } catch {
         toast.error("Something went wrong. Please try again.");

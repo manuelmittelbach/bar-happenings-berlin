@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
+import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries";
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
+import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 import type { BarlinEvent } from "@/types/event";
 
@@ -56,15 +57,49 @@ export default function OrganizerDashboard() {
     });
   }, [user, isApprovedAccess]);
 
-  const upcoming = myEvents
-    .filter((e) => !isEventInPast(e))
-    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-  const past = myEvents.filter((e) => isEventInPast(e));
+  const membersBySeries = useMemo(() => {
+    const map = new Map<string, BarlinEvent[]>();
+    for (const e of myEvents) {
+      const seriesId = e.parentId || e.id;
+      const arr = map.get(seriesId) ?? [];
+      arr.push(e);
+      map.set(seriesId, arr);
+    }
+    return map;
+  }, [myEvents]);
+
+  const liveMembers = (parent: BarlinEvent): BarlinEvent[] =>
+    (membersBySeries.get(parent.id) ?? [parent]).filter((m) => m.status !== "canceled");
+
+  const getNextUpcoming = (parent: BarlinEvent): BarlinEvent | null => {
+    const upc = liveMembers(parent)
+      .filter((m) => !isEventInPast(m))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    return upc[0] ?? null;
+  };
+
+  const getLastPast = (parent: BarlinEvent): BarlinEvent | null => {
+    const past = liveMembers(parent)
+      .filter((m) => isEventInPast(m))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
+    return past[0] ?? null;
+  };
+
+  const parents = myEvents.filter((e) => !e.parentId);
+  const upcoming = parents
+    .filter((p) => getNextUpcoming(p) !== null)
+    .sort((a, b) => {
+      const nA = getNextUpcoming(a)!;
+      const nB = getNextUpcoming(b)!;
+      return nA.date.localeCompare(nB.date) || nA.startTime.localeCompare(nB.startTime);
+    });
+  const past = parents.filter((p) => getNextUpcoming(p) === null && getLastPast(p) !== null);
   const displayed = activeTab === "upcoming" ? upcoming : past;
 
   const INITIAL_COUNT = 5;
   const [showAll, setShowAll] = useState(false);
-  useEffect(() => { setShowAll(false); }, [activeTab]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  useEffect(() => { setShowAll(false); setExpandedId(null); }, [activeTab]);
   const visible = showAll ? displayed : displayed.slice(0, INITIAL_COUNT);
   const hasMore = displayed.length > INITIAL_COUNT;
 
@@ -121,7 +156,7 @@ export default function OrganizerDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
-              { label: "Total Events", value: String(myEvents.length), icon: CalendarDays },
+              { label: "Total Events", value: String(myEvents.filter((e) => e.status !== "canceled").length), icon: CalendarDays },
               { label: "Upcoming", value: String(upcoming.length), icon: Clock },
             ].map((stat) => (
               <div key={stat.label} className="border border-border rounded-sm p-5 space-y-2">
@@ -167,62 +202,140 @@ export default function OrganizerDashboard() {
           )}
           {!eventsLoading && displayed.length > 0 && (
             <div className="space-y-3">
-              {visible.map((event) => (
-                <div
-                  key={event.id}
-                  className="border border-border rounded-sm p-5 flex flex-col sm:flex-row gap-4"
-                >
-                  {event.image && (
-                    <div className="w-full sm:w-28 h-24 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        style={{ objectPosition: event.imagePosition }}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-heading text-base font-semibold">{event.title}</span>
-                      {isEventStillOnline(event) && (
-                        <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[event.status === "canceled" ? "approved" : (event.status ?? "pending")] ?? ""}`}>
-                          {event.status === "approved" || event.status === "canceled" ? "online" : (event.status ?? "pending")}
-                        </span>
+              {visible.map((parent) => {
+                const next = getNextUpcoming(parent);
+                const displayEvent =
+                  activeTab === "upcoming"
+                    ? next ?? parent
+                    : getLastPast(parent) ?? parent;
+                const recurrenceLabel = formatRecurrenceLabel(parent.recurrence);
+                const upcomingMembers = liveMembers(parent)
+                  .filter((m) => !isEventInPast(m))
+                  .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+                const canExpand = activeTab === "upcoming" && upcomingMembers.length > 1;
+                const isExpanded = expandedId === parent.id;
+                return (
+                  <div
+                    key={parent.id}
+                    className="border border-border rounded-sm p-5"
+                  >
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {parent.image && (
+                        <div className="w-full sm:w-28 h-24 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
+                          <img
+                            src={parent.image}
+                            alt={parent.title}
+                            style={{ objectPosition: parent.imagePosition }}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       )}
-                      {event.status === "canceled" && (
-                        <span className="text-sm px-2 py-0.5 rounded-sm font-medium capitalize bg-red-500/10 text-red-600">
-                          canceled
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <span className="font-heading text-base font-semibold break-all min-w-0">{parent.title}</span>
+                          {recurrenceLabel && (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-sm font-medium bg-muted text-muted-foreground">
+                              <Repeat className="h-3 w-3" /> {recurrenceLabel}
+                            </span>
+                          )}
+                          {isEventStillOnline(displayEvent) && (
+                            <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[displayEvent.status ?? "pending"] ?? ""}`}>
+                              {displayEvent.status === "approved" ? "online" : (displayEvent.status ?? "pending")}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {recurrenceLabel && next ? "Next: " : ""}
+                          {formatDateWithDay(displayEvent.date)} · {displayEvent.startTime}{displayEvent.endTime ? ` – ${displayEvent.endTime}` : ""}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {displayEvent.interestedCount ?? 0} interested</span>
+                        </div>
+                      </div>
+                      {activeTab === "upcoming" && (
+                        <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
+                          {canExpand ? (
+                            displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
+                              <Link
+                                to={`/edit-event/${displayEvent.id}?scope=future`}
+                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <Pencil className="h-4 w-4" /> Edit series
+                              </Link>
+                            )
+                          ) : (
+                            <>
+                              {displayEvent.status !== "canceled" && (
+                                <Link
+                                  to={`/event/${displayEvent.id}`}
+                                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" /> View
+                                </Link>
+                              )}
+                              {displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
+                                <Link
+                                  to={`/edit-event/${displayEvent.id}`}
+                                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  <Pencil className="h-4 w-4" /> Edit
+                                </Link>
+                              )}
+                            </>
+                          )}
+                          {canExpand && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedId((prev) => (prev === parent.id ? null : parent.id))}
+                              aria-expanded={isExpanded}
+                              aria-label={isExpanded ? "Hide all dates" : "Show all dates"}
+                              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                              {isExpanded ? "Hide dates" : `All ${upcomingMembers.length} dates`}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {formatDateWithDay(event.date)} · {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {event.interestedCount ?? 0} interested</span>
-                    </div>
+                    {canExpand && isExpanded && (
+                      <div className="mt-4 pt-2 border-t border-border divide-y divide-border/50">
+                        {upcomingMembers.map((m) => {
+                          const canEdit = !hasEventStarted(m);
+                          return (
+                            <div
+                              key={m.id}
+                              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm py-2 px-2 -mx-2 rounded-sm hover:bg-muted/50"
+                            >
+                              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                                <span className="text-muted-foreground">
+                                  {formatDateWithDay(m.date)} · {m.startTime}{m.endTime ? ` – ${m.endTime}` : ""}
+                                </span>
+                              </div>
+                              <div className="flex gap-3 sm:justify-end flex-shrink-0">
+                                <Link
+                                  to={`/event/${m.id}`}
+                                  className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" /> View
+                                </Link>
+                                {canEdit && (
+                                  <Link
+                                    to={`/edit-event/${m.id}?scope=single`}
+                                    className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <Pencil className="h-4 w-4" /> Edit
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  {activeTab === "upcoming" && (
-                    <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
-                      <Link
-                        to={`/event/${event.id}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Eye className="h-4 w-4" /> View
-                      </Link>
-                      {event.status !== "canceled" && !hasEventStarted(event) && (
-                        <Link
-                          to={`/edit-event/${event.id}`}
-                          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Pencil className="h-4 w-4" /> Edit
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
               {hasMore && !showAll && (
                 <div className="pt-2 flex justify-center">
                   <button
