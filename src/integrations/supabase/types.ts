@@ -206,6 +206,7 @@ export type Database = {
           featured: boolean | null
           id: string
           image: string | null
+          image_position: string
           interested_count: number | null
           language: string | null
           neighborhood: string
@@ -236,6 +237,7 @@ export type Database = {
           featured?: boolean | null
           id: string
           image?: string | null
+          image_position?: string
           interested_count?: number | null
           language?: string | null
           neighborhood: string
@@ -266,6 +268,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           image?: string | null
+          image_position?: string
           interested_count?: number | null
           language?: string | null
           neighborhood?: string

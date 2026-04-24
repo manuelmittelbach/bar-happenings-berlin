@@ -274,7 +274,7 @@ export default function Index() {
                 <br />
                 <span className="heading-editorial lowercase italic">tonight</span>
                 <br />
-                in Berlin bars
+                in Berlin bars?
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
                 Live music, quiz nights, open mics, and community events in small independent bars across the city.
@@ -291,7 +291,7 @@ export default function Index() {
                   onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                   onFocus={() => setShowSuggestions(true)}
                   onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
-                  className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none focus:bg-muted transition-colors"
+                  className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none transition-colors"
                 />
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute top-full left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background">
@@ -395,14 +395,6 @@ export default function Index() {
           </section>
         ) : (
           <>
-            <div className="bg-background border-b border-border">
-              <div className="container py-4">
-                <p className="mono-label text-muted-foreground">
-                  {`${filtered.length} events found`}
-                </p>
-              </div>
-            </div>
-        
             {(() => {
               type SectionLayout = "grid-4" | "grid-2" | "list";
               const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
@@ -481,7 +473,7 @@ export default function Index() {
                 );
               };
         
-              const sectionBgs = ["bg-card", "bg-card", "bg-background", "bg-card", "bg-background"];
+              const sectionBgs = ["bg-background", "bg-background", "bg-background", "bg-background", "bg-background"];
         
               return sections.map((section, si) => (
                 <section

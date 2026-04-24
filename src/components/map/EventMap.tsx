@@ -6,10 +6,10 @@ import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 
 interface EventMapProps {
-  events: BarlinEvent[];
-  venueMap: Record<string, Venue>;
-  userLocation: { lat: number; lng: number } | null;
-  onEventClick: (id: string) => void;
+	events: BarlinEvent[];
+	venueMap: Record<string, Venue>;
+	userLocation: { lat: number; lng: number } | null;
+	onEventClick: (id: string) => void;
 }
 
 const BERLIN_CENTER: [number, number] = [13.405, 52.52];
@@ -17,353 +17,353 @@ const SOURCE_ID = "venues";
 const LAYER_ICONS = "venue-icons";
 
 const imageKey = (categoryId: string, count: number) =>
-  count > 1 ? `cat-${categoryId}-${count}` : `cat-${categoryId}`;
+	count > 1 ? `cat-${categoryId}-${count}` : `cat-${categoryId}`;
 
 const categoryIconPaths: Record<string, string> = {
-  "comedy":           `<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>`,
-  "pub-quiz":         `<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>`,
-  "quiz-night":       `<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>`,
-  "language-exchange":`<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>`,
-  "social":           `<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>`,
-  "singles":          `<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 1.5C10.5 3.5 9.26 3 7.5 3a5.5 5.5 0 0 0-5.5 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>`,
-  "dj-music":         `<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>`,
-  "live-music":       `<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="white"/>`,
-  "open-mic":         `<path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/><path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5"/><circle cx="16" cy="7" r="5"/>`,
-  "promo-date-night": `<path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H7c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/>`,
-  "screening":        `<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 12h18"/><path d="M17 3v18"/>`,
-  "sport":            `<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>`,
-  "other":            `<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>`,
+	"comedy": `<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>`,
+	"pub-quiz": `<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>`,
+	"quiz-night": `<path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>`,
+	"language-exchange": `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>`,
+	"social": `<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>`,
+	"singles": `<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 1.5C10.5 3.5 9.26 3 7.5 3a5.5 5.5 0 0 0-5.5 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>`,
+	"dj-music": `<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>`,
+	"live-music": `<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="white"/>`,
+	"open-mic": `<path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/><path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5"/><circle cx="16" cy="7" r="5"/>`,
+	"promo-date-night": `<path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H7c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/>`,
+	"screening": `<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 12h18"/><path d="M17 3v18"/>`,
+	"sport": `<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>`,
+	"other": `<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>`,
 };
 
 async function buildCategoryImage(categoryId: string, color: string, count = 1): Promise<ImageData> {
-  const SIZE = 80;
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
-  const ctx = canvas.getContext("2d")!;
+	const SIZE = 80;
+	const canvas = document.createElement("canvas");
+	canvas.width = SIZE;
+	canvas.height = SIZE;
+	const ctx = canvas.getContext("2d")!;
 
-  // Main circle
-  ctx.beginPath();
-  ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = 5;
-  ctx.stroke();
+	// Main circle
+	ctx.beginPath();
+	ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+	ctx.fillStyle = color;
+	ctx.fill();
+	ctx.strokeStyle = "white";
+	ctx.lineWidth = 5;
+	ctx.stroke();
 
-  // SVG icon — wait for onload before drawing
-  const paths = categoryIconPaths[categoryId] ?? categoryIconPaths["other"];
-  const iconSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
-  )}`;
-  await new Promise<void>((resolve) => {
-    const iconImg = new Image();
-    iconImg.onload = () => { ctx.drawImage(iconImg, 24, 24, 32, 32); resolve(); };
-    iconImg.onerror = () => resolve();
-    iconImg.src = iconSvg;
-  });
+	// SVG icon — wait for onload before drawing
+	const paths = categoryIconPaths[categoryId] ?? categoryIconPaths["other"];
+	const iconSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+		`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
+	)}`;
+	await new Promise<void>((resolve) => {
+		const iconImg = new Image();
+		iconImg.onload = () => { ctx.drawImage(iconImg, 24, 24, 32, 32); resolve(); };
+		iconImg.onerror = () => resolve();
+		iconImg.src = iconSvg;
+	});
 
-  // Count badge
-  if (count > 1) {
-    ctx.beginPath();
-    ctx.arc(62, 20, 15, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(62, 20, 12, 0, Math.PI * 2);
-    ctx.fillStyle = "#1f2937";
-    ctx.fill();
-    ctx.fillStyle = "white";
-    ctx.font = `bold ${count > 9 ? 11 : 14}px Arial, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(String(count), 62, 20);
-  }
+	// Count badge
+	if (count > 1) {
+		ctx.beginPath();
+		ctx.arc(62, 20, 15, 0, Math.PI * 2);
+		ctx.fillStyle = "white";
+		ctx.fill();
+		ctx.beginPath();
+		ctx.arc(62, 20, 12, 0, Math.PI * 2);
+		ctx.fillStyle = "#1f2937";
+		ctx.fill();
+		ctx.fillStyle = "white";
+		ctx.font = `bold ${count > 9 ? 11 : 14}px Arial, sans-serif`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(String(count), 62, 20);
+	}
 
-  return ctx.getImageData(0, 0, SIZE, SIZE);
+	return ctx.getImageData(0, 0, SIZE, SIZE);
 }
 
 export default function EventMap({ events, venueMap, userLocation, onEventClick }: EventMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const onEventClickRef = useRef(onEventClick);
-  const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
-  const sourceReadyRef = useRef(false);
-  const [locating, setLocating] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const mapRef = useRef<maplibregl.Map | null>(null);
+	const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+	const onEventClickRef = useRef(onEventClick);
+	const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
+	const sourceReadyRef = useRef(false);
+	const [locating, setLocating] = useState(false);
 
-  useEffect(() => { onEventClickRef.current = onEventClick; });
+	useEffect(() => { onEventClickRef.current = onEventClick; });
 
-  const venueEvents = useMemo(() => {
-    const map = new Map<string, BarlinEvent[]>();
-    events.forEach((e) => {
-      if (!e.venueId) return;
-      const venue = venueMap[e.venueId];
-      if (!venue?.lat || !venue?.lng) return;
-      if (!map.has(e.venueId)) map.set(e.venueId, []);
-      map.get(e.venueId)!.push(e);
-    });
-    return map;
-  }, [events, venueMap]);
+	const venueEvents = useMemo(() => {
+		const map = new Map<string, BarlinEvent[]>();
+		events.forEach((e) => {
+			if (!e.venueId) return;
+			const venue = venueMap[e.venueId];
+			if (!venue?.lat || !venue?.lng) return;
+			if (!map.has(e.venueId)) map.set(e.venueId, []);
+			map.get(e.venueId)!.push(e);
+		});
+		return map;
+	}, [events, venueMap]);
 
-  const geojson = useMemo((): GeoJSON.FeatureCollection => ({
-    type: "FeatureCollection",
-    features: Array.from(venueEvents.entries()).map(([venueId, evts]) => {
-      const venue = venueMap[venueId];
-      const info = getCategoryInfoByLabel(evts[0].category);
-      const categoryId = info?.id ?? "other";
-      return {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
-        properties: {
-          venueId,
-          venueName: venue.name,
-          neighborhood: venue.neighborhood,
-          categoryId,
-          count: evts.length,
-          eventsJson: JSON.stringify(
-            evts.map((e) => ({
-              id: e.id,
-              title: cleanEventTitle(e.title, e.venue),
-              date: e.date,
-              startTime: e.startTime ?? "",
-            }))
-          ),
-        },
-      };
-    }),
-  }), [venueEvents, venueMap]);
+	const geojson = useMemo((): GeoJSON.FeatureCollection => ({
+		type: "FeatureCollection",
+		features: Array.from(venueEvents.entries()).map(([venueId, evts]) => {
+			const venue = venueMap[venueId];
+			const info = getCategoryInfoByLabel(evts[0].category);
+			const categoryId = info?.id ?? "other";
+			return {
+				type: "Feature",
+				geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
+				properties: {
+					venueId,
+					venueName: venue.name,
+					neighborhood: venue.neighborhood,
+					categoryId,
+					count: evts.length,
+					eventsJson: JSON.stringify(
+						evts.map((e) => ({
+							id: e.id,
+							title: cleanEventTitle(e.title, e.venue),
+							date: e.date,
+							startTime: e.startTime ?? "",
+						}))
+					),
+				},
+			};
+		}),
+	}), [venueEvents, venueMap]);
 
-  // Initialize map, load icons, add layers
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+	// Initialize map, load icons, add layers
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container) return;
 
-    const map = new maplibregl.Map({
-      container,
-      style: "https://tiles.openfreemap.org/styles/positron",
-      center: BERLIN_CENTER,
-      zoom: 12,
-      minZoom: 10,
-      maxBounds: [[13.0, 52.3], [13.8, 52.75]],
-      attributionControl: false,
-    });
+		const map = new maplibregl.Map({
+			container,
+			style: "https://tiles.openfreemap.org/styles/positron",
+			center: BERLIN_CENTER,
+			zoom: 12,
+			minZoom: 10,
+			maxBounds: [[13.0, 52.3], [13.8, 52.75]],
+			attributionControl: false,
+		});
 
-    map.on("load", () => {
-      (async () => {
-      // Register base category images
-      await Promise.all([
-        ...categoryInfos.map(async (cat) => {
-          if (!map.hasImage(`cat-${cat.id}`))
-            map.addImage(`cat-${cat.id}`, await buildCategoryImage(cat.id, cat.color), { pixelRatio: 2 });
-        }),
-        (async () => {
-          if (!map.hasImage("cat-other"))
-            map.addImage("cat-other", await buildCategoryImage("other", "#6b7280"), { pixelRatio: 2 });
-        })(),
-      ]);
+		map.on("load", () => {
+			(async () => {
+				// Register base category images
+				await Promise.all([
+					...categoryInfos.map(async (cat) => {
+						if (!map.hasImage(`cat-${cat.id}`))
+							map.addImage(`cat-${cat.id}`, await buildCategoryImage(cat.id, cat.color), { pixelRatio: 2 });
+					}),
+					(async () => {
+						if (!map.hasImage("cat-other"))
+							map.addImage("cat-other", await buildCategoryImage("other", "#6b7280"), { pixelRatio: 2 });
+					})(),
+				]);
 
-      // Pre-register badge images for data already in ref
-      const seen = new Set<string>();
-      await Promise.all(
-        geojsonRef.current.features.map(async (f) => {
-          const { categoryId, count } = f.properties as { categoryId: string; count: number };
-          if (count <= 1) return;
-          const key = imageKey(categoryId, count);
-          if (!seen.has(key) && !map.hasImage(key)) {
-            seen.add(key);
-            const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
-            map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
-          }
-        })
-      );
+				// Pre-register badge images for data already in ref
+				const seen = new Set<string>();
+				await Promise.all(
+					geojsonRef.current.features.map(async (f) => {
+						const { categoryId, count } = f.properties as { categoryId: string; count: number };
+						if (count <= 1) return;
+						const key = imageKey(categoryId, count);
+						if (!seen.has(key) && !map.hasImage(key)) {
+							seen.add(key);
+							const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+							map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
+						}
+					})
+				);
 
-      map.addSource(SOURCE_ID, {
-        type: "geojson",
-        data: geojsonRef.current,
-      });
-      sourceReadyRef.current = true;
+				map.addSource(SOURCE_ID, {
+					type: "geojson",
+					data: geojsonRef.current,
+				});
+				sourceReadyRef.current = true;
 
-      // Symbol layer — icons with badge baked in, rendered in WebGL
-      map.addLayer({
-        id: LAYER_ICONS,
-        type: "symbol",
-        source: SOURCE_ID,
-        layout: {
-          "icon-image": [
-            "case",
-            [">", ["get", "count"], 1],
-            ["concat", "cat-", ["get", "categoryId"], "-", ["to-string", ["get", "count"]]],
-            ["concat", "cat-", ["get", "categoryId"]],
-          ],
-          "icon-size": 1,
-          "icon-allow-overlap": true,
-        },
-      });
+				// Symbol layer — icons with badge baked in, rendered in WebGL
+				map.addLayer({
+					id: LAYER_ICONS,
+					type: "symbol",
+					source: SOURCE_ID,
+					layout: {
+						"icon-image": [
+							"case",
+							[">", ["get", "count"], 1],
+							["concat", "cat-", ["get", "categoryId"], "-", ["to-string", ["get", "count"]]],
+							["concat", "cat-", ["get", "categoryId"]],
+						],
+						"icon-size": 1,
+						"icon-allow-overlap": true,
+					},
+				});
 
-      map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", LAYER_ICONS, () => { map.getCanvas().style.cursor = ""; });
+				map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
+				map.on("mouseleave", LAYER_ICONS, () => { map.getCanvas().style.cursor = ""; });
 
-      map.on("click", LAYER_ICONS, (e) => {
-        if (!e.features?.length) return;
-        const props = e.features[0].properties as {
-          venueName: string;
-          neighborhood: string;
-          eventsJson: string;
-        };
-        const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
-        const evts: { id: string; title: string; date: string; startTime: string }[] =
-          JSON.parse(props.eventsJson);
+				map.on("click", LAYER_ICONS, (e) => {
+					if (!e.features?.length) return;
+					const props = e.features[0].properties as {
+						venueName: string;
+						neighborhood: string;
+						eventsJson: string;
+					};
+					const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+					const evts: { id: string; title: string; date: string; startTime: string }[] =
+						JSON.parse(props.eventsJson);
 
-        const popupEl = document.createElement("div");
-        popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
+					const popupEl = document.createElement("div");
+					popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
 
-        const titleEl = document.createElement("p");
-        titleEl.style.cssText =
-          "font-weight:700;font-size:15px;margin:0;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
-        titleEl.textContent = props.venueName;
-        popupEl.appendChild(titleEl);
+					const titleEl = document.createElement("p");
+					titleEl.style.cssText =
+						"font-weight:700;font-size:15px;margin:0;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
+					titleEl.textContent = props.venueName;
+					popupEl.appendChild(titleEl);
 
-        const scrollEl = document.createElement("div");
-        scrollEl.className = "map-popup-scroll";
-        scrollEl.style.cssText = "max-height:220px;overflow-y:auto;padding:4px 12px;";
-        evts.forEach((evt) => {
-          const btn = document.createElement("button");
-          const isLast = evts.indexOf(evt) === evts.length - 1;
-          btn.className = "map-popup-btn";
-          btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
-          const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
-            weekday: "short", day: "numeric", month: "short",
-          });
-          btn.innerHTML = `
+					const scrollEl = document.createElement("div");
+					scrollEl.className = "map-popup-scroll";
+					scrollEl.style.cssText = "max-height:220px;overflow-y:auto;padding:4px 12px;";
+					evts.forEach((evt) => {
+						const btn = document.createElement("button");
+						const isLast = evts.indexOf(evt) === evts.length - 1;
+						btn.className = "map-popup-btn";
+						btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
+						const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
+							weekday: "short", day: "numeric", month: "short",
+						});
+						btn.innerHTML = `
             <p style="font-size:14px;font-weight:600;margin:0;color:#111;">${evt.title}</p>
             <p style="font-size:12px;color:#888;margin:3px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
           `;
-          btn.addEventListener("click", () => {
-            btn.style.background = "#f97316";
-            btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
-            btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
-            setTimeout(() => onEventClickRef.current(evt.id), 80);
-          });
-          scrollEl.appendChild(btn);
-        });
-        popupEl.appendChild(scrollEl);
+						btn.addEventListener("click", () => {
+							btn.style.background = "#f97316";
+							btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
+							btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
+							setTimeout(() => onEventClickRef.current(evt.id), 80);
+						});
+						scrollEl.appendChild(btn);
+					});
+					popupEl.appendChild(scrollEl);
 
-        new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
-          .setLngLat(coords)
-          .setDOMContent(popupEl)
-          .addTo(map);
-      });
-      })();
-    });
+					new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
+						.setLngLat(coords)
+						.setDOMContent(popupEl)
+						.addTo(map);
+				});
+			})();
+		});
 
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; sourceReadyRef.current = false; };
-  }, []);
+		mapRef.current = map;
+		return () => { map.remove(); mapRef.current = null; sourceReadyRef.current = false; };
+	}, []);
 
-  // Update data when events change — register any missing badge images first
-  useEffect(() => {
-    geojsonRef.current = geojson;
-    if (!sourceReadyRef.current) return;
-    const map = mapRef.current;
-    if (!map) return;
+	// Update data when events change — register any missing badge images first
+	useEffect(() => {
+		geojsonRef.current = geojson;
+		if (!sourceReadyRef.current) return;
+		const map = mapRef.current;
+		if (!map) return;
 
-    const needed = geojson.features
-      .map((f) => ({ categoryId: f.properties!.categoryId as string, count: f.properties!.count as number }))
-      .filter(({ categoryId, count }) => !map.hasImage(imageKey(categoryId, count)));
+		const needed = geojson.features
+			.map((f) => ({ categoryId: f.properties!.categoryId as string, count: f.properties!.count as number }))
+			.filter(({ categoryId, count }) => !map.hasImage(imageKey(categoryId, count)));
 
-    const apply = () => {
-      (map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource)?.setData(geojson);
-    };
+		const apply = () => {
+			(map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource)?.setData(geojson);
+		};
 
-    (async () => {
-      await Promise.all(
-        needed.map(async ({ categoryId, count }) => {
-          const key = imageKey(categoryId, count);
-          if (!map.hasImage(key)) {
-            const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
-            map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
-          }
-        })
-      );
-      apply();
-    })();
-  }, [geojson]);
+		(async () => {
+			await Promise.all(
+				needed.map(async ({ categoryId, count }) => {
+					const key = imageKey(categoryId, count);
+					if (!map.hasImage(key)) {
+						const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+						map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
+					}
+				})
+			);
+			apply();
+		})();
+	}, [geojson]);
 
-  // User location dot
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    userMarkerRef.current?.remove();
-    userMarkerRef.current = null;
-    if (!userLocation) return;
-    const el = document.createElement("div");
-    el.style.cssText =
-      "width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.3);";
-    userMarkerRef.current = new maplibregl.Marker({ element: el })
-      .setLngLat([userLocation.lng, userLocation.lat])
-      .addTo(map);
-  }, [userLocation]);
+	// User location dot
+	useEffect(() => {
+		const map = mapRef.current;
+		if (!map) return;
+		userMarkerRef.current?.remove();
+		userMarkerRef.current = null;
+		if (!userLocation) return;
+		const el = document.createElement("div");
+		el.style.cssText =
+			"width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.3);";
+		userMarkerRef.current = new maplibregl.Marker({ element: el })
+			.setLngLat([userLocation.lng, userLocation.lat])
+			.addTo(map);
+	}, [userLocation]);
 
-  function flyToUser() {
-    const map = mapRef.current;
-    if (!map) return;
-    if (userLocation) {
-      map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 1200 });
-      return;
-    }
-    if (!navigator.geolocation) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1200 });
-      },
-      () => {
-        setLocating(false);
-        alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
-      },
-      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
-    );
-  }
+	function flyToUser() {
+		const map = mapRef.current;
+		if (!map) return;
+		if (userLocation) {
+			map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 1200 });
+			return;
+		}
+		if (!navigator.geolocation) return;
+		setLocating(true);
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				setLocating(false);
+				map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1200 });
+			},
+			() => {
+				setLocating(false);
+				alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
+			},
+			{ timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+		);
+	}
 
-  return (
-    <div style={{ position: "relative", height: "100%", width: "100%" }}>
-      <div ref={containerRef} style={{ height: "100%", width: "100%" }} />
-      <button
-        onClick={flyToUser}
-        title="Zu meinem Standort"
-        style={{
-          position: "absolute",
-          bottom: 16,
-          left: 16,
-          zIndex: 1000,
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
-          background: "white",
-          border: "1.5px solid #d1d5db",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-        }}
-      >
-        <svg
-          width="20" height="20" viewBox="0 0 24 24"
-          fill={locating ? "none" : "#2563eb"}
-          stroke={locating ? "#2563eb" : "none"}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          className={locating ? "animate-spin" : ""}
-        >
-          {locating
-            ? <path d="M12 2a10 10 0 0 1 10 10" />
-            : <path d="M12 2L4 20l8-4 8 4L12 2z" transform="rotate(40 12 12)" />
-          }
-        </svg>
-      </button>
-    </div>
-  );
+	return (
+		<div style={{ position: "absolute", inset: 0 }}>
+			<div ref={containerRef} style={{ height: "100%", width: "100%" }} />
+			<button
+				onClick={flyToUser}
+				title="Zu meinem Standort"
+				style={{
+					position: "absolute",
+					bottom: 16,
+					left: 16,
+					zIndex: 1000,
+					width: 44,
+					height: 44,
+					borderRadius: "50%",
+					background: "white",
+					border: "1.5px solid #d1d5db",
+					boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					cursor: "pointer",
+				}}
+			>
+				<svg
+					width="20" height="20" viewBox="0 0 24 24"
+					fill={locating ? "none" : "#2563eb"}
+					stroke={locating ? "#2563eb" : "none"}
+					strokeWidth="2.5"
+					strokeLinecap="round"
+					className={locating ? "animate-spin" : ""}
+				>
+					{locating
+						? <path d="M12 2a10 10 0 0 1 10 10" />
+						: <path d="M12 2L4 20l8-4 8 4L12 2z" transform="rotate(40 12 12)" />
+					}
+				</svg>
+			</button>
+		</div>
+	);
 }

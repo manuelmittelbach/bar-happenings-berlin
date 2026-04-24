@@ -29,6 +29,7 @@ const badgeChipClasses: Record<EventBadge["variant"], string> = {
 export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
   const userLocation = useUserLocation();
+  const isCanceled = event.status === "canceled";
 
   const interestedCount = event.interestedCount ?? 0;
 
@@ -87,6 +88,11 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       <div>
         <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift">
           <div className="flex-1 min-w-0 flex flex-col justify-center">
+            {isCanceled && (
+              <p className="font-body text-xs font-extrabold uppercase tracking-wider text-red-600 mb-1">
+                Got canceled by the organizer
+              </p>
+            )}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
@@ -120,6 +126,11 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
           className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden card-hover-lift"
         >
           <div className="p-4 md:p-6 flex-1 min-w-0">
+            {isCanceled && (
+              <p className="font-body text-sm font-extrabold uppercase tracking-wider text-red-600 mb-3">
+                Got canceled by the organizer
+              </p>
+            )}
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <div className="inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
                 <Star className="h-3 w-3" />
@@ -160,11 +171,16 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
         className={`group relative flex flex-col border-2 transition-colors overflow-hidden card-hover-lift ${
           isLive
             ? "border-[hsl(0,72%,51%)]/50 hover:border-[hsl(0,72%,51%)] bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]"
-            : "border-border hover:border-foreground"
+            : "border-border hover:border-foreground bg-background"
         }`}
       >
         <div className="flex flex-1">
           <div className="p-3 md:p-4 flex-1 min-w-0">
+            {isCanceled && (
+              <p className="font-body text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-red-600 mb-1">
+                Got canceled by the organizer
+              </p>
+            )}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
               <BadgeChip />
