@@ -49,6 +49,12 @@ const EMPTY_FORM: EventFormData = {
   imagePosition: DEFAULT_IMAGE_POSITION,
 };
 
+const ENTRY_AMOUNTS = Array.from({ length: 100 }, (_, i) => (i + 1) * 0.5).map((n) =>
+  Number.isInteger(n) ? `${n} €` : `${Math.floor(n)},50 €`
+);
+const PREDEFINED_ENTRY_OPTIONS = new Set<string>(["Free", "Pay what you want", ...ENTRY_AMOUNTS]);
+const CUSTOM_ENTRY_SENTINEL = "__custom__";
+
 const LANGUAGES = [
   "English",
   "German",
@@ -126,6 +132,12 @@ export default function EventForm({
 }: EventFormProps) {
   const [formData, setFormData] = useState<EventFormData>({ ...EMPTY_FORM, ...initialValues });
   const [submitting, setSubmitting] = useState(false);
+  const [entryCustomMode, setEntryCustomMode] = useState<boolean>(
+    () => {
+      const v = initialValues?.entryInfo ?? "";
+      return v !== "" && !PREDEFINED_ENTRY_OPTIONS.has(v);
+    }
+  );
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageRemoved, setImageRemoved] = useState(false);
@@ -137,6 +149,10 @@ export default function EventForm({
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, ...initialValues }));
+    const incoming = initialValues?.entryInfo;
+    if (incoming !== undefined) {
+      setEntryCustomMode(incoming !== "" && !PREDEFINED_ENTRY_OPTIONS.has(incoming));
+    }
   }, [initialValues]);
 
   useEffect(() => {
@@ -370,12 +386,37 @@ export default function EventForm({
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Entry info</label>
-            <input
-              type="text" value={formData.entryInfo}
-              onChange={(e) => update("entryInfo", e.target.value)}
-              list="entry-info-suggestions"
+            <select
+              value={entryCustomMode ? CUSTOM_ENTRY_SENTINEL : formData.entryInfo}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === CUSTOM_ENTRY_SENTINEL) {
+                  setEntryCustomMode(true);
+                  update("entryInfo", "");
+                } else {
+                  setEntryCustomMode(false);
+                  update("entryInfo", v);
+                }
+              }}
               className={inputClass}
-            />
+            >
+              <option value="" disabled hidden>Select entry info</option>
+              <option value="Free">Free</option>
+              <option value="Pay what you want">Pay what you want</option>
+              <option value={CUSTOM_ENTRY_SENTINEL}>Custom…</option>
+              {ENTRY_AMOUNTS.map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+            </select>
+            {entryCustomMode && (
+              <input
+                type="text"
+                value={formData.entryInfo}
+                onChange={(e) => update("entryInfo", e.target.value)}
+                placeholder="e.g. First drink costs double"
+                className={inputClass}
+              />
+            )}
           </div>
         </div>
 

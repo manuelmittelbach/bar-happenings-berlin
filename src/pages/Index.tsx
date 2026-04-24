@@ -22,7 +22,15 @@ import { haversineMeters } from "@/lib/distance";
 import { isEventStillOnline } from "@/lib/eventStatus";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
-const entryFilters = ["All", "Free Entry", "Pay at Venue"];
+const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
+
+const parseEntryEuro = (s: string): number | null => {
+  const m = s.match(/^(\d+)(?:,(\d{1,2}))?\s*€$/);
+  if (!m) return null;
+  const whole = parseInt(m[1], 10);
+  const frac = m[2] ? parseInt(m[2], 10) / Math.pow(10, m[2].length) : 0;
+  return whole + frac;
+};
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 export default function Index() {
@@ -139,8 +147,20 @@ export default function Index() {
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    if (activeEntry === "Free Entry") result = result.filter((e) => /free/i.test(e.price));
-    if (activeEntry === "Pay at Venue") result = result.filter((e) => !/free/i.test(e.price));
+    if (activeEntry === "Free") result = result.filter((e) => e.entryInfo === "Free");
+    if (activeEntry === "Pay what you want") result = result.filter((e) =>
+      e.entryInfo === "Pay what you want" || e.entryInfo === "Free"
+    );
+    if (activeEntry === "0-5 €") result = result.filter((e) => {
+      if (e.entryInfo === "Free" || e.entryInfo === "Pay what you want") return true;
+      const n = parseEntryEuro(e.entryInfo);
+      return n !== null && n <= 5;
+    });
+    if (activeEntry === "0-10 €") result = result.filter((e) => {
+      if (e.entryInfo === "Free" || e.entryInfo === "Pay what you want") return true;
+      const n = parseEntryEuro(e.entryInfo);
+      return n !== null && n <= 10;
+    });
 
     const WALK_20MIN_M = 1600;
 
@@ -322,18 +342,35 @@ export default function Index() {
                 {d}
               </button>
             ))}
-            <button
-              onClick={() => setShowFilters((v) => !v)}
-              className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
-                showFilters
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-foreground hover:bg-foreground hover:text-background"
-              }`}
-              aria-expanded={showFilters}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Filters</span>
-            </button>
+            {(() => {
+              const activeFilterCount =
+                (searchQuery.trim() ? 1 : 0) +
+                (activeNeighborhood ? 1 : 0) +
+                (activeEntry !== "All" ? 1 : 0);
+              return (
+                <button
+                  onClick={() => setShowFilters((v) => !v)}
+                  className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
+                    showFilters
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-foreground hover:bg-foreground hover:text-background"
+                  }`}
+                  aria-expanded={showFilters}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none ${
+                      showFilters
+                        ? "bg-background text-foreground"
+                        : "bg-accent text-accent-foreground"
+                    }`}>
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
 
