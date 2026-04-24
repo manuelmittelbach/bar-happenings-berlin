@@ -264,7 +264,7 @@ export default function Index() {
 
   return (
     <>
-        <section className="border-b-2 border-foreground noise-bg bg-muted/40">
+        <section className="border-b-2 border-foreground bg-muted/40">
           <div className="container py-12 md:py-16 lg:py-20 relative z-[45]">
             <div>
               <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
@@ -332,13 +332,13 @@ export default function Index() {
               aria-expanded={showFilters}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filters
+              <span className="hidden md:inline">Filters</span>
             </button>
           </div>
         </div>
 
         {showFilters && (
-          <div className="border-b-2 border-foreground bg-card">
+          <div className="border-b-2 border-foreground bg-background">
             <div className="container py-5 space-y-5">
               <div>
                 <label className="mono-label text-muted-foreground mb-2 block">Search</label>
