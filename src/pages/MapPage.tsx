@@ -17,7 +17,7 @@ export default function MapPage() {
 
   const { data: eventsData = [] } = useEvents();
   const { data: venuesData = [] } = useVenues();
-  const userLocation = useUserLocation();
+  const { location: userLocation } = useUserLocation();
 
   const venueMap = useMemo(
     () => Object.fromEntries(venuesData.map((v) => [v.id, v])),
