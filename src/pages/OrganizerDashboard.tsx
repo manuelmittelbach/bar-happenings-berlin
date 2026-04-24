@@ -5,7 +5,8 @@ import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCi
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries";
-import { isEventInPast, isEventStillOnline } from "@/lib/eventStatus";
+import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
+import { Spinner } from "@/components/ui/spinner";
 import type { BarlinEvent } from "@/types/event";
 
 type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
@@ -55,7 +56,9 @@ export default function OrganizerDashboard() {
     });
   }, [user, isApprovedAccess]);
 
-  const upcoming = myEvents.filter((e) => !isEventInPast(e)).sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = myEvents
+    .filter((e) => !isEventInPast(e))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
   const past = myEvents.filter((e) => isEventInPast(e));
   const displayed = activeTab === "upcoming" ? upcoming : past;
 
@@ -136,7 +139,7 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
             >
-              <Plus className="h-4 w-4" /> New Event
+              <Plus className="h-4 w-4" /> Publish Event
             </Link>
           </div>
 
@@ -156,15 +159,10 @@ export default function OrganizerDashboard() {
           </div>
 
           {/* Events list */}
-          {eventsLoading && <p className="text-base text-muted-foreground">Loading…</p>}
+          {eventsLoading && <div className="flex justify-center py-8"><Spinner /></div>}
           {!eventsLoading && displayed.length === 0 && (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-base">No {activeTab} events yet.</p>
-              {activeTab === "upcoming" && (
-                <Link to="/publish" className="inline-block mt-3 text-sm text-accent hover:underline">
-                  Create an event →
-                </Link>
-              )}
             </div>
           )}
           {!eventsLoading && displayed.length > 0 && (
@@ -188,8 +186,13 @@ export default function OrganizerDashboard() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-heading text-base font-semibold">{event.title}</span>
                       {isEventStillOnline(event) && (
-                        <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[event.status ?? "pending"] ?? ""}`}>
-                          {event.status === "approved" ? "online" : (event.status ?? "pending")}
+                        <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[event.status === "canceled" ? "approved" : (event.status ?? "pending")] ?? ""}`}>
+                          {event.status === "approved" || event.status === "canceled" ? "online" : (event.status ?? "pending")}
+                        </span>
+                      )}
+                      {event.status === "canceled" && (
+                        <span className="text-sm px-2 py-0.5 rounded-sm font-medium capitalize bg-red-500/10 text-red-600">
+                          canceled
                         </span>
                       )}
                     </div>
@@ -208,12 +211,14 @@ export default function OrganizerDashboard() {
                       >
                         <Eye className="h-4 w-4" /> View
                       </Link>
-                      <Link
-                        to={`/edit-event/${event.id}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Pencil className="h-4 w-4" /> Edit
-                      </Link>
+                      {event.status !== "canceled" && !hasEventStarted(event) && (
+                        <Link
+                          to={`/edit-event/${event.id}`}
+                          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="h-4 w-4" /> Edit
+                        </Link>
+                      )}
                     </div>
                   )}
                 </div>

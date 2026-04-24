@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents } from "@/hooks/useEvents";
 import EventCard from "@/components/events/EventCard";
+import { Spinner } from "@/components/ui/spinner";
 import type { BarlinEvent } from "@/types/event";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
@@ -81,7 +82,7 @@ export default function MyEvents() {
 	if (loading) {
 		return (
 			<div className="flex-1 flex items-center justify-center bg-background">
-				<p className="font-body text-sm text-muted-foreground">Loading…</p>
+				<Spinner />
 			</div>
 		);
 	}

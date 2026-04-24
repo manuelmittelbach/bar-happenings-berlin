@@ -45,7 +45,7 @@ const DEFAULT_IMAGE_POSITION = "50% 50%";
 const EMPTY_FORM: EventFormData = {
   title: "", venue: "", address: "", neighborhood: "", date: "",
   startTime: "", endTime: "", category: "", description: "",
-  entryInfo: "", language: "English", website: "",
+  entryInfo: "", language: "", website: "",
   imagePosition: DEFAULT_IMAGE_POSITION,
 };
 
@@ -231,6 +231,10 @@ export default function EventForm({
         return;
       }
     }
+    if (formData.endTime && formData.startTime === formData.endTime) {
+      toast.error("End time must differ from start time.");
+      return;
+    }
     setSubmitting(true);
     try {
       const imageChanged = imageFile !== null || imageRemoved;
@@ -312,7 +316,6 @@ export default function EventForm({
           <input
             type="text" required value={formData.title}
             onChange={(e) => update("title", e.target.value)}
-            placeholder="e.g. Acoustic Sessions: Strings & Things"
             className={inputClass}
           />
         </div>
@@ -343,6 +346,12 @@ export default function EventForm({
               onChange={(e) => update("endTime", e.target.value)}
               className={inputClass}
             />
+            {formData.startTime && formData.endTime && formData.endTime < formData.startTime && (
+              <p className="text-xs text-accent mt-1">→ ends next day</p>
+            )}
+            {formData.startTime && formData.endTime && formData.endTime === formData.startTime && (
+              <p className="text-xs text-destructive mt-1">End time must differ from start</p>
+            )}
           </div>
         </div>
 
@@ -365,7 +374,6 @@ export default function EventForm({
               type="text" value={formData.entryInfo}
               onChange={(e) => update("entryInfo", e.target.value)}
               list="entry-info-suggestions"
-              placeholder="e.g. Free Entry, 10€, Donation Suggested"
               className={inputClass}
             />
           </div>
@@ -392,6 +400,7 @@ export default function EventForm({
               onChange={(e) => update("language", e.target.value)}
               className={inputClass}
             >
+              <option value="" disabled hidden>Select language</option>
               {LANGUAGES.map((lang) => (
                 <option key={lang} value={lang}>{lang}</option>
               ))}

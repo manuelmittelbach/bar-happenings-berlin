@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Clock3, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -80,9 +80,18 @@ export default function PublishEvent() {
   return (
     <EventForm
       title="Publish an Event"
+      subtitle="Once published, it appears directly on the front page."
       initialValues={venuePrefill}
       submitLabel="Publish Event"
       onSubmit={handleSubmit}
+      secondaryActions={
+        <Link
+          to="/dashboard"
+          className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Cancel
+        </Link>
+      }
     />
   );
 }
