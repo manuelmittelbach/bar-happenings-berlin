@@ -15,14 +15,10 @@ import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueri
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const languageLabel: Record<string, string> = {
-	"EN": "in English",
-	"DE": "in German",
-	"EN/DE": "in English & German",
-	"DE/EN": "in German & English",
-	"EN/RU": "in English & Russian",
-	"Multi": "multilingual",
-};
+function formatLanguage(raw: string | undefined): string | null {
+	if (!raw) return null;
+	return `in ${raw}`;
+}
 
 export default function EventDetail() {
 	const { id } = useParams();
@@ -139,13 +135,26 @@ export default function EventDetail() {
 				{/* Hero image — compact */}
 				<div className="relative h-[180px] md:h-[260px] bg-muted overflow-hidden">
 					{hasRealImage && (
-						<img src={event.image!} alt={displayTitle} className="absolute inset-0 w-full h-full object-cover" />
+						<img
+							src={event.image!}
+							alt={displayTitle}
+							style={{ objectPosition: event.imagePosition }}
+							className="absolute inset-0 w-full h-full object-cover"
+						/>
 					)}
 					<div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
 					<div className="absolute top-3 left-4">
 						<ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
 					</div>
 				</div>
+
+				{event.status === "canceled" && (
+					<div className="px-4 pt-4">
+						<p className="font-body text-sm font-extrabold uppercase tracking-wider text-red-600">
+							Got canceled by the organizer
+						</p>
+					</div>
+				)}
 
 				{/* Core info block */}
 				<div className="px-4 pt-4 pb-1">
@@ -220,7 +229,7 @@ export default function EventDetail() {
 				<div className="px-4 py-5 space-y-4">
 					<h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
 					<p className="text-sm text-muted-foreground">
-						{[priceLabel, event.recurrence || null, event.language ? (languageLabel[event.language] || event.language) : null].filter(Boolean).join(" · ")}
+						{[priceLabel, event.recurrence || null, formatLanguage(event.language)].filter(Boolean).join(" · ")}
 					</p>
 					<div />
 					{event.description.split("\n\n").map((p, i) => (
@@ -276,7 +285,7 @@ export default function EventDetail() {
 							rel="noopener noreferrer"
 							className="group w-full flex items-center justify-between py-3.5 border-b border-border text-sm text-foreground hover:text-accent transition-colors"
 						>
-							<span className="font-medium">Visit organizer</span>
+							<span className="font-medium">Event link</span>
 							<ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
 						</a>
 					)}

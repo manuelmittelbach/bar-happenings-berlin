@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import type { BarlinEvent, Venue } from "@/types/event";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
@@ -24,6 +24,7 @@ function mapEventRow(row: Tables<"events">): BarlinEvent {
     recurrence: row.recurrence ?? "",
     url: row.url ?? "",
     image: row.image ?? undefined,
+    imagePosition: row.image_position ?? "50% 50%",
     summary: row.summary ?? undefined,
     interestedCount: row.interested_count ?? 0,
     featured: row.featured ?? false,
@@ -51,7 +52,7 @@ export async function fetchEvents(): Promise<BarlinEvent[]> {
   const { data, error } = await supabase
     .from("events")
     .select("*")
-    .eq("status", "approved")
+    .in("status", ["approved", "canceled"])
     .order("date")
     .order("start_time");
   if (error) throw error;
@@ -78,16 +79,30 @@ export async function fetchEventById(id: string): Promise<BarlinEvent | null> {
   return mapEventRow(data);
 }
 
+export async function uploadEventImage(file: File, userId: string): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("event-images").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("event-images").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+interface EventWriteData {
+  title: string; venue: string; address: string; neighborhood: string;
+  date: string; startTime: string; endTime: string; category: string;
+  description: string; entryInfo: string; language: string; website: string;
+  imagePosition: string;
+}
+
 export async function createEvent(
-  formData: {
-    title: string; venue: string; address: string; neighborhood: string;
-    date: string; startTime: string; endTime: string; category: string;
-    description: string; entryInfo: string; language: string; tags: string;
-    instagram: string; website: string;
-  },
+  formData: EventWriteData,
   userId: string,
+  imageUrl?: string,
 ): Promise<void> {
-  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
   const { error } = await supabase.from("events").insert({
     id: crypto.randomUUID(),
     title: formData.title,
@@ -101,8 +116,9 @@ export async function createEvent(
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
     language: formData.language || null,
-    tags: tags.length > 0 ? tags : null,
     url: formData.website || null,
+    image: imageUrl || null,
+    image_position: formData.imagePosition,
     created_by: userId,
     status: "approved",
   });
@@ -111,15 +127,10 @@ export async function createEvent(
 
 export async function updateEvent(
   id: string,
-  formData: {
-    title: string; venue: string; address: string; neighborhood: string;
-    date: string; startTime: string; endTime: string; category: string;
-    description: string; entryInfo: string; language: string; tags: string;
-    instagram: string; website: string;
-  }
+  formData: EventWriteData,
+  imageUrl?: string | null,
 ): Promise<void> {
-  const tags = formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
-  const { error } = await supabase.from("events").update({
+  const update: TablesUpdate<"events"> = {
     title: formData.title,
     venue: formData.venue,
     address: formData.address,
@@ -131,9 +142,16 @@ export async function updateEvent(
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
     language: formData.language || null,
-    tags: tags.length > 0 ? tags : null,
     url: formData.website || null,
-  }).eq("id", id);
+    image_position: formData.imagePosition,
+  };
+  if (imageUrl !== undefined) update.image = imageUrl;
+  const { error } = await supabase.from("events").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export async function cancelEvent(id: string): Promise<void> {
+  const { error } = await supabase.from("events").update({ status: "canceled" }).eq("id", id);
   if (error) throw error;
 }
 
@@ -335,14 +353,11 @@ export async function updateOrganizerApprovalStatus(
   status: "approved" | "rejected",
   approverId?: string,
 ): Promise<void> {
-  const patch: Record<string, unknown> = { approval_status: status };
-  if (status === "approved") {
-    patch.approved_by = approverId ?? null;
-    patch.approved_at = new Date().toISOString();
-  } else {
-    patch.approved_by = null;
-    patch.approved_at = null;
-  }
+  const patch: { approval_status: string; approved_by: string | null; approved_at: string | null } = {
+    approval_status: status,
+    approved_by: status === "approved" ? approverId ?? null : null,
+    approved_at: status === "approved" ? new Date().toISOString() : null,
+  };
   const { error } = await supabase
     .from("profiles")
     .update(patch)

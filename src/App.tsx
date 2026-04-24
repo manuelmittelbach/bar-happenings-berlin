@@ -61,6 +61,7 @@ import OrganizerDashboard from "./pages/OrganizerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForBars from "./pages/ForBars";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import MyEvents from "./pages/MyEvents";
 import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/for-bars" element={<ForBars />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/my-events" element={<MyEvents />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/edit-event/:id" element={<EditEvent />} />

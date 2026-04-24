@@ -4,8 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchEventsByCreator } from "@/lib/supabaseQueries";
+import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries";
+import { isEventInPast, isEventStillOnline } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
+
+type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "bg-green-500/10 text-green-600",
@@ -19,6 +22,7 @@ export default function OrganizerDashboard() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [myEvents, setMyEvents] = useState<BarlinEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [venue, setVenue] = useState<OrganizerVenue>(null);
 
   const isApprovedAccess = role === "admin" || (role === "organizer" && approvalStatus === "approved");
 
@@ -44,13 +48,22 @@ export default function OrganizerDashboard() {
       .finally(() => setEventsLoading(false));
   }, [user, isApprovedAccess]);
 
-  const isLateNight = new Date().getHours() < 6;
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const cutoff = isLateNight ? yesterday : today;
-  const upcoming = myEvents.filter(e => e.date >= cutoff).sort((a, b) => a.date.localeCompare(b.date));
-  const past = myEvents.filter(e => e.date < cutoff);
+  useEffect(() => {
+    if (!user || !isApprovedAccess) return;
+    fetchOrganizerById(user.id).then((organizer) => {
+      if (organizer?.venue) setVenue(organizer.venue);
+    });
+  }, [user, isApprovedAccess]);
+
+  const upcoming = myEvents.filter((e) => !isEventInPast(e)).sort((a, b) => a.date.localeCompare(b.date));
+  const past = myEvents.filter((e) => isEventInPast(e));
   const displayed = activeTab === "upcoming" ? upcoming : past;
+
+  const INITIAL_COUNT = 5;
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => { setShowAll(false); }, [activeTab]);
+  const visible = showAll ? displayed : displayed.slice(0, INITIAL_COUNT);
+  const hasMore = displayed.length > INITIAL_COUNT;
 
   if (loading || role === null) return null;
   if (!user) return null;
@@ -92,12 +105,21 @@ export default function OrganizerDashboard() {
               <CheckCircle2 className="h-4 w-4" /> Email confirmed!
             </div>
           )}
+          {venue && (
+            <div className="mb-6 text-center">
+              <h1 className="heading-display text-2xl">{venue.name}</h1>
+              {venue.address && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {venue.address.replace(/,\s*Germany\s*$/i, "")}
+                </p>
+              )}
+            </div>
+          )}
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             {[
               { label: "Total Events", value: String(myEvents.length), icon: CalendarDays },
               { label: "Upcoming", value: String(upcoming.length), icon: Clock },
-              { label: "Total Interested", value: String(myEvents.reduce((s, e) => s + (e.interestedCount ?? 0), 0)), icon: Users },
             ].map((stat) => (
               <div key={stat.label} className="border border-border rounded-sm p-5 space-y-2">
                 <div className="flex items-center justify-between">
@@ -147,46 +169,66 @@ export default function OrganizerDashboard() {
           )}
           {!eventsLoading && displayed.length > 0 && (
             <div className="space-y-3">
-              {displayed.map((event) => (
+              {visible.map((event) => (
                 <div
                   key={event.id}
                   className="border border-border rounded-sm p-5 flex flex-col sm:flex-row gap-4"
                 >
                   {event.image && (
                     <div className="w-full sm:w-28 h-24 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
-                      <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+                      <img
+                        src={event.image}
+                        alt={event.title}
+                        style={{ objectPosition: event.imagePosition }}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-heading text-base font-semibold">{event.title}</span>
-                      <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[event.status ?? "pending"] ?? ""}`}>
-                        {event.status === "approved" ? "online" : (event.status ?? "pending")}
-                      </span>
+                      {isEventStillOnline(event) && (
+                        <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[event.status ?? "pending"] ?? ""}`}>
+                          {event.status === "approved" ? "online" : (event.status ?? "pending")}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {formatDateWithDay(event.date)} · {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""} · {event.neighborhood}
+                      {formatDateWithDay(event.date)} · {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
                     </p>
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {event.interestedCount ?? 0} interested</span>
                     </div>
                   </div>
-                  <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
-                    <Link
-                      to={`/event/${event.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Eye className="h-4 w-4" /> View
-                    </Link>
-                    <Link
-                      to={`/edit-event/${event.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" /> Edit
-                    </Link>
-                  </div>
+                  {activeTab === "upcoming" && (
+                    <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
+                      <Link
+                        to={`/event/${event.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Eye className="h-4 w-4" /> View
+                      </Link>
+                      <Link
+                        to={`/edit-event/${event.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" /> Edit
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ))}
+              {hasMore && !showAll && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Show more ({displayed.length - INITIAL_COUNT})
+                  </button>
+                </div>
+              )}
             </div>
           )}
     </div>

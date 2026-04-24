@@ -18,6 +18,7 @@ export interface BarlinEvent {
   recurrence: string;
   url: string;
   image?: string;
+  imagePosition: string;
   endTime?: string;
   summary?: string;
   interestedCount?: number;

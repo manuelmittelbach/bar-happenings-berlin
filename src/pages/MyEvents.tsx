@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents } from "@/hooks/useEvents";
@@ -87,22 +87,7 @@ export default function MyEvents() {
 	}
 
 	if (!user) {
-		return (
-			<div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center bg-background">
-				<h1 className="font-heading text-4xl font-extrabold uppercase tracking-tight">
-					Welcome back.
-				</h1>
-				<p className="text-sm text-muted-foreground max-w-xs">
-					Sign in to see your saved events.
-				</p>
-				<Link
-					to="/login"
-					className="h-11 px-6 flex items-center bg-foreground text-background font-body font-bold uppercase tracking-wider text-sm"
-				>
-					Sign in
-				</Link>
-			</div>
-		);
+		return <Navigate to="/login" state={{ from: "/my-events" }} replace />;
 	}
 
 	const hasAnyEvents = yesterdayEvents.length > 0 || upcomingEvents.length > 0;

@@ -1,6 +1,7 @@
 export default function About() {
   return (
-    <div className="container max-w-2xl py-16">
+    <div className="bg-muted/40 flex-1">
+      <div className="container max-w-2xl py-16">
           <h1 className="heading-display text-4xl md:text-5xl mb-8">
             About <span className="heading-editorial italic lowercase font-light">inside</span> Bars<span className="text-accent">.</span>
           </h1>
@@ -64,6 +65,7 @@ export default function About() {
               {" "}contributors.
             </p>
           </div>
+      </div>
     </div>
   );
 }
