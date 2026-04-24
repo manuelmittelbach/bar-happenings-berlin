@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  cancelEvent,
+  cancelEventSeries,
   fetchEventById,
   updateEvent,
-  cancelEvent,
+  updateEventSeries,
   uploadEventImage,
 } from "@/lib/supabaseQueries";
 import { hasEventStarted } from "@/lib/eventStatus";
@@ -13,6 +15,8 @@ import EventForm, { type EventFormData } from "@/components/events/EventForm";
 
 export default function EditEvent() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const scopeParam = searchParams.get("scope");
   const navigate = useNavigate();
   const { user, role, loading: authLoading } = useAuth();
   const isAdmin = role === "admin";
@@ -20,6 +24,9 @@ export default function EditEvent() {
   const [notFound, setNotFound] = useState(false);
   const [initialValues, setInitialValues] = useState<Partial<EventFormData> | null>(null);
   const [initialImageUrl, setInitialImageUrl] = useState<string | null>(null);
+  const [seriesInfo, setSeriesInfo] = useState<{ isSeries: boolean; seriesId: string; eventDate: string } | null>(null);
+
+  const applyToSeries = seriesInfo?.isSeries && scopeParam === "future";
 
   useEffect(() => {
     if (authLoading) return;
@@ -57,35 +64,63 @@ export default function EditEvent() {
         language: event.language || "",
         website: event.url ?? "",
         imagePosition: event.imagePosition,
+        recurrence: "",
+        recurrenceUntil: "",
       });
       setInitialImageUrl(event.image ?? null);
+      const isSeries = !!event.recurrence || !!event.parentId;
+      setSeriesInfo({
+        isSeries,
+        seriesId: event.parentId || event.id,
+        eventDate: event.date,
+      });
     });
-  }, [id, user, authLoading, role, isAdmin]);
+  }, [id, user, authLoading, role, isAdmin, navigate]);
 
   const handleSubmit = useMemo(
     () => async (data: EventFormData, image: { file: File | null; changed: boolean }) => {
-      if (!id || !user) return;
+      if (!id || !user || !seriesInfo) return;
       try {
         let imageUrl: string | null | undefined;
         if (image.changed) {
           imageUrl = image.file ? await uploadEventImage(image.file, user.id) : null;
         }
-        await updateEvent(id, data, imageUrl);
-        toast.success("Event updated!");
+        if (applyToSeries) {
+          await updateEventSeries(seriesInfo.seriesId, seriesInfo.eventDate, data, imageUrl);
+          toast.success("Series updated!");
+        } else {
+          await updateEvent(id, data, imageUrl);
+          toast.success("Event updated!");
+        }
         navigate(isAdmin ? "/admin" : "/dashboard");
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate]
+    [id, user, isAdmin, navigate, seriesInfo, applyToSeries],
   );
 
   const handleDelete = async () => {
-    if (!id) return;
-    if (!window.confirm("Cancel this event? This action cannot be undone. The event will be marked as canceled and stay visible.")) return;
+    if (!id || !seriesInfo) return;
+    const today = new Date().toISOString().split("T")[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const staysVisible = seriesInfo.eventDate === today || seriesInfo.eventDate === tomorrow;
+    const confirmMessage = applyToSeries
+      ? staysVisible
+        ? "Cancel this series? The next upcoming event stays visible as canceled; all later events will be removed. This cannot be undone."
+        : "Cancel this series? All events will be removed from the listings. This cannot be undone."
+      : staysVisible
+        ? "Cancel this event? This action cannot be undone. The event will be marked as canceled and stay visible."
+        : "Cancel this event? This action cannot be undone. The event will be removed from the listings.";
+    if (!window.confirm(confirmMessage)) return;
     try {
-      await cancelEvent(id);
-      toast.success("Event marked as canceled.");
+      if (applyToSeries) {
+        await cancelEventSeries(seriesInfo.seriesId, seriesInfo.eventDate);
+        toast.success("Series marked as canceled.");
+      } else {
+        await cancelEvent(id);
+        toast.success("Event marked as canceled.");
+      }
       navigate(isAdmin ? "/admin" : "/dashboard");
     } catch {
       toast.error("Couldn't cancel the event. Please try again.");
@@ -102,17 +137,24 @@ export default function EditEvent() {
     );
   }
 
-  if (!initialValues) return null;
+  if (!initialValues || !seriesInfo) return null;
+
+  const subtitle = applyToSeries
+    ? "Changes will apply to all upcoming events in this series."
+    : seriesInfo.isSeries
+    ? "Changes will apply to this event only."
+    : "Changes are saved directly.";
 
   return (
     <EventForm
-      title="Edit Event"
-      subtitle="Changes are saved directly."
+      title={applyToSeries ? "Edit Series" : "Edit Event"}
+      subtitle={subtitle}
       initialValues={initialValues}
       initialImageUrl={initialImageUrl}
-      submitLabel="Save Changes"
+      submitLabel={applyToSeries ? "Save Series" : "Save Changes"}
       submittingLabel="Saving…"
       onSubmit={handleSubmit}
+      recurrenceLocked={seriesInfo.isSeries}
       secondaryActions={
         <Link
           to={isAdmin ? "/admin" : "/dashboard"}
@@ -128,7 +170,7 @@ export default function EditEvent() {
             onClick={handleDelete}
             className="w-full h-12 bg-background border border-accent text-accent rounded-sm text-sm font-semibold hover:opacity-70 transition-opacity"
           >
-            Cancel Event
+            {applyToSeries ? "Cancel Series" : "Cancel Event"}
           </button>
         </div>
       }

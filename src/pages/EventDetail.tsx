@@ -8,10 +8,11 @@ import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { useEventById, useEventsByParentId } from "@/hooks/useEvents";
+import { useEventById, useEventSeries } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueries";
+import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { endsNextDay } from "@/lib/eventStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -28,7 +29,8 @@ export default function EventDetail() {
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { data: event, isLoading } = useEventById(id || "");
-	const { data: siblings = [] } = useEventsByParentId(event?.parentId || "");
+	const seriesId = event ? (event.parentId || event.id) : "";
+	const { data: seriesMembers = [] } = useEventSeries(seriesId);
 	const [saved, setSaved] = useState(false);
 	const [datesOpen, setDatesOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
@@ -117,13 +119,18 @@ export default function EventDetail() {
 	const today = new Date();
 	today.setHours(6, 0, 0, 0);
 	const todayStr = today.toISOString().split("T")[0];
-	const siblingDates = siblings.map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i && d >= todayStr).sort();
+	const siblingDates = seriesMembers.filter(e => e.status !== "canceled").map(e => e.date).filter((d, i, arr) => arr.indexOf(d) === i && d >= todayStr).sort();
 	const displayTitle = cleanEventTitle(event.title, event.venue);
 	const hasRealImage = !!event.image;
 
 	const priceLabel = event.price
 		? event.price.split(" — ")[0]
 		: "Free entry";
+
+	const seriesRule = seriesMembers.find((m) => m.recurrence)?.recurrence ?? "";
+	const seriesLastDate = seriesMembers.reduce((max, m) => (m.date > max ? m.date : max), "");
+	const isLastInSeries = seriesMembers.length > 1 && event.date === seriesLastDate;
+	const recurrenceLabel = isLastInSeries ? null : formatRecurrenceLabel(seriesRule);
 
 	const handleMaps = () => {
 		window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`, '_blank');
@@ -233,7 +240,7 @@ export default function EventDetail() {
 				<div className="px-4 py-5 space-y-4">
 					<h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
 					<p className="text-sm text-muted-foreground">
-						{[priceLabel, event.recurrence || null, formatLanguage(event.language)].filter(Boolean).join(" · ")}
+						{[priceLabel, recurrenceLabel, formatLanguage(event.language)].filter(Boolean).join(" · ")}
 					</p>
 					<div />
 					{event.description.split("\n\n").map((p, i) => (
@@ -258,7 +265,7 @@ export default function EventDetail() {
 							{datesOpen && (
 								<div className="flex flex-wrap gap-2 pb-3.5">
 									{siblingDates.map(d => {
-										const siblingEvent = siblings.find(e => e.date === d);
+										const siblingEvent = seriesMembers.find(e => e.date === d);
 										const isActive = d === event.date;
 										return (
 											<button

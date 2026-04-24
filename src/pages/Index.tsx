@@ -138,6 +138,13 @@ export default function Index() {
 
     result = result.filter((e) => isEventStillOnline(e));
 
+    // Hide canceled events unless they're today or tomorrow — no reason to clutter
+    // the listings with cancellations that happen far in advance.
+    result = result.filter((e) => {
+      if (e.status !== "canceled") return true;
+      return e.date === today || e.date === tomorrow;
+    });
+
     if (searchQuery) {
       result = result.filter(
         (e) => fuzzyMatchAny([e.venue], searchQuery)
@@ -189,14 +196,6 @@ export default function Index() {
       if (groupA !== groupB) return groupA - groupB;
       if (groupA === 0) return dA - dB; // walking distance: nearest first
       return a.startTime.localeCompare(b.startTime);
-    });
-
-    const seen = new Set<string>();
-    result = result.filter((e) => {
-      if (!e.parentId) return true;
-      if (seen.has(e.parentId)) return false;
-      seen.add(e.parentId);
-      return true;
     });
 
     return result;

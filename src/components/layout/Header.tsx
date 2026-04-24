@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
@@ -15,7 +15,7 @@ const navItems = [
 export default function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const discoverActive = useDiscoverActive();
 
@@ -122,13 +122,16 @@ export default function Header() {
                 </Link>
               )}
               {user && (
-                <button
-                  onClick={async () => { await signOut(); navigate("/login"); }}
-                  className="hidden sm:inline-flex h-9 w-9 items-center justify-center border-2 border-foreground text-foreground transition-all hover:bg-foreground hover:text-background"
-                  title="Sign out"
+                <Link
+                  to="/profile"
+                  className={`hidden sm:inline-flex h-9 w-9 items-center justify-center border-2 border-foreground transition-all hover:bg-foreground hover:text-background ${
+                    location.pathname === "/profile" ? "bg-foreground text-background" : "text-foreground"
+                  }`}
+                  title="Profile"
+                  aria-label="Profile"
                 >
-                  <LogOut className="h-4 w-4" />
-                </button>
+                  <User className="h-4 w-4" />
+                </Link>
               )}
             </>
           )}
@@ -221,12 +224,13 @@ export default function Header() {
                 </Link>
               )}
               {user && (
-                <button
-                  onClick={async () => { await signOut(); navigate("/login"); setMobileOpen(false); }}
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileOpen(false)}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors"
                 >
-                  <LogOut className="h-4 w-4" /> Sign out
-                </button>
+                  <User className="h-4 w-4" /> Profile
+                </Link>
               )}
             </nav>
           </motion.div>

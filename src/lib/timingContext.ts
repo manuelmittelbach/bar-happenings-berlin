@@ -1,3 +1,5 @@
+import { parseRule, describeRule } from "@/lib/recurrence";
+
 /**
  * Generates contextual timing labels like "Happening tonight", "Tomorrow evening", "In 2 days"
  */
@@ -56,8 +58,18 @@ export function getSocialProofText(count: number): { text: string; highlight: bo
 /**
  * Generates an editorial "moment" line based on category + venue context
  */
-export function getMomentLine(category: string, venue: string, neighborhood: string, recurrence?: string): string {
-  const dayPart = recurrence ? ` ${recurrence.toLowerCase()}` : "";
+export function getMomentLine(
+  category: string,
+  venue: string,
+  neighborhood: string,
+  recurrence?: string,
+  startDate?: string,
+): string {
+  const parsed = recurrence ? parseRule(recurrence) : null;
+  const recurrenceText = parsed && startDate
+    ? describeRule(startDate, parsed.freq)
+    : (recurrence ?? "").toLowerCase();
+  const dayPart = recurrenceText ? ` ${recurrenceText}` : "";
   
   const moments: Record<string, string[]> = {
     "Comedy": [`Live laughs in ${neighborhood}`, `Comedy night vibes${dayPart}`],

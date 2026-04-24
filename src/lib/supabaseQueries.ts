@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { BarlinEvent, Venue } from "@/types/event";
+import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
   return {
@@ -96,20 +97,24 @@ interface EventWriteData {
   date: string; startTime: string; endTime: string; category: string;
   description: string; entryInfo: string; language: string; website: string;
   imagePosition: string;
+  recurrence: string; recurrenceUntil: string;
 }
 
-export async function createEvent(
+function buildEventRow(
   formData: EventWriteData,
   userId: string,
-  imageUrl?: string,
-): Promise<void> {
-  const { error } = await supabase.from("events").insert({
-    id: crypto.randomUUID(),
+  imageUrl: string | undefined,
+  overrides: { id: string; date: string; parent_id: string; recurrence: string },
+): TablesInsert<"events"> {
+  return {
+    id: overrides.id,
+    parent_id: overrides.parent_id,
+    recurrence: overrides.recurrence,
     title: formData.title,
     venue: formData.venue,
     address: formData.address,
     neighborhood: formData.neighborhood,
-    date: formData.date,
+    date: overrides.date,
     start_time: formData.startTime,
     end_time: formData.endTime || null,
     category: formData.category,
@@ -121,23 +126,50 @@ export async function createEvent(
     image_position: formData.imagePosition,
     created_by: userId,
     status: "approved",
-  });
+  };
+}
+
+export async function createEvent(
+  formData: EventWriteData,
+  userId: string,
+  imageUrl?: string,
+): Promise<void> {
+  if (!formData.recurrence) {
+    const row = buildEventRow(formData, userId, imageUrl, {
+      id: crypto.randomUUID(),
+      date: formData.date,
+      parent_id: "",
+      recurrence: "",
+    });
+    const { error } = await supabase.from("events").insert(row);
+    if (error) throw error;
+    return;
+  }
+
+  const freq = formData.recurrence as RecurrenceFreq;
+  const dates = generateOccurrences(formData.date, freq, formData.recurrenceUntil);
+  if (dates.length === 0) throw new Error("No occurrences generated for recurring event.");
+
+  const parentId = crypto.randomUUID();
+  const parentRule = formatRule(freq, formData.recurrenceUntil);
+  const rows: TablesInsert<"events">[] = dates.map((date, idx) =>
+    buildEventRow(formData, userId, imageUrl, {
+      id: idx === 0 ? parentId : crypto.randomUUID(),
+      date,
+      parent_id: idx === 0 ? "" : parentId,
+      recurrence: idx === 0 ? parentRule : "",
+    }),
+  );
+  const { error } = await supabase.from("events").insert(rows);
   if (error) throw error;
 }
 
-export async function updateEvent(
-  id: string,
-  formData: EventWriteData,
-  imageUrl?: string | null,
-): Promise<void> {
+function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | undefined, includeDateTime: boolean): TablesUpdate<"events"> {
   const update: TablesUpdate<"events"> = {
     title: formData.title,
     venue: formData.venue,
     address: formData.address,
     neighborhood: formData.neighborhood,
-    date: formData.date,
-    start_time: formData.startTime,
-    end_time: formData.endTime || null,
     category: formData.category,
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
@@ -145,8 +177,37 @@ export async function updateEvent(
     url: formData.website || null,
     image_position: formData.imagePosition,
   };
+  if (includeDateTime) {
+    update.date = formData.date;
+    update.start_time = formData.startTime;
+    update.end_time = formData.endTime || null;
+  }
   if (imageUrl !== undefined) update.image = imageUrl;
+  return update;
+}
+
+export async function updateEvent(
+  id: string,
+  formData: EventWriteData,
+  imageUrl?: string | null,
+): Promise<void> {
+  const update = buildUpdatePatch(formData, imageUrl, true);
   const { error } = await supabase.from("events").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateEventSeries(
+  seriesId: string,
+  fromDate: string,
+  formData: EventWriteData,
+  imageUrl?: string | null,
+): Promise<void> {
+  const update = buildUpdatePatch(formData, imageUrl, false);
+  const { error } = await supabase
+    .from("events")
+    .update(update)
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
+    .gte("date", fromDate);
   if (error) throw error;
 }
 
@@ -155,11 +216,46 @@ export async function cancelEvent(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function fetchEventsByParentId(parentId: string): Promise<BarlinEvent[]> {
+export async function cancelEventSeries(seriesId: string, fromDate: string): Promise<void> {
+  // Fetch IDs of later events in the series (date > fromDate) — these get deleted.
+  const { data: laterRows, error: fetchErr } = await supabase
+    .from("events")
+    .select("id")
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
+    .gt("date", fromDate);
+  if (fetchErr) throw fetchErr;
+
+  const laterIds = (laterRows ?? []).map((r) => r.id);
+
+  if (laterIds.length > 0) {
+    // Clean up user_interests before deleting events (FK constraint).
+    const { error: interestErr } = await supabase
+      .from("user_interests")
+      .delete()
+      .in("event_id", laterIds);
+    if (interestErr) throw interestErr;
+
+    const { error: deleteErr } = await supabase
+      .from("events")
+      .delete()
+      .in("id", laterIds);
+    if (deleteErr) throw deleteErr;
+  }
+
+  // The event at fromDate stays visible, marked as canceled.
+  const { error: updateErr } = await supabase
+    .from("events")
+    .update({ status: "canceled" })
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
+    .eq("date", fromDate);
+  if (updateErr) throw updateErr;
+}
+
+export async function fetchEventSeries(seriesId: string): Promise<BarlinEvent[]> {
   const { data, error } = await supabase
     .from("events")
     .select("*")
-    .eq("parent_id", parentId)
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
     .order("date");
   if (error) throw error;
   return data.map(mapEventRow);
@@ -218,6 +314,14 @@ export async function fetchProfile(userId: string): Promise<{ firstName: string;
     .maybeSingle();
   if (!data) return null;
   return { firstName: data.first_name, lastName: data.last_name, role: data.role, approvalStatus: data.approval_status };
+}
+
+export async function updateProfile(userId: string, profile: { firstName: string; lastName: string }): Promise<void> {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ first_name: profile.firstName, last_name: profile.lastName })
+    .eq("id", userId);
+  if (error) throw error;
 }
 
 export type OrganizerAccount = {

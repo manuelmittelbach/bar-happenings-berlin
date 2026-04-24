@@ -103,9 +103,9 @@ export default function MyEvents() {
 							sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
 							navigate("/");
 						}}
-						className="inline-flex h-11 px-6 items-center bg-accent text-white font-heading font-bold uppercase tracking-widest text-xs hover:bg-accent/90 transition-colors"
+						className="inline-flex h-11 px-6 items-center bg-background border-2 border-accent text-accent font-heading font-bold uppercase tracking-widest text-xs hover:bg-accent hover:text-white transition-colors"
 					>
-						Browse events
+						Discover events
 					</button>
 				</div>
 
