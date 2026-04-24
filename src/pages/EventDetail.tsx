@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import {
 	MapPin, ExternalLink,
-	ChevronDown, Plus
+	ChevronDown, Plus, Users
 } from "lucide-react";
 import ShareMenu from "@/components/events/ShareMenu";
 import { motion } from "framer-motion";
@@ -12,8 +12,10 @@ import { useEventById, useEventsByParentId } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueries";
+import { endsNextDay } from "@/lib/eventStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 function formatLanguage(raw: string | undefined): string | null {
 	if (!raw) return null;
@@ -98,7 +100,7 @@ export default function EventDetail() {
 	if (isLoading) {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center bg-background">
-				<p className="font-body text-sm text-muted-foreground">Loading…</p>
+				<Spinner />
 			</div>
 		);
 	}
@@ -143,18 +145,14 @@ export default function EventDetail() {
 						/>
 					)}
 					<div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-					<div className="absolute top-3 left-4">
-						<ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
-					</div>
+					{event.status === "canceled" && (
+						<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+							<span className="-rotate-12 border-2 border-red-600 text-red-600 bg-background/80 font-body text-sm md:text-base font-extrabold uppercase tracking-wider px-4 py-1.5 shadow-md whitespace-nowrap">
+								Canceled by the organizer
+							</span>
+						</div>
+					)}
 				</div>
-
-				{event.status === "canceled" && (
-					<div className="px-4 pt-4">
-						<p className="font-body text-sm font-extrabold uppercase tracking-wider text-red-600">
-							Got canceled by the organizer
-						</p>
-					</div>
-				)}
 
 				{/* Core info block */}
 				<div className="px-4 pt-4 pb-1">
@@ -170,11 +168,7 @@ export default function EventDetail() {
 
 				{/* Interested row */}
 				<div className="px-4 pb-4 pt-3">
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex items-baseline gap-2">
-							<span className="font-body text-3xl font-extrabold text-accent">{interestedCount}</span>
-							<span className="font-body text-sm font-bold text-accent uppercase tracking-wider">Interested</span>
-						</div>
+					<div className="flex items-center gap-3">
 						<button
 							onClick={handleSave}
 							disabled={isSaving}
@@ -186,38 +180,48 @@ export default function EventDetail() {
 							{!saved && <Plus className="h-4 w-4" />}
 							Interested
 						</button>
+						<span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
+							<Users className="h-4 w-4" />
+							{interestedCount}
+						</span>
 					</div>
 				</div>
 
 				<div className="border-t border-border mx-4" />
 
 				{/* Key details */}
-				<div className="px-4 pt-3 pb-3 grid grid-cols-2 gap-4">
+				<div className="px-4 pt-3 pb-3 flex items-start gap-4">
 					{/* When */}
-					<div>
+					<div className="flex-1">
 						<p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
 						{event.startTime && (
 							<p className="text-foreground font-mono text-sm mt-0.5">
 								{event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
+								{endsNextDay(event.startTime, event.endTime) && (
+									<span className="text-muted-foreground text-xs ml-1">(next day)</span>
+								)}
 							</p>
 						)}
 					</div>
 
 					{/* Where */}
-					<div className="text-left">
+					<div className="flex-1 text-left md:pl-48">
 						<p className="font-body font-bold text-sm">{event.venue}</p>
 						{event.address && (
-							<p className="text-muted-foreground text-[11px] mt-0.5">{event.address}</p>
+							<p className="text-muted-foreground text-[13px] mt-0.5">
+								{event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, '')}
+							</p>
 						)}
-						<p className="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
+						<p className="text-muted-foreground text-[13px] mt-0.5 flex items-center gap-1">
 							<MapPin className="h-3 w-3 shrink-0" /> {event.neighborhood}
 						</p>
-						<button
-							onClick={handleMaps}
-							className="text-xs font-mono text-accent mt-1 block cursor-pointer"
-						>
-							Open in Maps
-						</button>
+						<div className="mt-1 flex items-center gap-2 text-xs font-mono text-accent">
+							<button onClick={handleMaps} className="cursor-pointer">
+								Open in Maps
+							</button>
+							<span aria-hidden="true" className="text-foreground">·</span>
+							<ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
+						</div>
 					</div>
 				</div>
 

@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
+import { setDiscoverActive } from "@/hooks/useDiscoverActive";
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function Footer() {
 
   const goHome = () => {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+    setDiscoverActive(false);
 
     const scrollToTop = (smooth = false) => {
       window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
@@ -63,20 +65,6 @@ export default function Footer() {
                   >
                     Quiz Nights
                   </button>
-                </li>
-              </ul>
-            </div>
-
-            <div className="text-center md:text-left">
-              <h4 className="mono-label text-primary-foreground/40 mb-4">Venues</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link
-                    to="/for-bars"
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    For Bars
-                  </Link>
                 </li>
               </ul>
             </div>

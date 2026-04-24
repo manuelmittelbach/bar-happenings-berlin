@@ -6,6 +6,7 @@ import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
+import { isEventStillOnline } from "@/lib/eventStatus";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 
@@ -25,17 +26,15 @@ export default function MapPage() {
 
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const isLateNight = new Date().getHours() < 6;
 
   const filtered = useMemo(() => {
     let result = [...eventsData];
-    result = result.filter((e) => e.date >= (isLateNight ? yesterday : today));
+    result = result.filter((e) => isEventStillOnline(e));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     return result;
-  }, [eventsData, activeCategory, activeDate, today, tomorrow, yesterday, isLateNight]);
+  }, [eventsData, activeCategory, activeDate, today, tomorrow]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">

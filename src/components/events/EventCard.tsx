@@ -82,17 +82,21 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
     );
   };
 
+  const canceledOverlay = isCanceled ? (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+      <span className="-rotate-12 border-2 border-red-600 text-red-600 bg-background/80 font-body text-[10px] md:text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 shadow-md whitespace-nowrap">
+        Canceled by the organizer
+      </span>
+    </div>
+  ) : null;
+
   /* ─── LIST layout ─── */
   if (layout === "list") {
     return (
-      <div>
-        <Link to={`/event/${event.id}`} onClick={handleClick} className="group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift">
+      <div className="relative">
+        {canceledOverlay}
+        <Link to={`/event/${event.id}`} onClick={handleClick} className={`group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift ${isCanceled ? "opacity-50" : ""}`}>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            {isCanceled && (
-              <p className="font-body text-xs font-extrabold uppercase tracking-wider text-red-600 mb-1">
-                Got canceled by the organizer
-              </p>
-            )}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold">{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
@@ -119,18 +123,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   /* ─── FEATURED layout ─── */
   if (featured) {
     return (
-      <div className="col-span-1">
+      <div className="col-span-1 relative">
+        {canceledOverlay}
         <Link
           to={`/event/${event.id}`}
           onClick={handleClick}
-          className="group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden card-hover-lift"
+          className={`group flex flex-col md:flex-row relative bg-background border-[3px] border-accent transition-all shadow-[0_0_20px_hsl(var(--accent)/0.15)] hover:shadow-[0_0_30px_hsl(var(--accent)/0.3)] overflow-hidden card-hover-lift ${isCanceled ? "opacity-50" : ""}`}
         >
           <div className="p-4 md:p-6 flex-1 min-w-0">
-            {isCanceled && (
-              <p className="font-body text-sm font-extrabold uppercase tracking-wider text-red-600 mb-3">
-                Got canceled by the organizer
-              </p>
-            )}
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <div className="inline-flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
                 <Star className="h-3 w-3" />
@@ -164,11 +164,14 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
   const mightBeOver = badge?.label === "Might be over";
 
   return (
-    <div className={mightBeOver ? "opacity-60" : ""}>
+    <div className={`relative ${mightBeOver ? "opacity-60" : ""}`}>
+      {canceledOverlay}
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
         className={`group relative flex flex-col border-2 transition-colors overflow-hidden card-hover-lift ${
+          isCanceled ? "opacity-50" : ""
+        } ${
           isLive
             ? "border-[hsl(0,72%,51%)]/50 hover:border-[hsl(0,72%,51%)] bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]"
             : "border-border hover:border-foreground bg-background"
@@ -176,11 +179,6 @@ export default function EventCard({ event, index = 0, layout = "grid", featured 
       >
         <div className="flex flex-1">
           <div className="p-3 md:p-4 flex-1 min-w-0">
-            {isCanceled && (
-              <p className="font-body text-[10px] md:text-xs font-extrabold uppercase tracking-wider text-red-600 mb-1">
-                Got canceled by the organizer
-              </p>
-            )}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
               <BadgeChip />

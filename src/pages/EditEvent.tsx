@@ -8,6 +8,7 @@ import {
   cancelEvent,
   uploadEventImage,
 } from "@/lib/supabaseQueries";
+import { hasEventStarted } from "@/lib/eventStatus";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
 
 export default function EditEvent() {
@@ -38,6 +39,10 @@ export default function EditEvent() {
         setNotFound(true);
         return;
       }
+      if (event.status === "canceled" || hasEventStarted(event)) {
+        navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
+        return;
+      }
       setInitialValues({
         title: event.title,
         venue: event.venue,
@@ -49,7 +54,7 @@ export default function EditEvent() {
         category: event.category,
         description: event.description,
         entryInfo: event.entryInfo || "",
-        language: event.language || "English",
+        language: event.language || "",
         website: event.url ?? "",
         imagePosition: event.imagePosition,
       });
@@ -77,7 +82,7 @@ export default function EditEvent() {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!window.confirm("Cancel this event? It will be marked as canceled and stay visible.")) return;
+    if (!window.confirm("Cancel this event? This action cannot be undone. The event will be marked as canceled and stay visible.")) return;
     try {
       await cancelEvent(id);
       toast.success("Event marked as canceled.");

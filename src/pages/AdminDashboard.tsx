@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { Spinner } from "@/components/ui/spinner";
 import {
   fetchPendingOrganizers,
   fetchDecidedOrganizers,
@@ -141,7 +142,7 @@ export default function AdminDashboard() {
 
           {activeBarTab === "pending" && (
             <div className="space-y-3">
-              {pendingOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+              {pendingOrganizersLoading && <div className="flex justify-center py-4"><Spinner /></div>}
               {!pendingOrganizersLoading && pendingOrganizers.length === 0 && (
                 <p className="text-sm text-muted-foreground">No bar accounts pending review.</p>
               )}
@@ -158,7 +159,7 @@ export default function AdminDashboard() {
 
           {activeBarTab === "overview" && (
             <div className="space-y-3">
-              {decidedOrganizersLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+              {decidedOrganizersLoading && <div className="flex justify-center py-4"><Spinner /></div>}
               {!decidedOrganizersLoading && decidedOrganizers.length === 0 && (
                 <p className="text-sm text-muted-foreground">No bar accounts approved or rejected yet.</p>
               )}

@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
+import { setDiscoverActive, useDiscoverActive } from "@/hooks/useDiscoverActive";
 
 const navItems = [
   { label: "Discover", path: "/" },
@@ -16,6 +17,13 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const discoverActive = useDiscoverActive();
+
+  useEffect(() => {
+    if (location.pathname !== "/") {
+      setDiscoverActive(false);
+    }
+  }, [location.pathname]);
 
   const scrollToDateFilter = () => {
     const el = document.getElementById("date-filter-bar");
@@ -25,6 +33,7 @@ export default function Header() {
 
   const handleDiscoverClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    setDiscoverActive(true);
     if (location.pathname === "/") {
       scrollToDateFilter();
     } else {
@@ -40,6 +49,7 @@ export default function Header() {
         <button
           onClick={() => {
             sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+            setDiscoverActive(false);
             const scrollToTop = (smooth = false) => {
               window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
               document.documentElement.scrollTop = 0;
@@ -60,8 +70,12 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => {
+            const isActive =
+              item.path === "/"
+                ? location.pathname === "/" && discoverActive
+                : location.pathname === item.path;
             const className = `mono-label transition-colors hover:text-foreground ${
-              location.pathname === item.path ? "text-foreground" : "text-muted-foreground"
+              isActive ? "text-foreground" : "text-muted-foreground"
             }`;
             if (item.path === "/") {
               return (
@@ -85,7 +99,9 @@ export default function Header() {
                 <>
                   <Link
                     to="/my-events"
-                    className="hidden sm:inline-flex mono-label transition-colors text-muted-foreground hover:text-foreground"
+                    className={`hidden sm:inline-flex mono-label transition-colors hover:text-foreground ${
+                      location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
+                    }`}
                   >
                     Saved Events
                   </Link>
@@ -138,8 +154,12 @@ export default function Header() {
           >
             <nav className="container flex flex-col gap-4 py-6">
               {navItems.map((item) => {
+                const isActive =
+                  item.path === "/"
+                    ? location.pathname === "/" && discoverActive
+                    : location.pathname === item.path;
                 const className = `mono-label ${
-                  location.pathname === item.path ? "text-foreground" : "text-muted-foreground"
+                  isActive ? "text-foreground" : "text-muted-foreground"
                 } text-left`;
                 if (item.path === "/") {
                   return (
@@ -148,10 +168,8 @@ export default function Header() {
                       onClick={(e) => {
                         setMobileOpen(false);
                         if (location.pathname === "/") {
-                          setTimeout(() => {
-                            const el = document.getElementById("date-filter-bar");
-                            el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                          }, 250);
+                          setDiscoverActive(true);
+                          setTimeout(() => scrollToDateFilter(), 250);
                         } else {
                           handleDiscoverClick(e);
                         }
@@ -178,7 +196,9 @@ export default function Header() {
                   <Link
                     to="/my-events"
                     onClick={() => setMobileOpen(false)}
-                    className="mono-label text-muted-foreground text-left"
+                    className={`mono-label text-left ${
+                      location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
+                    }`}
                   >
                     Saved Events
                   </Link>

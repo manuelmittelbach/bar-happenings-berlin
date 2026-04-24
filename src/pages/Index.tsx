@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, Users, Map } from "lucide-react";
+import { Search, Users, Map, SlidersHorizontal } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
 import EventCard from "@/components/events/EventCard";
+import { Spinner } from "@/components/ui/spinner";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
@@ -16,7 +17,9 @@ import { getVenueById } from "@/data/legacyVenueLookup";
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
+import { isEventStillOnline } from "@/lib/eventStatus";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free Entry", "Pay at Venue"];
@@ -114,7 +117,9 @@ export default function Index() {
     [venuesData]
   );
 
-  const userLocation = useUserLocation();
+  const { location: userLocation, status: locationStatus, request: requestLocation } = useUserLocation();
+  const [locationBannerDismissed, setLocationBannerDismissed] = useState(false);
+  const showLocationBanner = locationStatus === "idle" && !locationBannerDismissed;
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
@@ -123,11 +128,11 @@ export default function Index() {
   const filtered = useMemo(() => {
     let result = [...eventsData];
 
-    result = result.filter((e) => e.date >= (isLateNight ? yesterday : today));
+    result = result.filter((e) => isEventStillOnline(e));
 
     if (searchQuery) {
       result = result.filter(
-        (e) => fuzzyMatchAny([e.venue, e.neighborhood], searchQuery)
+        (e) => fuzzyMatchAny([e.venue], searchQuery)
       );
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
@@ -236,14 +241,8 @@ export default function Index() {
   const suggestions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
-    const results: { label: string; type: "bar" | "neighborhood" }[] = [];
+    const results: { label: string; type: "bar" }[] = [];
     const seen = new Set<string>();
-    for (const n of neighborhoods) {
-      if (n.toLowerCase().includes(q) && !seen.has(n)) {
-        seen.add(n);
-        results.push({ label: n, type: "neighborhood" });
-      }
-    }
     for (const v of venuesData) {
       if (v.name.toLowerCase().includes(q) && !seen.has(v.name)) {
         seen.add(v.name);
@@ -281,47 +280,35 @@ export default function Index() {
               </p>
             </div>
 
-            <div className="mt-10 max-w-lg">
-              <div className="relative" ref={searchWrapperRef}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search by neighborhood or bar"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                  onFocus={() => setShowSuggestions(true)}
-                  onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
-                  className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none transition-colors"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s.label}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setSearchQuery(s.label);
-                          setShowSuggestions(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors text-left border-b border-border last:border-b-0"
-                      >
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground w-20 shrink-0">
-                          {s.type === "bar" ? "Bar" : "Area"}
-                        </span>
-                        <span className="text-sm font-body truncate">{s.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+            {/* Location permission primer */}
+            {showLocationBanner && (
+              <div className="mt-10 max-w-lg flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
+                <MapPin className="h-4 w-4 text-accent shrink-0" />
+                <p className="text-sm text-muted-foreground flex-1">
+                  <button
+                    onClick={() => requestLocation()}
+                    className="text-foreground font-semibold underline underline-offset-2 hover:text-accent transition-colors"
+                  >
+                        Show nearby events first
+                  </button>
+                  {" "}— uses your location to sort
+                </p>
+                <button
+                  onClick={() => setLocationBannerDismissed(true)}
+                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            </div>
+            )}
+
           </div>
         </section>
 
         {/* Date filter bar — Map-style with thick black border */}
         <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 56 }} className="bg-background border-b border-border">
-          <div className="container flex gap-2 py-2.5">
+          <div className="container flex items-center gap-2 py-2.5">
             {dateFilters.map((d) => (
               <button
                 key={d}
@@ -335,12 +322,57 @@ export default function Index() {
                 {d}
               </button>
             ))}
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
+                showFilters
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-foreground hover:bg-foreground hover:text-background"
+              }`}
+              aria-expanded={showFilters}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
+            </button>
           </div>
         </div>
 
         {showFilters && (
           <div className="border-b-2 border-foreground bg-card">
             <div className="container py-5 space-y-5">
+              <div>
+                <label className="mono-label text-muted-foreground mb-2 block">Search</label>
+                <div className="relative max-w-lg" ref={searchWrapperRef}>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search by bar"
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
+                    className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none transition-colors"
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s.label}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchQuery(s.label);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors text-left border-b border-border last:border-b-0"
+                        >
+                          <span className="text-sm font-body truncate">{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div>
                 <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
                 <div className="flex flex-wrap gap-2">
@@ -387,9 +419,8 @@ export default function Index() {
         {eventsLoading ? (
           <section className="bg-background">
             <div className="container py-24">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-                <p className="mono-label text-muted-foreground">Loading events…</p>
+              <div className="flex justify-center">
+                <Spinner />
               </div>
             </div>
           </section>
