@@ -367,6 +367,14 @@ export type OrganizerAccount = {
     instagram: string | null;
     phone: string | null;
   } | null;
+  pendingSubmission: {
+    name: string;
+    address: string;
+    neighborhood: string;
+    website: string | null;
+    instagram: string | null;
+    phone: string | null;
+  } | null;
 };
 
 type OrganizerProfileRow = {
@@ -383,15 +391,42 @@ type OrganizerProfileRow = {
 async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<OrganizerAccount[]> {
   if (profiles.length === 0) return [];
   const ids = profiles.map((p) => p.id);
-  const { data: owners, error } = await supabase
-    .from("venue_owners")
-    .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone )")
-    .in("user_id", ids);
-  if (error) throw error;
+  const [ownersRes, submissionsRes] = await Promise.all([
+    supabase
+      .from("venue_owners")
+      .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone )")
+      .in("user_id", ids),
+    supabase
+      .from("pending_bar_submissions")
+      .select("user_id, name, address, neighborhood, website, instagram, phone")
+      .in("user_id", ids),
+  ]);
+  if (ownersRes.error) throw ownersRes.error;
+  if (submissionsRes.error) throw submissionsRes.error;
   const venueByUser = new Map<string, OrganizerAccount["venue"]>();
-  for (const row of owners ?? []) {
+  for (const row of ownersRes.data ?? []) {
     const v = (row as { user_id: string; venues: OrganizerAccount["venue"] | null }).venues;
     if (v) venueByUser.set((row as { user_id: string }).user_id, v);
+  }
+  const submissionByUser = new Map<string, OrganizerAccount["pendingSubmission"]>();
+  for (const row of submissionsRes.data ?? []) {
+    const r = row as {
+      user_id: string;
+      name: string;
+      address: string;
+      neighborhood: string;
+      website: string | null;
+      instagram: string | null;
+      phone: string | null;
+    };
+    submissionByUser.set(r.user_id, {
+      name: r.name,
+      address: r.address,
+      neighborhood: r.neighborhood,
+      website: r.website,
+      instagram: r.instagram,
+      phone: r.phone,
+    });
   }
   return profiles.map((row) => ({
     id: row.id,
@@ -403,6 +438,7 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
     approvedAt: row.approved_at,
     createdAt: row.created_at,
     venue: venueByUser.get(row.id) ?? null,
+    pendingSubmission: submissionByUser.get(row.id) ?? null,
   }));
 }
 
@@ -492,5 +528,84 @@ export async function updateOrganizerApprovalStatus(
     .from("profiles")
     .update(patch)
     .eq("id", userId);
+  if (error) throw error;
+  // On reject: clean up any pending submission so the organizer entry doesn't keep dangling data.
+  if (status === "rejected") {
+    await supabase.from("pending_bar_submissions").delete().eq("user_id", userId);
+  }
+}
+
+export async function approveOrganizerWithNewBar(
+  userId: string,
+  approverId: string,
+): Promise<void> {
+  // Fetch the latest submission state (admin may have edited it after first load).
+  const { data: sub, error: subError } = await supabase
+    .from("pending_bar_submissions")
+    .select("name, address, neighborhood, website, instagram, phone")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (subError) throw subError;
+  if (!sub) throw new Error("No pending submission found for this organizer.");
+
+  // Insert a brand-new venue (FK to bars was dropped — venues is standalone now).
+  const { data: venueRow, error: venueError } = await supabase
+    .from("venues")
+    .insert({
+      name: sub.name,
+      address: sub.address,
+      neighborhood: sub.neighborhood,
+      website: sub.website,
+      instagram: sub.instagram,
+      phone: sub.phone,
+      lat: 0,
+      lng: 0,
+    })
+    .select("id")
+    .single();
+  if (venueError) throw venueError;
+  const venueId = venueRow.id;
+
+  const { error: ownerError } = await supabase.from("venue_owners").insert({
+    user_id: userId,
+    venue_id: venueId,
+  });
+  if (ownerError) throw ownerError;
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({
+      approval_status: "approved",
+      approved_by: approverId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+  if (profileError) throw profileError;
+
+  await supabase.from("pending_bar_submissions").delete().eq("user_id", userId);
+}
+
+export async function updatePendingBarSubmission(
+  userId: string,
+  submission: {
+    name: string;
+    address: string;
+    neighborhood: string;
+    website: string | null;
+    instagram: string | null;
+    phone: string | null;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from("pending_bar_submissions")
+    .update({
+      name: submission.name,
+      address: submission.address,
+      neighborhood: submission.neighborhood,
+      website: submission.website,
+      instagram: submission.instagram,
+      phone: submission.phone,
+    })
+    .eq("user_id", userId);
   if (error) throw error;
 }
