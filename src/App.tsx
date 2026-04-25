@@ -1,17 +1,35 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useLayoutEffect } from "react";
+import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+function ScrollManager() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const positions = useRef(new Map<string, number>());
+
+  useEffect(() => {
+    const key = location.key;
+    const handleScroll = () => {
+      positions.current.set(key, window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [location.key]);
+
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }, [pathname]);
+    if (navigationType === "POP") {
+      const saved = positions.current.get(location.key) ?? 0;
+      window.scrollTo(0, saved);
+    } else {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [location.key, navigationType]);
+
   return null;
 }
 
@@ -85,7 +103,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
+        <ScrollManager />
         <AuthRedirectHandler />
         <Routes>
           <Route element={<Layout />}>

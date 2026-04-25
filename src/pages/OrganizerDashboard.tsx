@@ -25,6 +25,7 @@ export default function OrganizerDashboard() {
   const [myEvents, setMyEvents] = useState<BarlinEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [venue, setVenue] = useState<OrganizerVenue>(null);
+  const [venueLoading, setVenueLoading] = useState(true);
 
   const isApprovedAccess = role === "admin" || (role === "organizer" && approvalStatus === "approved");
 
@@ -52,9 +53,11 @@ export default function OrganizerDashboard() {
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
-    fetchOrganizerById(user.id).then((organizer) => {
-      if (organizer?.venue) setVenue(organizer.venue);
-    });
+    fetchOrganizerById(user.id)
+      .then((organizer) => {
+        if (organizer?.venue) setVenue(organizer.venue);
+      })
+      .finally(() => setVenueLoading(false));
   }, [user, isApprovedAccess]);
 
   const membersBySeries = useMemo(() => {
@@ -136,6 +139,14 @@ export default function OrganizerDashboard() {
     );
   }
 
+  if (eventsLoading || venueLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8">
           {justConfirmed && (
@@ -145,9 +156,9 @@ export default function OrganizerDashboard() {
           )}
           {venue && (
             <div className="mb-6 text-center">
-              <h1 className="heading-display text-2xl">{venue.name}</h1>
+              <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">{venue.name}</h1>
               {venue.address && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="mt-1 text-base md:text-lg text-muted-foreground leading-relaxed">
                   {venue.address.replace(/,\s*Germany\s*$/i, "")}
                 </p>
               )}
@@ -169,12 +180,12 @@ export default function OrganizerDashboard() {
             ))}
           </div>
 
-          <div className="flex justify-end mb-8">
+          <div className="flex justify-start mb-8">
             <Link
               to="/publish"
               className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
             >
-              <Plus className="h-4 w-4" /> Publish Event
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish Event in ${venue.name}` : "Publish Event"}
             </Link>
           </div>
 
