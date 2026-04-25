@@ -2,9 +2,16 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchOrganizerById, updateOrganizerAccount } from "@/lib/supabaseQueries";
+import {
+	fetchOrganizerById,
+	updateOrganizerAccount,
+	updatePendingBarSubmission,
+	updateProfile,
+} from "@/lib/supabaseQueries";
 import { deriveNeighborhoodFromAddress } from "@/lib/neighborhoodFromAddress";
 import { Spinner } from "@/components/ui/spinner";
+
+type EditMode = "venue" | "pending";
 
 export default function EditBarAccount() {
 	const { id } = useParams<{ id: string }>();
@@ -15,6 +22,7 @@ export default function EditBarAccount() {
 	const { role, loading: authLoading, roleResolved } = useAuth();
 	const [submitting, setSubmitting] = useState(false);
 	const [notFound, setNotFound] = useState(false);
+	const [mode, setMode] = useState<EditMode | null>(null);
 	const [venueId, setVenueId] = useState<string | null>(null);
 	const [email, setEmail] = useState<string | null>(null);
 	const [existingNeighborhood, setExistingNeighborhood] = useState("");
@@ -37,22 +45,39 @@ export default function EditBarAccount() {
 		if (!id) return;
 		fetchOrganizerById(id)
 			.then((organizer) => {
-				if (!organizer || !organizer.venue) {
+				if (!organizer) {
 					setNotFound(true);
 					return;
 				}
-				setVenueId(organizer.venue.id);
 				setEmail(organizer.email);
-				setExistingNeighborhood(organizer.venue.neighborhood);
-				setForm({
-					firstName: organizer.firstName,
-					lastName: organizer.lastName,
-					barName: organizer.venue.name,
-					barAddress: organizer.venue.address,
-					barWebsite: organizer.venue.website ?? "",
-					barInstagram: organizer.venue.instagram ?? "",
-					barPhone: organizer.venue.phone ?? "",
-				});
+				if (organizer.venue) {
+					setMode("venue");
+					setVenueId(organizer.venue.id);
+					setExistingNeighborhood(organizer.venue.neighborhood);
+					setForm({
+						firstName: organizer.firstName,
+						lastName: organizer.lastName,
+						barName: organizer.venue.name,
+						barAddress: organizer.venue.address,
+						barWebsite: organizer.venue.website ?? "",
+						barInstagram: organizer.venue.instagram ?? "",
+						barPhone: organizer.venue.phone ?? "",
+					});
+				} else if (organizer.pendingSubmission) {
+					setMode("pending");
+					setExistingNeighborhood(organizer.pendingSubmission.neighborhood);
+					setForm({
+						firstName: organizer.firstName,
+						lastName: organizer.lastName,
+						barName: organizer.pendingSubmission.name,
+						barAddress: organizer.pendingSubmission.address,
+						barWebsite: organizer.pendingSubmission.website ?? "",
+						barInstagram: organizer.pendingSubmission.instagram ?? "",
+						barPhone: organizer.pendingSubmission.phone ?? "",
+					});
+				} else {
+					setNotFound(true);
+				}
 			})
 			.catch(() => setNotFound(true));
 	}, [id, role, authLoading, roleResolved, navigate]);
@@ -62,25 +87,38 @@ export default function EditBarAccount() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!id || !venueId) return;
+		if (!id || !mode) return;
+		if (mode === "venue" && !venueId) return;
 		setSubmitting(true);
 		try {
 			const derived = deriveNeighborhoodFromAddress(form.barAddress);
 			const neighborhoodToSave = derived || existingNeighborhood;
-			await updateOrganizerAccount(
-				id,
-				{ firstName: form.firstName, lastName: form.lastName },
-				{
-					id: venueId,
+			if (mode === "venue" && venueId) {
+				await updateOrganizerAccount(
+					id,
+					{ firstName: form.firstName, lastName: form.lastName },
+					{
+						id: venueId,
+						name: form.barName,
+						address: form.barAddress,
+						neighborhood: neighborhoodToSave,
+						website: form.barWebsite || null,
+						instagram: form.barInstagram || null,
+						phone: form.barPhone || null,
+					},
+				);
+			} else {
+				await updateProfile(id, { firstName: form.firstName, lastName: form.lastName });
+				await updatePendingBarSubmission(id, {
 					name: form.barName,
 					address: form.barAddress,
 					neighborhood: neighborhoodToSave,
 					website: form.barWebsite || null,
 					instagram: form.barInstagram || null,
 					phone: form.barPhone || null,
-				},
-			);
-			toast.success("Bar account updated!");
+				});
+			}
+			toast.success(mode === "venue" ? "Bar account updated!" : "Pending submission updated!");
 			navigate(returnPath);
 		} catch {
 			toast.error("Something went wrong. Please try again.");
@@ -106,11 +144,24 @@ export default function EditBarAccount() {
 		);
 	}
 
+	if (!mode) {
+		return (
+			<div className="flex-1 flex items-center justify-center py-16">
+				<Spinner />
+			</div>
+		);
+	}
+
 	return (
 		<div className="container max-w-2xl py-8">
-					<h1 className="heading-display text-3xl mb-2">Edit Bar Account</h1>
+					<h1 className="heading-display text-3xl mb-2">
+						{mode === "pending" ? "Edit Pending Submission" : "Edit Bar Account"}
+					</h1>
 					<p className="text-muted-foreground text-sm mb-8">
-						{email ? `Editing account for ${email}. ` : ""}Changes are saved directly.
+						{email ? `Editing account for ${email}. ` : ""}
+						{mode === "pending"
+							? "Changes apply to the pending submission. Approve from the admin dashboard to publish."
+							: "Changes are saved directly."}
 					</p>
 
 					<form onSubmit={handleSubmit} className="space-y-6">

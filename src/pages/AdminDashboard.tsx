@@ -11,6 +11,7 @@ import {
   fetchDecidedOrganizers,
   fetchVenuesWithOwnership,
   updateOrganizerApprovalStatus,
+  approveOrganizerWithNewBar,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
 import type { Venue } from "@/types/event";
@@ -85,14 +86,32 @@ export default function AdminDashboard() {
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
     try {
-      await updateOrganizerApprovalStatus(organizer.id, "approved", user.id);
-      toast.success(`${organizer.venue?.name ?? organizer.email ?? "Bar"} approved`);
+      const label = organizer.venue?.name ?? organizer.pendingSubmission?.name ?? organizer.email ?? "Bar";
+      let approvedVenue: OrganizerAccount["venue"] = organizer.venue;
+      if (organizer.pendingSubmission && !organizer.venue) {
+        await approveOrganizerWithNewBar(organizer.id, user.id, organizer.pendingSubmission);
+        approvedVenue = {
+          id: "",
+          name: organizer.pendingSubmission.name,
+          address: organizer.pendingSubmission.address,
+          neighborhood: organizer.pendingSubmission.neighborhood,
+          website: organizer.pendingSubmission.website,
+          instagram: organizer.pendingSubmission.instagram,
+          phone: organizer.pendingSubmission.phone,
+        };
+        loadAllBars();
+      } else {
+        await updateOrganizerApprovalStatus(organizer.id, "approved", user.id);
+      }
+      toast.success(`${label} approved`);
       setPendingOrganizers(prev => prev.filter(o => o.id !== organizer.id));
       const decided: OrganizerAccount = {
         ...organizer,
         approvalStatus: "approved",
         approvedBy: user.id,
         approvedAt: new Date().toISOString(),
+        venue: approvedVenue,
+        pendingSubmission: null,
       };
       setDecidedOrganizers(prev => [decided, ...prev]);
     } catch {
@@ -103,13 +122,15 @@ export default function AdminDashboard() {
   const handleRejectOrganizer = async (organizer: OrganizerAccount) => {
     try {
       await updateOrganizerApprovalStatus(organizer.id, "rejected");
-      toast.error(`${organizer.venue?.name ?? organizer.email ?? "Bar"} rejected`);
+      const label = organizer.venue?.name ?? organizer.pendingSubmission?.name ?? organizer.email ?? "Bar";
+      toast.error(`${label} rejected`);
       setPendingOrganizers(prev => prev.filter(o => o.id !== organizer.id));
       const decided: OrganizerAccount = {
         ...organizer,
         approvalStatus: "rejected",
         approvedBy: null,
         approvedAt: null,
+        pendingSubmission: null,
       };
       setDecidedOrganizers(prev => [decided, ...prev]);
     } catch {
@@ -316,54 +337,83 @@ function OrganizerCard({
       ? "bg-red-500/10 text-red-600"
       : "bg-yellow-500/10 text-yellow-600";
 
+  // Display unifies venue (claimed) and pendingSubmission (awaiting approve) — admin sees the same fields either way.
+  const display = organizer.venue
+    ? {
+        name: organizer.venue.name,
+        address: organizer.venue.address,
+        neighborhood: organizer.venue.neighborhood,
+        website: organizer.venue.website,
+        instagram: organizer.venue.instagram,
+        phone: organizer.venue.phone,
+      }
+    : organizer.pendingSubmission
+    ? {
+        name: organizer.pendingSubmission.name,
+        address: organizer.pendingSubmission.address,
+        neighborhood: organizer.pendingSubmission.neighborhood,
+        website: organizer.pendingSubmission.website,
+        instagram: organizer.pendingSubmission.instagram,
+        phone: organizer.pendingSubmission.phone,
+      }
+    : null;
+  const isSubmittedBar = !organizer.venue && !!organizer.pendingSubmission;
+
   return (
     <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-heading text-sm font-semibold">{organizer.venue?.name ?? "(no venue)"}</p>
+          <p className="font-heading text-sm font-semibold">{display?.name ?? "(no venue)"}</p>
+          {isSubmittedBar && (
+            <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
+              Submitted bar
+            </span>
+          )}
           {organizer.approvalStatus !== "pending" && (
             <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
               {organizer.approvalStatus}
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {organizer.venue?.neighborhood}
-          {organizer.venue?.address ? ` · ${organizer.venue.address}` : ""}
-        </p>
+        {display && (
+          <p className="text-xs text-muted-foreground">
+            {display.neighborhood}
+            {display.address ? ` · ${display.address}` : ""}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           {fullName || "(no name)"}
           {organizer.email ? ` · ${organizer.email}` : ""}
         </p>
-        {(organizer.venue?.website || organizer.venue?.instagram || organizer.venue?.phone) && (
+        {display && (display.website || display.instagram || display.phone) && (
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            {organizer.venue?.website && (
+            {display.website && (
               <a
-                href={organizer.venue.website}
+                href={display.website}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 hover:text-foreground"
               >
-                <Globe className="h-3 w-3" /> {organizer.venue.website.replace(/^https?:\/\//, "")}
+                <Globe className="h-3 w-3" /> {display.website.replace(/^https?:\/\//, "")}
               </a>
             )}
-            {organizer.venue?.instagram && (
+            {display.instagram && (
               <a
                 href={
-                  /^https?:\/\//i.test(organizer.venue.instagram)
-                    ? organizer.venue.instagram
-                    : `https://instagram.com/${organizer.venue.instagram.replace(/^@/, "")}`
+                  /^https?:\/\//i.test(display.instagram)
+                    ? display.instagram
+                    : `https://instagram.com/${display.instagram.replace(/^@/, "")}`
                 }
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 hover:text-foreground"
               >
-                <Instagram className="h-3 w-3" /> {organizer.venue.instagram.replace(/^https?:\/\//, "")}
+                <Instagram className="h-3 w-3" /> {display.instagram.replace(/^https?:\/\//, "")}
               </a>
             )}
-            {organizer.venue?.phone && (
+            {display.phone && (
               <span className="inline-flex items-center gap-1">
-                <Phone className="h-3 w-3" /> {organizer.venue.phone}
+                <Phone className="h-3 w-3" /> {display.phone}
               </span>
             )}
           </div>
@@ -374,14 +424,16 @@ function OrganizerCard({
         </p>
       </div>
       <div className="flex gap-2 flex-shrink-0">
-        <Link
-          to={`/admin/bar-account/${organizer.id}`}
-          state={{ returnPath }}
-          className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
-          title="Edit"
-        >
-          <Edit className="h-3 w-3" /> Edit
-        </Link>
+        {(organizer.venue || organizer.pendingSubmission) && (
+          <Link
+            to={`/admin/bar-account/${organizer.id}`}
+            state={{ returnPath }}
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+            title="Edit"
+          >
+            <Edit className="h-3 w-3" /> Edit
+          </Link>
+        )}
         {onApprove && (
           <button
             onClick={onApprove}

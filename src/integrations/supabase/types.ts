@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       bar_sources: {
@@ -465,6 +490,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_bar_submissions: {
+        Row: {
+          address: string
+          created_at: string
+          instagram: string | null
+          name: string
+          neighborhood: string
+          phone: string | null
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          instagram?: string | null
+          name: string
+          neighborhood?: string
+          phone?: string | null
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          instagram?: string | null
+          name?: string
+          neighborhood?: string
+          phone?: string | null
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           approval_status: string
@@ -612,7 +670,7 @@ export type Database = {
           address: string
           description?: string | null
           facebook?: string | null
-          id: string
+          id?: string
           image?: string | null
           inserted_at?: string | null
           instagram?: string | null
@@ -647,21 +705,14 @@ export type Database = {
           website?: string | null
           website_events?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "venues_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "bars"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      cleanup_unconfirmed_signups: { Args: never; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       truncate_staging: { Args: never; Returns: undefined }
     }
@@ -792,6 +843,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
