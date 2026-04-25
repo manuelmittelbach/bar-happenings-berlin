@@ -19,7 +19,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function OrganizerDashboard() {
-  const { user, role, approvalStatus, loading } = useAuth();
+  const { user, role, approvalStatus, loading, roleResolved } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [myEvents, setMyEvents] = useState<BarlinEvent[]>([]);
@@ -38,10 +38,10 @@ export default function OrganizerDashboard() {
   });
 
   useEffect(() => {
-    if (!loading && role !== null && role !== "organizer" && role !== "admin") {
+    if (!loading && roleResolved && role !== "organizer" && role !== "admin") {
       navigate("/", { replace: true });
     }
-  }, [user, role, loading, navigate]);
+  }, [user, role, roleResolved, loading, navigate]);
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
@@ -106,7 +106,13 @@ export default function OrganizerDashboard() {
   const visible = showAll ? displayed : displayed.slice(0, INITIAL_COUNT);
   const hasMore = displayed.length > INITIAL_COUNT;
 
-  if (loading || role === null) return null;
+  if (loading || !roleResolved) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
   if (!user) return null;
 
   if (role === "organizer" && approvalStatus !== "approved") {

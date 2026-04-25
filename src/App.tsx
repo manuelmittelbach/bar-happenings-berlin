@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Spinner } from "@/components/ui/spinner";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
@@ -33,21 +34,34 @@ function ScrollManager() {
   return null;
 }
 
-function AuthRedirectHandler() {
+function detectAuthCallback(): boolean {
+  const s = window.location.search;
+  const h = window.location.hash;
+  return (
+    s.includes("code=") ||
+    s.includes("error=") ||
+    h.includes("access_token=") ||
+    h.includes("type=signup") ||
+    h.includes("error=")
+  );
+}
+
+function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const [pending, setPending] = useState<boolean>(detectAuthCallback);
+
   useEffect(() => {
+    if (!pending) return;
+
     const params = new URLSearchParams(window.location.search);
-    const hasCode = params.has("code");
-    const hasSignupHash = window.location.hash.includes("type=signup");
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
       const isReset = window.location.pathname.includes("reset-password");
       navigate(isReset ? "/login?link_error=reset" : "/login?link_error=confirm", { replace: true });
+      setPending(false);
       return;
     }
-
-    if (!hasCode && !hasSignupHash) return;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
@@ -61,12 +75,22 @@ function AuthRedirectHandler() {
             const role = data?.role;
             const destination = role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events";
             navigate(destination, { replace: true });
+            setPending(false);
           });
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
-  return null;
+  }, [pending, navigate]);
+
+  if (pending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -104,7 +128,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollManager />
-        <AuthRedirectHandler />
+        <AuthCallbackGate>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
@@ -125,6 +149,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </AuthCallbackGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

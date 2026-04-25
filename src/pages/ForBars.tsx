@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchUserRole } from "@/lib/supabaseQueries";
 
 const benefits = [
 	{ num: "01", label: "Fill the room" },
@@ -13,7 +14,17 @@ export default function ForBars() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const signInRef = useRef<HTMLElement>(null);
-	const { signIn, resetPassword } = useAuth();
+	const { user, signIn, signOut, resetPassword } = useAuth();
+	const [signingOut, setSigningOut] = useState(false);
+
+	const handleSignOut = async () => {
+		setSigningOut(true);
+		try {
+			await signOut();
+		} finally {
+			setSigningOut(false);
+		}
+	};
 
 	useEffect(() => {
 		if ((location.state as { scrollToSignIn?: boolean } | null)?.scrollToSignIn) {
@@ -56,9 +67,11 @@ export default function ForBars() {
 				await resetPassword(email);
 				setSuccess("Reset link sent — check your inbox.");
 			} else {
-				const { user } = await signIn(email, password);
-				const metaRole = user?.user_metadata?.role;
-				navigate(metaRole === "organizer" ? "/dashboard" : "/my-events");
+				const { user: signedInUser } = await signIn(email, password);
+				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
+				const target =
+					userRole === "admin" ? "/admin" : userRole === "organizer" ? "/dashboard" : "/my-events";
+				navigate(target);
 			}
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Something went wrong";
@@ -88,15 +101,35 @@ export default function ForBars() {
 								Publish your events and reach locals looking for something to do tonight.
 							</p>
 
-							<button
-								onClick={() =>
-									navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
-								}
-								className="group mt-8 inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-body font-semibold text-sm hover:bg-foreground/90 transition-colors"
-							>
-								Create account
-								<ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-							</button>
+							{user && !loading ? (
+								<div className="mt-8 max-w-md border-l-2 border-foreground pl-4 py-2 space-y-2">
+									<p className="text-sm">
+										You're signed in as <strong className="font-mono">{user.email}</strong>.
+									</p>
+									<p className="text-sm text-muted-foreground leading-relaxed">
+										Sign out to register a new bar account.
+									</p>
+									<button
+										type="button"
+										onClick={handleSignOut}
+										disabled={signingOut}
+										className="mt-1 inline-flex items-center gap-2 h-9 px-4 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
+									>
+										<LogOut className="h-3.5 w-3.5" />
+										{signingOut ? "Signing out…" : "Sign out"}
+									</button>
+								</div>
+							) : (
+								<button
+									onClick={() =>
+										navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
+									}
+									className="group mt-8 inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-body font-semibold text-sm hover:bg-foreground/90 transition-colors"
+								>
+									Create account
+									<ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+								</button>
+							)}
 
 							<ul className="mt-12 grid grid-cols-3 gap-3 md:gap-6">
 								{benefits.map((b) => (
@@ -119,6 +152,26 @@ export default function ForBars() {
 					{/* Sign in */}
 					<section ref={signInRef} className="md:flex-1 md:flex md:items-center">
 						<div className="w-full px-4 md:pl-8 md:pr-0 lg:pl-12 py-12 md:py-20">
+							{user && !loading ? (
+								<div className="max-w-sm mx-auto space-y-5">
+									<div className="text-center">
+										<h2 className="heading-display text-2xl">You're signed in</h2>
+										<p className="text-sm text-muted-foreground mt-1 break-all">
+											as <span className="font-mono">{user.email}</span>
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={handleSignOut}
+										disabled={signingOut}
+										className="inline-flex w-full h-11 items-center justify-center gap-2 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
+									>
+										<LogOut className="h-3.5 w-3.5" />
+										{signingOut ? "Signing out…" : "Sign out to switch account"}
+									</button>
+								</div>
+							) : (
+								<>
 							<div className="max-w-sm mx-auto text-center mb-8">
 								<h2 className="heading-display text-2xl">
 									{isForgotPassword ? "Reset password" : "Welcome back!"}
@@ -213,6 +266,8 @@ export default function ForBars() {
 									</p>
 								)}
 							</form>
+							</>
+							)}
 						</div>
 					</section>
 			</div>

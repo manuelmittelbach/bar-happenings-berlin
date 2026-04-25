@@ -4,6 +4,7 @@ import { KeyRound, Save, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, updateProfile } from "@/lib/supabaseQueries";
+import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
 
 const inputClass =
@@ -11,13 +12,15 @@ const inputClass =
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, role, approvalStatus, loading, signOut, resetPassword } = useAuth();
+  const { user, role, approvalStatus, loading, signOut } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [resetting, setResetting] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -51,18 +54,37 @@ export default function Profile() {
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user?.email) return;
-    setResetting(true);
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast.error("New password must differ from current password.");
+      return;
+    }
+    setChangingPassword(true);
     try {
-      await resetPassword(user.email);
-      toast.success("Password reset link sent.", {
-        description: `Check ${user.email} for the link.`,
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
       });
-    } catch {
-      toast.error("Couldn't send reset email. Please try again.");
+      if (verifyError) {
+        toast.error("Current password is incorrect.");
+        return;
+      }
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) {
+        toast.error("Couldn't update password. Please try again.");
+        return;
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      toast.success("Password updated.");
     } finally {
-      setResetting(false);
+      setChangingPassword(false);
     }
   };
 
@@ -158,19 +180,43 @@ export default function Profile() {
 
       {/* Security block */}
       <section className="mb-10 border-t border-border pt-8">
-        <h2 className="mono-label text-foreground mb-4">Security</h2>
-        <button
-          type="button"
-          onClick={handleResetPassword}
-          disabled={resetting}
-          className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
-        >
-          <KeyRound className="h-3.5 w-3.5" />
-          {resetting ? "Sending…" : "Send password reset email"}
-        </button>
-        <p className="mt-2 text-xs text-muted-foreground">
-          A reset link will be emailed to <span className="font-mono">{user.email}</span>.
-        </p>
+        <h2 className="mono-label text-foreground mb-4">Change password</h2>
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="mono-label text-muted-foreground">Current password</label>
+            <input
+              type="password"
+              required
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="mono-label text-muted-foreground">New password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className={inputClass}
+            />
+            <p className="text-xs text-muted-foreground">At least 6 characters.</p>
+          </div>
+          <div className="pt-1">
+            <button
+              type="submit"
+              disabled={changingPassword}
+              className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <KeyRound className="h-3.5 w-3.5" />
+              {changingPassword ? "Updating…" : "Update password"}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="border-t border-border pt-8">

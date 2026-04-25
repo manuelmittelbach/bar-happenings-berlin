@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
@@ -12,7 +12,7 @@ const navItems = [
   { label: "For Bars", path: "/for-bars" },
 ];
 
-type ActiveSection = "saved" | "manage" | "profile" | "none";
+type ActiveSection = "saved" | "manage" | "admin" | "profile" | "none";
 
 const SECTION_KEY = "headerActiveSection";
 const RESET_ROUTES = new Set([
@@ -23,11 +23,11 @@ const RESET_ROUTES = new Set([
   "/login",
   "/map",
   "/reset-password",
-  "/admin",
 ]);
 const SECTION_ROUTES: Record<string, ActiveSection> = {
   "/my-events": "saved",
   "/dashboard": "manage",
+  "/admin": "admin",
   "/profile": "profile",
 };
 
@@ -167,6 +167,19 @@ export default function Header() {
                   Your Events
                 </Link>
               )}
+              {role === "admin" && (
+                <Link
+                  to="/admin"
+                  className={`hidden sm:inline-flex h-9 px-5 items-center justify-center gap-1.5 border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
+                    activeSection === "admin"
+                      ? "bg-foreground text-background"
+                      : "text-foreground hover:bg-foreground hover:text-background"
+                  }`}
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Admin
+                </Link>
+              )}
               {user && (
                 <Link
                   to="/profile"
@@ -277,6 +290,19 @@ export default function Header() {
                   }`}
                 >
                   Your Events
+                </Link>
+              )}
+              {role === "admin" && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className={`inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-colors ${
+                    activeSection === "admin"
+                      ? "bg-foreground text-background"
+                      : "text-foreground hover:bg-foreground hover:text-background"
+                  }`}
+                >
+                  <Shield className="h-4 w-4" /> Admin
                 </Link>
               )}
               {user && (

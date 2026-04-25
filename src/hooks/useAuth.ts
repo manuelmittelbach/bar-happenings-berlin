@@ -9,6 +9,7 @@ interface AuthState {
   session: Session | null;
   loading: boolean;
   role: "user" | "organizer" | "admin" | null;
+  roleResolved: boolean;
   approvalStatus: ApprovalStatus | null;
 }
 
@@ -35,6 +36,7 @@ export function useAuth() {
     session: null,
     loading: true,
     role: null,
+    roleResolved: false,
     approvalStatus: null,
   });
 
@@ -45,23 +47,25 @@ export function useAuth() {
       const user = session?.user ?? null;
       if (!user) {
         lastFetchedUserId = null;
-        setState({ user: null, session: null, loading: false, role: null, approvalStatus: null });
+        setState({ user: null, session: null, loading: false, role: null, roleResolved: true, approvalStatus: null });
         return;
       }
       const metaRole = user.user_metadata?.role;
       const initialRole: "user" | "organizer" | "admin" =
         metaRole === "organizer" || metaRole === "admin" ? metaRole : "user";
+      const sameUser = lastFetchedUserId === user.id;
       setState(prev => ({
         user,
         session,
         loading: false,
         role: prev.role ?? initialRole,
+        roleResolved: sameUser ? prev.roleResolved : false,
         approvalStatus: prev.approvalStatus ?? "approved",
       }));
-      if (lastFetchedUserId === user.id) return;
+      if (sameUser) return;
       lastFetchedUserId = user.id;
       fetchRoleAndStatus(user).then(({ role, approvalStatus }) =>
-        setState(prev => ({ ...prev, role, approvalStatus })));
+        setState(prev => ({ ...prev, role, approvalStatus, roleResolved: true })));
     });
 
     return () => subscription.unsubscribe();
