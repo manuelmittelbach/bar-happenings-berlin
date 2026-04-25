@@ -1,31 +1,35 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { neighborhoods } from "@/data/neighborhoods";
 import { fetchOrganizerById, updateOrganizerAccount } from "@/lib/supabaseQueries";
+import { deriveNeighborhoodFromAddress } from "@/lib/neighborhoodFromAddress";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function EditBarAccount() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const { role, loading: authLoading } = useAuth();
+	const location = useLocation();
+	const returnPath =
+		(location.state as { returnPath?: string } | null)?.returnPath ?? "/admin";
+	const { role, loading: authLoading, roleResolved } = useAuth();
 	const [submitting, setSubmitting] = useState(false);
 	const [notFound, setNotFound] = useState(false);
 	const [venueId, setVenueId] = useState<string | null>(null);
 	const [email, setEmail] = useState<string | null>(null);
+	const [existingNeighborhood, setExistingNeighborhood] = useState("");
 	const [form, setForm] = useState({
 		firstName: "",
 		lastName: "",
 		barName: "",
 		barAddress: "",
-		barNeighborhood: "",
 		barWebsite: "",
 		barInstagram: "",
 		barPhone: "",
 	});
 
 	useEffect(() => {
-		if (authLoading || role === null) return;
+		if (authLoading || !roleResolved) return;
 		if (role !== "admin") {
 			navigate("/", { replace: true });
 			return;
@@ -39,19 +43,19 @@ export default function EditBarAccount() {
 				}
 				setVenueId(organizer.venue.id);
 				setEmail(organizer.email);
+				setExistingNeighborhood(organizer.venue.neighborhood);
 				setForm({
 					firstName: organizer.firstName,
 					lastName: organizer.lastName,
 					barName: organizer.venue.name,
 					barAddress: organizer.venue.address,
-					barNeighborhood: organizer.venue.neighborhood,
 					barWebsite: organizer.venue.website ?? "",
 					barInstagram: organizer.venue.instagram ?? "",
 					barPhone: organizer.venue.phone ?? "",
 				});
 			})
 			.catch(() => setNotFound(true));
-	}, [id, role, authLoading, navigate]);
+	}, [id, role, authLoading, roleResolved, navigate]);
 
 	const update = (field: keyof typeof form, value: string) =>
 		setForm((prev) => ({ ...prev, [field]: value }));
@@ -61,6 +65,8 @@ export default function EditBarAccount() {
 		if (!id || !venueId) return;
 		setSubmitting(true);
 		try {
+			const derived = deriveNeighborhoodFromAddress(form.barAddress);
+			const neighborhoodToSave = derived || existingNeighborhood;
 			await updateOrganizerAccount(
 				id,
 				{ firstName: form.firstName, lastName: form.lastName },
@@ -68,14 +74,14 @@ export default function EditBarAccount() {
 					id: venueId,
 					name: form.barName,
 					address: form.barAddress,
-					neighborhood: form.barNeighborhood,
+					neighborhood: neighborhoodToSave,
 					website: form.barWebsite || null,
 					instagram: form.barInstagram || null,
 					phone: form.barPhone || null,
 				},
 			);
 			toast.success("Bar account updated!");
-			navigate("/admin?section=bars");
+			navigate(returnPath);
 		} catch {
 			toast.error("Something went wrong. Please try again.");
 		} finally {
@@ -83,7 +89,13 @@ export default function EditBarAccount() {
 		}
 	};
 
-	if (authLoading || role === null) return null;
+	if (authLoading || !roleResolved) {
+		return (
+			<div className="flex-1 flex items-center justify-center py-16">
+				<Spinner />
+			</div>
+		);
+	}
 	if (role !== "admin") return null;
 
 	if (notFound) {
@@ -147,20 +159,6 @@ export default function EditBarAccount() {
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<label className="text-sm font-medium">Neighborhood <span className="text-accent">*</span></label>
-								<select
-									required
-									value={form.barNeighborhood}
-									onChange={(e) => update("barNeighborhood", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
-								>
-									<option value="">Select neighborhood…</option>
-									{neighborhoods.map((n) => (
-										<option key={n} value={n}>{n}</option>
-									))}
-								</select>
-							</div>
-							<div className="space-y-1.5">
 								<label className="text-sm font-medium">Website</label>
 								<input
 									type="url"
@@ -201,7 +199,7 @@ export default function EditBarAccount() {
 								{submitting ? "Saving…" : "Save Changes"}
 							</button>
 							<Link
-								to="/admin?section=bars"
+								to={returnPath}
 								className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
 							>
 								Cancel

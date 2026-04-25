@@ -12,13 +12,14 @@ import {
 } from "@/lib/supabaseQueries";
 import { hasEventStarted } from "@/lib/eventStatus";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function EditEvent() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const scopeParam = searchParams.get("scope");
   const navigate = useNavigate();
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading, roleResolved } = useAuth();
   const isAdmin = role === "admin";
 
   const [notFound, setNotFound] = useState(false);
@@ -34,13 +35,14 @@ export default function EditEvent() {
       navigate("/login", { replace: true });
       return;
     }
+    if (!roleResolved) return;
     if (role !== "organizer" && role !== "admin") {
       navigate("/", { replace: true });
     }
-  }, [authLoading, user, role, navigate]);
+  }, [authLoading, user, role, roleResolved, navigate]);
 
   useEffect(() => {
-    if (!id || authLoading || !user || role === null) return;
+    if (!id || authLoading || !user || !roleResolved) return;
     fetchEventById(id).then((event) => {
       if (!event || (!isAdmin && event.createdBy !== user.id)) {
         setNotFound(true);
@@ -75,7 +77,7 @@ export default function EditEvent() {
         eventDate: event.date,
       });
     });
-  }, [id, user, authLoading, role, isAdmin, navigate]);
+  }, [id, user, authLoading, role, roleResolved, isAdmin, navigate]);
 
   const handleSubmit = useMemo(
     () => async (data: EventFormData, image: { file: File | null; changed: boolean }) => {
@@ -137,7 +139,13 @@ export default function EditEvent() {
     );
   }
 
-  if (!initialValues || !seriesInfo) return null;
+  if (!initialValues || !seriesInfo) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
 
   const subtitle = applyToSeries
     ? "Changes will apply to all upcoming events in this series."

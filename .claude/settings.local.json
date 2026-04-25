@@ -56,7 +56,9 @@
       "Bash(echo \"EXIT=$?\")",
       "Bash(awk NR>=144 && NR<=148 {print NR\": \"length\\($0\\)\" chars: [\"$0\"]\"} *)",
       "Bash(npx vitest *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(awk *)",
+      "Bash(supabase db *)"
     ]
   }
 }

@@ -6,10 +6,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { createEvent, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function PublishEvent() {
   const navigate = useNavigate();
-  const { user, role, approvalStatus, loading } = useAuth();
+  const { user, role, approvalStatus, loading, roleResolved } = useAuth();
   const [venuePrefill, setVenuePrefill] = useState<Partial<EventFormData>>({});
 
   useEffect(() => {
@@ -18,10 +19,11 @@ export default function PublishEvent() {
       navigate("/login", { replace: true, state: { from: "/publish" } });
       return;
     }
+    if (!roleResolved) return;
     if (role !== "organizer" && role !== "admin") {
       navigate("/", { replace: true });
     }
-  }, [loading, user, role, navigate]);
+  }, [loading, user, role, roleResolved, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -56,7 +58,14 @@ export default function PublishEvent() {
     [user, navigate]
   );
 
-  if (loading || !user || (role !== "organizer" && role !== "admin")) return null;
+  if (loading || !roleResolved) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!user || (role !== "organizer" && role !== "admin")) return null;
 
   if (role === "organizer" && approvalStatus !== "approved") {
     const rejected = approvalStatus === "rejected";

@@ -61,3 +61,11 @@ export function deriveNeighborhood(street: string, postalCode: string): Neighbor
 
 	return PLZ_MAP[plz] ?? "";
 }
+
+export function deriveNeighborhoodFromAddress(address: string): Neighborhood | "" {
+	const match = address.match(/\b(\d{5})\b/);
+	if (!match) return "";
+	const plz = match[1];
+	const street = address.slice(0, match.index ?? 0);
+	return deriveNeighborhood(street, plz);
+}

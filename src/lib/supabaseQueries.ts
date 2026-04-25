@@ -267,6 +267,20 @@ export async function fetchVenues(): Promise<Venue[]> {
   return data.map(mapVenueRow);
 }
 
+export async function fetchVenuesWithOwnership(): Promise<{ venue: Venue; hasOwner: boolean }[]> {
+  const [venuesRes, ownersRes] = await Promise.all([
+    supabase.from("venues").select("*").order("name", { ascending: true }),
+    supabase.from("venue_owners").select("venue_id"),
+  ]);
+  if (venuesRes.error) throw venuesRes.error;
+  if (ownersRes.error) throw ownersRes.error;
+  const ownedSet = new Set((ownersRes.data ?? []).map((o) => o.venue_id));
+  return (venuesRes.data ?? []).map((row) => ({
+    venue: mapVenueRow(row),
+    hasOwner: ownedSet.has(row.id),
+  }));
+}
+
 export async function saveInterest(userId: string, eventId: string): Promise<void> {
   const { error } = await supabase
     .from("user_interests")
@@ -304,6 +318,17 @@ export async function fetchInterestedEvents(userId: string): Promise<BarlinEvent
     .map((row) => row.events as Tables<"events"> | null)
     .filter((e): e is Tables<"events"> => e !== null)
     .map(mapEventRow);
+}
+
+export async function fetchUserRole(userId: string): Promise<"user" | "organizer" | "admin"> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  const r = data?.role;
+  if (r === "admin" || r === "organizer") return r;
+  return "user";
 }
 
 export async function fetchProfile(userId: string): Promise<{ firstName: string; lastName: string; role: string; approvalStatus: string } | null> {
@@ -390,6 +415,7 @@ export async function fetchPendingOrganizers(): Promise<OrganizerAccount[]> {
     .select(ORGANIZER_PROFILE_SELECT)
     .eq("role", "organizer")
     .eq("approval_status", "pending")
+    .eq("email_confirmed", true)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return hydrateOrganizers(data as OrganizerProfileRow[]);

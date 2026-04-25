@@ -4,6 +4,15 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
+import { fetchUserRole } from "@/lib/supabaseQueries";
+import { Spinner } from "@/components/ui/spinner";
+
+function resolvePostAuthTarget(from: string | null): string {
+	if (!from) return "/my-events";
+	if (from === "/login" || from === "/for-bars") return "/my-events";
+	if (!from.startsWith("/")) return "/my-events";
+	return from;
+}
 
 type VenueOption = { id: string; name: string };
 
@@ -44,14 +53,23 @@ export default function Login() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const from = (location.state as { from?: string })?.from ?? null;
-	const fromMyEvents = from === "/my-events" || from?.startsWith("/event/") === true;
-	const { signIn, signUp, resetPassword } = useAuth();
+	const { user, role, loading: authLoading, roleResolved, signIn, signUp, resetPassword } = useAuth();
+
+	useEffect(() => {
+		if (authLoading || !user || !roleResolved) return;
+		const target = role === "admin" ? "/admin" : resolvePostAuthTarget(from);
+		navigate(target, { replace: true });
+	}, [user, role, roleResolved, authLoading, from, navigate]);
 
 	const [isLogin, setIsLogin] = useState(() => {
 		const p = new URLSearchParams(window.location.search);
+		if (p.get("link_error") === "confirm") return false;
 		return p.get("mode") !== "signup";
 	});
-	const [isForgotPassword, setIsForgotPassword] = useState(false);
+	const [isForgotPassword, setIsForgotPassword] = useState(() => {
+		const p = new URLSearchParams(window.location.search);
+		return p.get("link_error") === "reset";
+	});
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [isBarOwner, setIsBarOwner] = useState(() => {
@@ -158,8 +176,9 @@ export default function Login() {
 				const { user: signedInUser } = await signIn(email, password);
 				clearLockout(email);
 				setLockedUntil(null);
-				const metaRole = signedInUser?.user_metadata?.role;
-				navigate(metaRole === "organizer" ? "/dashboard" : "/my-events");
+				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
+				const target = userRole === "admin" ? "/admin" : resolvePostAuthTarget(from);
+				navigate(target);
 			} else {
 				let venuePayload: Parameters<typeof signUp>[5];
 				if (isBarOwner) {
@@ -203,6 +222,14 @@ export default function Login() {
 			setLoading(false);
 		}
 	};
+
+	if (authLoading || user) {
+		return (
+			<div className="flex-1 flex items-center justify-center py-16">
+				<Spinner />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex-1 flex items-center justify-center py-16">
