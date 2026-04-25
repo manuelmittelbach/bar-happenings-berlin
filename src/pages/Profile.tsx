@@ -57,8 +57,8 @@ export default function Profile() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.email) return;
-    if (newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters.");
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters.");
       return;
     }
     if (newPassword === currentPassword) {
@@ -198,13 +198,13 @@ export default function Profile() {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className={inputClass}
             />
-            <p className="text-xs text-muted-foreground">At least 6 characters.</p>
+            <p className="text-xs text-muted-foreground">At least 8 characters.</p>
           </div>
           <div className="pt-1">
             <button

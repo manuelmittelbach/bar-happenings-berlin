@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { markEmailJustConfirmed } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -65,7 +66,7 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        sessionStorage.setItem("email-just-confirmed", "1");
+        markEmailJustConfirmed();
         supabase
           .from("profiles")
           .select("role")

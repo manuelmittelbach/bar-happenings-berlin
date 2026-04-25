@@ -8,6 +8,7 @@ import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries"
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
+import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
 import type { BarlinEvent } from "@/types/event";
 
 type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
@@ -29,13 +30,12 @@ export default function OrganizerDashboard() {
 
   const isApprovedAccess = role === "admin" || (role === "organizer" && approvalStatus === "approved");
 
-  const [justConfirmed] = useState(() => {
-    if (sessionStorage.getItem("email-just-confirmed")) {
-      sessionStorage.removeItem("email-just-confirmed");
-      return true;
-    }
-    return false;
-  });
+  const [justConfirmed] = useState(consumeJustConfirmed);
+
+  useEffect(() => {
+    if (!justConfirmed) return;
+    return clearJustConfirmedSoon();
+  }, [justConfirmed]);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "organizer" && role !== "admin") {

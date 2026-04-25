@@ -58,7 +58,13 @@
       "Bash(npx vitest *)",
       "Bash(npx vite *)",
       "Bash(awk *)",
-      "Bash(supabase db *)"
+      "Bash(supabase db *)",
+      "Bash(npx eslint *)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__generate_typescript_types"
     ]
   }
 }

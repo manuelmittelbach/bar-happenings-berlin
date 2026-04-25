@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import EventCard from "@/components/events/EventCard";
 import { Spinner } from "@/components/ui/spinner";
 import type { BarlinEvent } from "@/types/event";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
+import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
 
 function formatDateHeader(dateStr: string) {
 	const today = new Date().toISOString().split("T")[0];
@@ -55,13 +56,12 @@ export default function MyEvents() {
 	const { data: events = [], isLoading: eventsLoading } = useMyEvents(user?.id ?? null);
 	const [showPast, setShowPast] = useState(false);
 
-	const [justConfirmed] = useState(() => {
-		if (sessionStorage.getItem("email-just-confirmed")) {
-			sessionStorage.removeItem("email-just-confirmed");
-			return true;
-		}
-		return false;
-	});
+	const [justConfirmed] = useState(consumeJustConfirmed);
+
+	useEffect(() => {
+		if (!justConfirmed) return;
+		return clearJustConfirmedSoon();
+	}, [justConfirmed]);
 
 	const isLateNight = new Date().getHours() < 6;
 	const today = new Date().toISOString().split("T")[0];

@@ -7,18 +7,27 @@ import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 import { Spinner } from "@/components/ui/spinner";
 
-function resolvePostAuthTarget(from: string | null): string {
-	if (!from) return "/my-events";
-	if (from === "/login" || from === "/for-bars") return "/my-events";
-	if (!from.startsWith("/")) return "/my-events";
+type Role = "user" | "organizer" | "admin" | null;
+
+function defaultTargetForRole(role: Role): string {
+	if (role === "admin") return "/admin";
+	if (role === "organizer") return "/dashboard";
+	return "/my-events";
+}
+
+function resolvePostAuthTarget(from: string | null, role: Role): string {
+	const fallback = defaultTargetForRole(role);
+	if (!from) return fallback;
+	if (from === "/login" || from === "/for-bars") return fallback;
+	if (!from.startsWith("/")) return fallback;
 	return from;
 }
 
 type VenueOption = { id: string; name: string };
 
 const LOCKOUT_PREFIX = "inside-bars-lockout:";
-const LOCKOUT_MS = 5 * 60 * 1000;
-const MAX_FAILURES = 3;
+const LOCKOUT_MS = 15 * 60 * 1000;
+const MAX_FAILURES = 5;
 
 type LockoutEntry = { failures: number; lockedUntil: number | null };
 
@@ -57,7 +66,7 @@ export default function Login() {
 
 	useEffect(() => {
 		if (authLoading || !user || !roleResolved) return;
-		const target = role === "admin" ? "/admin" : resolvePostAuthTarget(from);
+		const target = resolvePostAuthTarget(from, role);
 		navigate(target, { replace: true });
 	}, [user, role, roleResolved, authLoading, from, navigate]);
 
@@ -72,7 +81,7 @@ export default function Login() {
 	});
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
-	const [isBarOwner, setIsBarOwner] = useState(() => {
+	const [isBarOwner] = useState(() => {
 		const p = new URLSearchParams(window.location.search);
 		return p.get("bar") === "1";
 	});
@@ -150,6 +159,8 @@ export default function Login() {
 			return "Please confirm your email address first, then sign in.";
 		if (msg.includes("rate limit") || msg.includes("over_email_send_rate_limit"))
 			return "Too many attempts. Please wait a few minutes and try again.";
+		if (msg.includes("weak_password") || msg.includes("Password should be"))
+			return "Password is too weak. Please use at least 8 characters.";
 		return msg;
 	}
 
@@ -177,7 +188,7 @@ export default function Login() {
 				clearLockout(email);
 				setLockedUntil(null);
 				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
-				const target = userRole === "admin" ? "/admin" : resolvePostAuthTarget(from);
+				const target = resolvePostAuthTarget(from, userRole);
 				navigate(target);
 			} else {
 				let venuePayload: Parameters<typeof signUp>[5];
@@ -363,6 +374,11 @@ export default function Login() {
 														placeholder="10435"
 														className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
 													/>
+													{barPostalCode.length === 5 && (
+														<p className="text-xs text-muted-foreground">
+															Neighborhood: {deriveNeighborhood(barStreet, barPostalCode) || "Unknown — please check"}
+														</p>
+													)}
 												</div>
 												<div className="space-y-1.5">
 													<label className="text-sm font-medium">City <span className="text-accent">*</span></label>
@@ -440,6 +456,7 @@ export default function Login() {
 											<input
 												type={showPass ? "text" : "password"}
 												required
+												{...(!isLogin && { minLength: 8 })}
 												value={password}
 												onChange={(e) => setPassword(e.target.value)}
 												placeholder="••••••••"

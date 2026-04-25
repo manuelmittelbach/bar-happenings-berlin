@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
+	clearVenueClaimProposals,
 	fetchOrganizerById,
 	updateOrganizerAccount,
 	updatePendingBarSubmission,
@@ -11,7 +12,7 @@ import {
 import { deriveNeighborhoodFromAddress } from "@/lib/neighborhoodFromAddress";
 import { Spinner } from "@/components/ui/spinner";
 
-type EditMode = "venue" | "pending";
+type EditMode = "venue" | "pending" | "claim";
 
 export default function EditBarAccount() {
 	const { id } = useParams<{ id: string }>();
@@ -75,6 +76,19 @@ export default function EditBarAccount() {
 						barInstagram: organizer.pendingSubmission.instagram ?? "",
 						barPhone: organizer.pendingSubmission.phone ?? "",
 					});
+				} else if (organizer.pendingClaim) {
+					setMode("claim");
+					setVenueId(organizer.pendingClaim.venueId);
+					setExistingNeighborhood(organizer.pendingClaim.venueNeighborhood);
+					setForm({
+						firstName: organizer.firstName,
+						lastName: organizer.lastName,
+						barName: organizer.pendingClaim.venueName,
+						barAddress: organizer.pendingClaim.venueAddress,
+						barWebsite: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite ?? "",
+						barInstagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram ?? "",
+						barPhone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone ?? "",
+					});
 				} else {
 					setNotFound(true);
 				}
@@ -85,15 +99,19 @@ export default function EditBarAccount() {
 	const update = (field: keyof typeof form, value: string) =>
 		setForm((prev) => ({ ...prev, [field]: value }));
 
+	const derivedNeighborhood = useMemo(
+		() => deriveNeighborhoodFromAddress(form.barAddress),
+		[form.barAddress],
+	);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!id || !mode) return;
-		if (mode === "venue" && !venueId) return;
+		if ((mode === "venue" || mode === "claim") && !venueId) return;
 		setSubmitting(true);
 		try {
-			const derived = deriveNeighborhoodFromAddress(form.barAddress);
-			const neighborhoodToSave = derived || existingNeighborhood;
-			if (mode === "venue" && venueId) {
+			const neighborhoodToSave = derivedNeighborhood || existingNeighborhood;
+			if ((mode === "venue" || mode === "claim") && venueId) {
 				await updateOrganizerAccount(
 					id,
 					{ firstName: form.firstName, lastName: form.lastName },
@@ -107,6 +125,9 @@ export default function EditBarAccount() {
 						phone: form.barPhone || null,
 					},
 				);
+				if (mode === "claim") {
+					await clearVenueClaimProposals(id);
+				}
 			} else {
 				await updateProfile(id, { firstName: form.firstName, lastName: form.lastName });
 				await updatePendingBarSubmission(id, {
@@ -118,7 +139,13 @@ export default function EditBarAccount() {
 					phone: form.barPhone || null,
 				});
 			}
-			toast.success(mode === "venue" ? "Bar account updated!" : "Pending submission updated!");
+			toast.success(
+				mode === "pending"
+					? "Pending submission updated!"
+					: mode === "claim"
+						? "Claimed bar updated!"
+						: "Bar account updated!",
+			);
 			navigate(returnPath);
 		} catch {
 			toast.error("Something went wrong. Please try again.");
@@ -155,13 +182,19 @@ export default function EditBarAccount() {
 	return (
 		<div className="container max-w-2xl py-8">
 					<h1 className="heading-display text-3xl mb-2">
-						{mode === "pending" ? "Edit Pending Submission" : "Edit Bar Account"}
+						{mode === "pending"
+							? "Edit Pending Submission"
+							: mode === "claim"
+								? "Edit Claimed Bar"
+								: "Edit Bar Account"}
 					</h1>
 					<p className="text-muted-foreground text-sm mb-8">
 						{email ? `Editing account for ${email}. ` : ""}
 						{mode === "pending"
 							? "Changes apply to the pending submission. Approve from the admin dashboard to publish."
-							: "Changes are saved directly."}
+							: mode === "claim"
+								? "Changes are saved directly to the venue. The pending claim's proposed values will be cleared."
+								: "Changes are saved directly."}
 					</p>
 
 					<form onSubmit={handleSubmit} className="space-y-6">
@@ -208,6 +241,10 @@ export default function EditBarAccount() {
 									onChange={(e) => update("barAddress", e.target.value)}
 									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
 								/>
+								<p className="text-xs text-muted-foreground">
+									Neighborhood: {derivedNeighborhood || existingNeighborhood || "—"}
+									{derivedNeighborhood && existingNeighborhood && derivedNeighborhood !== existingNeighborhood && " (will update on save)"}
+								</p>
 							</div>
 							<div className="space-y-1.5">
 								<label className="text-sm font-medium">Website</label>
