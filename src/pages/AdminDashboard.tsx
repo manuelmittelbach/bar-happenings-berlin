@@ -12,6 +12,7 @@ import {
   fetchVenuesWithOwnership,
   updateOrganizerApprovalStatus,
   approveOrganizerWithNewBar,
+  approveOrganizerWithVenueClaim,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
 import type { Venue } from "@/types/event";
@@ -85,11 +86,20 @@ export default function AdminDashboard() {
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
+    if (organizer.orphaned) {
+      toast.error("Can't approve — venue was deleted. Please reject this organizer.");
+      return;
+    }
     try {
-      const label = organizer.venue?.name ?? organizer.pendingSubmission?.name ?? organizer.email ?? "Bar";
+      const label =
+        organizer.venue?.name ??
+        organizer.pendingSubmission?.name ??
+        organizer.pendingClaim?.venueName ??
+        organizer.email ??
+        "Bar";
       let approvedVenue: OrganizerAccount["venue"] = organizer.venue;
       if (organizer.pendingSubmission && !organizer.venue) {
-        await approveOrganizerWithNewBar(organizer.id, user.id, organizer.pendingSubmission);
+        await approveOrganizerWithNewBar(organizer.id, user.id);
         approvedVenue = {
           id: "",
           name: organizer.pendingSubmission.name,
@@ -98,6 +108,18 @@ export default function AdminDashboard() {
           website: organizer.pendingSubmission.website,
           instagram: organizer.pendingSubmission.instagram,
           phone: organizer.pendingSubmission.phone,
+        };
+        loadAllBars();
+      } else if (organizer.pendingClaim && !organizer.venue) {
+        await approveOrganizerWithVenueClaim(organizer.id, user.id);
+        approvedVenue = {
+          id: organizer.pendingClaim.venueId,
+          name: organizer.pendingClaim.venueName,
+          address: organizer.pendingClaim.venueAddress,
+          neighborhood: organizer.pendingClaim.venueNeighborhood,
+          website: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite,
+          instagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram,
+          phone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone,
         };
         loadAllBars();
       } else {
@@ -112,6 +134,7 @@ export default function AdminDashboard() {
         approvedAt: new Date().toISOString(),
         venue: approvedVenue,
         pendingSubmission: null,
+        pendingClaim: null,
       };
       setDecidedOrganizers(prev => [decided, ...prev]);
     } catch {
@@ -122,7 +145,12 @@ export default function AdminDashboard() {
   const handleRejectOrganizer = async (organizer: OrganizerAccount) => {
     try {
       await updateOrganizerApprovalStatus(organizer.id, "rejected");
-      const label = organizer.venue?.name ?? organizer.pendingSubmission?.name ?? organizer.email ?? "Bar";
+      const label =
+        organizer.venue?.name ??
+        organizer.pendingSubmission?.name ??
+        organizer.pendingClaim?.venueName ??
+        organizer.email ??
+        "Bar";
       toast.error(`${label} rejected`);
       setPendingOrganizers(prev => prev.filter(o => o.id !== organizer.id));
       const decided: OrganizerAccount = {
@@ -131,6 +159,8 @@ export default function AdminDashboard() {
         approvedBy: null,
         approvedAt: null,
         pendingSubmission: null,
+        pendingClaim: null,
+        orphaned: false,
       };
       setDecidedOrganizers(prev => [decided, ...prev]);
     } catch {
@@ -337,7 +367,7 @@ function OrganizerCard({
       ? "bg-red-500/10 text-red-600"
       : "bg-yellow-500/10 text-yellow-600";
 
-  // Display unifies venue (claimed) and pendingSubmission (awaiting approve) — admin sees the same fields either way.
+  // Display unifies venue / pendingSubmission / pendingClaim — admin sees consistent fields.
   const display = organizer.venue
     ? {
         name: organizer.venue.name,
@@ -356,8 +386,19 @@ function OrganizerCard({
         instagram: organizer.pendingSubmission.instagram,
         phone: organizer.pendingSubmission.phone,
       }
+    : organizer.pendingClaim
+    ? {
+        name: organizer.pendingClaim.venueName,
+        address: organizer.pendingClaim.venueAddress,
+        neighborhood: organizer.pendingClaim.venueNeighborhood,
+        // Show proposed if set, else current venue value
+        website: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite,
+        instagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram,
+        phone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone,
+      }
     : null;
   const isSubmittedBar = !organizer.venue && !!organizer.pendingSubmission;
+  const isClaim = !organizer.venue && !!organizer.pendingClaim;
 
   return (
     <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
@@ -366,7 +407,17 @@ function OrganizerCard({
           <p className="font-heading text-sm font-semibold">{display?.name ?? "(no venue)"}</p>
           {isSubmittedBar && (
             <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
-              Submitted bar
+              Bar not yet in table
+            </span>
+          )}
+          {isClaim && (
+            <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-yellow-500/10 text-yellow-700">
+              Bar already in table — organizer might have changed: email, website, instagram, phone
+            </span>
+          )}
+          {organizer.orphaned && (
+            <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-red-500/10 text-red-600">
+              Orphaned — venue was deleted
             </span>
           )}
           {organizer.approvalStatus !== "pending" && (
@@ -424,7 +475,7 @@ function OrganizerCard({
         </p>
       </div>
       <div className="flex gap-2 flex-shrink-0">
-        {(organizer.venue || organizer.pendingSubmission) && (
+        {(organizer.venue || organizer.pendingSubmission || organizer.pendingClaim) && (
           <Link
             to={`/admin/bar-account/${organizer.id}`}
             state={{ returnPath }}
@@ -437,7 +488,9 @@ function OrganizerCard({
         {onApprove && (
           <button
             onClick={onApprove}
-            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium"
+            disabled={organizer.orphaned}
+            title={organizer.orphaned ? "Venue was deleted — please reject this organizer" : undefined}
+            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="h-3 w-3" /> Approve
           </button>

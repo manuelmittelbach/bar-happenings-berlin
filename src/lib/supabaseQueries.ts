@@ -375,6 +375,21 @@ export type OrganizerAccount = {
     instagram: string | null;
     phone: string | null;
   } | null;
+  pendingClaim: {
+    venueId: string;
+    venueName: string;
+    venueAddress: string;
+    venueNeighborhood: string;
+    venueWebsite: string | null;
+    venueInstagram: string | null;
+    venuePhone: string | null;
+    proposedWebsite: string | null;
+    proposedInstagram: string | null;
+    proposedPhone: string | null;
+  } | null;
+  // True if organizer is in pending state but has no submission AND no claim
+  // (e.g. claim's venue was deleted and CASCADE removed the claim row).
+  orphaned: boolean;
 };
 
 type OrganizerProfileRow = {
@@ -391,7 +406,7 @@ type OrganizerProfileRow = {
 async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<OrganizerAccount[]> {
   if (profiles.length === 0) return [];
   const ids = profiles.map((p) => p.id);
-  const [ownersRes, submissionsRes] = await Promise.all([
+  const [ownersRes, submissionsRes, claimsRes] = await Promise.all([
     supabase
       .from("venue_owners")
       .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone )")
@@ -400,9 +415,14 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       .from("pending_bar_submissions")
       .select("user_id, name, address, neighborhood, website, instagram, phone")
       .in("user_id", ids),
+    supabase
+      .from("pending_venue_claims")
+      .select("user_id, venue_id, proposed_website, proposed_instagram, proposed_phone, venues ( id, name, address, neighborhood, website, instagram, phone )")
+      .in("user_id", ids),
   ]);
   if (ownersRes.error) throw ownersRes.error;
   if (submissionsRes.error) throw submissionsRes.error;
+  if (claimsRes.error) throw claimsRes.error;
   const venueByUser = new Map<string, OrganizerAccount["venue"]>();
   for (const row of ownersRes.data ?? []) {
     const v = (row as { user_id: string; venues: OrganizerAccount["venue"] | null }).venues;
@@ -428,18 +448,62 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       phone: r.phone,
     });
   }
-  return profiles.map((row) => ({
-    id: row.id,
-    email: row.email,
-    firstName: row.first_name,
-    lastName: row.last_name,
-    approvalStatus: row.approval_status as OrganizerAccount["approvalStatus"],
-    approvedBy: row.approved_by,
-    approvedAt: row.approved_at,
-    createdAt: row.created_at,
-    venue: venueByUser.get(row.id) ?? null,
-    pendingSubmission: submissionByUser.get(row.id) ?? null,
-  }));
+  const claimByUser = new Map<string, OrganizerAccount["pendingClaim"]>();
+  for (const row of claimsRes.data ?? []) {
+    const r = row as {
+      user_id: string;
+      venue_id: string;
+      proposed_website: string | null;
+      proposed_instagram: string | null;
+      proposed_phone: string | null;
+      venues: {
+        id: string;
+        name: string;
+        address: string;
+        neighborhood: string;
+        website: string | null;
+        instagram: string | null;
+        phone: string | null;
+      } | null;
+    };
+    if (!r.venues) continue;
+    claimByUser.set(r.user_id, {
+      venueId: r.venue_id,
+      venueName: r.venues.name,
+      venueAddress: r.venues.address,
+      venueNeighborhood: r.venues.neighborhood,
+      venueWebsite: r.venues.website,
+      venueInstagram: r.venues.instagram,
+      venuePhone: r.venues.phone,
+      proposedWebsite: r.proposed_website,
+      proposedInstagram: r.proposed_instagram,
+      proposedPhone: r.proposed_phone,
+    });
+  }
+  return profiles.map((row) => {
+    const venue = venueByUser.get(row.id) ?? null;
+    const pendingSubmission = submissionByUser.get(row.id) ?? null;
+    const pendingClaim = claimByUser.get(row.id) ?? null;
+    const orphaned =
+      row.approval_status === "pending" &&
+      !venue &&
+      !pendingSubmission &&
+      !pendingClaim;
+    return {
+      id: row.id,
+      email: row.email,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      approvalStatus: row.approval_status as OrganizerAccount["approvalStatus"],
+      approvedBy: row.approved_by,
+      approvedAt: row.approved_at,
+      createdAt: row.created_at,
+      venue,
+      pendingSubmission,
+      pendingClaim,
+      orphaned,
+    };
+  });
 }
 
 const ORGANIZER_PROFILE_SELECT =
@@ -465,7 +529,11 @@ export async function fetchDecidedOrganizers(): Promise<OrganizerAccount[]> {
     .in("approval_status", ["approved", "rejected"])
     .order("approved_at", { ascending: false, nullsFirst: false });
   if (error) throw error;
-  return hydrateOrganizers(data as OrganizerProfileRow[]);
+  const hydrated = await hydrateOrganizers(data as OrganizerProfileRow[]);
+  // Hide approved organizers whose venue was deleted (zombie state) — they'd
+  // otherwise show as "(no venue) Approved". Rejected entries stay visible
+  // for audit (they never had a venue).
+  return hydrated.filter((o) => o.approvalStatus !== "approved" || o.venue !== null);
 }
 
 export async function fetchOrganizerById(userId: string): Promise<OrganizerAccount | null> {
@@ -529,10 +597,66 @@ export async function updateOrganizerApprovalStatus(
     .update(patch)
     .eq("id", userId);
   if (error) throw error;
-  // On reject: clean up any pending submission so the organizer entry doesn't keep dangling data.
+  // On reject: clean up any pending data so the organizer entry doesn't keep dangling rows.
   if (status === "rejected") {
     await supabase.from("pending_bar_submissions").delete().eq("user_id", userId);
+    await supabase.from("pending_venue_claims").delete().eq("user_id", userId);
   }
+}
+
+export async function clearVenueClaimProposals(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("pending_venue_claims")
+    .update({
+      proposed_website: null,
+      proposed_instagram: null,
+      proposed_phone: null,
+    })
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function approveOrganizerWithVenueClaim(
+  userId: string,
+  approverId: string,
+): Promise<void> {
+  const { data: claim, error: claimError } = await supabase
+    .from("pending_venue_claims")
+    .select("venue_id, proposed_website, proposed_instagram, proposed_phone")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (claimError) throw claimError;
+  if (!claim) throw new Error("No pending claim found for this organizer.");
+
+  const venueUpdates: { website?: string; instagram?: string; phone?: string } = {};
+  if (claim.proposed_website) venueUpdates.website = claim.proposed_website;
+  if (claim.proposed_instagram) venueUpdates.instagram = claim.proposed_instagram;
+  if (claim.proposed_phone) venueUpdates.phone = claim.proposed_phone;
+  if (Object.keys(venueUpdates).length > 0) {
+    const { error: venueError } = await supabase
+      .from("venues")
+      .update(venueUpdates)
+      .eq("id", claim.venue_id);
+    if (venueError) throw venueError;
+  }
+
+  const { error: ownerError } = await supabase.from("venue_owners").insert({
+    user_id: userId,
+    venue_id: claim.venue_id,
+  });
+  if (ownerError) throw ownerError;
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({
+      approval_status: "approved",
+      approved_by: approverId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+  if (profileError) throw profileError;
+
+  await supabase.from("pending_venue_claims").delete().eq("user_id", userId);
 }
 
 export async function approveOrganizerWithNewBar(
