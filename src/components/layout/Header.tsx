@@ -12,16 +12,52 @@ const navItems = [
   { label: "For Bars", path: "/for-bars" },
 ];
 
+type ActiveSection = "saved" | "manage" | "profile" | "none";
+
+const SECTION_KEY = "headerActiveSection";
+const RESET_ROUTES = new Set([
+  "/",
+  "/about",
+  "/for-bars",
+  "/contact",
+  "/login",
+  "/map",
+  "/reset-password",
+  "/admin",
+]);
+const SECTION_ROUTES: Record<string, ActiveSection> = {
+  "/my-events": "saved",
+  "/dashboard": "manage",
+  "/profile": "profile",
+};
+
 export default function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const discoverActive = useDiscoverActive();
+  const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
+    if (typeof window === "undefined") return "none";
+    return (sessionStorage.getItem(SECTION_KEY) as ActiveSection) || "none";
+  });
 
   useEffect(() => {
     if (location.pathname !== "/") {
       setDiscoverActive(false);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const explicit = SECTION_ROUTES[location.pathname];
+    if (explicit) {
+      sessionStorage.setItem(SECTION_KEY, explicit);
+      setActiveSection(explicit);
+      return;
+    }
+    if (RESET_ROUTES.has(location.pathname)) {
+      sessionStorage.removeItem(SECTION_KEY);
+      setActiveSection("none");
     }
   }, [location.pathname]);
 
@@ -99,33 +135,43 @@ export default function Header() {
                 <>
                   <Link
                     to="/my-events"
-                    className={`hidden sm:inline-flex mono-label transition-colors hover:text-foreground ${
-                      location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
+                    className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
+                      activeSection === "saved"
+                        ? "bg-foreground text-background"
+                        : "text-foreground hover:bg-foreground hover:text-background"
                     }`}
                   >
-                    Saved Events
+                    Your Events
                   </Link>
                   <Link
                     to="/dashboard"
-                    className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
+                    className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
+                      activeSection === "manage"
+                        ? "bg-foreground text-background"
+                        : "text-foreground hover:bg-foreground hover:text-background"
+                    }`}
                   >
-                    Manage Bar
+                    Your Bar
                   </Link>
                 </>
               ) : (
                 <Link
                   to={user ? "/my-events" : "/login"}
                   state={user ? undefined : { from: "/my-events" }}
-                  className="hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider transition-all hover:bg-background hover:text-foreground"
+                  className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
+                    activeSection === "saved"
+                      ? "bg-foreground text-background"
+                      : "text-foreground hover:bg-foreground hover:text-background"
+                  }`}
                 >
-                  Saved Events
+                  Your Events
                 </Link>
               )}
               {user && (
                 <Link
                   to="/profile"
                   className={`hidden sm:inline-flex h-9 w-9 items-center justify-center border-2 border-foreground transition-all hover:bg-foreground hover:text-background ${
-                    location.pathname === "/profile" ? "bg-foreground text-background" : "text-foreground"
+                    activeSection === "profile" ? "bg-foreground text-background" : "text-foreground"
                   }`}
                   title="Profile"
                   aria-label="Profile"
@@ -199,18 +245,24 @@ export default function Header() {
                   <Link
                     to="/my-events"
                     onClick={() => setMobileOpen(false)}
-                    className={`mono-label text-left ${
-                      location.pathname === "/my-events" ? "text-foreground" : "text-muted-foreground"
+                    className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
+                      activeSection === "saved"
+                        ? "bg-foreground text-background"
+                        : "text-foreground"
                     }`}
                   >
-                    Saved Events
+                    Your Events
                   </Link>
                   <Link
                     to="/dashboard"
                     onClick={() => setMobileOpen(false)}
-                    className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
+                    className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
+                      activeSection === "manage"
+                        ? "bg-foreground text-background"
+                        : "text-foreground"
+                    }`}
                   >
-                    Manage Bar
+                    Your Bar
                   </Link>
                 </>
               ) : (
@@ -218,16 +270,24 @@ export default function Header() {
                   to={user ? "/my-events" : "/login"}
                   state={user ? undefined : { from: "/my-events" }}
                   onClick={() => setMobileOpen(false)}
-                  className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground bg-foreground text-background font-heading text-xs font-bold uppercase tracking-wider"
+                  className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
+                    activeSection === "saved"
+                      ? "bg-foreground text-background"
+                      : "text-foreground"
+                  }`}
                 >
-                  Saved Events
+                  Your Events
                 </Link>
               )}
               {user && (
                 <Link
                   to="/profile"
                   onClick={() => setMobileOpen(false)}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors"
+                  className={`inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-colors ${
+                    activeSection === "profile"
+                      ? "bg-foreground text-background"
+                      : "text-foreground hover:bg-foreground hover:text-background"
+                  }`}
                 >
                   <User className="h-4 w-4" /> Profile
                 </Link>

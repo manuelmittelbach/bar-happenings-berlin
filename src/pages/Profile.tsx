@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, KeyRound, Save } from "lucide-react";
+import { KeyRound, Save, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile, updateProfile } from "@/lib/supabaseQueries";
@@ -91,7 +91,6 @@ export default function Profile() {
     <div className="container max-w-2xl py-10 md:py-14">
       {/* Header */}
       <div className="mb-10 md:mb-14 border-b-2 border-foreground pb-6">
-        <p className="mono-label text-accent mb-3">Your account</p>
         <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Profile</h1>
         <p className="mt-4 text-sm text-muted-foreground max-w-md leading-relaxed">
           Update the details linked to your account. Your email is what you sign in with — contact us if it needs to change.
@@ -174,13 +173,11 @@ export default function Profile() {
         </p>
       </section>
 
-      {/* Sign out block */}
-      <section className="border-t-2 border-accent pt-8">
-        <h2 className="mono-label text-accent mb-4">Session</h2>
+      <section className="border-t border-border pt-8">
         <button
           type="button"
           onClick={handleSignOut}
-          className="inline-flex items-center gap-2 h-11 px-5 border-2 border-accent text-accent font-heading text-xs font-bold uppercase tracking-widest hover:bg-accent hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
