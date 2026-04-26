@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { KeyRound, Save, LogOut } from "lucide-react";
+import { KeyRound, Save, LogOut, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchProfile, updateProfile } from "@/lib/supabaseQueries";
+import { fetchOrganizerById, fetchProfile, updateProfile } from "@/lib/supabaseQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Spinner } from "@/components/ui/spinner";
+
+const SUPPORT_EMAIL = "hello@insidebars.co";
+
+type BarIdentity = { name: string; address: string; neighborhood: string };
 
 const inputClass =
   "w-full h-11 px-3 bg-background border-2 border-foreground text-sm font-body outline-none focus:bg-muted/40 transition-colors";
@@ -21,6 +25,9 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [barIdentity, setBarIdentity] = useState<BarIdentity | null>(null);
+
+  const isApprovedOrganizer = role === "organizer" && approvalStatus === "approved";
 
   useEffect(() => {
     if (loading) return;
@@ -39,6 +46,22 @@ export default function Profile() {
       setInitialized(true);
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !isApprovedOrganizer) {
+      setBarIdentity(null);
+      return;
+    }
+    fetchOrganizerById(user.id).then((organizer) => {
+      if (organizer?.venue) {
+        setBarIdentity({
+          name: organizer.venue.name,
+          address: organizer.venue.address,
+          neighborhood: organizer.venue.neighborhood,
+        });
+      }
+    });
+  }, [user, isApprovedOrganizer]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,6 +201,37 @@ export default function Profile() {
         </form>
       </section>
 
+      {/* Bar identity block — only for approved organizers */}
+      {barIdentity && (
+        <section className="mb-10 border-t border-border pt-8">
+          <div className="border border-border rounded-sm p-5 bg-muted/30">
+            <p className="mono-label text-muted-foreground mb-3">Bar identity</p>
+            <p className="text-lg font-heading font-bold leading-tight">
+              {barIdentity.name}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {barIdentity.address.replace(/,\s*Germany\s*$/i, "")}
+            </p>
+            {barIdentity.neighborhood && (
+              <p className="text-sm text-muted-foreground">{barIdentity.neighborhood}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-4 flex items-start gap-1.5">
+              <Mail className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>
+                If the location or bar name changes, please contact us at{" "}
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="text-foreground underline hover:text-accent transition-colors"
+                >
+                  {SUPPORT_EMAIL}
+                </a>
+                .
+              </span>
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* Security block */}
       <section className="mb-10 border-t border-border pt-8">
         <h2 className="mono-label text-foreground mb-4">Change password</h2>
@@ -210,7 +264,7 @@ export default function Profile() {
             <button
               type="submit"
               disabled={changingPassword}
-              className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <KeyRound className="h-3.5 w-3.5" />
               {changingPassword ? "Updating…" : "Update password"}
