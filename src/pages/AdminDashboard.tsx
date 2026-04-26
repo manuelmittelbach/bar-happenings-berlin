@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatDateShort } from "@/lib/dateFormat";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -13,6 +13,7 @@ import {
   updateOrganizerApprovalStatus,
   approveOrganizerWithNewBar,
   approveOrganizerWithVenueClaim,
+  setVenueOnline,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
 import type { Venue } from "@/types/event";
@@ -139,6 +140,26 @@ export default function AdminDashboard() {
       setDecidedOrganizers(prev => [decided, ...prev]);
     } catch {
       toast.error("Failed to approve bar account.");
+    }
+  };
+
+  const handleToggleOnline = async (venueId: string, next: "yes" | "no") => {
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId ? { ...item, venue: { ...item.venue, online: next } } : item,
+      ),
+    );
+    try {
+      await setVenueOnline(venueId, next);
+    } catch {
+      setAllBars(prev =>
+        prev.map(item =>
+          item.venue.id === venueId
+            ? { ...item, venue: { ...item.venue, online: next === "yes" ? "no" : "yes" } }
+            : item,
+        ),
+      );
+      toast.error("Couldn't update online status. Please try again.");
     }
   };
 
@@ -284,7 +305,12 @@ export default function AdminDashboard() {
                       return <p className="text-sm text-muted-foreground">No bars match your search.</p>;
                     }
                     return filtered.map(({ venue, hasOwner }) => (
-                      <BarCard key={venue.id} venue={venue} hasOwner={hasOwner} />
+                      <BarCard
+                        key={venue.id}
+                        venue={venue}
+                        hasOwner={hasOwner}
+                        onToggleOnline={handleToggleOnline}
+                      />
                     ));
                   })()}
                 </>
@@ -295,7 +321,15 @@ export default function AdminDashboard() {
   );
 }
 
-function BarCard({ venue, hasOwner }: { venue: Venue; hasOwner: boolean }) {
+function BarCard({
+  venue,
+  hasOwner,
+  onToggleOnline,
+}: {
+  venue: Venue;
+  hasOwner: boolean;
+  onToggleOnline: (venueId: string, next: "yes" | "no") => void;
+}) {
   return (
     <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
@@ -313,34 +347,69 @@ function BarCard({ venue, hasOwner }: { venue: Venue; hasOwner: boolean }) {
           {venue.neighborhood || "(no neighborhood)"}
           {venue.address ? ` · ${venue.address}` : ""}
         </p>
-        {(venue.website || venue.instagram) && (
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            {venue.website && (
-              <a
-                href={venue.website}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                <Globe className="h-3 w-3" /> {venue.website.replace(/^https?:\/\//, "")}
-              </a>
-            )}
-            {venue.instagram && (
-              <a
-                href={
-                  /^https?:\/\//i.test(venue.instagram)
-                    ? venue.instagram
-                    : `https://instagram.com/${venue.instagram.replace(/^@/, "")}`
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                <Instagram className="h-3 w-3" /> {venue.instagram.replace(/^https?:\/\//, "")}
-              </a>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+          {venue.website ? (
+            <a
+              href={venue.website}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 hover:text-foreground"
+            >
+              <Globe className="h-3 w-3" /> {venue.website.replace(/^https?:\/\//, "")}
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-1 italic">
+              <Globe className="h-3 w-3" /> NULL
+            </span>
+          )}
+          {venue.instagram ? (
+            <a
+              href={
+                /^https?:\/\//i.test(venue.instagram)
+                  ? venue.instagram
+                  : `https://instagram.com/${venue.instagram.replace(/^@/, "")}`
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 hover:text-foreground"
+            >
+              <Instagram className="h-3 w-3" /> {venue.instagram.replace(/^https?:\/\//, "")}
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-1 italic">
+              <Instagram className="h-3 w-3" /> NULL
+            </span>
+          )}
+          {venue.websiteEvents ? (
+            <a
+              href={venue.websiteEvents}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 hover:text-foreground"
+            >
+              <CalendarDays className="h-3 w-3" /> {venue.websiteEvents.replace(/^https?:\/\//, "")}
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-1 italic">
+              <CalendarDays className="h-3 w-3" /> NULL
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => onToggleOnline(venue.id, venue.online === "yes" ? "no" : "yes")}
+          className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border transition-colors ${
+            venue.online === "yes"
+              ? "bg-green-500/10 text-green-600 border-green-500/40 hover:bg-green-500/20"
+              : "bg-red-500/10 text-red-600 border-red-500/40 hover:bg-red-500/20"
+          }`}
+          title={`Online: ${venue.online}. Click to toggle.`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${venue.online === "yes" ? "bg-green-500" : "bg-red-500"}`} />
+          Online: {venue.online}
+        </button>
       </div>
     </div>
   );

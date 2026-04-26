@@ -44,9 +44,22 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     image: row.image ?? "",
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
+    websiteEvents: row.website_events ?? undefined,
+    online: row.online === "yes" ? "yes" : "no",
     lat: Number(row.lat),
     lng: Number(row.lng),
   };
+}
+
+export async function setVenueOnline(
+  venueId: string,
+  online: "yes" | "no",
+): Promise<void> {
+  const { error } = await supabase
+    .from("venues")
+    .update({ online })
+    .eq("id", venueId);
+  if (error) throw error;
 }
 
 export async function fetchEvents(): Promise<BarlinEvent[]> {
