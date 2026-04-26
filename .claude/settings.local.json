@@ -64,7 +64,8 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "mcp__claude_ai_Supabase__list_migrations",
       "mcp__claude_ai_Supabase__apply_migration",
-      "mcp__claude_ai_Supabase__generate_typescript_types"
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

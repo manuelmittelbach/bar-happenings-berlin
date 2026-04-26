@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
 export default function UpdatePassword() {
   const navigate = useNavigate();
@@ -51,7 +53,8 @@ export default function UpdatePassword() {
                   <input
                     type={showPass ? "text" : "password"}
                     required
-                    minLength={8}
+                    autoComplete="new-password"
+                    minLength={PASSWORD_MIN_LENGTH}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -60,11 +63,14 @@ export default function UpdatePassword() {
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
+                    aria-label={showPass ? "Hide password" : "Show password"}
+                    aria-pressed={showPass}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <PasswordStrengthMeter password={password} />
               </div>
 
               {error && <p className="text-sm text-accent font-medium">{error}</p>}

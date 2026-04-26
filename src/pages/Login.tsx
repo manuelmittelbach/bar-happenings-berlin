@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 import { Spinner } from "@/components/ui/spinner";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
 type Role = "user" | "organizer" | "admin" | null;
 
@@ -285,6 +287,7 @@ export default function Login() {
 											<input
 												type="text"
 												required
+												autoComplete="given-name"
 												value={firstName}
 												onChange={(e) => setFirstName(e.target.value)}
 												placeholder="Anna"
@@ -296,6 +299,7 @@ export default function Login() {
 											<input
 												type="text"
 												required
+												autoComplete="family-name"
 												value={lastName}
 												onChange={(e) => setLastName(e.target.value)}
 												placeholder="Müller"
@@ -431,6 +435,7 @@ export default function Login() {
 									<input
 										type="email"
 										required
+										autoComplete="email"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										placeholder="you@example.com"
@@ -456,7 +461,8 @@ export default function Login() {
 											<input
 												type={showPass ? "text" : "password"}
 												required
-												{...(!isLogin && { minLength: 8 })}
+												autoComplete={isLogin ? "current-password" : "new-password"}
+												{...(!isLogin && { minLength: PASSWORD_MIN_LENGTH })}
 												value={password}
 												onChange={(e) => setPassword(e.target.value)}
 												placeholder="••••••••"
@@ -465,11 +471,14 @@ export default function Login() {
 											<button
 												type="button"
 												onClick={() => setShowPass(!showPass)}
+												aria-label={showPass ? "Hide password" : "Show password"}
+												aria-pressed={showPass}
 												className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 											>
 												{showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 											</button>
 										</div>
+										{!isLogin && <PasswordStrengthMeter password={password} />}
 									</div>
 								)}
 

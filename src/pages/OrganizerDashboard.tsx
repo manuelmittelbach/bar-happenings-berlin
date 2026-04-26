@@ -140,6 +140,11 @@ export default function OrganizerDashboard() {
                 ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
                 : "Thanks for signing up! An admin needs to review your bar details before you can publish events. You'll get access automatically as soon as your account is approved."}
             </p>
+            {!rejected && (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We do this to protect you and the bar community — only real owners or staff should be able to publish events for a bar.
+              </p>
+            )}
         </div>
       </div>
     );
