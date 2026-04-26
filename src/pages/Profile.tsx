@@ -10,6 +10,9 @@ import {
   consumeEmailJustChanged,
   clearEmailJustChangedSoon,
   EMAIL_CHANGE_KEY,
+  consumePasswordJustReset,
+  clearPasswordJustResetSoon,
+  PASSWORD_RESET_KEY,
 } from "@/lib/justConfirmed";
 
 const SUPPORT_EMAIL = "hello@insidebars.co";
@@ -23,6 +26,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, role, approvalStatus, loading, signOut } = useAuth();
   const [emailJustChanged, setEmailJustChanged] = useState<boolean>(consumeEmailJustChanged);
+  const [passwordJustReset, setPasswordJustReset] = useState<boolean>(consumePasswordJustReset);
 
   useEffect(() => {
     if (!emailJustChanged) return;
@@ -30,9 +34,18 @@ export default function Profile() {
   }, [emailJustChanged]);
 
   useEffect(() => {
+    if (!passwordJustReset) return;
+    return clearPasswordJustResetSoon();
+  }, [passwordJustReset]);
+
+  useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key !== EMAIL_CHANGE_KEY) return;
-      if (e.newValue && consumeEmailJustChanged()) setEmailJustChanged(true);
+      if (e.key === EMAIL_CHANGE_KEY && e.newValue && consumeEmailJustChanged()) {
+        setEmailJustChanged(true);
+      }
+      if (e.key === PASSWORD_RESET_KEY && e.newValue && consumePasswordJustReset()) {
+        setPasswordJustReset(true);
+      }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -216,6 +229,11 @@ export default function Profile() {
       {emailJustChanged && (
         <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
           <CheckCircle2 className="h-4 w-4" /> Email updated!
+        </div>
+      )}
+      {passwordJustReset && (
+        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
+          <CheckCircle2 className="h-4 w-4" /> Password reset!
         </div>
       )}
       {/* Header */}
