@@ -38,6 +38,14 @@ function ScrollManager() {
 function detectAuthCallback(): boolean {
   const s = window.location.search;
   const h = window.location.hash;
+  const hasError = s.includes("error=") || h.includes("error=");
+  if (
+    !hasError &&
+    window.location.pathname === "/reset-password" &&
+    (h.includes("type=recovery") || h.includes("access_token="))
+  ) {
+    return false;
+  }
   return (
     s.includes("code=") ||
     s.includes("error=") ||

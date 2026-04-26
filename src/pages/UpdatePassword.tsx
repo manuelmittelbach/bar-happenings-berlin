@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { markPasswordJustReset } from "@/lib/justConfirmed";
 
 export default function UpdatePassword() {
   const navigate = useNavigate();
@@ -25,7 +26,8 @@ export default function UpdatePassword() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      navigate("/my-events");
+      markPasswordJustReset();
+      navigate("/profile", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
