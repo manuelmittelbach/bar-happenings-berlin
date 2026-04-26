@@ -36,6 +36,8 @@ export interface Venue {
   image: string;
   instagram?: string;
   website?: string;
+  websiteEvents?: string;
+  online: "yes" | "no";
   lat: number;
   lng: number;
 }
