@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { KeyRound, Save, LogOut, Mail, AtSign, CheckCircle2 } from "lucide-react";
+import { KeyRound, Save, LogOut, Mail, AtSign, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchOrganizerById, fetchProfile, updateProfile } from "@/lib/supabaseQueries";
@@ -44,6 +44,10 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [changingEmail, setChangingEmail] = useState(false);
@@ -154,6 +158,10 @@ export default function Profile() {
       toast.error("New password must differ from current password.");
       return;
     }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords don't match.");
+      return;
+    }
     setChangingPassword(true);
     try {
       const { error: verifyError } = await supabase.auth.signInWithPassword({
@@ -169,9 +177,14 @@ export default function Profile() {
         toast.error("Couldn't update password. Please try again.");
         return;
       }
+      await supabase.auth.signOut({ scope: "others" });
+      void supabase.functions.invoke("notify-password-changed").catch(() => {
+        // Notification email failure is non-fatal — password change already succeeded.
+      });
       setCurrentPassword("");
       setNewPassword("");
-      toast.success("Password updated.");
+      setConfirmPassword("");
+      toast.success("Password updated. Other devices have been signed out.");
     } finally {
       setChangingPassword(false);
     }
@@ -338,27 +351,69 @@ export default function Profile() {
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">Current password</label>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showCurrent ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className={`${inputClass} pr-11`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent((v) => !v)}
+                aria-label={showCurrent ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">New password</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={`${inputClass} pr-11`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew((v) => !v)}
+                aria-label={showNew ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="mono-label text-muted-foreground">Confirm new password</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`${inputClass} pr-11`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="pt-1">
             <button
