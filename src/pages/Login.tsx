@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 import { Spinner } from "@/components/ui/spinner";
+import { markEmailJustConfirmed } from "@/lib/justConfirmed";
 
 type Role = "user" | "organizer" | "admin" | null;
 
@@ -64,12 +65,6 @@ export default function Login() {
 	const from = (location.state as { from?: string })?.from ?? null;
 	const { user, role, loading: authLoading, roleResolved, signIn, signUp, resetPassword } = useAuth();
 
-	useEffect(() => {
-		if (authLoading || !user || !roleResolved) return;
-		const target = resolvePostAuthTarget(from, role);
-		navigate(target, { replace: true });
-	}, [user, role, roleResolved, authLoading, from, navigate]);
-
 	const [isLogin, setIsLogin] = useState(() => {
 		const p = new URLSearchParams(window.location.search);
 		if (p.get("link_error") === "confirm") return false;
@@ -107,6 +102,16 @@ export default function Login() {
 	});
 	const [success, setSuccess] = useState("");
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (authLoading || !user || !roleResolved) return;
+		if (success === "confirm-email") {
+			markEmailJustConfirmed();
+		}
+		const target = resolvePostAuthTarget(from, role);
+		navigate(target, { replace: true });
+	}, [user, role, roleResolved, authLoading, from, navigate, success]);
+
 	const [lockedUntil, setLockedUntil] = useState<number | null>(() => {
 		const entry = readLockout(email);
 		return entry.lockedUntil && entry.lockedUntil > Date.now() ? entry.lockedUntil : null;

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { markEmailJustConfirmed } from "@/lib/justConfirmed";
+import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -43,8 +43,15 @@ function detectAuthCallback(): boolean {
     s.includes("error=") ||
     h.includes("access_token=") ||
     h.includes("type=signup") ||
+    h.includes("type=email_change") ||
+    h.includes("type=email") ||
     h.includes("error=")
   );
+}
+
+function isEmailChangeCallback(): boolean {
+  const h = window.location.hash;
+  return h.includes("type=email_change") || h.includes("type=email");
 }
 
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
@@ -64,8 +71,17 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const emailChange = isEmailChangeCallback();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
+      if (!session) return;
+      if (emailChange && (event === "USER_UPDATED" || event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        markEmailJustChanged();
+        navigate("/profile", { replace: true });
+        setPending(false);
+        return;
+      }
+      if (event === "SIGNED_IN") {
         markEmailJustConfirmed();
         supabase
           .from("profiles")
