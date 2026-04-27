@@ -249,6 +249,26 @@ def is_acceptable_date(d: date) -> bool:
     return TODAY <= d <= MAX_DATE
 
 
+def fetch_existing_event_dates_by_venue(client) -> dict[str, set[str]]:
+    """Map venue_id -> {date_iso} for events publicly visible on the site
+    (status approved/canceled, future dates). Used to skip scraped events that
+    already exist as live events for the same venue + date."""
+    result = (
+        client.table("events")
+        .select("venue_id, date")
+        .in_("status", ["approved", "canceled"])
+        .gte("date", TODAY_ISO)
+        .execute()
+    )
+    out: dict[str, set[str]] = {}
+    for row in result.data:
+        vid = row.get("venue_id")
+        d = row.get("date")
+        if vid and d:
+            out.setdefault(vid, set()).add(d)
+    return out
+
+
 def clear_staging(client) -> int:
     """Delete EVERY row from venue_events_staging. Returns number deleted.
     Used by the --clear flag to wipe stale staged events before a fresh scrape."""
@@ -301,6 +321,11 @@ def main():
     venues = result.data
     print(f"  {len(venues)} venues found (sorted A→Z by name)\n")
 
+    print("Fetching existing event dates for dedup...")
+    existing_dates_map = fetch_existing_event_dates_by_venue(client)
+    total_live = sum(len(s) for s in existing_dates_map.values())
+    print(f"  {total_live} live event-dates known across {len(existing_dates_map)} venues\n")
+
     total_scanned = 0
     total_events = 0
     total_errors = 0
@@ -317,6 +342,8 @@ def main():
         if not text:
             print(f"  ✗ Could not fetch page: {fetch_error}")
             log_scrape(client, venue_id, "fetch_error", fetch_error)
+            if ensure_placeholder(client, venue_id, url):
+                print("  + placeholder created (fetch error)")
             total_errors += 1
             continue
 
@@ -325,6 +352,8 @@ def main():
         if ollama_error:
             print(f"  ✗ Ollama error: {ollama_error}")
             log_scrape(client, venue_id, "timeout", ollama_error)
+            if ensure_placeholder(client, venue_id, url):
+                print("  + placeholder created (LLM error)")
             total_errors += 1
             continue
 
@@ -335,9 +364,11 @@ def main():
                 print("  + placeholder created for manual entry")
             continue
 
+        existing_dates = existing_dates_map.get(venue_id, set())
         inserted = 0
         skipped_past = 0
         skipped_invalid = 0
+        skipped_already_live = 0
         for ev in events:
             try:
                 title = (ev.get("title") or "").strip()
@@ -347,6 +378,9 @@ def main():
                     continue
                 if not is_acceptable_date(parsed):
                     skipped_past += 1
+                    continue
+                if parsed.isoformat() in existing_dates:
+                    skipped_already_live += 1
                     continue
 
                 row = {
@@ -370,24 +404,34 @@ def main():
                 print(f"  ⚠ Insert error: {e}")
                 total_errors += 1
 
-        if inserted or skipped_past or skipped_invalid:
+        # Summary line
+        if inserted or skipped_past or skipped_invalid or skipped_already_live:
             extras = []
             if skipped_past:
                 extras.append(f"{skipped_past} past/out-of-range")
             if skipped_invalid:
                 extras.append(f"{skipped_invalid} invalid")
+            if skipped_already_live:
+                extras.append(f"{skipped_already_live} already live")
             extra_str = f" ({', '.join(extras)} skipped)" if extras else ""
             print(f"  ✓ {inserted} event(s) staged{extra_str}")
-            if inserted:
-                log_scrape(client, venue_id, "success")
             total_events += inserted
 
-        # If nothing landed in staging (all extracted events were filtered out),
-        # still create a placeholder so the venue shows up for manual review.
-        if inserted == 0:
-            log_scrape(client, venue_id, "no_events")
+        # Log status by outcome
+        if inserted > 0:
+            log_scrape(client, venue_id, "success")
+        elif skipped_already_live > 0 and skipped_invalid == 0 and skipped_past == 0:
+            log_scrape(client, venue_id, "all_already_live")  # Fall 5
+        elif skipped_invalid > 0:
+            log_scrape(client, venue_id, "invalid_output")    # Fall 7
+        else:
+            log_scrape(client, venue_id, "no_future_events")  # Fall 4
+
+        # Placeholder only if LLM produced unparseable rows (Fall 7).
+        # All other "no inserted" cases are deliberate skips, no admin attention needed.
+        if skipped_invalid > 0:
             if ensure_placeholder(client, venue_id, url):
-                print("  + placeholder created for manual entry")
+                print("  + placeholder created (LLM produced unparseable rows)")
 
     print(f"\n{'=' * 50}")
     print(f"Done! {total_scanned} venues scanned, {total_events} events staged, {total_errors} errors.")
