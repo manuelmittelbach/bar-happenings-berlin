@@ -26,9 +26,9 @@ const badgeChipClasses: Record<EventBadge["variant"], string> = {
 };
 
 
-export default function EventCard({ event, index = 0, layout = "grid", featured = false, onClick }: EventCardProps) {
+export default function EventCard({ event, layout = "grid", featured = false, onClick }: EventCardProps) {
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
-  const userLocation = useUserLocation();
+  const { location: userLocation } = useUserLocation();
   const isCanceled = event.status === "canceled";
 
   const interestedCount = event.interestedCount ?? 0;

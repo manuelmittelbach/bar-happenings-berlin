@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { markEmailJustChanged } from "@/lib/justConfirmed";
 
 type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -42,14 +43,21 @@ export function useAuth() {
 
   useEffect(() => {
     let lastFetchedUserId: string | null = null;
+    let lastSeenEmail: string | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user ?? null;
       if (!user) {
         lastFetchedUserId = null;
+        lastSeenEmail = null;
         setState({ user: null, session: null, loading: false, role: null, roleResolved: true, approvalStatus: null });
         return;
       }
+      const currentEmail = user.email ?? null;
+      if (lastSeenEmail && currentEmail && currentEmail !== lastSeenEmail && lastFetchedUserId === user.id) {
+        markEmailJustChanged();
+      }
+      lastSeenEmail = currentEmail;
       const metaRole = user.user_metadata?.role;
       const initialRole: "user" | "organizer" | "admin" =
         metaRole === "organizer" || metaRole === "admin" ? metaRole : "user";

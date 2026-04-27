@@ -72,7 +72,9 @@
       "Bash(ps -p 55458 -o lstart=)",
       "Bash(pkill -f \"scrape_venue_events.py\")",
       "mcp__supabase__list_migrations",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "mcp__supabase__list_edge_functions",
+      "mcp__supabase__deploy_edge_function"
     ]
   }
 }
