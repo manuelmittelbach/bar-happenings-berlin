@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents } from "@/hooks/useEvents";
 import EventCard from "@/components/events/EventCard";
@@ -96,6 +96,11 @@ export default function MyEvents() {
 	return (
 		<div className="bg-background pb-24">
 			<div className="max-w-screen-sm mx-auto px-4 pt-6">
+				{justConfirmed && (
+					<div className="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
+						<CheckCircle2 className="h-4 w-4" /> Email confirmed!
+					</div>
+				)}
 				<div className="mt-12 mb-8 flex justify-center">
 					<button
 						onClick={() => {
@@ -113,9 +118,7 @@ export default function MyEvents() {
 					<p className="text-sm text-muted-foreground">Loading your events…</p>
 				) : !hasAnyEvents && pastEvents.length === 0 ? (
 					<div className="flex flex-col items-center py-16 gap-4 text-center">
-						<p className="font-body font-bold">
-							{justConfirmed ? "Email confirmed!" : "Nothing saved yet"}
-						</p>
+						<p className="font-body font-bold">Nothing saved yet</p>
 						<p className="text-sm text-muted-foreground">
 							Tap "Interested" on any event to save it here.
 						</p>
