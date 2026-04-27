@@ -754,8 +754,10 @@ export type Database = {
           description: string | null
           end_time: string | null
           entry_info: string | null
+          events_id: string | null
           id: string
           is_manual: boolean
+          is_manual_tab: boolean
           language: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -772,8 +774,10 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
+          events_id?: string | null
           id?: string
           is_manual?: boolean
+          is_manual_tab?: boolean
           language?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -790,8 +794,10 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
+          events_id?: string | null
           id?: string
           is_manual?: boolean
+          is_manual_tab?: boolean
           language?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
