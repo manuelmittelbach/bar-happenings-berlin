@@ -70,7 +70,9 @@
       "Bash(rm -rf \"/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/Tipsy Tiger/.git\")",
       "Bash(rm \"/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/Tipsy Tiger/.gitignore\")",
       "Bash(ps -p 55458 -o lstart=)",
-      "Bash(pkill -f \"scrape_venue_events.py\")"
+      "Bash(pkill -f \"scrape_venue_events.py\")",
+      "mcp__supabase__list_migrations",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

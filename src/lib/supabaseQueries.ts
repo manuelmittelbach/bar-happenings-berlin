@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventFilter, StagedEventStatus, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
@@ -769,6 +769,7 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     status: row.status as StagedEventStatus,
     scrapedAt: row.scraped_at,
     reviewedAt: row.reviewed_at,
+    isManual: row.is_manual ?? false,
   };
 }
 
@@ -805,14 +806,16 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
 }
 
 export async function fetchStagedEvents(
-  statusFilter: StagedEventStatus | "all" = "pending",
+  filter: StagedEventFilter = "pending",
 ): Promise<StagedEvent[]> {
   let query = supabase
     .from("venue_events_staging")
     .select("*, venues!inner(name, address, neighborhood)");
 
-  if (statusFilter !== "all") {
-    query = query.eq("status", statusFilter);
+  if (filter === "manual") {
+    query = query.eq("is_manual", true);
+  } else if (filter !== "all") {
+    query = query.eq("status", filter);
   }
 
   const { data, error } = await query;
@@ -822,6 +825,88 @@ export async function fetchStagedEvents(
     || a.date.localeCompare(b.date)
     || (a.startTime ?? "").localeCompare(b.startTime ?? ""),
   );
+}
+
+export async function createBlankManualStagedEvent(
+  venueId: string,
+): Promise<StagedEvent> {
+  const id = crypto.randomUUID();
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .insert({
+      id,
+      venue_id: venueId,
+      status: "pending",
+      is_manual: true,
+      source_url: null,
+    });
+  if (error) throw error;
+
+  const { data, error: fetchErr } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues!inner(name, address, neighborhood)")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
+  return mapStagedEventRow(data as StagedEventRow);
+}
+
+export async function duplicateStagedEvent(
+  source: StagedEvent,
+  edits?: StagedEventEdits,
+): Promise<StagedEvent> {
+  const id = crypto.randomUUID();
+  const merged = {
+    title: edits?.title ?? source.title,
+    date: edits?.date ?? source.date,
+    startTime: edits?.startTime !== undefined ? edits.startTime : source.startTime,
+    endTime: edits?.endTime !== undefined ? edits.endTime : source.endTime,
+    category: edits?.category !== undefined ? edits.category : source.category,
+    language: edits?.language ?? source.language,
+    description: edits?.description ?? source.description,
+    entryInfo: edits?.entryInfo ?? source.entryInfo,
+  };
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .insert({
+      id,
+      venue_id: source.venueId,
+      title: merged.title || null,
+      date: merged.date || null,
+      start_time: merged.startTime,
+      end_time: merged.endTime,
+      category: merged.category,
+      language: merged.language || null,
+      description: merged.description || null,
+      entry_info: merged.entryInfo || null,
+      source_url: source.sourceUrl,
+      status: "pending",
+      is_manual: true,
+    });
+  if (error) throw error;
+
+  const { data, error: fetchErr } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues!inner(name, address, neighborhood)")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
+  return mapStagedEventRow(data as StagedEventRow);
+}
+
+export async function updateStagedEventManualFields(
+  stagedId: string,
+  patch: { venueId?: string; sourceUrl?: string | null },
+): Promise<void> {
+  const update: TablesUpdate<"venue_events_staging"> = {};
+  if (patch.venueId !== undefined) update.venue_id = patch.venueId;
+  if (patch.sourceUrl !== undefined) update.source_url = patch.sourceUrl;
+  if (Object.keys(update).length === 0) return;
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .update(update)
+    .eq("id", stagedId);
+  if (error) throw error;
 }
 
 export async function approveStagedEvent(

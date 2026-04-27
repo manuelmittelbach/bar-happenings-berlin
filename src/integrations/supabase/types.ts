@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       bar_sources: {
@@ -92,6 +67,7 @@ export type Database = {
           rating: number | null
           source_type: string | null
           telegram: string | null
+          updated_at: string | null
           website: string | null
         }
         Insert: {
@@ -111,6 +87,7 @@ export type Database = {
           rating?: number | null
           source_type?: string | null
           telegram?: string | null
+          updated_at?: string | null
           website?: string | null
         }
         Update: {
@@ -130,6 +107,7 @@ export type Database = {
           rating?: number | null
           source_type?: string | null
           telegram?: string | null
+          updated_at?: string | null
           website?: string | null
         }
         Relationships: []
@@ -373,6 +351,105 @@ export type Database = {
           },
         ]
       }
+      events_archive: {
+        Row: {
+          address: string
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string
+          category: string
+          category_id: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string | null
+          end_time: string | null
+          entry_info: string | null
+          featured: boolean | null
+          id: string
+          image: string | null
+          image_position: string
+          interested_count: number | null
+          language: string | null
+          neighborhood: string
+          parent_id: string | null
+          price: string | null
+          recurrence: string | null
+          start_time: string
+          status: string
+          summary: string | null
+          tags: string[] | null
+          title: string
+          url: string | null
+          venue: string
+          venue_id: string | null
+        }
+        Insert: {
+          address: string
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string
+          category: string
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          featured?: boolean | null
+          id: string
+          image?: string | null
+          image_position?: string
+          interested_count?: number | null
+          language?: string | null
+          neighborhood: string
+          parent_id?: string | null
+          price?: string | null
+          recurrence?: string | null
+          start_time: string
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          url?: string | null
+          venue: string
+          venue_id?: string | null
+        }
+        Update: {
+          address?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string
+          category?: string
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          featured?: boolean | null
+          id?: string
+          image?: string | null
+          image_position?: string
+          interested_count?: number | null
+          language?: string | null
+          neighborhood?: string
+          parent_id?: string | null
+          price?: string | null
+          recurrence?: string | null
+          start_time?: string
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          url?: string | null
+          venue?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       events_staging: {
         Row: {
           area: string | null
@@ -491,6 +568,8 @@ export type Database = {
         Row: {
           address: string
           created_at: string
+          inside_image_position: string
+          inside_image_url: string | null
           instagram: string | null
           name: string
           neighborhood: string
@@ -501,6 +580,8 @@ export type Database = {
         Insert: {
           address: string
           created_at?: string
+          inside_image_position?: string
+          inside_image_url?: string | null
           instagram?: string | null
           name: string
           neighborhood?: string
@@ -511,6 +592,8 @@ export type Database = {
         Update: {
           address?: string
           created_at?: string
+          inside_image_position?: string
+          inside_image_url?: string | null
           instagram?: string | null
           name?: string
           neighborhood?: string
@@ -523,6 +606,8 @@ export type Database = {
       pending_venue_claims: {
         Row: {
           created_at: string
+          proposed_inside_image_position: string
+          proposed_inside_image_url: string | null
           proposed_instagram: string | null
           proposed_phone: string | null
           proposed_website: string | null
@@ -531,6 +616,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          proposed_inside_image_position?: string
+          proposed_inside_image_url?: string | null
           proposed_instagram?: string | null
           proposed_phone?: string | null
           proposed_website?: string | null
@@ -539,6 +626,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          proposed_inside_image_position?: string
+          proposed_inside_image_url?: string | null
           proposed_instagram?: string | null
           proposed_phone?: string | null
           proposed_website?: string | null
@@ -629,68 +718,6 @@ export type Database = {
           },
         ]
       }
-      venue_events_staging: {
-        Row: {
-          category: string | null
-          date: string | null
-          description: string | null
-          end_time: string | null
-          entry_info: string | null
-          id: string
-          language: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          scraped_at: string
-          source_url: string
-          start_time: string | null
-          status: string
-          title: string | null
-          venue_id: string
-        }
-        Insert: {
-          category?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          entry_info?: string | null
-          id?: string
-          language?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          scraped_at?: string
-          source_url: string
-          start_time?: string | null
-          status?: string
-          title?: string | null
-          venue_id: string
-        }
-        Update: {
-          category?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          entry_info?: string | null
-          id?: string
-          language?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          scraped_at?: string
-          source_url?: string
-          start_time?: string | null
-          status?: string
-          title?: string | null
-          venue_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_events_staging_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_interests: {
         Row: {
           created_at: string | null
@@ -716,6 +743,71 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_events_staging: {
+        Row: {
+          category: string | null
+          date: string | null
+          description: string | null
+          end_time: string | null
+          entry_info: string | null
+          id: string
+          is_manual: boolean
+          language: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scraped_at: string
+          source_url: string | null
+          start_time: string | null
+          status: string
+          title: string | null
+          venue_id: string
+        }
+        Insert: {
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          id?: string
+          is_manual?: boolean
+          language?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scraped_at?: string
+          source_url?: string | null
+          start_time?: string | null
+          status?: string
+          title?: string | null
+          venue_id: string
+        }
+        Update: {
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          id?: string
+          is_manual?: boolean
+          language?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scraped_at?: string
+          source_url?: string | null
+          start_time?: string | null
+          status?: string
+          title?: string | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_events_staging_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -758,6 +850,8 @@ export type Database = {
           id: string
           image: string | null
           inserted_at: string | null
+          inside_image_position: string
+          inside_image_url: string | null
           instagram: string | null
           lat: number
           lng: number
@@ -767,6 +861,7 @@ export type Database = {
           opening_hours: string | null
           phone: string | null
           telegram: string | null
+          updated_at: string | null
           website: string | null
           website_events: string | null
         }
@@ -778,6 +873,8 @@ export type Database = {
           id?: string
           image?: string | null
           inserted_at?: string | null
+          inside_image_position?: string
+          inside_image_url?: string | null
           instagram?: string | null
           lat: number
           lng: number
@@ -787,6 +884,7 @@ export type Database = {
           opening_hours?: string | null
           phone?: string | null
           telegram?: string | null
+          updated_at?: string | null
           website?: string | null
           website_events?: string | null
         }
@@ -798,6 +896,8 @@ export type Database = {
           id?: string
           image?: string | null
           inserted_at?: string | null
+          inside_image_position?: string
+          inside_image_url?: string | null
           instagram?: string | null
           lat?: number
           lng?: number
@@ -807,6 +907,7 @@ export type Database = {
           opening_hours?: string | null
           phone?: string | null
           telegram?: string | null
+          updated_at?: string | null
           website?: string | null
           website_events?: string | null
         }
@@ -948,9 +1049,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

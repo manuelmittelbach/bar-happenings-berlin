@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatDateShort } from "@/lib/dateFormat";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,10 +20,14 @@ import {
   approveStagedEvent,
   rejectStagedEvent,
   fetchLiveEventsByVenue,
+  fetchVenues,
+  createBlankManualStagedEvent,
+  duplicateStagedEvent,
+  updateStagedEventManualFields,
   type OrganizerAccount,
   type LiveEventInfo,
 } from "@/lib/supabaseQueries";
-import type { StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
+import type { StagedEvent, StagedEventEdits, StagedEventFilter, Venue } from "@/types/event";
 
 type BarTab = "pending" | "overview" | "all-bars" | "scraped";
 
@@ -73,9 +77,10 @@ export default function AdminDashboard() {
   const [allBarsQuery, setAllBarsQuery] = useState("");
   const [stagedEvents, setStagedEvents] = useState<StagedEvent[]>([]);
   const [stagedEventsLoading, setStagedEventsLoading] = useState(true);
-  const [stagedFilter, setStagedFilter] = useState<StagedEventStatus | "all">("pending");
+  const [stagedFilter, setStagedFilter] = useState<StagedEventFilter>("pending");
   const [stagedQuery, setStagedQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
+  const [venues, setVenues] = useState<Venue[]>([]);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -133,11 +138,22 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadVenues = useCallback(async () => {
+    try {
+      const list = await fetchVenues();
+      list.sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }));
+      setVenues(list);
+    } catch {
+      // Silent — fallback: dropdown will be empty.
+    }
+  }, []);
+
   useEffect(() => {
     loadPendingOrganizers();
     loadDecidedOrganizers();
     loadAllBars();
-  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars]);
+    loadVenues();
+  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues]);
 
   useEffect(() => {
     loadStagedEvents();
@@ -245,6 +261,67 @@ export default function AdminDashboard() {
       setStagedEvents(prev => prev.filter(s => s.id !== staged.id));
     } catch {
       toast.error("Failed to reject event.");
+    }
+  };
+
+  const handleCreateBlankManual = async () => {
+    if (venues.length === 0) {
+      toast.error("No venues available.");
+      return;
+    }
+    try {
+      const created = await createBlankManualStagedEvent(venues[0].id);
+      setStagedFilter("manual");
+      setStagedEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
+      toast.success("Blank card created");
+    } catch {
+      toast.error("Failed to create card.");
+    }
+  };
+
+  const handleDuplicateStaged = async (source: StagedEvent, edits: StagedEventEdits) => {
+    try {
+      const created = await duplicateStagedEvent(source, edits);
+      setStagedEvents(prev => {
+        const idx = prev.findIndex(s => s.id === source.id);
+        if (idx === -1) return [created, ...prev];
+        return [...prev.slice(0, idx + 1), created, ...prev.slice(idx + 1)];
+      });
+      toast.success("Card duplicated");
+    } catch {
+      toast.error("Failed to duplicate card.");
+    }
+  };
+
+  const handleManualVenueChange = async (stagedId: string, venueId: string) => {
+    try {
+      await updateStagedEventManualFields(stagedId, { venueId });
+      const venue = venues.find(v => v.id === venueId);
+      setStagedEvents(prev =>
+        prev.map(s =>
+          s.id === stagedId && venue
+            ? {
+                ...s,
+                venueId,
+                venueName: venue.name,
+                venueAddress: venue.address,
+                venueNeighborhood: venue.neighborhood,
+              }
+            : s,
+        ),
+      );
+    } catch {
+      toast.error("Failed to update venue.");
+    }
+  };
+
+  const handleManualSourceUrlChange = async (stagedId: string, sourceUrl: string) => {
+    const value = sourceUrl.trim() || null;
+    try {
+      await updateStagedEventManualFields(stagedId, { sourceUrl: value });
+      setStagedEvents(prev => prev.map(s => (s.id === stagedId ? { ...s, sourceUrl: value } : s)));
+    } catch {
+      toast.error("Failed to update URL.");
     }
   };
 
@@ -370,20 +447,28 @@ export default function AdminDashboard() {
           {activeBarTab === "scraped" && (
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2 mb-2">
-                <div className="flex gap-2 flex-shrink-0">
-                  {(["pending", "rejected", "all"] as const).map(f => (
+                <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                  {(["pending", "rejected", "all", "manual"] as const).map(f => (
                     <button
                       key={f}
                       onClick={() => setStagedFilter(f)}
-                      className={`h-10 px-3 text-xs font-medium border rounded-sm capitalize transition-colors ${
+                      className={`h-10 px-3 text-xs font-medium border rounded-sm transition-colors ${
                         stagedFilter === f
                           ? "bg-foreground text-background border-foreground"
                           : "border-border hover:bg-muted"
                       }`}
                     >
-                      {f}
+                      {f === "manual" ? "Created Manually" : f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
                   ))}
+                  <button
+                    onClick={handleCreateBlankManual}
+                    disabled={venues.length === 0}
+                    className="inline-flex items-center gap-1 h-10 px-3 text-xs font-medium border border-border rounded-sm hover:bg-muted disabled:opacity-50"
+                    title="Create new manual card"
+                  >
+                    <Plus className="h-4 w-4" /> New
+                  </button>
                 </div>
                 <input
                   type="search"
@@ -396,7 +481,7 @@ export default function AdminDashboard() {
               {stagedEventsLoading && <div className="flex justify-center py-4"><Spinner /></div>}
               {!stagedEventsLoading && stagedEvents.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  No {stagedFilter === "all" ? "" : stagedFilter} scraped events.
+                  No {stagedFilter === "manual" ? "manual" : stagedFilter === "all" ? "" : stagedFilter} scraped events.
                 </p>
               )}
               {!stagedEventsLoading && (() => {
@@ -407,16 +492,26 @@ export default function AdminDashboard() {
                       s.title.toLowerCase().includes(q),
                     )
                   : stagedEvents;
-                if (q && filtered.length === 0) {
+                const sorted = [...filtered].sort((a, b) => {
+                  const aBlank = a.isManual && !a.title;
+                  const bBlank = b.isManual && !b.title;
+                  if (aBlank !== bBlank) return aBlank ? -1 : 1;
+                  return 0;
+                });
+                if (q && sorted.length === 0) {
                   return <p className="text-sm text-muted-foreground">No events match your search.</p>;
                 }
-                return filtered.map(staged => (
+                return sorted.map(staged => (
                   <StagedEventCard
                     key={staged.id}
                     staged={staged}
                     liveEvents={liveEventsByVenue[staged.venueId] ?? []}
+                    venues={venues}
                     onApprove={(edits) => handleApproveStaged(staged, edits)}
                     onReject={() => handleRejectStaged(staged)}
+                    onDuplicate={(edits) => handleDuplicateStaged(staged, edits)}
+                    onVenueChange={(venueId) => handleManualVenueChange(staged.id, venueId)}
+                    onSourceUrlChange={(url) => handleManualSourceUrlChange(staged.id, url)}
                   />
                 ));
               })()}
@@ -723,13 +818,21 @@ function OrganizerCard({
 function StagedEventCard({
   staged,
   liveEvents,
+  venues,
   onApprove,
   onReject,
+  onDuplicate,
+  onVenueChange,
+  onSourceUrlChange,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
+  venues: Venue[];
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
+  onDuplicate: (edits: StagedEventEdits) => Promise<void>;
+  onVenueChange: (venueId: string) => Promise<void>;
+  onSourceUrlChange: (url: string) => Promise<void>;
 }) {
   const [title, setTitle] = useState(staged.title);
   const [date, setDate] = useState(staged.date);
@@ -739,6 +842,7 @@ function StagedEventCard({
   const [language, setLanguage] = useState(staged.language);
   const [description, setDescription] = useState(staged.description);
   const [entryInfo, setEntryInfo] = useState(staged.entryInfo);
+  const [sourceUrlInput, setSourceUrlInput] = useState(staged.sourceUrl ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [confirmingClash, setConfirmingClash] = useState(false);
 
@@ -746,6 +850,8 @@ function StagedEventCard({
   const sameDayEvents = liveEvents.filter(e => e.date === date);
 
   const isPending = staged.status === "pending";
+  const isManual = staged.isManual;
+  const canEditManualFields = isManual && isPending;
   const statusPill =
     staged.status === "approved"
       ? "bg-green-500/10 text-green-600"
@@ -753,19 +859,21 @@ function StagedEventCard({
       ? "bg-red-500/10 text-red-600"
       : "bg-yellow-500/10 text-yellow-600";
 
+  const collectEdits = (): StagedEventEdits => ({
+    title: title.trim(),
+    date,
+    startTime: startTime || null,
+    endTime: endTime || null,
+    category: category || null,
+    language,
+    description,
+    entryInfo,
+  });
+
   const performApprove = async () => {
     setSubmitting(true);
     try {
-      await onApprove({
-        title: title.trim(),
-        date,
-        startTime: startTime || null,
-        endTime: endTime || null,
-        category: category || null,
-        language,
-        description,
-        entryInfo,
-      });
+      await onApprove(collectEdits());
     } finally {
       setSubmitting(false);
       setConfirmingClash(false);
@@ -780,30 +888,96 @@ function StagedEventCard({
     await performApprove();
   };
 
+  const handleDuplicateClick = async () => {
+    setSubmitting(true);
+    try {
+      await onDuplicate(collectEdits());
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="border border-border rounded-sm p-4 space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
-        <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
-        {!isPending && (
-          <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
-            {staged.status}
-          </span>
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+          {canEditManualFields ? (
+            <select
+              value={staged.venueId}
+              onChange={e => onVenueChange(e.target.value)}
+              className="h-8 px-2 bg-muted/50 border border-border rounded-sm text-sm font-heading font-semibold outline-none focus:border-foreground transition-colors"
+            >
+              {venues.map(v => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
+          )}
+          <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
+          {isManual && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-red-500/10 text-red-600 border border-red-500/40">
+              Created Manually
+            </span>
+          )}
+          {!isPending && (
+            <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
+              {staged.status}
+            </span>
+          )}
+        </div>
+        {isPending && (
+          <button
+            onClick={handleDuplicateClick}
+            disabled={submitting}
+            title="Duplicate this card"
+            className="inline-flex items-center justify-center h-8 w-8 border border-border rounded-sm hover:bg-muted disabled:opacity-50 flex-shrink-0"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
         )}
       </div>
 
-      <a
-        href={staged.sourceUrl}
-        onClick={(e) => {
-          e.preventDefault();
-          openSourceWindow(staged.sourceUrl);
-        }}
-        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline break-all max-w-full cursor-pointer"
-        title="Open source page in side window to verify"
-      >
-        <ExternalLink className="h-3 w-3 flex-shrink-0" />
-        <span className="truncate">{staged.sourceUrl.replace(/^https?:\/\//, "")}</span>
-      </a>
+      {canEditManualFields ? (
+        <div className="flex items-center gap-2">
+          <input
+            type="url"
+            value={sourceUrlInput}
+            onChange={e => setSourceUrlInput(e.target.value)}
+            onBlur={() => {
+              if ((sourceUrlInput.trim() || null) !== staged.sourceUrl) {
+                onSourceUrlChange(sourceUrlInput);
+              }
+            }}
+            placeholder="Source URL (optional)"
+            className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+          />
+          {staged.sourceUrl && (
+            <button
+              onClick={() => openSourceWindow(staged.sourceUrl!)}
+              title="Open source in side window"
+              className="inline-flex items-center justify-center h-9 w-9 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ) : (
+        staged.sourceUrl && (
+          <a
+            href={staged.sourceUrl}
+            onClick={(e) => {
+              e.preventDefault();
+              openSourceWindow(staged.sourceUrl!);
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline break-all max-w-full cursor-pointer"
+            title="Open source page in side window to verify"
+          >
+            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{staged.sourceUrl.replace(/^https?:\/\//, "")}</span>
+          </a>
+        )
+      )}
 
       {liveDates.length > 0 && (
         <p className="text-xs text-muted-foreground">
