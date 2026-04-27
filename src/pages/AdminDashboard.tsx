@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { formatDateShort } from "@/lib/dateFormat";
+import { formatDateShort, formatDateWithDay } from "@/lib/dateFormat";
+import { cleanEventTitle } from "@/lib/cleanTitle";
+import { endsNextDay } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, MapPin, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +18,7 @@ import {
   approveOrganizerWithNewBar,
   approveOrganizerWithVenueClaim,
   setVenueOnline,
+  updateVenueLinks,
   fetchStagedEvents,
   approveStagedEvent,
   rejectStagedEvent,
@@ -24,12 +27,14 @@ import {
   createBlankManualStagedEvent,
   duplicateStagedEvent,
   updateStagedEventManualFields,
+  updateApprovedStagedEvent,
   type OrganizerAccount,
   type LiveEventInfo,
 } from "@/lib/supabaseQueries";
-import type { StagedEvent, StagedEventEdits, StagedEventFilter, Venue } from "@/types/event";
+import type { StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 
-type BarTab = "pending" | "overview" | "all-bars" | "scraped";
+type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual";
+type ScrapedTabFilter = StagedEventStatusFilter | "manual";
 
 function openSourceWindow(url: string) {
   // Anchor to the monitor the user's browser is currently on (multi-monitor safe).
@@ -60,6 +65,7 @@ export default function AdminDashboard() {
     tabParam === "overview" ? "overview"
     : tabParam === "all-bars" ? "all-bars"
     : tabParam === "scraped" ? "scraped"
+    : tabParam === "manual" ? "manual"
     : "pending";
   const setActiveBarTab = (tab: BarTab) => {
     const next = new URLSearchParams(searchParams);
@@ -75,10 +81,14 @@ export default function AdminDashboard() {
   const [allBars, setAllBars] = useState<{ venue: Venue; hasOwner: boolean }[]>([]);
   const [allBarsLoading, setAllBarsLoading] = useState(true);
   const [allBarsQuery, setAllBarsQuery] = useState("");
-  const [stagedEvents, setStagedEvents] = useState<StagedEvent[]>([]);
-  const [stagedEventsLoading, setStagedEventsLoading] = useState(true);
-  const [stagedFilter, setStagedFilter] = useState<StagedEventFilter>("pending");
-  const [stagedQuery, setStagedQuery] = useState("");
+  const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
+  const [scrapedLoading, setScrapedLoading] = useState(true);
+  const [scrapedFilter, setScrapedFilter] = useState<ScrapedTabFilter>("pending");
+  const [scrapedQuery, setScrapedQuery] = useState("");
+  const [manualEvents, setManualEvents] = useState<StagedEvent[]>([]);
+  const [manualLoading, setManualLoading] = useState(true);
+  const [manualFilter, setManualFilter] = useState<StagedEventStatusFilter>("pending");
+  const [manualQuery, setManualQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
   const [venues, setVenues] = useState<Venue[]>([]);
 
@@ -119,16 +129,33 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const loadStagedEvents = useCallback(async () => {
-    setStagedEventsLoading(true);
+  const loadScrapedEvents = useCallback(async () => {
+    setScrapedLoading(true);
     try {
-      setStagedEvents(await fetchStagedEvents(stagedFilter));
+      if (scrapedFilter === "manual") {
+        // Client-side filter to is_manual=true within scraped scope
+        const all = await fetchStagedEvents("all", "scraped");
+        setScrapedEvents(all.filter(s => s.isManual));
+      } else {
+        setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
+      }
     } catch {
       toast.error("Failed to load scraped events.");
     } finally {
-      setStagedEventsLoading(false);
+      setScrapedLoading(false);
     }
-  }, [stagedFilter]);
+  }, [scrapedFilter]);
+
+  const loadManualEvents = useCallback(async () => {
+    setManualLoading(true);
+    try {
+      setManualEvents(await fetchStagedEvents(manualFilter, "manual"));
+    } catch {
+      toast.error("Failed to load manual events.");
+    } finally {
+      setManualLoading(false);
+    }
+  }, [manualFilter]);
 
   const loadLiveEvents = useCallback(async () => {
     try {
@@ -156,8 +183,12 @@ export default function AdminDashboard() {
   }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues]);
 
   useEffect(() => {
-    loadStagedEvents();
-  }, [loadStagedEvents]);
+    loadScrapedEvents();
+  }, [loadScrapedEvents]);
+
+  useEffect(() => {
+    loadManualEvents();
+  }, [loadManualEvents]);
 
   useEffect(() => {
     loadLiveEvents();
@@ -221,6 +252,33 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleVenueLinkChange = async (
+    venueId: string,
+    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+  ) => {
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId
+          ? {
+              ...item,
+              venue: {
+                ...item.venue,
+                ...(patch.website !== undefined ? { website: patch.website ?? undefined } : {}),
+                ...(patch.instagram !== undefined ? { instagram: patch.instagram ?? undefined } : {}),
+                ...(patch.websiteEvents !== undefined ? { websiteEvents: patch.websiteEvents ?? undefined } : {}),
+              },
+            }
+          : item,
+      ),
+    );
+    try {
+      await updateVenueLinks(venueId, patch);
+    } catch {
+      toast.error("Couldn't save link. Please try again.");
+      loadAllBars();
+    }
+  };
+
   const handleToggleOnline = async (venueId: string, next: "yes" | "no") => {
     setAllBars(prev =>
       prev.map(item =>
@@ -246,7 +304,8 @@ export default function AdminDashboard() {
     try {
       await approveStagedEvent(staged, user.id, edits);
       toast.success(`"${edits.title ?? staged.title}" approved`);
-      setStagedEvents(prev => prev.filter(s => s.id !== staged.id));
+      setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
+      setManualEvents(prev => prev.filter(s => s.id !== staged.id));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to approve event.";
       toast.error(message);
@@ -258,21 +317,28 @@ export default function AdminDashboard() {
     try {
       await rejectStagedEvent(staged.id, user.id);
       toast.error(`"${staged.title}" rejected`);
-      setStagedEvents(prev => prev.filter(s => s.id !== staged.id));
+      setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
+      setManualEvents(prev => prev.filter(s => s.id !== staged.id));
     } catch {
       toast.error("Failed to reject event.");
     }
   };
 
-  const handleCreateBlankManual = async () => {
+  const handleCreateBlank = async (scope: "scraped" | "manual") => {
     if (venues.length === 0) {
       toast.error("No venues available.");
       return;
     }
     try {
-      const created = await createBlankManualStagedEvent(venues[0].id);
-      setStagedFilter("manual");
-      setStagedEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
+      const created = await createBlankManualStagedEvent(venues[0].id, scope);
+      if (scope === "manual") {
+        setManualFilter("pending");
+        setManualEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
+      } else {
+        // Force a status pill (not "Created Manually") so the new pending blank shows up
+        if (scrapedFilter !== "pending") setScrapedFilter("pending");
+        setScrapedEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
+      }
       toast.success("Blank card created");
     } catch {
       toast.error("Failed to create card.");
@@ -282,11 +348,16 @@ export default function AdminDashboard() {
   const handleDuplicateStaged = async (source: StagedEvent, edits: StagedEventEdits) => {
     try {
       const created = await duplicateStagedEvent(source, edits);
-      setStagedEvents(prev => {
+      const insertAfterSource = (prev: StagedEvent[]) => {
         const idx = prev.findIndex(s => s.id === source.id);
         if (idx === -1) return [created, ...prev];
         return [...prev.slice(0, idx + 1), created, ...prev.slice(idx + 1)];
-      });
+      };
+      if (created.isManualTab) {
+        setManualEvents(insertAfterSource);
+      } else {
+        setScrapedEvents(insertAfterSource);
+      }
       toast.success("Card duplicated");
     } catch {
       toast.error("Failed to duplicate card.");
@@ -297,9 +368,10 @@ export default function AdminDashboard() {
     try {
       await updateStagedEventManualFields(stagedId, { venueId });
       const venue = venues.find(v => v.id === venueId);
-      setStagedEvents(prev =>
+      if (!venue) return;
+      const apply = (prev: StagedEvent[]) =>
         prev.map(s =>
-          s.id === stagedId && venue
+          s.id === stagedId
             ? {
                 ...s,
                 venueId,
@@ -308,8 +380,9 @@ export default function AdminDashboard() {
                 venueNeighborhood: venue.neighborhood,
               }
             : s,
-        ),
-      );
+        );
+      setScrapedEvents(apply);
+      setManualEvents(apply);
     } catch {
       toast.error("Failed to update venue.");
     }
@@ -319,9 +392,45 @@ export default function AdminDashboard() {
     const value = sourceUrl.trim() || null;
     try {
       await updateStagedEventManualFields(stagedId, { sourceUrl: value });
-      setStagedEvents(prev => prev.map(s => (s.id === stagedId ? { ...s, sourceUrl: value } : s)));
+      const apply = (prev: StagedEvent[]) =>
+        prev.map(s => (s.id === stagedId ? { ...s, sourceUrl: value } : s));
+      setScrapedEvents(apply);
+      setManualEvents(apply);
     } catch {
       toast.error("Failed to update URL.");
+    }
+  };
+
+  const handleSaveApprovedStaged = async (staged: StagedEvent, edits: StagedEventEdits) => {
+    try {
+      await updateApprovedStagedEvent(staged, edits, venues);
+      toast.success("Event updated");
+      const newVenue = edits.venueId ? venues.find(v => v.id === edits.venueId) : null;
+      const apply = (prev: StagedEvent[]) =>
+        prev.map(s => {
+          if (s.id !== staged.id) return s;
+          return {
+            ...s,
+            title: edits.title ?? s.title,
+            date: edits.date ?? s.date,
+            startTime: edits.startTime !== undefined ? edits.startTime : s.startTime,
+            endTime: edits.endTime !== undefined ? edits.endTime : s.endTime,
+            category: edits.category !== undefined ? edits.category : s.category,
+            language: edits.language ?? s.language,
+            description: edits.description ?? s.description,
+            entryInfo: edits.entryInfo ?? s.entryInfo,
+            sourceUrl: edits.sourceUrl !== undefined ? edits.sourceUrl : s.sourceUrl,
+            venueId: newVenue?.id ?? s.venueId,
+            venueName: newVenue?.name ?? s.venueName,
+            venueAddress: newVenue?.address ?? s.venueAddress,
+            venueNeighborhood: newVenue?.neighborhood ?? s.venueNeighborhood,
+          };
+        });
+      setScrapedEvents(apply);
+      setManualEvents(apply);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save changes.";
+      toast.error(message);
     }
   };
 
@@ -395,7 +504,7 @@ export default function AdminDashboard() {
 
           {/* Bar Accounts sub-tabs */}
           <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
-            {(["overview", "pending", "all-bars", "scraped"] as const).map((tab) => (
+            {(["overview", "pending", "all-bars", "scraped", "manual"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveBarTab(tab)}
@@ -409,7 +518,9 @@ export default function AdminDashboard() {
                   ? decidedOrganizersLoading ? "Overview" : `Overview (${decidedOrganizers.length})`
                   : tab === "all-bars"
                   ? allBarsLoading ? "All Bars" : `All Bars (${allBars.length})`
-                  : stagedEventsLoading ? "Scraped Events" : `Scraped Events (${stagedEvents.length})`}
+                  : tab === "scraped"
+                  ? scrapedLoading ? "Scraped Events" : `Scraped Events (${scrapedEvents.length})`
+                  : manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`}
               </button>
             ))}
           </div>
@@ -445,77 +556,48 @@ export default function AdminDashboard() {
           )}
 
           {activeBarTab === "scraped" && (
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2 mb-2">
-                <div className="flex gap-2 flex-shrink-0 flex-wrap">
-                  {(["pending", "rejected", "all", "manual"] as const).map(f => (
-                    <button
-                      key={f}
-                      onClick={() => setStagedFilter(f)}
-                      className={`h-10 px-3 text-xs font-medium border rounded-sm transition-colors ${
-                        stagedFilter === f
-                          ? "bg-foreground text-background border-foreground"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      {f === "manual" ? "Created Manually" : f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                  ))}
-                  <button
-                    onClick={handleCreateBlankManual}
-                    disabled={venues.length === 0}
-                    className="inline-flex items-center gap-1 h-10 px-3 text-xs font-medium border border-border rounded-sm hover:bg-muted disabled:opacity-50"
-                    title="Create new manual card"
-                  >
-                    <Plus className="h-4 w-4" /> New
-                  </button>
-                </div>
-                <input
-                  type="search"
-                  value={stagedQuery}
-                  onChange={e => setStagedQuery(e.target.value)}
-                  placeholder="Search by venue or title…"
-                  className="flex-1 h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
-                />
-              </div>
-              {stagedEventsLoading && <div className="flex justify-center py-4"><Spinner /></div>}
-              {!stagedEventsLoading && stagedEvents.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No {stagedFilter === "manual" ? "manual" : stagedFilter === "all" ? "" : stagedFilter} scraped events.
-                </p>
-              )}
-              {!stagedEventsLoading && (() => {
-                const q = stagedQuery.trim().toLowerCase();
-                const filtered = q
-                  ? stagedEvents.filter(s =>
-                      s.venueName.toLowerCase().includes(q) ||
-                      s.title.toLowerCase().includes(q),
-                    )
-                  : stagedEvents;
-                const sorted = [...filtered].sort((a, b) => {
-                  const aBlank = a.isManual && !a.title;
-                  const bBlank = b.isManual && !b.title;
-                  if (aBlank !== bBlank) return aBlank ? -1 : 1;
-                  return 0;
-                });
-                if (q && sorted.length === 0) {
-                  return <p className="text-sm text-muted-foreground">No events match your search.</p>;
-                }
-                return sorted.map(staged => (
-                  <StagedEventCard
-                    key={staged.id}
-                    staged={staged}
-                    liveEvents={liveEventsByVenue[staged.venueId] ?? []}
-                    venues={venues}
-                    onApprove={(edits) => handleApproveStaged(staged, edits)}
-                    onReject={() => handleRejectStaged(staged)}
-                    onDuplicate={(edits) => handleDuplicateStaged(staged, edits)}
-                    onVenueChange={(venueId) => handleManualVenueChange(staged.id, venueId)}
-                    onSourceUrlChange={(url) => handleManualSourceUrlChange(staged.id, url)}
-                  />
-                ));
-              })()}
-            </div>
+            <StagedEventsList
+              events={scrapedEvents}
+              loading={scrapedLoading}
+              filter={scrapedFilter}
+              onFilterChange={setScrapedFilter}
+              query={scrapedQuery}
+              onQueryChange={setScrapedQuery}
+              showCreatedManuallyPill={true}
+              hideManualBadge={false}
+              venues={venues}
+              liveEventsByVenue={liveEventsByVenue}
+              onApprove={handleApproveStaged}
+              onReject={handleRejectStaged}
+              onDuplicate={handleDuplicateStaged}
+              onVenueChange={handleManualVenueChange}
+              onSourceUrlChange={handleManualSourceUrlChange}
+              onSaveApproved={handleSaveApprovedStaged}
+              emptyLabel="scraped"
+            />
+          )}
+
+          {activeBarTab === "manual" && (
+            <StagedEventsList
+              events={manualEvents}
+              loading={manualLoading}
+              filter={manualFilter}
+              onFilterChange={(f) => setManualFilter(f as StagedEventStatusFilter)}
+              query={manualQuery}
+              onQueryChange={setManualQuery}
+              showCreatedManuallyPill={false}
+              hideManualBadge={true}
+              onCreateBlank={() => handleCreateBlank("manual")}
+              venues={venues}
+              liveEventsByVenue={liveEventsByVenue}
+              onApprove={handleApproveStaged}
+              onReject={handleRejectStaged}
+              onDuplicate={handleDuplicateStaged}
+              onVenueChange={handleManualVenueChange}
+              onSourceUrlChange={handleManualSourceUrlChange}
+              onSaveApproved={handleSaveApprovedStaged}
+              emptyLabel="manual"
+            />
           )}
 
           {activeBarTab === "all-bars" && (
@@ -548,6 +630,7 @@ export default function AdminDashboard() {
                         venue={venue}
                         hasOwner={hasOwner}
                         onToggleOnline={handleToggleOnline}
+                        onLinkChange={handleVenueLinkChange}
                       />
                     ));
                   })()}
@@ -563,11 +646,40 @@ function BarCard({
   venue,
   hasOwner,
   onToggleOnline,
+  onLinkChange,
 }: {
   venue: Venue;
   hasOwner: boolean;
   onToggleOnline: (venueId: string, next: "yes" | "no") => void;
+  onLinkChange: (
+    venueId: string,
+    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+  ) => Promise<void>;
 }) {
+  const [website, setWebsite] = useState(venue.website ?? "");
+  const [instagram, setInstagram] = useState(venue.instagram ?? "");
+  const [websiteEvents, setWebsiteEvents] = useState(venue.websiteEvents ?? "");
+
+  useEffect(() => { setWebsite(venue.website ?? ""); }, [venue.website]);
+  useEffect(() => { setInstagram(venue.instagram ?? ""); }, [venue.instagram]);
+  useEffect(() => { setWebsiteEvents(venue.websiteEvents ?? ""); }, [venue.websiteEvents]);
+
+  const persistIfChanged = (
+    field: "website" | "instagram" | "websiteEvents",
+    current: string,
+    original: string | undefined,
+  ) => {
+    const next = current.trim() || null;
+    if (next === (original ?? null)) return;
+    onLinkChange(venue.id, { [field]: next });
+  };
+
+  const instagramHref = instagram
+    ? /^https?:\/\//i.test(instagram)
+      ? instagram
+      : `https://instagram.com/${instagram.replace(/^@/, "")}`
+    : null;
+
   return (
     <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
@@ -585,53 +697,73 @@ function BarCard({
           {venue.neighborhood || "(no neighborhood)"}
           {venue.address ? ` · ${venue.address}` : ""}
         </p>
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          {venue.website ? (
-            <a
-              href={venue.website}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 hover:text-foreground"
-            >
-              <Globe className="h-3 w-3" /> {venue.website.replace(/^https?:\/\//, "")}
-            </a>
-          ) : (
-            <span className="inline-flex items-center gap-1 italic">
-              <Globe className="h-3 w-3" /> NULL
-            </span>
-          )}
-          {venue.instagram ? (
-            <a
-              href={
-                /^https?:\/\//i.test(venue.instagram)
-                  ? venue.instagram
-                  : `https://instagram.com/${venue.instagram.replace(/^@/, "")}`
-              }
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 hover:text-foreground"
-            >
-              <Instagram className="h-3 w-3" /> {venue.instagram.replace(/^https?:\/\//, "")}
-            </a>
-          ) : (
-            <span className="inline-flex items-center gap-1 italic">
-              <Instagram className="h-3 w-3" /> NULL
-            </span>
-          )}
-          {venue.websiteEvents ? (
-            <a
-              href={venue.websiteEvents}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 hover:text-foreground"
-            >
-              <CalendarDays className="h-3 w-3" /> {venue.websiteEvents.replace(/^https?:\/\//, "")}
-            </a>
-          ) : (
-            <span className="inline-flex items-center gap-1 italic">
-              <CalendarDays className="h-3 w-3" /> NULL
-            </span>
-          )}
+        <div className="flex flex-col sm:flex-row gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={website}
+              onChange={e => setWebsite(e.target.value)}
+              onBlur={() => persistIfChanged("website", website, venue.website)}
+              placeholder="Website…"
+              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+            />
+            {venue.website && (
+              <a
+                href={venue.website}
+                target="_blank"
+                rel="noreferrer"
+                title="Open"
+                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <Instagram className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={instagram}
+              onChange={e => setInstagram(e.target.value)}
+              onBlur={() => persistIfChanged("instagram", instagram, venue.instagram)}
+              placeholder="Instagram…"
+              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+            />
+            {instagramHref && (
+              <a
+                href={instagramHref}
+                target="_blank"
+                rel="noreferrer"
+                title="Open"
+                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <CalendarDays className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={websiteEvents}
+              onChange={e => setWebsiteEvents(e.target.value)}
+              onBlur={() => persistIfChanged("websiteEvents", websiteEvents, venue.websiteEvents)}
+              placeholder="Events page URL…"
+              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+            />
+            {venue.websiteEvents && (
+              <a
+                href={venue.websiteEvents}
+                target="_blank"
+                rel="noreferrer"
+                title="Open"
+                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex gap-2 flex-shrink-0">
@@ -819,20 +951,24 @@ function StagedEventCard({
   staged,
   liveEvents,
   venues,
+  hideManualBadge,
   onApprove,
   onReject,
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
+  onSaveApproved,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
   venues: Venue[];
+  hideManualBadge: boolean;
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
   onDuplicate: (edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (venueId: string) => Promise<void>;
   onSourceUrlChange: (url: string) => Promise<void>;
+  onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
 }) {
   const [title, setTitle] = useState(staged.title);
   const [date, setDate] = useState(staged.date);
@@ -843,15 +979,44 @@ function StagedEventCard({
   const [description, setDescription] = useState(staged.description);
   const [entryInfo, setEntryInfo] = useState(staged.entryInfo);
   const [sourceUrlInput, setSourceUrlInput] = useState(staged.sourceUrl ?? "");
+  const [venueIdLocal, setVenueIdLocal] = useState(staged.venueId);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingClash, setConfirmingClash] = useState(false);
+
+  // Re-sync local state when the underlying staged row changes from outside
+  // (e.g., after a save the parent updates the list — without this the
+  // dirty-check below would see local !== staged and keep showing Save).
+  useEffect(() => { setTitle(staged.title); }, [staged.title]);
+  useEffect(() => { setDate(staged.date); }, [staged.date]);
+  useEffect(() => { setStartTime(staged.startTime ?? ""); }, [staged.startTime]);
+  useEffect(() => { setEndTime(staged.endTime ?? ""); }, [staged.endTime]);
+  useEffect(() => { setCategory(staged.category ?? ""); }, [staged.category]);
+  useEffect(() => { setLanguage(staged.language); }, [staged.language]);
+  useEffect(() => { setDescription(staged.description); }, [staged.description]);
+  useEffect(() => { setEntryInfo(staged.entryInfo); }, [staged.entryInfo]);
+  useEffect(() => { setSourceUrlInput(staged.sourceUrl ?? ""); }, [staged.sourceUrl]);
+  useEffect(() => { setVenueIdLocal(staged.venueId); }, [staged.venueId]);
 
   const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
   const sameDayEvents = liveEvents.filter(e => e.date === date);
 
   const isPending = staged.status === "pending";
+  const isApproved = staged.status === "approved";
+  const isOrphanedApproved = isApproved && !staged.eventsId;
+  const canEdit = isPending || (isApproved && !!staged.eventsId);
   const isManual = staged.isManual;
-  const canEditManualFields = isManual && isPending;
+  const canEditManualFields = canEdit && (isManual || isApproved);
+  const isDirty =
+    title !== staged.title ||
+    date !== staged.date ||
+    startTime !== (staged.startTime ?? "") ||
+    endTime !== (staged.endTime ?? "") ||
+    category !== (staged.category ?? "") ||
+    language !== staged.language ||
+    description !== staged.description ||
+    entryInfo !== staged.entryInfo ||
+    sourceUrlInput !== (staged.sourceUrl ?? "") ||
+    venueIdLocal !== staged.venueId;
   const statusPill =
     staged.status === "approved"
       ? "bg-green-500/10 text-green-600"
@@ -868,6 +1033,8 @@ function StagedEventCard({
     language,
     description,
     entryInfo,
+    ...(canEditManualFields ? { sourceUrl: sourceUrlInput.trim() || null } : {}),
+    ...(isApproved ? { venueId: venueIdLocal } : {}),
   });
 
   const performApprove = async () => {
@@ -897,14 +1064,31 @@ function StagedEventCard({
     }
   };
 
+  const handleSaveApprovedClick = async () => {
+    setSubmitting(true);
+    try {
+      await onSaveApproved(collectEdits());
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="border border-border rounded-sm p-4 space-y-3">
+      {isOrphanedApproved && (
+        <p className="text-xs text-muted-foreground italic border border-border rounded-sm px-2 py-1.5 bg-muted/30">
+          Cannot edit — link to live event missing.
+        </p>
+      )}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
           {canEditManualFields ? (
             <select
-              value={staged.venueId}
-              onChange={e => onVenueChange(e.target.value)}
+              value={isApproved ? venueIdLocal : staged.venueId}
+              onChange={e => {
+                if (isApproved) setVenueIdLocal(e.target.value);
+                else onVenueChange(e.target.value);
+              }}
               className="h-8 px-2 bg-muted/50 border border-border rounded-sm text-sm font-heading font-semibold outline-none focus:border-foreground transition-colors"
             >
               {venues.map(v => (
@@ -915,7 +1099,7 @@ function StagedEventCard({
             <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
           )}
           <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
-          {isManual && (
+          {isManual && !hideManualBadge && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-red-500/10 text-red-600 border border-red-500/40">
               Created Manually
             </span>
@@ -945,7 +1129,8 @@ function StagedEventCard({
             value={sourceUrlInput}
             onChange={e => setSourceUrlInput(e.target.value)}
             onBlur={() => {
-              if ((sourceUrlInput.trim() || null) !== staged.sourceUrl) {
+              // Pending: persist immediately to DB on blur. Approved: collected via Save button.
+              if (isPending && (sourceUrlInput.trim() || null) !== staged.sourceUrl) {
                 onSourceUrlChange(sourceUrlInput);
               }
             }}
@@ -991,13 +1176,13 @@ function StagedEventCard({
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Title"
-          disabled={!isPending}
+          disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         />
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          disabled={!isPending}
+          disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         >
           <option value="">— No category —</option>
@@ -1009,7 +1194,7 @@ function StagedEventCard({
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          disabled={!isPending}
+          disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         />
         <div className="flex gap-2">
@@ -1017,7 +1202,7 @@ function StagedEventCard({
             type="time"
             value={startTime}
             onChange={e => setStartTime(e.target.value)}
-            disabled={!isPending}
+            disabled={!canEdit}
             placeholder="Start"
             className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
           />
@@ -1025,7 +1210,7 @@ function StagedEventCard({
             type="time"
             value={endTime}
             onChange={e => setEndTime(e.target.value)}
-            disabled={!isPending}
+            disabled={!canEdit}
             placeholder="End"
             className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
           />
@@ -1035,13 +1220,13 @@ function StagedEventCard({
           value={entryInfo}
           onChange={e => setEntryInfo(e.target.value)}
           placeholder='Entry (e.g. "Free", "Pay what you want", "8 €")'
-          disabled={!isPending}
+          disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         />
         <select
           value={language}
           onChange={e => setLanguage(e.target.value)}
-          disabled={!isPending}
+          disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         >
           <option value="">— No language —</option>
@@ -1056,7 +1241,7 @@ function StagedEventCard({
         onChange={e => setDescription(e.target.value)}
         placeholder="Description"
         rows={2}
-        disabled={!isPending}
+        disabled={!canEdit}
         className="w-full px-2 py-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60 resize-y"
       />
 
@@ -1127,6 +1312,244 @@ function StagedEventCard({
           )}
         </div>
       )}
+
+      {isApproved && canEdit && isDirty && (
+        <div className="flex justify-end gap-2 flex-shrink-0">
+          <button
+            onClick={handleSaveApprovedClick}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Check className="h-3 w-3" /> {submitting ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StagedEventPreview({ staged }: { staged: StagedEvent }) {
+  const displayTitle = cleanEventTitle(staged.title || "(untitled)", staged.venueName);
+  const detailsLine = [staged.entryInfo, staged.language ? `in ${staged.language}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const handleMaps = () => {
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(staged.venueAddress || staged.venueName)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  return (
+    <div className="border border-border rounded-sm overflow-hidden bg-background">
+      <div className="px-3 py-1.5 bg-muted/60 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        Live preview
+      </div>
+      <div className="relative h-[120px] bg-muted overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+      </div>
+      <div className="px-4 pt-3 pb-1">
+        <h3 className="font-body text-lg font-extrabold leading-[1.1] tracking-tight">{displayTitle}</h3>
+      </div>
+      <div className="px-4 pb-3 pt-2">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            disabled
+            className="h-10 px-5 flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-body rounded-full border-2 bg-transparent text-foreground border-accent opacity-90 cursor-default"
+          >
+            <Plus className="h-4 w-4" /> Interested
+          </button>
+          <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+            <Users className="h-4 w-4" /> 0
+          </span>
+        </div>
+      </div>
+      <div className="border-t border-border mx-4" />
+      <div className="px-4 pt-3 pb-3 flex items-start gap-4">
+        <div className="flex-1 min-w-0">
+          {staged.date ? (
+            <p className="font-body font-bold text-sm">{formatDateWithDay(staged.date)}</p>
+          ) : (
+            <p className="font-body font-bold text-sm text-muted-foreground italic">(no date)</p>
+          )}
+          {staged.startTime && (
+            <p className="text-foreground font-mono text-sm mt-0.5">
+              {staged.startTime}{staged.endTime ? ` – ${staged.endTime}` : ""}
+              {endsNextDay(staged.startTime ?? undefined, staged.endTime ?? undefined) && (
+                <span className="text-muted-foreground text-xs ml-1">(next day)</span>
+              )}
+            </p>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="font-body font-bold text-sm truncate">{staged.venueName}</p>
+          {staged.venueAddress && (
+            <p className="text-muted-foreground text-[13px] mt-0.5">
+              {staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
+            </p>
+          )}
+          <p className="text-muted-foreground text-[13px] mt-0.5 flex items-center gap-1">
+            <MapPin className="h-3 w-3 shrink-0" /> {staged.venueNeighborhood}
+          </p>
+          <div className="mt-1 flex items-center gap-2 text-xs font-mono text-accent">
+            <button onClick={handleMaps} className="cursor-pointer hover:underline">
+              Open in Maps
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-border mx-4" />
+      <div className="px-4 py-4 space-y-3">
+        <h4 className="font-body text-xs font-bold uppercase tracking-[0.12em]">About this event</h4>
+        {detailsLine && <p className="text-xs text-muted-foreground">{detailsLine}</p>}
+        {staged.description ? (
+          staged.description.split("\n\n").map((p, i) => (
+            <p key={i} className="text-sm text-muted-foreground/80 leading-[1.7] font-body">{p}</p>
+          ))
+        ) : (
+          <p className="text-xs italic text-muted-foreground/70">(no description)</p>
+        )}
+      </div>
+      {staged.sourceUrl && (
+        <a
+          href={staged.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center justify-between mx-4 py-3 border-t border-border text-sm text-foreground hover:text-accent transition-colors"
+        >
+          <span className="font-medium">Event link</span>
+          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+        </a>
+      )}
+    </div>
+  );
+}
+
+function StagedEventsList({
+  events,
+  loading,
+  filter,
+  onFilterChange,
+  query,
+  onQueryChange,
+  showCreatedManuallyPill,
+  hideManualBadge,
+  onCreateBlank,
+  liveEventsByVenue,
+  venues,
+  onApprove,
+  onReject,
+  onDuplicate,
+  onVenueChange,
+  onSourceUrlChange,
+  onSaveApproved,
+  emptyLabel,
+}: {
+  events: StagedEvent[];
+  loading: boolean;
+  filter: ScrapedTabFilter;
+  onFilterChange: (f: ScrapedTabFilter) => void;
+  query: string;
+  onQueryChange: (q: string) => void;
+  showCreatedManuallyPill: boolean;
+  hideManualBadge: boolean;
+  onCreateBlank?: () => void;
+  liveEventsByVenue: Record<string, LiveEventInfo[]>;
+  venues: Venue[];
+  onApprove: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
+  onReject: (s: StagedEvent) => Promise<void>;
+  onDuplicate: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
+  onVenueChange: (id: string, venueId: string) => Promise<void>;
+  onSourceUrlChange: (id: string, url: string) => Promise<void>;
+  onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
+  emptyLabel: string;
+}) {
+  const statusPills: ScrapedTabFilter[] = ["pending", "rejected", "approved", "all"];
+  const pills: ScrapedTabFilter[] = showCreatedManuallyPill
+    ? [...statusPills, "manual"]
+    : statusPills;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col sm:flex-row gap-2 mb-2">
+        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          {pills.map(f => (
+            <button
+              key={f}
+              onClick={() => onFilterChange(f)}
+              className={`h-10 px-3 text-xs font-medium border rounded-sm transition-colors ${
+                filter === f
+                  ? "bg-foreground text-background border-foreground"
+                  : "border-border hover:bg-muted"
+              }`}
+            >
+              {f === "manual" ? "Created Manually" : f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+          {onCreateBlank && (
+            <button
+              onClick={onCreateBlank}
+              disabled={venues.length === 0}
+              className="inline-flex items-center gap-1 h-10 px-3 text-xs font-medium border border-border rounded-sm hover:bg-muted disabled:opacity-50"
+              title="Create new manual card"
+            >
+              <Plus className="h-4 w-4" /> New
+            </button>
+          )}
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={e => onQueryChange(e.target.value)}
+          placeholder="Search by venue or title…"
+          className="flex-1 h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+        />
+      </div>
+      {loading && <div className="flex justify-center py-4"><Spinner /></div>}
+      {!loading && events.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No {filter === "manual" ? "manual" : filter === "all" ? "" : filter} {emptyLabel} events.
+        </p>
+      )}
+      {!loading && (() => {
+        const q = query.trim().toLowerCase();
+        const filtered = q
+          ? events.filter(s =>
+              s.venueName.toLowerCase().includes(q) ||
+              s.title.toLowerCase().includes(q),
+            )
+          : events;
+        if (q && filtered.length === 0) {
+          return <p className="text-sm text-muted-foreground">No events match your search.</p>;
+        }
+        return filtered.map(staged => {
+          const card = (
+            <StagedEventCard
+              staged={staged}
+              liveEvents={liveEventsByVenue[staged.venueId] ?? []}
+              venues={venues}
+              hideManualBadge={hideManualBadge}
+              onApprove={(edits) => onApprove(staged, edits)}
+              onReject={() => onReject(staged)}
+              onDuplicate={(edits) => onDuplicate(staged, edits)}
+              onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
+              onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
+              onSaveApproved={(edits) => onSaveApproved(staged, edits)}
+            />
+          );
+          if (filter === "approved") {
+            return (
+              <div key={staged.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                {card}
+                <StagedEventPreview staged={staged} />
+              </div>
+            );
+          }
+          return <div key={staged.id}>{card}</div>;
+        });
+      })()}
     </div>
   );
 }

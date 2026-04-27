@@ -195,6 +195,8 @@ def ensure_placeholder(client, venue_id: str, source_url: str) -> bool:
                 "date": None,
                 "source_url": source_url,
                 "status": "pending",
+                "is_manual": True,
+                "is_manual_tab": True,
             }
         ).execute()
         return True
@@ -225,12 +227,13 @@ def normalize_language(value: str | None) -> str:
 
 
 def normalize_entry_info(value: str | None) -> str:
-    """Trim and drop placeholder values; admin review filters bad output."""
+    """Trim and drop placeholder values; mark unknown as 'No entry info'
+    so admin sees a clear marker on the staging card."""
     if not value or not isinstance(value, str):
-        return ""
+        return "No entry info"
     cleaned = value.strip()
     if not cleaned or cleaned.lower() in {"null", "none", "n/a"}:
-        return ""
+        return "No entry info"
     return cleaned
 
 
@@ -250,11 +253,18 @@ def is_acceptable_date(d: date) -> bool:
 
 
 def _trim_time(t: str | None) -> str | None:
-    """Normalize a time string to HH:MM for matching across formats."""
+    """Normalize a time string to HH:MM, or None if not parseable.
+    Handles LLM quirks: literal 'null'/'none' strings and single-digit hours
+    (e.g. '9:00' -> '09:00')."""
     if not t or not isinstance(t, str):
         return None
     s = t.strip()
-    return s[:5] if len(s) >= 5 and s[2] == ":" else None
+    if not s or s.lower() in {"null", "none", "n/a"}:
+        return None
+    m = re.match(r"^(\d{1,2}):(\d{2})(?::\d{2})?$", s)
+    if not m:
+        return None
+    return f"{int(m.group(1)):02d}:{m.group(2)}"
 
 
 def fetch_existing_event_keys_by_venue(client) -> dict[str, set[str]]:
@@ -275,6 +285,28 @@ def fetch_existing_event_keys_by_venue(client) -> dict[str, set[str]]:
         t = _trim_time(row.get("start_time"))
         if vid and d and t:
             out.setdefault(vid, set()).add(f"{d}T{t}")
+    return out
+
+
+def fetch_existing_staged_keys_by_venue(client) -> dict[str, set[tuple[str, str]]]:
+    """Map venue_id -> {(date, title), ...} for non-manual rows already in
+    venue_events_staging. Mirrors the partial unique index
+    (venue_id, date, title) WHERE is_manual = false so we can skip duplicates
+    without relying on Postgres ON CONFLICT (which can't target a partial index
+    via the supabase-py client)."""
+    result = (
+        client.table("venue_events_staging")
+        .select("venue_id, date, title, is_manual")
+        .eq("is_manual", False)
+        .execute()
+    )
+    out: dict[str, set[tuple[str, str]]] = {}
+    for row in result.data:
+        vid = row.get("venue_id")
+        d = row.get("date")
+        t = (row.get("title") or "").strip()
+        if vid and d and t:
+            out.setdefault(vid, set()).add((d, t))
     return out
 
 
@@ -335,6 +367,11 @@ def main():
     total_live = sum(len(s) for s in existing_keys_map.values())
     print(f"  {total_live} live events known across {len(existing_keys_map)} venues\n")
 
+    print("Fetching already staged (venue, date, title) keys for dedup...")
+    staged_keys_map = fetch_existing_staged_keys_by_venue(client)
+    total_staged = sum(len(s) for s in staged_keys_map.values())
+    print(f"  {total_staged} staged events known across {len(staged_keys_map)} venues\n")
+
     total_scanned = 0
     total_events = 0
     total_errors = 0
@@ -374,10 +411,12 @@ def main():
             continue
 
         existing_keys = existing_keys_map.get(venue_id, set())
+        staged_keys = staged_keys_map.setdefault(venue_id, set())
         inserted = 0
         skipped_past = 0
         skipped_invalid = 0
         skipped_already_live = 0
+        skipped_already_staged = 0
         for ev in events:
             try:
                 title = (ev.get("title") or "").strip()
@@ -388,34 +427,37 @@ def main():
                 if not is_acceptable_date(parsed):
                     skipped_past += 1
                     continue
+                date_iso = parsed.isoformat()
                 ev_start = _trim_time(ev.get("start_time"))
-                if ev_start and f"{parsed.isoformat()}T{ev_start}" in existing_keys:
+                ev_end   = _trim_time(ev.get("end_time"))
+                if ev_start and f"{date_iso}T{ev_start}" in existing_keys:
                     skipped_already_live += 1
+                    continue
+                if (date_iso, title) in staged_keys:
+                    skipped_already_staged += 1
                     continue
 
                 row = {
                     "venue_id":    venue_id,
                     "title":       title,
-                    "date":        parsed.isoformat(),
-                    "start_time":  ev.get("start_time"),
-                    "end_time":    ev.get("end_time"),
+                    "date":        date_iso,
+                    "start_time":  ev_start,
+                    "end_time":    ev_end,
                     "category":    normalize_category(ev.get("category")),
                     "language":    normalize_language(ev.get("language")),
                     "description": ev.get("description") or "",
                     "entry_info":  normalize_entry_info(ev.get("entry_info")),
                     "source_url":  ev.get("source_url") or url,
                 }
-                # ignore_duplicates so re-scraping doesn't reset approved/rejected status
-                client.table("venue_events_staging").upsert(
-                    row, on_conflict="venue_id,date,title", ignore_duplicates=True
-                ).execute()
+                client.table("venue_events_staging").insert(row).execute()
+                staged_keys.add((date_iso, title))
                 inserted += 1
             except Exception as e:
                 print(f"  ⚠ Insert error: {e}")
                 total_errors += 1
 
         # Summary line
-        if inserted or skipped_past or skipped_invalid or skipped_already_live:
+        if inserted or skipped_past or skipped_invalid or skipped_already_live or skipped_already_staged:
             extras = []
             if skipped_past:
                 extras.append(f"{skipped_past} past/out-of-range")
@@ -423,6 +465,8 @@ def main():
                 extras.append(f"{skipped_invalid} invalid")
             if skipped_already_live:
                 extras.append(f"{skipped_already_live} already live")
+            if skipped_already_staged:
+                extras.append(f"{skipped_already_staged} already staged")
             extra_str = f" ({', '.join(extras)} skipped)" if extras else ""
             print(f"  ✓ {inserted} event(s) staged{extra_str}")
             total_events += inserted

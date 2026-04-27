@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventFilter, StagedEventStatus, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatus, StagedEventStatusFilter, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
@@ -57,6 +57,22 @@ export async function setVenueOnline(
   const { error } = await supabase
     .from("venues")
     .update({ online })
+    .eq("id", venueId);
+  if (error) throw error;
+}
+
+export async function updateVenueLinks(
+  venueId: string,
+  patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+): Promise<void> {
+  const update: TablesUpdate<"venues"> = {};
+  if (patch.website !== undefined) update.website = patch.website;
+  if (patch.instagram !== undefined) update.instagram = patch.instagram;
+  if (patch.websiteEvents !== undefined) update.website_events = patch.websiteEvents;
+  if (Object.keys(update).length === 0) return;
+  const { error } = await supabase
+    .from("venues")
+    .update(update)
     .eq("id", venueId);
   if (error) throw error;
 }
@@ -770,6 +786,8 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     scrapedAt: row.scraped_at,
     reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
+    isManualTab: row.is_manual_tab ?? false,
+    eventsId: row.events_id ?? null,
   };
 }
 
@@ -806,16 +824,20 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
 }
 
 export async function fetchStagedEvents(
-  filter: StagedEventFilter = "pending",
+  statusFilter: StagedEventStatusFilter = "pending",
+  scope: StagedEventScope = "any",
 ): Promise<StagedEvent[]> {
   let query = supabase
     .from("venue_events_staging")
     .select("*, venues!inner(name, address, neighborhood)");
 
-  if (filter === "manual") {
-    query = query.eq("is_manual", true);
-  } else if (filter !== "all") {
-    query = query.eq("status", filter);
+  if (statusFilter !== "all") {
+    query = query.eq("status", statusFilter);
+  }
+  if (scope === "manual") {
+    query = query.eq("is_manual_tab", true);
+  } else if (scope === "scraped") {
+    query = query.eq("is_manual_tab", false);
   }
 
   const { data, error } = await query;
@@ -829,6 +851,7 @@ export async function fetchStagedEvents(
 
 export async function createBlankManualStagedEvent(
   venueId: string,
+  scope: "scraped" | "manual" = "scraped",
 ): Promise<StagedEvent> {
   const id = crypto.randomUUID();
   const { error } = await supabase
@@ -838,6 +861,7 @@ export async function createBlankManualStagedEvent(
       venue_id: venueId,
       status: "pending",
       is_manual: true,
+      is_manual_tab: scope === "manual",
       source_url: null,
     });
   if (error) throw error;
@@ -879,9 +903,10 @@ export async function duplicateStagedEvent(
       language: merged.language || null,
       description: merged.description || null,
       entry_info: merged.entryInfo || null,
-      source_url: source.sourceUrl,
+      source_url: edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl,
       status: "pending",
       is_manual: true,
+      is_manual_tab: source.isManualTab,
     });
   if (error) throw error;
 
@@ -964,6 +989,7 @@ export async function approveStagedEvent(
       status: "approved",
       reviewed_by: adminUserId,
       reviewed_at: new Date().toISOString(),
+      events_id: eventRow.id,
     })
     .eq("id", staged.id);
   if (updateError) throw updateError;
@@ -982,4 +1008,73 @@ export async function rejectStagedEvent(
     })
     .eq("id", stagedId);
   if (error) throw error;
+}
+
+export async function updateApprovedStagedEvent(
+  staged: StagedEvent,
+  edits: StagedEventEdits,
+  venues: Venue[],
+): Promise<void> {
+  if (!staged.eventsId) {
+    throw new Error("Cannot edit — no link to live event");
+  }
+  const newVenueId = edits.venueId ?? staged.venueId;
+  const venue = venues.find(v => v.id === newVenueId);
+  if (!venue) throw new Error("Venue not found");
+
+  const merged = {
+    title: edits.title ?? staged.title,
+    date: edits.date ?? staged.date,
+    startTime: edits.startTime !== undefined ? edits.startTime : staged.startTime,
+    endTime: edits.endTime !== undefined ? edits.endTime : staged.endTime,
+    category: edits.category !== undefined ? edits.category : staged.category,
+    language: edits.language ?? staged.language,
+    description: edits.description ?? staged.description,
+    entryInfo: edits.entryInfo ?? staged.entryInfo,
+    sourceUrl: edits.sourceUrl !== undefined ? edits.sourceUrl : staged.sourceUrl,
+  };
+
+  if (!merged.title.trim()) throw new Error("Title is required");
+  if (!merged.date) throw new Error("Date is required");
+  if (!merged.startTime) throw new Error("Start time is required");
+  if (!merged.category) throw new Error("Category is required");
+
+  const eventsUpdate: TablesUpdate<"events"> = {
+    title: merged.title,
+    date: merged.date,
+    start_time: merged.startTime,
+    end_time: merged.endTime || null,
+    category: merged.category,
+    language: merged.language || null,
+    description: merged.description || null,
+    entry_info: merged.entryInfo || null,
+    url: merged.sourceUrl,
+    venue: venue.name,
+    venue_id: venue.id,
+    address: venue.address,
+    neighborhood: venue.neighborhood,
+  };
+  const { error: eventsErr } = await supabase
+    .from("events")
+    .update(eventsUpdate)
+    .eq("id", staged.eventsId);
+  if (eventsErr) throw eventsErr;
+
+  const stagingUpdate: TablesUpdate<"venue_events_staging"> = {
+    title: merged.title,
+    date: merged.date,
+    start_time: merged.startTime,
+    end_time: merged.endTime,
+    category: merged.category,
+    language: merged.language || null,
+    description: merged.description || null,
+    entry_info: merged.entryInfo || null,
+    source_url: merged.sourceUrl,
+    venue_id: venue.id,
+  };
+  const { error: stagingErr } = await supabase
+    .from("venue_events_staging")
+    .update(stagingUpdate)
+    .eq("id", staged.id);
+  if (stagingErr) throw stagingErr;
 }

@@ -42,7 +42,8 @@ export interface Venue {
 }
 
 export type StagedEventStatus = "pending" | "approved" | "rejected";
-export type StagedEventFilter = StagedEventStatus | "all" | "manual";
+export type StagedEventStatusFilter = "pending" | "rejected" | "approved" | "all";
+export type StagedEventScope = "scraped" | "manual" | "any";
 
 export interface StagedEvent {
   id: string;
@@ -63,6 +64,8 @@ export interface StagedEvent {
   scrapedAt: string;
   reviewedAt: string | null;
   isManual: boolean;
+  isManualTab: boolean;
+  eventsId: string | null;
 }
 
 export interface StagedEventEdits {
@@ -74,4 +77,6 @@ export interface StagedEventEdits {
   language?: string;
   description?: string;
   entryInfo?: string;
+  sourceUrl?: string | null;
+  venueId?: string;
 }

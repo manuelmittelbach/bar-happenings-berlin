@@ -123,7 +123,7 @@ export default function EventDetail() {
 	const displayTitle = cleanEventTitle(event.title, event.venue);
 	const hasRealImage = !!event.image;
 
-	const priceLabel = event.entryInfo || "Free entry";
+	const priceLabel = event.entryInfo ?? "";
 
 	const seriesRule = seriesMembers.find((m) => m.recurrence)?.recurrence ?? "";
 	const seriesLastDate = seriesMembers.reduce((max, m) => (m.date > max ? m.date : max), "");
