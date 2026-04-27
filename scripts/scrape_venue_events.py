@@ -249,11 +249,44 @@ def is_acceptable_date(d: date) -> bool:
     return TODAY <= d <= MAX_DATE
 
 
+def clear_staging(client) -> int:
+    """Delete EVERY row from venue_events_staging. Returns number deleted.
+    Used by the --clear flag to wipe stale staged events before a fresh scrape."""
+    # Count first so we can report. Supabase delete() needs a filter, so we use
+    # a date condition that always matches (scraped_at has a NOT NULL default).
+    count_res = client.table("venue_events_staging").select("id", count="exact").execute()
+    count = count_res.count or 0
+    if count == 0:
+        return 0
+    client.table("venue_events_staging").delete().gte("scraped_at", "1970-01-01").execute()
+    return count
+
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description="Scrape venue website_events into venue_events_staging."
+    )
+    p.add_argument(
+        "--clear",
+        action="store_true",
+        help="Delete ALL rows from venue_events_staging and exit (no scraping). "
+             "Use this to start a fresh review batch.",
+    )
+    return p.parse_args()
+
+
 def main():
+    args = parse_args()
+
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise SystemExit("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required in .env")
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    if args.clear:
+        deleted = clear_staging(client)
+        print(f"Cleared venue_events_staging: {deleted} row(s) deleted.")
+        return
 
     print("Fetching venues with website_events and online='yes'...")
     result = (

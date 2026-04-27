@@ -25,8 +25,13 @@ Find it at: Supabase Dashboard → Project Settings → API → `service_role` k
 
 ```bash
 cd scripts
-python3 scrape_venue_events.py
+python3 scrape_venue_events.py            # normal scrape
+python3 scrape_venue_events.py --clear    # wipe ALL rows from venue_events_staging and exit
 ```
+
+`--clear` deletes every row in `venue_events_staging` (pending, approved, rejected
+all together — `events` table is unaffected). Use this to reset the admin review
+queue before a fresh scrape.
 
 The script will:
 1. Query all venues with `online='yes'` and a non-empty `website_events`
