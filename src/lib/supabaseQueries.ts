@@ -3,6 +3,15 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatus, StagedEventStatusFilter, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
+// Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
+// also contain seconds. Normalize everything to HH:MM at every read/write
+// boundary so seconds never reach the UI.
+function trimTime(t: string | null | undefined): string {
+  if (!t) return "";
+  const m = t.match(/^(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}` : t;
+}
+
 function mapEventRow(row: Tables<"events">): BarlinEvent {
   return {
     id: row.id,
@@ -13,8 +22,8 @@ function mapEventRow(row: Tables<"events">): BarlinEvent {
     neighborhood: row.neighborhood,
     address: row.address,
     date: row.date,
-    startTime: row.start_time,
-    endTime: row.end_time ?? undefined,
+    startTime: trimTime(row.start_time),
+    endTime: row.end_time ? trimTime(row.end_time) : undefined,
     category: row.category,
     categoryId: row.category_id ?? "",
     tags: row.tags ?? [],
@@ -143,8 +152,8 @@ function buildEventRow(
     address: formData.address,
     neighborhood: formData.neighborhood,
     date: overrides.date,
-    start_time: formData.startTime,
-    end_time: formData.endTime || null,
+    start_time: trimTime(formData.startTime),
+    end_time: formData.endTime ? trimTime(formData.endTime) : null,
     category: formData.category,
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
@@ -207,8 +216,8 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
   };
   if (includeDateTime) {
     update.date = formData.date;
-    update.start_time = formData.startTime;
-    update.end_time = formData.endTime || null;
+    update.start_time = trimTime(formData.startTime);
+    update.end_time = formData.endTime ? trimTime(formData.endTime) : null;
   }
   if (imageUrl !== undefined) update.image = imageUrl;
   return update;
@@ -775,8 +784,8 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     venueNeighborhood: row.venues?.neighborhood ?? "",
     title: row.title ?? "",
     date: row.date ?? "",
-    startTime: row.start_time,
-    endTime: row.end_time,
+    startTime: trimTime(row.start_time) || null,
+    endTime: trimTime(row.end_time) || null,
     category: row.category,
     language: row.language ?? "",
     description: row.description ?? "",
@@ -812,7 +821,7 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
       (map[row.venue_id] ??= []).push({
         id: row.id,
         date: row.date,
-        startTime: row.start_time ?? "",
+        startTime: trimTime(row.start_time),
         title: row.title,
       });
     }
@@ -897,8 +906,8 @@ export async function duplicateStagedEvent(
       venue_id: source.venueId,
       title: merged.title || null,
       date: merged.date || null,
-      start_time: merged.startTime,
-      end_time: merged.endTime,
+      start_time: merged.startTime ? trimTime(merged.startTime) : null,
+      end_time: merged.endTime ? trimTime(merged.endTime) : null,
       category: merged.category,
       language: merged.language || null,
       description: merged.description || null,
@@ -965,8 +974,8 @@ export async function approveStagedEvent(
     address: staged.venueAddress,
     neighborhood: staged.venueNeighborhood,
     date: merged.date,
-    start_time: merged.startTime,
-    end_time: merged.endTime || null,
+    start_time: trimTime(merged.startTime),
+    end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category,
     language: merged.language || null,
     description: merged.description || null,
@@ -1042,8 +1051,8 @@ export async function updateApprovedStagedEvent(
   const eventsUpdate: TablesUpdate<"events"> = {
     title: merged.title,
     date: merged.date,
-    start_time: merged.startTime,
-    end_time: merged.endTime || null,
+    start_time: trimTime(merged.startTime),
+    end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category,
     language: merged.language || null,
     description: merged.description || null,
@@ -1063,8 +1072,8 @@ export async function updateApprovedStagedEvent(
   const stagingUpdate: TablesUpdate<"venue_events_staging"> = {
     title: merged.title,
     date: merged.date,
-    start_time: merged.startTime,
-    end_time: merged.endTime,
+    start_time: trimTime(merged.startTime),
+    end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category,
     language: merged.language || null,
     description: merged.description || null,
