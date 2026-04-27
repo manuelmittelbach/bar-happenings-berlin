@@ -249,13 +249,21 @@ def is_acceptable_date(d: date) -> bool:
     return TODAY <= d <= MAX_DATE
 
 
-def fetch_existing_event_dates_by_venue(client) -> dict[str, set[str]]:
-    """Map venue_id -> {date_iso} for events publicly visible on the site
+def _trim_time(t: str | None) -> str | None:
+    """Normalize a time string to HH:MM for matching across formats."""
+    if not t or not isinstance(t, str):
+        return None
+    s = t.strip()
+    return s[:5] if len(s) >= 5 and s[2] == ":" else None
+
+
+def fetch_existing_event_keys_by_venue(client) -> dict[str, set[str]]:
+    """Map venue_id -> {f"{date}T{HH:MM}", ...} for events publicly visible
     (status approved/canceled, future dates). Used to skip scraped events that
-    already exist as live events for the same venue + date."""
+    already exist as live events for the same (venue, date, start_time)."""
     result = (
         client.table("events")
-        .select("venue_id, date")
+        .select("venue_id, date, start_time")
         .in_("status", ["approved", "canceled"])
         .gte("date", TODAY_ISO)
         .execute()
@@ -264,8 +272,9 @@ def fetch_existing_event_dates_by_venue(client) -> dict[str, set[str]]:
     for row in result.data:
         vid = row.get("venue_id")
         d = row.get("date")
-        if vid and d:
-            out.setdefault(vid, set()).add(d)
+        t = _trim_time(row.get("start_time"))
+        if vid and d and t:
+            out.setdefault(vid, set()).add(f"{d}T{t}")
     return out
 
 
@@ -321,10 +330,10 @@ def main():
     venues = result.data
     print(f"  {len(venues)} venues found (sorted A→Z by name)\n")
 
-    print("Fetching existing event dates for dedup...")
-    existing_dates_map = fetch_existing_event_dates_by_venue(client)
-    total_live = sum(len(s) for s in existing_dates_map.values())
-    print(f"  {total_live} live event-dates known across {len(existing_dates_map)} venues\n")
+    print("Fetching existing event (venue, date, start_time) keys for dedup...")
+    existing_keys_map = fetch_existing_event_keys_by_venue(client)
+    total_live = sum(len(s) for s in existing_keys_map.values())
+    print(f"  {total_live} live events known across {len(existing_keys_map)} venues\n")
 
     total_scanned = 0
     total_events = 0
@@ -364,7 +373,7 @@ def main():
                 print("  + placeholder created for manual entry")
             continue
 
-        existing_dates = existing_dates_map.get(venue_id, set())
+        existing_keys = existing_keys_map.get(venue_id, set())
         inserted = 0
         skipped_past = 0
         skipped_invalid = 0
@@ -379,7 +388,8 @@ def main():
                 if not is_acceptable_date(parsed):
                     skipped_past += 1
                     continue
-                if parsed.isoformat() in existing_dates:
+                ev_start = _trim_time(ev.get("start_time"))
+                if ev_start and f"{parsed.isoformat()}T{ev_start}" in existing_keys:
                     skipped_already_live += 1
                     continue
 

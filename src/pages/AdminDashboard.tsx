@@ -19,8 +19,9 @@ import {
   fetchStagedEvents,
   approveStagedEvent,
   rejectStagedEvent,
-  fetchLiveEventDatesByVenue,
+  fetchLiveEventsByVenue,
   type OrganizerAccount,
+  type LiveEventInfo,
 } from "@/lib/supabaseQueries";
 import type { StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
 
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
   const [stagedEventsLoading, setStagedEventsLoading] = useState(true);
   const [stagedFilter, setStagedFilter] = useState<StagedEventStatus | "all">("pending");
   const [stagedQuery, setStagedQuery] = useState("");
-  const [liveDatesByVenue, setLiveDatesByVenue] = useState<Record<string, string[]>>({});
+  const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -124,9 +125,9 @@ export default function AdminDashboard() {
     }
   }, [stagedFilter]);
 
-  const loadLiveDates = useCallback(async () => {
+  const loadLiveEvents = useCallback(async () => {
     try {
-      setLiveDatesByVenue(await fetchLiveEventDatesByVenue());
+      setLiveEventsByVenue(await fetchLiveEventsByVenue());
     } catch {
       // Silent — non-critical context info.
     }
@@ -143,8 +144,8 @@ export default function AdminDashboard() {
   }, [loadStagedEvents]);
 
   useEffect(() => {
-    loadLiveDates();
-  }, [loadLiveDates]);
+    loadLiveEvents();
+  }, [loadLiveEvents]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -413,7 +414,7 @@ export default function AdminDashboard() {
                   <StagedEventCard
                     key={staged.id}
                     staged={staged}
-                    liveDates={liveDatesByVenue[staged.venueId] ?? []}
+                    liveEvents={liveEventsByVenue[staged.venueId] ?? []}
                     onApprove={(edits) => handleApproveStaged(staged, edits)}
                     onReject={() => handleRejectStaged(staged)}
                   />
@@ -721,12 +722,12 @@ function OrganizerCard({
 
 function StagedEventCard({
   staged,
-  liveDates,
+  liveEvents,
   onApprove,
   onReject,
 }: {
   staged: StagedEvent;
-  liveDates: string[];
+  liveEvents: LiveEventInfo[];
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
 }) {
@@ -739,6 +740,10 @@ function StagedEventCard({
   const [description, setDescription] = useState(staged.description);
   const [entryInfo, setEntryInfo] = useState(staged.entryInfo);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingClash, setConfirmingClash] = useState(false);
+
+  const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
+  const sameDayEvents = liveEvents.filter(e => e.date === date);
 
   const isPending = staged.status === "pending";
   const statusPill =
@@ -748,7 +753,7 @@ function StagedEventCard({
       ? "bg-red-500/10 text-red-600"
       : "bg-yellow-500/10 text-yellow-600";
 
-  const handleApprove = async () => {
+  const performApprove = async () => {
     setSubmitting(true);
     try {
       await onApprove({
@@ -763,7 +768,16 @@ function StagedEventCard({
       });
     } finally {
       setSubmitting(false);
+      setConfirmingClash(false);
     }
+  };
+
+  const handleApprove = async () => {
+    if (sameDayEvents.length > 0 && !confirmingClash) {
+      setConfirmingClash(true);
+      return;
+    }
+    await performApprove();
   };
 
   return (
@@ -872,22 +886,71 @@ function StagedEventCard({
         className="w-full px-2 py-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60 resize-y"
       />
 
+      {isPending && confirmingClash && (
+        <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-2">
+          <p className="text-xs font-medium text-yellow-700">
+            ⚠ {sameDayEvents.length === 1
+              ? "There is already an event that day:"
+              : `There are already ${sameDayEvents.length} events that day:`}
+          </p>
+          <ul className="space-y-1">
+            {sameDayEvents.map(e => (
+              <li key={e.id}>
+                <a
+                  href={`/event/${e.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {e.title}{e.startTime ? ` · ${e.startTime}` : ""}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            Open the link(s) to compare. If this is a duplicate, cancel and reject.
+          </p>
+        </div>
+      )}
+
       {isPending && (
         <div className="flex justify-end gap-2 flex-shrink-0">
-          <button
-            onClick={onReject}
-            disabled={submitting}
-            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-          >
-            <X className="h-3 w-3" /> Reject
-          </button>
-          <button
-            onClick={handleApprove}
-            disabled={submitting}
-            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Check className="h-3 w-3" /> {submitting ? "Approving…" : "Approve"}
-          </button>
+          {confirmingClash ? (
+            <>
+              <button
+                onClick={() => setConfirmingClash(false)}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={performApprove}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 bg-yellow-600 text-white rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="h-3 w-3" /> {submitting ? "Approving…" : "Approve anyway"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onReject}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <X className="h-3 w-3" /> Reject
+              </button>
+              <button
+                onClick={handleApprove}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="h-3 w-3" /> {submitting ? "Approving…" : "Approve"}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
