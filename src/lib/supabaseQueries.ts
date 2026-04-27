@@ -809,10 +809,7 @@ export async function fetchStagedEvents(
 ): Promise<StagedEvent[]> {
   let query = supabase
     .from("venue_events_staging")
-    .select("*, venues!inner(name, address, neighborhood)")
-    .order("name", { referencedTable: "venues", ascending: true })
-    .order("date", { ascending: true })
-    .order("start_time", { ascending: true, nullsFirst: false });
+    .select("*, venues!inner(name, address, neighborhood)");
 
   if (statusFilter !== "all") {
     query = query.eq("status", statusFilter);
@@ -820,7 +817,11 @@ export async function fetchStagedEvents(
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data as StagedEventRow[]).map(mapStagedEventRow);
+  return (data as StagedEventRow[]).map(mapStagedEventRow).sort((a, b) =>
+    a.venueName.localeCompare(b.venueName, "de", { sensitivity: "base" })
+    || a.date.localeCompare(b.date)
+    || (a.startTime ?? "").localeCompare(b.startTime ?? ""),
+  );
 }
 
 export async function approveStagedEvent(
