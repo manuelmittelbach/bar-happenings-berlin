@@ -20,6 +20,7 @@ import {
   setVenueOnline,
   updateVenueLinks,
   fetchStagedEvents,
+  fetchStagedEventCount,
   approveStagedEvent,
   rejectStagedEvent,
   fetchLiveEventsByVenue,
@@ -34,7 +35,17 @@ import {
 import type { StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 
 type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual";
+type AdminSection = "bars" | "events";
 type ScrapedTabFilter = StagedEventStatusFilter | "manual";
+
+const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
+const EVENT_TABS: BarTab[] = ["scraped", "manual"];
+
+const sectionOf = (tab: BarTab): AdminSection =>
+  tab === "scraped" || tab === "manual" ? "events" : "bars";
+
+const defaultTabFor = (section: AdminSection): BarTab =>
+  section === "events" ? "scraped" : "pending";
 
 function openSourceWindow(url: string) {
   // Anchor to the monitor the user's browser is currently on (multi-monitor safe).
@@ -91,6 +102,8 @@ export default function AdminDashboard() {
   const [manualQuery, setManualQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
   const [venues, setVenues] = useState<Venue[]>([]);
+  const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
+  const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -175,12 +188,26 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadPendingEventCounts = useCallback(async () => {
+    try {
+      const [scraped, manual] = await Promise.all([
+        fetchStagedEventCount("pending", "scraped"),
+        fetchStagedEventCount("pending", "manual"),
+      ]);
+      setScrapedPendingCount(scraped);
+      setManualPendingCount(manual);
+    } catch {
+      // Silent — count is informational, not critical.
+    }
+  }, []);
+
   useEffect(() => {
     loadPendingOrganizers();
     loadDecidedOrganizers();
     loadAllBars();
     loadVenues();
-  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues]);
+    loadPendingEventCounts();
+  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts]);
 
   useEffect(() => {
     loadScrapedEvents();
@@ -306,6 +333,7 @@ export default function AdminDashboard() {
       toast.success(`"${edits.title ?? staged.title}" approved`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      loadPendingEventCounts();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to approve event.";
       toast.error(message);
@@ -319,6 +347,7 @@ export default function AdminDashboard() {
       toast.error(`"${staged.title}" rejected`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      loadPendingEventCounts();
     } catch {
       toast.error("Failed to reject event.");
     }
@@ -330,7 +359,12 @@ export default function AdminDashboard() {
       return;
     }
     try {
-      const created = await createBlankManualStagedEvent(venues[0].id, scope);
+      const defaultVenue = venues[0];
+      const created = await createBlankManualStagedEvent(
+        defaultVenue.id,
+        scope,
+        defaultVenue.websiteEvents ?? null,
+      );
       if (scope === "manual") {
         setManualFilter("pending");
         setManualEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
@@ -340,6 +374,7 @@ export default function AdminDashboard() {
         setScrapedEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
       }
       toast.success("Blank card created");
+      loadPendingEventCounts();
     } catch {
       toast.error("Failed to create card.");
     }
@@ -359,6 +394,7 @@ export default function AdminDashboard() {
         setScrapedEvents(insertAfterSource);
       }
       toast.success("Card duplicated");
+      loadPendingEventCounts();
     } catch {
       toast.error("Failed to duplicate card.");
     }
@@ -491,20 +527,43 @@ export default function AdminDashboard() {
             </div>
             <div className="border border-border rounded-sm p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground font-medium">Total Decided</span>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground font-medium">Pending Events</span>
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </div>
-              {decidedOrganizersLoading ? (
+              {scrapedPendingCount === null || manualPendingCount === null ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
-                <p className="font-heading text-2xl font-bold">{String(decidedOrganizers.length)}</p>
+                <>
+                  <p className="font-heading text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount)}</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {scrapedPendingCount} scraped · {manualPendingCount} manual
+                  </p>
+                </>
               )}
             </div>
           </div>
 
-          {/* Bar Accounts sub-tabs */}
+          {/* Section toggle: Bars vs Events */}
+          <div className="inline-flex border border-border rounded-sm p-0.5 bg-muted/30 mb-4">
+            {(["bars", "events"] as const).map(section => {
+              const active = sectionOf(activeBarTab) === section;
+              return (
+                <button
+                  key={section}
+                  onClick={() => setActiveBarTab(defaultTabFor(section))}
+                  className={`px-4 h-8 text-sm font-medium capitalize rounded-sm transition-colors ${
+                    active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {section}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Sub-tabs for the active section only */}
           <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
-            {(["overview", "pending", "all-bars", "scraped", "manual"] as const).map((tab) => (
+            {(sectionOf(activeBarTab) === "bars" ? BAR_TABS : EVENT_TABS).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveBarTab(tab)}
@@ -1073,6 +1132,19 @@ function StagedEventCard({
     }
   };
 
+  const handleCancelApprovedClick = () => {
+    setTitle(staged.title);
+    setDate(staged.date);
+    setStartTime(staged.startTime ?? "");
+    setEndTime(staged.endTime ?? "");
+    setCategory(staged.category ?? "");
+    setLanguage(staged.language);
+    setDescription(staged.description);
+    setEntryInfo(staged.entryInfo);
+    setSourceUrlInput(staged.sourceUrl ?? "");
+    setVenueIdLocal(staged.venueId);
+  };
+
   return (
     <div className="border border-border rounded-sm p-4 space-y-3">
       {isOrphanedApproved && (
@@ -1315,6 +1387,13 @@ function StagedEventCard({
 
       {isApproved && canEdit && isDirty && (
         <div className="flex justify-end gap-2 flex-shrink-0">
+          <button
+            onClick={handleCancelApprovedClick}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+          >
+            <X className="h-3 w-3" /> Cancel
+          </button>
           <button
             onClick={handleSaveApprovedClick}
             disabled={submitting}

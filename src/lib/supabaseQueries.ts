@@ -832,6 +832,24 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
   return map;
 }
 
+export async function fetchStagedEventCount(
+  statusFilter: StagedEventStatus,
+  scope: StagedEventScope = "any",
+): Promise<number> {
+  let query = supabase
+    .from("venue_events_staging")
+    .select("*", { count: "exact", head: true })
+    .eq("status", statusFilter);
+  if (scope === "manual") {
+    query = query.eq("is_manual_tab", true);
+  } else if (scope === "scraped") {
+    query = query.eq("is_manual_tab", false);
+  }
+  const { count, error } = await query;
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function fetchStagedEvents(
   statusFilter: StagedEventStatusFilter = "pending",
   scope: StagedEventScope = "any",
@@ -861,6 +879,7 @@ export async function fetchStagedEvents(
 export async function createBlankManualStagedEvent(
   venueId: string,
   scope: "scraped" | "manual" = "scraped",
+  sourceUrl: string | null = null,
 ): Promise<StagedEvent> {
   const id = crypto.randomUUID();
   const { error } = await supabase
@@ -871,7 +890,7 @@ export async function createBlankManualStagedEvent(
       status: "pending",
       is_manual: true,
       is_manual_tab: scope === "manual",
-      source_url: null,
+      source_url: sourceUrl,
     });
   if (error) throw error;
 
