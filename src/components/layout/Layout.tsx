@@ -4,15 +4,15 @@ import Footer from "@/components/layout/Footer";
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const hideFooter = pathname === "/map";
+  const isMap = pathname === "/map";
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`flex flex-col ${isMap ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}>
       <Header />
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-h-0">
         <Outlet />
       </main>
-      {!hideFooter && <Footer />}
+      {!isMap && <Footer />}
     </div>
   );
 }
