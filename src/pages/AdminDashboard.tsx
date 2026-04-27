@@ -1122,7 +1122,7 @@ function StagedEventCard({
         )}
       </div>
 
-      {canEditManualFields ? (
+      {canEdit ? (
         <div className="flex items-center gap-2">
           <input
             type="url"
