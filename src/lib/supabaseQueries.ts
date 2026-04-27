@@ -772,21 +772,35 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
   };
 }
 
-export async function fetchLiveEventDatesByVenue(): Promise<Record<string, string[]>> {
+export interface LiveEventInfo {
+  id: string;
+  date: string;
+  startTime: string;
+  title: string;
+}
+
+export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEventInfo[]>> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("events")
-    .select("venue_id, date")
+    .select("id, venue_id, date, start_time, title")
     .in("status", ["approved", "canceled"])
     .gte("date", today);
   if (error) throw error;
-  const map: Record<string, string[]> = {};
+  const map: Record<string, LiveEventInfo[]> = {};
   for (const row of data) {
     if (row.venue_id && row.date) {
-      (map[row.venue_id] ??= []).push(row.date);
+      (map[row.venue_id] ??= []).push({
+        id: row.id,
+        date: row.date,
+        startTime: row.start_time ?? "",
+        title: row.title,
+      });
     }
   }
-  Object.values(map).forEach(arr => arr.sort());
+  Object.values(map).forEach(arr =>
+    arr.sort((a, b) => (a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date))),
+  );
   return map;
 }
 
