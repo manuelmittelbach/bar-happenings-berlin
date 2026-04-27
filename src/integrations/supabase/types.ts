@@ -236,7 +236,6 @@ export type Database = {
           language: string | null
           neighborhood: string
           parent_id: string | null
-          price: string | null
           recurrence: string | null
           start_time: string
           status: string
@@ -267,7 +266,6 @@ export type Database = {
           language?: string | null
           neighborhood: string
           parent_id?: string | null
-          price?: string | null
           recurrence?: string | null
           start_time: string
           status?: string
@@ -298,7 +296,6 @@ export type Database = {
           language?: string | null
           neighborhood?: string
           parent_id?: string | null
-          price?: string | null
           recurrence?: string | null
           start_time?: string
           status?: string
@@ -604,6 +601,7 @@ export type Database = {
           id: string
           scanned_at: string | null
           status: string | null
+          venue_id: string | null
         }
         Insert: {
           bar_id?: string | null
@@ -611,6 +609,7 @@ export type Database = {
           id?: string
           scanned_at?: string | null
           status?: string | null
+          venue_id?: string | null
         }
         Update: {
           bar_id?: string | null
@@ -618,8 +617,79 @@ export type Database = {
           id?: string
           scanned_at?: string | null
           status?: string | null
+          venue_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scrape_logs_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_events_staging: {
+        Row: {
+          category: string | null
+          date: string | null
+          description: string | null
+          end_time: string | null
+          entry_info: string | null
+          id: string
+          language: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scraped_at: string
+          source_url: string
+          start_time: string | null
+          status: string
+          title: string | null
+          venue_id: string
+        }
+        Insert: {
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          id?: string
+          language?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scraped_at?: string
+          source_url: string
+          start_time?: string | null
+          status?: string
+          title?: string | null
+          venue_id: string
+        }
+        Update: {
+          category?: string | null
+          date?: string | null
+          description?: string | null
+          end_time?: string | null
+          entry_info?: string | null
+          id?: string
+          language?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scraped_at?: string
+          source_url?: string
+          start_time?: string | null
+          status?: string
+          title?: string | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_events_staging_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_interests: {
         Row: {

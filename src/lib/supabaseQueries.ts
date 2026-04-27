@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import type { BarlinEvent, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 
 function mapEventRow(row: Tables<"events">): BarlinEvent {
@@ -19,7 +19,6 @@ function mapEventRow(row: Tables<"events">): BarlinEvent {
     categoryId: row.category_id ?? "",
     tags: row.tags ?? [],
     description: row.description ?? "",
-    price: row.price ?? "",
     entryInfo: row.entry_info ?? "",
     language: row.language ?? "",
     recurrence: row.recurrence ?? "",
@@ -744,5 +743,125 @@ export async function updatePendingBarSubmission(
       phone: submission.phone,
     })
     .eq("user_id", userId);
+  if (error) throw error;
+}
+
+type StagedEventRow = Tables<"venue_events_staging"> & {
+  venues: Pick<Tables<"venues">, "name" | "address" | "neighborhood"> | null;
+};
+
+function mapStagedEventRow(row: StagedEventRow): StagedEvent {
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    venueName: row.venues?.name ?? "(unknown venue)",
+    venueAddress: row.venues?.address ?? "",
+    venueNeighborhood: row.venues?.neighborhood ?? "",
+    title: row.title ?? "",
+    date: row.date ?? "",
+    startTime: row.start_time,
+    endTime: row.end_time,
+    category: row.category,
+    language: row.language ?? "",
+    description: row.description ?? "",
+    entryInfo: row.entry_info ?? "",
+    sourceUrl: row.source_url,
+    status: row.status as StagedEventStatus,
+    scrapedAt: row.scraped_at,
+    reviewedAt: row.reviewed_at,
+  };
+}
+
+export async function fetchStagedEvents(
+  statusFilter: StagedEventStatus | "all" = "pending",
+): Promise<StagedEvent[]> {
+  let query = supabase
+    .from("venue_events_staging")
+    .select("*, venues!inner(name, address, neighborhood)")
+    .order("name", { referencedTable: "venues", ascending: true })
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true, nullsFirst: false });
+
+  if (statusFilter !== "all") {
+    query = query.eq("status", statusFilter);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as StagedEventRow[]).map(mapStagedEventRow);
+}
+
+export async function approveStagedEvent(
+  staged: StagedEvent,
+  adminUserId: string,
+  edits?: StagedEventEdits,
+): Promise<void> {
+  const merged = {
+    title: edits?.title ?? staged.title,
+    date: edits?.date ?? staged.date,
+    startTime: edits?.startTime !== undefined ? edits.startTime : staged.startTime,
+    endTime: edits?.endTime !== undefined ? edits.endTime : staged.endTime,
+    category: edits?.category !== undefined ? edits.category : staged.category,
+    language: edits?.language ?? staged.language,
+    description: edits?.description ?? staged.description,
+    entryInfo: edits?.entryInfo ?? staged.entryInfo,
+  };
+
+  if (!merged.title.trim()) throw new Error("Title is required");
+  if (!merged.date) throw new Error("Date is required");
+  if (!merged.startTime) throw new Error("Start time is required");
+  if (!merged.category) throw new Error("Category is required");
+
+  const eventRow: TablesInsert<"events"> = {
+    id: crypto.randomUUID(),
+    parent_id: "",
+    recurrence: "",
+    title: merged.title,
+    venue: staged.venueName,
+    venue_id: staged.venueId,
+    address: staged.venueAddress,
+    neighborhood: staged.venueNeighborhood,
+    date: merged.date,
+    start_time: merged.startTime,
+    end_time: merged.endTime || null,
+    category: merged.category,
+    language: merged.language || null,
+    description: merged.description || null,
+    url: staged.sourceUrl || null,
+    entry_info: merged.entryInfo || null,
+    image: null,
+    image_position: "50% 50%",
+    created_by: adminUserId,
+    status: "approved",
+    approved_by: adminUserId,
+    approved_at: new Date().toISOString(),
+  };
+
+  const { error: insertError } = await supabase.from("events").insert(eventRow);
+  if (insertError) throw insertError;
+
+  const { error: updateError } = await supabase
+    .from("venue_events_staging")
+    .update({
+      status: "approved",
+      reviewed_by: adminUserId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", staged.id);
+  if (updateError) throw updateError;
+}
+
+export async function rejectStagedEvent(
+  stagedId: string,
+  adminUserId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .update({
+      status: "rejected",
+      reviewed_by: adminUserId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", stagedId);
   if (error) throw error;
 }
