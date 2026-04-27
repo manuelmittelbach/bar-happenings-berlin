@@ -19,6 +19,7 @@ import {
   fetchStagedEvents,
   approveStagedEvent,
   rejectStagedEvent,
+  fetchLiveEventDatesByVenue,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
 import type { StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
@@ -73,6 +74,7 @@ export default function AdminDashboard() {
   const [stagedEventsLoading, setStagedEventsLoading] = useState(true);
   const [stagedFilter, setStagedFilter] = useState<StagedEventStatus | "all">("pending");
   const [stagedQuery, setStagedQuery] = useState("");
+  const [liveDatesByVenue, setLiveDatesByVenue] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -122,6 +124,14 @@ export default function AdminDashboard() {
     }
   }, [stagedFilter]);
 
+  const loadLiveDates = useCallback(async () => {
+    try {
+      setLiveDatesByVenue(await fetchLiveEventDatesByVenue());
+    } catch {
+      // Silent — non-critical context info.
+    }
+  }, []);
+
   useEffect(() => {
     loadPendingOrganizers();
     loadDecidedOrganizers();
@@ -131,6 +141,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadStagedEvents();
   }, [loadStagedEvents]);
+
+  useEffect(() => {
+    loadLiveDates();
+  }, [loadLiveDates]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -399,6 +413,7 @@ export default function AdminDashboard() {
                   <StagedEventCard
                     key={staged.id}
                     staged={staged}
+                    liveDates={liveDatesByVenue[staged.venueId] ?? []}
                     onApprove={(edits) => handleApproveStaged(staged, edits)}
                     onReject={() => handleRejectStaged(staged)}
                   />
@@ -706,10 +721,12 @@ function OrganizerCard({
 
 function StagedEventCard({
   staged,
+  liveDates,
   onApprove,
   onReject,
 }: {
   staged: StagedEvent;
+  liveDates: string[];
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
 }) {
@@ -773,6 +790,12 @@ function StagedEventCard({
         <ExternalLink className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">{staged.sourceUrl.replace(/^https?:\/\//, "")}</span>
       </a>
+
+      {liveDates.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Already live ({liveDates.length}): {liveDates.map(formatDateShort).join(", ")}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input

@@ -772,6 +772,24 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
   };
 }
 
+export async function fetchLiveEventDatesByVenue(): Promise<Record<string, string[]>> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("events")
+    .select("venue_id, date")
+    .in("status", ["approved", "canceled"])
+    .gte("date", today);
+  if (error) throw error;
+  const map: Record<string, string[]> = {};
+  for (const row of data) {
+    if (row.venue_id && row.date) {
+      (map[row.venue_id] ??= []).push(row.date);
+    }
+  }
+  Object.values(map).forEach(arr => arr.sort());
+  return map;
+}
+
 export async function fetchStagedEvents(
   statusFilter: StagedEventStatus | "all" = "pending",
 ): Promise<StagedEvent[]> {
