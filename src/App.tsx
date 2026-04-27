@@ -111,6 +111,8 @@ import UpdatePassword from "./pages/UpdatePassword";
 import EditEvent from "./pages/EditEvent";
 import EditBarAccount from "./pages/EditBarAccount";
 import Profile from "./pages/Profile";
+import Impressum from "./pages/Impressum";
+import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/layout/Layout";
 
@@ -147,6 +149,8 @@ const App = () => (
             <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
             <Route path="/reset-password" element={<UpdatePassword />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/impressum" element={<Impressum />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

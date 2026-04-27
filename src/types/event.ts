@@ -12,7 +12,6 @@ export interface BarlinEvent {
   categoryId: string;
   tags: string[];
   description: string;
-  price: string;
   entryInfo: string;
   language: string;
   recurrence: string;
@@ -40,4 +39,37 @@ export interface Venue {
   online: "yes" | "no";
   lat: number;
   lng: number;
+}
+
+export type StagedEventStatus = "pending" | "approved" | "rejected";
+
+export interface StagedEvent {
+  id: string;
+  venueId: string;
+  venueName: string;
+  venueAddress: string;
+  venueNeighborhood: string;
+  title: string;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  category: string | null;
+  language: string;
+  description: string;
+  entryInfo: string;
+  sourceUrl: string;
+  status: StagedEventStatus;
+  scrapedAt: string;
+  reviewedAt: string | null;
+}
+
+export interface StagedEventEdits {
+  title?: string;
+  date?: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  category?: string | null;
+  language?: string;
+  description?: string;
+  entryInfo?: string;
 }

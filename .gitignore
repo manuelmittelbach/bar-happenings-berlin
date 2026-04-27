@@ -26,3 +26,9 @@ dist-ssr
 # Playwright / local test artifacts
 .playwright-mcp/
 test*.png
+
+# Standalone sub-project (separate scraping tooling)
+Tipsy Tiger/
+
+# Scraper secrets
+scripts/.env

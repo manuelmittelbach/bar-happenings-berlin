@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Upload, Calendar, Clock, Repeat, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { categories } from "@/data/categories";
+import { LANGUAGES } from "@/data/languages";
 import DateField from "@/components/events/DateField";
 import {
   addOneDay,
@@ -75,67 +76,6 @@ const ENTRY_AMOUNTS = Array.from({ length: 100 }, (_, i) => (i + 1) * 0.5).map((
 );
 const PREDEFINED_ENTRY_OPTIONS = new Set<string>(["Free", "Pay what you want", ...ENTRY_AMOUNTS]);
 const CUSTOM_ENTRY_SENTINEL = "__custom__";
-
-const LANGUAGES = [
-  "English",
-  "German",
-  "English / German",
-  "Albanian",
-  "Arabic",
-  "Armenian",
-  "Basque",
-  "Belarusian",
-  "Bengali",
-  "Bosnian",
-  "Bulgarian",
-  "Catalan",
-  "Chinese",
-  "Croatian",
-  "Czech",
-  "Danish",
-  "Dutch",
-  "Estonian",
-  "Finnish",
-  "French",
-  "Galician",
-  "Georgian",
-  "Greek",
-  "Hebrew",
-  "Hindi",
-  "Hungarian",
-  "Icelandic",
-  "Indonesian",
-  "Irish",
-  "Italian",
-  "Japanese",
-  "Korean",
-  "Latvian",
-  "Lithuanian",
-  "Luxembourgish",
-  "Macedonian",
-  "Maltese",
-  "Montenegrin",
-  "Norwegian",
-  "Persian",
-  "Polish",
-  "Portuguese",
-  "Romanian",
-  "Russian",
-  "Scottish Gaelic",
-  "Serbian",
-  "Slovak",
-  "Slovenian",
-  "Spanish",
-  "Swahili",
-  "Swedish",
-  "Thai",
-  "Turkish",
-  "Ukrainian",
-  "Urdu",
-  "Vietnamese",
-  "Welsh",
-  "Yiddish",
-];
 
 const inputClass =
   "w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors";

@@ -85,6 +85,28 @@ export default function Footer() {
                 </li>
               </ul>
             </div>
+
+            <div className="text-center md:text-left">
+              <h4 className="mono-label text-primary-foreground/40 mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link
+                    to="/impressum"
+                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+                  >
+                    Impressum
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/datenschutz"
+                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+                  >
+                    Datenschutz
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 

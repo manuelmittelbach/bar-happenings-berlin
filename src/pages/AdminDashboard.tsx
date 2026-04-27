@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatDateShort } from "@/lib/dateFormat";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { categories } from "@/data/categories";
+import { LANGUAGES } from "@/data/languages";
 import {
   fetchPendingOrganizers,
   fetchDecidedOrganizers,
@@ -14,11 +16,34 @@ import {
   approveOrganizerWithNewBar,
   approveOrganizerWithVenueClaim,
   setVenueOnline,
+  fetchStagedEvents,
+  approveStagedEvent,
+  rejectStagedEvent,
   type OrganizerAccount,
 } from "@/lib/supabaseQueries";
-import type { Venue } from "@/types/event";
+import type { StagedEvent, StagedEventEdits, StagedEventStatus, Venue } from "@/types/event";
 
-type BarTab = "pending" | "overview" | "all-bars";
+type BarTab = "pending" | "overview" | "all-bars" | "scraped";
+
+function openSourceWindow(url: string) {
+  // Anchor to the monitor the user's browser is currently on (multi-monitor safe).
+  const monitor = window.screen as Screen & { availLeft?: number; availTop?: number };
+  const screenLeft = monitor.availLeft ?? 0;
+  const screenTop = monitor.availTop ?? 0;
+  const screenW = monitor.availWidth;
+  const screenH = monitor.availHeight;
+
+  const popupW = Math.floor(screenW / 2);
+  const popupH = screenH;
+  const popupLeft = screenLeft + (screenW - popupW);
+  const popupTop = screenTop;
+
+  window.open(
+    url,
+    "verify-source",
+    `popup=true,left=${popupLeft},top=${popupTop},width=${popupW},height=${popupH},noopener,noreferrer`,
+  );
+}
 
 export default function AdminDashboard() {
   const { user, role, loading, roleResolved } = useAuth();
@@ -26,7 +51,10 @@ export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeBarTab: BarTab =
-    tabParam === "overview" ? "overview" : tabParam === "all-bars" ? "all-bars" : "pending";
+    tabParam === "overview" ? "overview"
+    : tabParam === "all-bars" ? "all-bars"
+    : tabParam === "scraped" ? "scraped"
+    : "pending";
   const setActiveBarTab = (tab: BarTab) => {
     const next = new URLSearchParams(searchParams);
     if (tab === "pending") next.delete("tab");
@@ -41,6 +69,10 @@ export default function AdminDashboard() {
   const [allBars, setAllBars] = useState<{ venue: Venue; hasOwner: boolean }[]>([]);
   const [allBarsLoading, setAllBarsLoading] = useState(true);
   const [allBarsQuery, setAllBarsQuery] = useState("");
+  const [stagedEvents, setStagedEvents] = useState<StagedEvent[]>([]);
+  const [stagedEventsLoading, setStagedEventsLoading] = useState(true);
+  const [stagedFilter, setStagedFilter] = useState<StagedEventStatus | "all">("pending");
+  const [stagedQuery, setStagedQuery] = useState("");
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -79,11 +111,26 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadStagedEvents = useCallback(async () => {
+    setStagedEventsLoading(true);
+    try {
+      setStagedEvents(await fetchStagedEvents(stagedFilter));
+    } catch {
+      toast.error("Failed to load scraped events.");
+    } finally {
+      setStagedEventsLoading(false);
+    }
+  }, [stagedFilter]);
+
   useEffect(() => {
     loadPendingOrganizers();
     loadDecidedOrganizers();
     loadAllBars();
   }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars]);
+
+  useEffect(() => {
+    loadStagedEvents();
+  }, [loadStagedEvents]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -163,6 +210,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleApproveStaged = async (staged: StagedEvent, edits: StagedEventEdits) => {
+    if (!user) return;
+    try {
+      await approveStagedEvent(staged, user.id, edits);
+      toast.success(`"${edits.title ?? staged.title}" approved`);
+      setStagedEvents(prev => prev.filter(s => s.id !== staged.id));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to approve event.";
+      toast.error(message);
+    }
+  };
+
+  const handleRejectStaged = async (staged: StagedEvent) => {
+    if (!user) return;
+    try {
+      await rejectStagedEvent(staged.id, user.id);
+      toast.error(`"${staged.title}" rejected`);
+      setStagedEvents(prev => prev.filter(s => s.id !== staged.id));
+    } catch {
+      toast.error("Failed to reject event.");
+    }
+  };
+
   const handleRejectOrganizer = async (organizer: OrganizerAccount) => {
     try {
       await updateOrganizerApprovalStatus(organizer.id, "rejected");
@@ -233,7 +303,7 @@ export default function AdminDashboard() {
 
           {/* Bar Accounts sub-tabs */}
           <div className="flex gap-4 border-b border-border mb-6 overflow-x-auto">
-            {(["overview", "pending", "all-bars"] as const).map((tab) => (
+            {(["overview", "pending", "all-bars", "scraped"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveBarTab(tab)}
@@ -245,7 +315,9 @@ export default function AdminDashboard() {
                   ? pendingOrganizersLoading ? "Pending" : `Pending (${pendingOrganizers.length})`
                   : tab === "overview"
                   ? decidedOrganizersLoading ? "Overview" : `Overview (${decidedOrganizers.length})`
-                  : allBarsLoading ? "All Bars" : `All Bars (${allBars.length})`}
+                  : tab === "all-bars"
+                  ? allBarsLoading ? "All Bars" : `All Bars (${allBars.length})`
+                  : stagedEventsLoading ? "Scraped Events" : `Scraped Events (${stagedEvents.length})`}
               </button>
             ))}
           </div>
@@ -277,6 +349,61 @@ export default function AdminDashboard() {
               {decidedOrganizers.map((organizer) => (
                 <OrganizerCard key={organizer.id} organizer={organizer} returnPath="/admin?tab=overview" />
               ))}
+            </div>
+          )}
+
+          {activeBarTab === "scraped" && (
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                <div className="flex gap-2 flex-shrink-0">
+                  {(["pending", "rejected", "all"] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setStagedFilter(f)}
+                      className={`h-10 px-3 text-xs font-medium border rounded-sm capitalize transition-colors ${
+                        stagedFilter === f
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="search"
+                  value={stagedQuery}
+                  onChange={e => setStagedQuery(e.target.value)}
+                  placeholder="Search by venue or title…"
+                  className="flex-1 h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+                />
+              </div>
+              {stagedEventsLoading && <div className="flex justify-center py-4"><Spinner /></div>}
+              {!stagedEventsLoading && stagedEvents.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No {stagedFilter === "all" ? "" : stagedFilter} scraped events.
+                </p>
+              )}
+              {!stagedEventsLoading && (() => {
+                const q = stagedQuery.trim().toLowerCase();
+                const filtered = q
+                  ? stagedEvents.filter(s =>
+                      s.venueName.toLowerCase().includes(q) ||
+                      s.title.toLowerCase().includes(q),
+                    )
+                  : stagedEvents;
+                if (q && filtered.length === 0) {
+                  return <p className="text-sm text-muted-foreground">No events match your search.</p>;
+                }
+                return filtered.map(staged => (
+                  <StagedEventCard
+                    key={staged.id}
+                    staged={staged}
+                    onApprove={(edits) => handleApproveStaged(staged, edits)}
+                    onReject={() => handleRejectStaged(staged)}
+                  />
+                ));
+              })()}
             </div>
           )}
 
@@ -573,6 +700,173 @@ function OrganizerCard({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function StagedEventCard({
+  staged,
+  onApprove,
+  onReject,
+}: {
+  staged: StagedEvent;
+  onApprove: (edits: StagedEventEdits) => Promise<void>;
+  onReject: () => void;
+}) {
+  const [title, setTitle] = useState(staged.title);
+  const [date, setDate] = useState(staged.date);
+  const [startTime, setStartTime] = useState(staged.startTime ?? "");
+  const [endTime, setEndTime] = useState(staged.endTime ?? "");
+  const [category, setCategory] = useState(staged.category ?? "");
+  const [language, setLanguage] = useState(staged.language);
+  const [description, setDescription] = useState(staged.description);
+  const [entryInfo, setEntryInfo] = useState(staged.entryInfo);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isPending = staged.status === "pending";
+  const statusPill =
+    staged.status === "approved"
+      ? "bg-green-500/10 text-green-600"
+      : staged.status === "rejected"
+      ? "bg-red-500/10 text-red-600"
+      : "bg-yellow-500/10 text-yellow-600";
+
+  const handleApprove = async () => {
+    setSubmitting(true);
+    try {
+      await onApprove({
+        title: title.trim(),
+        date,
+        startTime: startTime || null,
+        endTime: endTime || null,
+        category: category || null,
+        language,
+        description,
+        entryInfo,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="border border-border rounded-sm p-4 space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
+        <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
+        {!isPending && (
+          <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
+            {staged.status}
+          </span>
+        )}
+      </div>
+
+      <a
+        href={staged.sourceUrl}
+        onClick={(e) => {
+          e.preventDefault();
+          openSourceWindow(staged.sourceUrl);
+        }}
+        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline break-all max-w-full cursor-pointer"
+        title="Open source page in side window to verify"
+      >
+        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate">{staged.sourceUrl.replace(/^https?:\/\//, "")}</span>
+      </a>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Title"
+          disabled={!isPending}
+          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+        />
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          disabled={!isPending}
+          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+        >
+          <option value="">— No category —</option>
+          {categories.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <input
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          disabled={!isPending}
+          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+        />
+        <div className="flex gap-2">
+          <input
+            type="time"
+            value={startTime}
+            onChange={e => setStartTime(e.target.value)}
+            disabled={!isPending}
+            placeholder="Start"
+            className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+          />
+          <input
+            type="time"
+            value={endTime}
+            onChange={e => setEndTime(e.target.value)}
+            disabled={!isPending}
+            placeholder="End"
+            className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+          />
+        </div>
+        <input
+          type="text"
+          value={entryInfo}
+          onChange={e => setEntryInfo(e.target.value)}
+          placeholder='Entry (e.g. "Free", "Pay what you want", "8 €")'
+          disabled={!isPending}
+          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+        />
+        <select
+          value={language}
+          onChange={e => setLanguage(e.target.value)}
+          disabled={!isPending}
+          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+        >
+          <option value="">— No language —</option>
+          {LANGUAGES.map(l => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
+      </div>
+
+      <textarea
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Description"
+        rows={2}
+        disabled={!isPending}
+        className="w-full px-2 py-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60 resize-y"
+      />
+
+      {isPending && (
+        <div className="flex justify-end gap-2 flex-shrink-0">
+          <button
+            onClick={onReject}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+          >
+            <X className="h-3 w-3" /> Reject
+          </button>
+          <button
+            onClick={handleApprove}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Check className="h-3 w-3" /> {submitting ? "Approving…" : "Approve"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
