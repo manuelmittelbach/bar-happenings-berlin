@@ -14,41 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      bar_sources: {
-        Row: {
-          bar_id: string | null
-          created_at: string | null
-          id: string
-          last_scraped_at: string | null
-          platform: string
-          url: string
-        }
-        Insert: {
-          bar_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_scraped_at?: string | null
-          platform: string
-          url: string
-        }
-        Update: {
-          bar_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_scraped_at?: string | null
-          platform?: string
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bar_sources_bar_id_fkey"
-            columns: ["bar_id"]
-            isOneToOne: false
-            referencedRelation: "bars"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       bars: {
         Row: {
           address: string | null
@@ -108,66 +73,6 @@ export type Database = {
           source_type?: string | null
           telegram?: string | null
           updated_at?: string | null
-          website?: string | null
-        }
-        Relationships: []
-      }
-      bars_backup: {
-        Row: {
-          address: string | null
-          area: string | null
-          created_at: string | null
-          google_types: string | null
-          id: string
-          instagram: string | null
-          latitude: number | null
-          longitude: number | null
-          name: string
-          num_ratings: number | null
-          opening_hours: string | null
-          phone: string | null
-          place_id: string
-          rating: number | null
-          source_type: string | null
-          telegram: string | null
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          area?: string | null
-          created_at?: string | null
-          google_types?: string | null
-          id?: string
-          instagram?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          num_ratings?: number | null
-          opening_hours?: string | null
-          phone?: string | null
-          place_id: string
-          rating?: number | null
-          source_type?: string | null
-          telegram?: string | null
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          area?: string | null
-          created_at?: string | null
-          google_types?: string | null
-          id?: string
-          instagram?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          num_ratings?: number | null
-          opening_hours?: string | null
-          phone?: string | null
-          place_id?: string
-          rating?: number | null
-          source_type?: string | null
-          telegram?: string | null
           website?: string | null
         }
         Relationships: []
@@ -358,120 +263,6 @@ export type Database = {
         }
         Relationships: []
       }
-      events_staging: {
-        Row: {
-          area: string | null
-          bar_id: string | null
-          changed_fields: Json | null
-          cost: string | null
-          created_at: string | null
-          date: string | null
-          description: string | null
-          end_time: string | null
-          feedbackloop_status: string | null
-          id: string
-          name: string
-          source_platform: string | null
-          source_url: string | null
-          start_time: string | null
-          sync_status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name?: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      past_events: {
-        Row: {
-          area: string | null
-          bar_id: string | null
-          changed_fields: Json | null
-          cost: string | null
-          created_at: string | null
-          date: string | null
-          description: string | null
-          end_time: string | null
-          feedbackloop_status: string | null
-          id: string
-          name: string
-          source_platform: string | null
-          source_url: string | null
-          start_time: string | null
-          sync_status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name?: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       pending_bar_submissions: {
         Row: {
           address: string
@@ -590,41 +381,6 @@ export type Database = {
           role?: string
         }
         Relationships: []
-      }
-      scrape_logs: {
-        Row: {
-          bar_id: string | null
-          error_message: string | null
-          id: string
-          scanned_at: string | null
-          status: string | null
-          venue_id: string | null
-        }
-        Insert: {
-          bar_id?: string | null
-          error_message?: string | null
-          id?: string
-          scanned_at?: string | null
-          status?: string | null
-          venue_id?: string | null
-        }
-        Update: {
-          bar_id?: string | null
-          error_message?: string | null
-          id?: string
-          scanned_at?: string | null
-          status?: string | null
-          venue_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scrape_logs_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_interests: {
         Row: {
