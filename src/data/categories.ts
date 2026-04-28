@@ -9,12 +9,12 @@ export interface CategoryInfo {
 
 export const categoryInfos: CategoryInfo[] = [
   // ── Active categories (shown in filter bar, in this order) ──
-  { id: "comedy",       label: "Comedy",     emoji: "🎤",  color: "#d63c2f", enabled: true },
-  { id: "pub-quiz",     label: "Quiz",       emoji: "🧠",  color: "#2456f5", enabled: true },
   { id: "live-music",   label: "Live Music", emoji: "🎸",  color: "#f07d30", enabled: true },
-  { id: "dj-music",     label: "DJ",         emoji: "🎧",  color: "#9b5cf6", enabled: true },
-  { id: "karaoke",      label: "Karaoke",    emoji: "🎤",  color: "#d946ef", enabled: true },
   { id: "open-mic",     label: "Open Mic",   emoji: "🎙️", color: "#e88a2e", enabled: true },
+  { id: "comedy",       label: "Comedy",     emoji: "🤣",  color: "#d63c2f", enabled: true },
+  { id: "dj-music",     label: "DJ",         emoji: "🎧",  color: "#9b5cf6", enabled: true },
+  { id: "pub-quiz",     label: "Quiz",       emoji: "🧠",  color: "#2456f5", enabled: true },
+  { id: "karaoke",      label: "Karaoke",    emoji: "🎤",  color: "#d946ef", enabled: true },
   { id: "drag-cabaret", label: "Drag",       emoji: "👑",  color: "#f59e0b", enabled: true },
   { id: "screening",    label: "Screening",  emoji: "🎬",  color: "#6366f1", enabled: true },
   { id: "singles",      label: "Dating",     emoji: "💘",  color: "#ec4899", enabled: true },
