@@ -81,7 +81,8 @@
       "Bash(cp live-music.jpg karaoke.jpg)",
       "Bash(cp comedy.jpg drag-cabaret.jpg)",
       "Bash(cp pub-quiz.jpg games.jpg)",
-      "Bash(cp social.jpg sports.jpg)"
+      "Bash(cp social.jpg sports.jpg)",
+      "Bash(h-12 px-6 *)"
     ]
   }
 }
