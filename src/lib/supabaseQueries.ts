@@ -34,9 +34,7 @@ function mapEventRow(row: Tables<"events">): BarlinEvent {
     url: row.url ?? "",
     image: row.image ?? undefined,
     imagePosition: row.image_position ?? "50% 50%",
-    summary: row.summary ?? undefined,
     interestedCount: row.interested_count ?? 0,
-    featured: row.featured ?? false,
     status: row.status,
     createdBy: row.created_by ?? undefined,
   };

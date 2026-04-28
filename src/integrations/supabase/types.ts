@@ -206,7 +206,6 @@ export type Database = {
           description: string | null
           end_time: string | null
           entry_info: string | null
-          featured: boolean | null
           id: string
           image: string | null
           image_position: string
@@ -217,7 +216,6 @@ export type Database = {
           recurrence: string | null
           start_time: string | null
           status: string
-          summary: string | null
           tags: string[] | null
           title: string
           url: string | null
@@ -236,7 +234,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          featured?: boolean | null
           id: string
           image?: string | null
           image_position?: string
@@ -247,7 +244,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
-          summary?: string | null
           tags?: string[] | null
           title: string
           url?: string | null
@@ -266,7 +262,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          featured?: boolean | null
           id?: string
           image?: string | null
           image_position?: string
@@ -277,7 +272,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
-          summary?: string | null
           tags?: string[] | null
           title?: string
           url?: string | null
@@ -365,7 +359,6 @@ export type Database = {
           description: string | null
           end_time: string | null
           entry_info: string | null
-          featured: boolean | null
           id: string
           image: string | null
           image_position: string
@@ -377,7 +370,6 @@ export type Database = {
           recurrence: string | null
           start_time: string
           status: string
-          summary: string | null
           tags: string[] | null
           title: string
           url: string | null
@@ -397,7 +389,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          featured?: boolean | null
           id: string
           image?: string | null
           image_position?: string
@@ -409,7 +400,6 @@ export type Database = {
           recurrence?: string | null
           start_time: string
           status?: string
-          summary?: string | null
           tags?: string[] | null
           title: string
           url?: string | null
@@ -429,7 +419,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          featured?: boolean | null
           id?: string
           image?: string | null
           image_position?: string
@@ -441,7 +430,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string
           status?: string
-          summary?: string | null
           tags?: string[] | null
           title?: string
           url?: string | null

@@ -132,7 +132,7 @@ export default function MyEvents() {
 								</h2>
 								<div className="grid grid-cols-1 gap-6">
 									{yesterdayEvents.map((event, i) => (
-										<EventCard key={event.id} event={event} index={i} featured={false} />
+										<EventCard key={event.id} event={event} index={i} />
 									))}
 								</div>
 							</div>
@@ -145,7 +145,7 @@ export default function MyEvents() {
 								</h2>
 								<div className="grid grid-cols-1 gap-6">
 									{group.events.map((event, i) => (
-										<EventCard key={event.id} event={event} index={i} featured={false} />
+										<EventCard key={event.id} event={event} index={i} />
 									))}
 								</div>
 							</div>
@@ -174,7 +174,7 @@ export default function MyEvents() {
 												</h2>
 												<div className="grid grid-cols-1 gap-6 opacity-60 pointer-events-none cursor-default">
 													{group.events.map((event, i) => (
-														<EventCard key={event.id} event={event} index={i} featured={false} />
+														<EventCard key={event.id} event={event} index={i} />
 													))}
 												</div>
 											</div>

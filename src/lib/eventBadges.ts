@@ -79,10 +79,5 @@ export function getEventBadge(
     }
   }
 
-  // DISABLED — re-enable to show popular badge
-  // if (interestedCount > 30 && !event.featured) {
-  //   return { label: "Popular", variant: "popular", icon: TrendingUp };
-  // }
-
   return null;
 }

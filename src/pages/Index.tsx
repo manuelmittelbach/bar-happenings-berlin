@@ -201,19 +201,6 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation, eventsData, venueMap]);
 
-  // Deterministic ~12% featured picks
-  const featuredIds = useMemo(() => {
-    const set = new Set<string>();
-    filtered.forEach((e, i) => {
-      const hash = e.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      if ((hash + i) % 8 === 0) set.add(e.id);
-    });
-    if (set.size === 0 && filtered.length >= 3) {
-      set.add(filtered[0].id);
-    }
-    return set;
-  }, [filtered]);
-
   useLayoutEffect(() => {
     if (sessionStorage.getItem("inside-bars-scroll-to-filter") === "1") {
       sessionStorage.removeItem("inside-bars-scroll-to-filter");
@@ -578,7 +565,7 @@ export default function Index() {
                     ) : (
                       <div className="grid grid-cols-1 gap-6">
                         {section.events.map((event, i) => (
-                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} featured={false} />
+                          <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} />
                         ))}
                       </div>
                     )}
