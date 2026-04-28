@@ -36,7 +36,7 @@ export default function VenueBlock({ venue, otherEvents }: VenueBlockProps) {
               to={`/event/${ev.id}`}
               className="block text-sm hover:text-accent transition-colors"
             >
-              {ev.title} · {ev.date} · {ev.startTime}
+              {ev.title} · {ev.date}{ev.startTime ? ` · ${ev.startTime}` : ""}
             </Link>
           ))}
         </div>

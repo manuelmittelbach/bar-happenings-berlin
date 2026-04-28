@@ -205,12 +205,16 @@ export default function EventDetail() {
 					{/* When */}
 					<div className="flex-1">
 						<p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
-						{event.startTime && (
+						{event.startTime ? (
 							<p className="text-foreground font-mono text-sm mt-0.5">
 								{event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
 								{endsNextDay(event.startTime, event.endTime) && (
 									<span className="text-muted-foreground text-xs ml-1">(next day)</span>
 								)}
+							</p>
+						) : (
+							<p className="text-muted-foreground font-mono text-xs mt-0.5 italic">
+								No info on start time
 							</p>
 						)}
 					</div>
