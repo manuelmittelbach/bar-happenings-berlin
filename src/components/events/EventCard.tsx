@@ -9,6 +9,7 @@ import type { BarlinEvent } from "@/types/event";
 import { getVenueById } from "@/data/legacyVenueLookup";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
+import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -108,10 +109,12 @@ export default function EventCard({ event, layout = "grid", featured = false, on
             </h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <LocationChip size="sm" />
-              <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
-                <Users className="h-3.5 w-3.5" />
-                {interestedCount}
-              </span>
+              {SHOW_INTEREST_COUNT && (
+                <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+                  <Users className="h-3.5 w-3.5" />
+                  {interestedCount}
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{event.description}</p>
           </div>
@@ -148,10 +151,12 @@ export default function EventCard({ event, layout = "grid", featured = false, on
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <LocationChip size="sm" />
-              <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
-                <Users className="h-3.5 w-3.5" />
-                {interestedCount}
-              </span>
+              {SHOW_INTEREST_COUNT && (
+                <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
+                  <Users className="h-3.5 w-3.5" />
+                  {interestedCount}
+                </span>
+              )}
             </div>
           </div>
         </Link>
@@ -191,10 +196,12 @@ export default function EventCard({ event, layout = "grid", featured = false, on
               <div className="flex items-center gap-1.5 flex-wrap">
                 <LocationChip size="xs" />
               </div>
-              <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
-                <Users className="h-3 w-3" />
-                {interestedCount}
-              </span>
+              {SHOW_INTEREST_COUNT && (
+                <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
+                  <Users className="h-3 w-3" />
+                  {interestedCount}
+                </span>
+              )}
             </div>
           </div>
         </div>
