@@ -1513,7 +1513,7 @@ function StagedEventCard({
         </div>
       )}
 
-      {isPending && confirmingNoStartTime && (
+      {isPending && confirmingNoStartTime && !confirmingClash && (
         <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-1">
           <p className="text-xs font-medium text-yellow-700">
             ⚠ Approve without a start time?
@@ -1578,7 +1578,10 @@ function StagedEventCard({
           ) : confirmingClash ? (
             <>
               <button
-                onClick={() => setConfirmingClash(false)}
+                onClick={() => {
+                  setConfirmingClash(false);
+                  setConfirmingNoStartTime(false);
+                }}
                 disabled={submitting}
                 className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
