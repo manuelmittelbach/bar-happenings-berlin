@@ -285,10 +285,10 @@ export default function Login() {
 						</div>
 
 							<form onSubmit={handleSubmit} className="space-y-4">
-								{!isLogin && !isForgotPassword && (
+								{!isLogin && !isForgotPassword && isBarOwner && (
 									<div className="flex gap-2">
 										<div className="flex-1 space-y-1.5">
-											<label className="text-sm font-medium">First name {isBarOwner && <span className="text-accent">*</span>}</label>
+											<label className="text-sm font-medium">First name <span className="text-accent">*</span></label>
 											<input
 												type="text"
 												required
@@ -300,7 +300,7 @@ export default function Login() {
 											/>
 										</div>
 										<div className="flex-1 space-y-1.5">
-											<label className="text-sm font-medium">Last name {isBarOwner && <span className="text-accent">*</span>}</label>
+											<label className="text-sm font-medium">Last name <span className="text-accent">*</span></label>
 											<input
 												type="text"
 												required

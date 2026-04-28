@@ -256,43 +256,48 @@ export default function Profile() {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-5">
-          {/* First + last name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="mono-label text-muted-foreground">First name</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className={inputClass}
-              />
+        {role !== "user" && (
+          <form onSubmit={handleSave} className="space-y-5">
+            {/* First + last name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="mono-label text-muted-foreground">First name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="mono-label text-muted-foreground">Last name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="mono-label text-muted-foreground">Last name</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-          </div>
 
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="h-3.5 w-3.5" />
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-          </div>
-        </form>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Email — read-only display + change form */}
-        <form onSubmit={handleChangeEmail} className="space-y-4 mt-8 pt-6 border-t border-border">
+        <form
+          onSubmit={handleChangeEmail}
+          className={`space-y-4 ${role !== "user" ? "mt-8 pt-6 border-t border-border" : "mt-2"}`}
+        >
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">Email</label>
             <div className="flex items-center h-11 px-3 bg-muted/40 border-2 border-border text-sm font-mono text-muted-foreground select-all">

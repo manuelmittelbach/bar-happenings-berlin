@@ -35,11 +35,21 @@ export default function Datenschutz() {
               die Funktion der Seite genutzt (z. B. Login-Session, UI-Zustand). Eine
               Einwilligungspflicht nach § 25 Abs. 2 TTDSG besteht hierfür nicht.
             </p>
+            <p className="mb-2">
+              <strong className="text-foreground">Bei Registrierung als Nutzer:in:</strong> Wir
+              verarbeiten ausschließlich deine E-Mail-Adresse und ein verschlüsseltes Passwort.
+              Weitere Angaben (z. B. Name) erheben wir nicht.
+            </p>
+            <p className="mb-2">
+              <strong className="text-foreground">Bei Registrierung als Bar-Betreiber:in:</strong>{" "}
+              Zusätzlich verarbeiten wir Vor- und Nachname der vertretungsberechtigten Person sowie
+              Angaben zur Bar (Name, Adresse, ggf. Website, Instagram-Handle und Telefonnummer).
+              Diese Daten benötigen wir, um die Bar-Inhaberschaft zu prüfen und Events deiner Bar
+              veröffentlichen zu können.
+            </p>
             <p>
-              <strong className="text-foreground">Bei Registrierung / Login:</strong> Wir
-              verarbeiten deine E-Mail-Adresse, ein verschlüsseltes Passwort sowie die von dir im
-              Profil hinterlegten Angaben. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung
-              eines Vertrags bzw. vorvertragliche Maßnahmen).
+              Rechtsgrundlage in beiden Fällen: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung eines
+              Vertrags bzw. vorvertragliche Maßnahmen).
             </p>
           </section>
 
