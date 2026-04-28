@@ -3,25 +3,31 @@ export interface CategoryInfo {
   label: string;
   emoji: string;
   color: string;
+  // Toggle to true to bring a category back into the filter bar.
+  enabled: boolean;
 }
 
 export const categoryInfos: CategoryInfo[] = [
-  { id: "comedy", label: "Comedy", emoji: "🎤", color: "#d63c2f" },
-  { id: "pub-quiz", label: "Pub Quiz", emoji: "🧠", color: "#2456f5" },
-  { id: "language-exchange", label: "Language Exchange", emoji: "🌍", color: "#3abf6e" },
-  { id: "social", label: "Social / Networking", emoji: "🤝", color: "#e8d84b" },
-  { id: "singles", label: "Singles & Dating", emoji: "💘", color: "#ec4899" },
-  { id: "dj-music", label: "DJ / Music Night", emoji: "🎧", color: "#9b5cf6" },
-  { id: "live-music", label: "Live Music", emoji: "🎸", color: "#f07d30" },
-  { id: "other", label: "Other", emoji: "✦", color: "#14b8a6" },
-  { id: "open-mic", label: "Open Mic", emoji: "🎙️", color: "#e88a2e" },
-  { id: "quiz-night", label: "Quiz Night", emoji: "🧠", color: "#2456f5" },
-  { id: "promo-date-night", label: "Promo / Date Night", emoji: "🍸", color: "#ec4899" },
-  { id: "screening", label: "Screening", emoji: "🎬", color: "#6366f1" },
-  { id: "sport", label: "Sport / Games", emoji: "🏆", color: "#22c55e" },
+  // ── Active categories (shown in filter bar, in this order) ──
+  { id: "live-music",   label: "Live Music", emoji: "🎸",  color: "#f07d30", enabled: true },
+  { id: "open-mic",     label: "Open Mic",   emoji: "🎙️", color: "#e88a2e", enabled: true },
+  { id: "comedy",       label: "Comedy",     emoji: "🤣",  color: "#d63c2f", enabled: true },
+  { id: "dj-music",     label: "DJ",         emoji: "🎧",  color: "#9b5cf6", enabled: true },
+  { id: "pub-quiz",     label: "Quiz",       emoji: "🧠",  color: "#2456f5", enabled: true },
+  { id: "karaoke",      label: "Karaoke",    emoji: "🎤",  color: "#d946ef", enabled: true },
+  { id: "drag-cabaret", label: "Drag",       emoji: "👑",  color: "#f59e0b", enabled: true },
+  { id: "screening",    label: "Screening",  emoji: "🎬",  color: "#6366f1", enabled: true },
+  { id: "singles",      label: "Dating",     emoji: "💘",  color: "#ec4899", enabled: true },
+  { id: "other",        label: "Other",      emoji: "✦",   color: "#14b8a6", enabled: true },
+
+  // ── Inactive (icons, images and DB records still wired up — flip enabled to re-add) ──
+  { id: "social",            label: "Social / Networking", emoji: "🤝",  color: "#e8d84b", enabled: false },
+  { id: "language-exchange", label: "Language Exchange",   emoji: "🌍",  color: "#3abf6e", enabled: false },
+  { id: "games",             label: "Games",               emoji: "🎲",  color: "#65a30d", enabled: false },
+  { id: "sports",            label: "Sports",              emoji: "⚽",  color: "#16a34a", enabled: false },
 ];
 
-export const categories = categoryInfos.map(c => c.label);
+export const categories = categoryInfos.filter(c => c.enabled).map(c => c.label);
 
 export const getCategoryInfo = (categoryId: string) =>
   categoryInfos.find(c => c.id === categoryId);

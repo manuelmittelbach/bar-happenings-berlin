@@ -6,7 +6,7 @@ import { toast } from "sonner";
 interface ShareMenuProps {
   eventTitle: string;
   eventId: string;
-  variant?: "icon" | "full" | "header";
+  variant?: "icon" | "full" | "header" | "pill";
 }
 
 export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: ShareMenuProps) {
@@ -16,10 +16,30 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
   const text = `Check out "${eventTitle}" on Inside Bars!`;
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    toast.success("Link copied!");
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Non-secure context (HTTP over LAN IP) and older WebKit lack navigator.clipboard
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (!ok) throw new Error("execCommand copy failed");
+      }
+      setCopied(true);
+      toast.success("Link copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy link");
+    }
   };
 
   const shareLinks = [
@@ -56,6 +76,11 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
         ) : variant === "header" ? (
           <button className="text-xs font-mono text-accent cursor-pointer">
             Share event
+          </button>
+        ) : variant === "pill" ? (
+          <button className="h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 bg-transparent text-foreground border-accent hover:bg-accent/10 transition-all duration-200 active:scale-[0.98]">
+            <Share2 className="h-4 w-4" />
+            Share
           </button>
         ) : (
           <button className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
