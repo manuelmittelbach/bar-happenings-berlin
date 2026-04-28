@@ -41,6 +41,22 @@ export function triggerLocationRequest() {
   );
 }
 
+export function requestLocationOnce(): Promise<UserLocation | null> {
+  if (permissionStatus === "granted" && cached) return Promise.resolve(cached);
+  if (permissionStatus === "denied") return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const listener = (s: LocationPermissionStatus) => {
+      if (s === "granted" || s === "denied") {
+        statusSubscribers.delete(listener);
+        resolve(s === "granted" ? cached : null);
+      }
+    };
+    statusSubscribers.add(listener);
+    triggerLocationRequest();
+  });
+}
+
 export function useUserLocation(): {
   location: UserLocation | null;
   status: LocationPermissionStatus;
