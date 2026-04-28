@@ -40,22 +40,46 @@ TODAY_ISO    = TODAY.isoformat()
 # far-future entries.
 MAX_DATE     = TODAY + timedelta(weeks=8)
 
-# Allowed event categories — must match labels in the `categories` table
-CATEGORIES = [
-    "Live Music",
-    "Pub Quiz",
-    "Quiz Night",
-    "Comedy",
-    "Open Mic",
-    "DJ / Music Night",
-    "Language Exchange",
-    "Social / Networking",
-    "Singles & Dating",
-    "Promo / Date Night",
-    "Screening",
-    "Sport / Games",
-    "Other",
+# Allowed event categories are the *enabled* entries in src/data/categories.ts.
+# Re-read on every run so flipping `enabled` in that file flows through to the
+# scraper without a code change here.
+CATEGORIES_TS_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "src", "data", "categories.ts"
+)
+
+_CATEGORY_ENTRY_RE = re.compile(
+    r'\{\s*id:\s*"(?P<id>[^"]+)"\s*,\s*'
+    r'label:\s*"(?P<label>[^"]+)"[^}]*?'
+    r'enabled:\s*(?P<enabled>true|false)\s*\}',
+    re.DOTALL,
+)
+
+_FALLBACK_CATEGORIES = [
+    "Live Music", "Open Mic", "Comedy", "DJ", "Quiz",
+    "Karaoke", "Drag", "Screening", "Dating", "Other",
 ]
+
+
+def load_enabled_categories() -> list[str]:
+    """Parse src/data/categories.ts and return labels where enabled=true."""
+    try:
+        with open(CATEGORIES_TS_PATH, encoding="utf-8") as f:
+            source = f.read()
+    except OSError as e:
+        print(f"⚠ Could not read {CATEGORIES_TS_PATH}: {e}. Falling back to defaults.")
+        return _FALLBACK_CATEGORIES
+
+    labels = [
+        m.group("label") for m in _CATEGORY_ENTRY_RE.finditer(source)
+        if m.group("enabled") == "true"
+    ]
+    if not labels:
+        print(f"⚠ No enabled categories parsed from {CATEGORIES_TS_PATH}. Falling back to defaults.")
+        return _FALLBACK_CATEGORIES
+    return labels
+
+
+CATEGORIES = load_enabled_categories()
 
 # Most common language values for Berlin bar events.
 # Full list is in src/data/languages.ts — admin can pick any of the 58 in the UI.
