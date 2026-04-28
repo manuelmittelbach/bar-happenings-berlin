@@ -215,7 +215,6 @@ export type Database = {
           recurrence: string | null
           start_time: string | null
           status: string
-          tags: string[] | null
           title: string
           url: string | null
           venue: string
@@ -242,7 +241,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
-          tags?: string[] | null
           title: string
           url?: string | null
           venue: string
@@ -269,7 +267,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
-          tags?: string[] | null
           title?: string
           url?: string | null
           venue?: string
@@ -366,7 +363,6 @@ export type Database = {
           recurrence: string | null
           start_time: string
           status: string
-          tags: string[] | null
           title: string
           url: string | null
           venue: string
@@ -395,7 +391,6 @@ export type Database = {
           recurrence?: string | null
           start_time: string
           status?: string
-          tags?: string[] | null
           title: string
           url?: string | null
           venue: string
@@ -424,7 +419,6 @@ export type Database = {
           recurrence?: string | null
           start_time?: string
           status?: string
-          tags?: string[] | null
           title?: string
           url?: string | null
           venue?: string

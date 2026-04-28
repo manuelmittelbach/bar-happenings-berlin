@@ -9,7 +9,6 @@ export interface BarlinEvent {
   date: string;
   startTime: string;
   category: string;
-  tags: string[];
   description: string;
   entryInfo: string;
   language: string;
