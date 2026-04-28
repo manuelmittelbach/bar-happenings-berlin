@@ -10,6 +10,7 @@ import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
 import type { BarlinEvent } from "@/types/event";
+import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
 type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
 
@@ -270,9 +271,11 @@ export default function OrganizerDashboard() {
                           {recurrenceLabel && next ? "Next: " : ""}
                           {formatDateWithDay(displayEvent.date)} · {displayEvent.startTime}{displayEvent.endTime ? ` – ${displayEvent.endTime}` : ""}
                         </p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {displayEvent.interestedCount ?? 0} interested</span>
-                        </div>
+                        {SHOW_INTEREST_COUNT && (
+                          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {displayEvent.interestedCount ?? 0} interested</span>
+                          </div>
+                        )}
                       </div>
                       {activeTab === "upcoming" && (
                         <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">

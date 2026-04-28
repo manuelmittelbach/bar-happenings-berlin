@@ -17,6 +17,7 @@ import { endsNextDay } from "@/lib/eventStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
 function formatLanguage(raw: string | undefined): string | null {
 	if (!raw) return null;
@@ -185,10 +186,12 @@ export default function EventDetail() {
 							{!saved && <Plus className="h-4 w-4" />}
 							Interested
 						</button>
-						<span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
-							<Users className="h-4 w-4" />
-							{interestedCount}
-						</span>
+						{SHOW_INTEREST_COUNT && (
+							<span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
+								<Users className="h-4 w-4" />
+								{interestedCount}
+							</span>
+						)}
 					</div>
 				</div>
 
