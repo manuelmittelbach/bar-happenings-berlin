@@ -25,7 +25,6 @@ function mapEventRow(row: Tables<"events">): BarlinEvent {
     startTime: trimTime(row.start_time),
     endTime: row.end_time ? trimTime(row.end_time) : undefined,
     category: row.category,
-    tags: row.tags ?? [],
     description: row.description ?? "",
     entryInfo: row.entry_info ?? "",
     language: row.language ?? "",
