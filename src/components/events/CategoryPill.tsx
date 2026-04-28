@@ -1,5 +1,5 @@
 import { getCategoryInfoByLabel, type CategoryInfo } from "@/data/categories";
-import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Music2, Crown, Dice5 } from "lucide-react";
+import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Crown, Dice5, Laugh } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface CategoryPillProps {
@@ -9,12 +9,12 @@ interface CategoryPillProps {
 }
 
 const categoryIcons: Record<string, LucideIcon> = {
-  "comedy": Mic,
+  "comedy": Laugh,
   "pub-quiz": Brain,
   "live-music": Guitar,
   "dj-music": Headphones,
   "open-mic": MicVocal,
-  "karaoke": Music2,
+  "karaoke": Mic,
   "drag-cabaret": Crown,
   "social": Handshake,
   "language-exchange": Globe,
@@ -50,8 +50,8 @@ const desktopShortLabels: Record<string, string> = {
 
 /* Priority order — controls filter-bar order on desktop and mobile */
 const desktopCategoryOrder: string[] = [
-  "Comedy", "Quiz", "Live Music", "DJ", "Karaoke",
-  "Open Mic", "Drag", "Screening", "Dating", "Other",
+  "Live Music", "Open Mic", "Comedy", "DJ", "Quiz",
+  "Karaoke", "Drag", "Screening", "Dating", "Other",
   // Inactive (kept for fast re-enable):
   "Social / Networking", "Language Exchange", "Games", "Sports",
 ];
@@ -96,8 +96,7 @@ export function CategoryIconRow({
 
       {sorted.map((cat) => {
         const info = getCategoryInfoByLabel(cat);
-        const Icon = info ? categoryIcons[info.id] : Sparkles;
-        const I = Icon || Sparkles;
+        const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
         return (
@@ -113,7 +112,7 @@ export function CategoryIconRow({
                 ? "bg-accent text-background  scale-105"
                 : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
             }`}>
-              <I className="h-[22px] w-[22px]" />
+              {Icon ? <Icon className="h-[22px] w-[22px]" /> : <span className="text-[22px] leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
             <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors ${
               isActive ? "text-accent" : ""
@@ -165,8 +164,7 @@ export function CategoryIconBar({
 
       {sorted.map((cat) => {
         const info = getCategoryInfoByLabel(cat);
-        const Icon = info ? categoryIcons[info.id] : Sparkles;
-        const I = Icon || Sparkles;
+        const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
         return (
@@ -182,7 +180,7 @@ export function CategoryIconBar({
                 ? "bg-accent text-background  scale-105"
                 : "bg-muted border-2 border-border"
             }`}>
-              <I className="h-5 w-5" />
+              {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
             <span className={`text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
               isActive ? "text-accent" : ""
