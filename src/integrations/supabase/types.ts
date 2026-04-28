@@ -274,71 +274,6 @@ export type Database = {
         }
         Relationships: []
       }
-      events_alt: {
-        Row: {
-          area: string | null
-          bar_id: string | null
-          changed_fields: Json | null
-          cost: string | null
-          created_at: string | null
-          date: string | null
-          description: string | null
-          end_time: string | null
-          feedbackloop_status: string | null
-          id: string
-          name: string
-          source_platform: string | null
-          source_url: string | null
-          start_time: string | null
-          sync_status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          area?: string | null
-          bar_id?: string | null
-          changed_fields?: Json | null
-          cost?: string | null
-          created_at?: string | null
-          date?: string | null
-          description?: string | null
-          end_time?: string | null
-          feedbackloop_status?: string | null
-          id?: string
-          name?: string
-          source_platform?: string | null
-          source_url?: string | null
-          start_time?: string | null
-          sync_status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "events_bar_id_fkey"
-            columns: ["bar_id"]
-            isOneToOne: false
-            referencedRelation: "bars"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       events_archive: {
         Row: {
           address: string
@@ -359,7 +294,6 @@ export type Database = {
           language: string | null
           neighborhood: string
           parent_id: string | null
-          price: string | null
           recurrence: string | null
           start_time: string
           status: string
@@ -387,7 +321,6 @@ export type Database = {
           language?: string | null
           neighborhood: string
           parent_id?: string | null
-          price?: string | null
           recurrence?: string | null
           start_time: string
           status?: string
@@ -415,7 +348,6 @@ export type Database = {
           language?: string | null
           neighborhood?: string
           parent_id?: string | null
-          price?: string | null
           recurrence?: string | null
           start_time?: string
           status?: string
@@ -713,15 +645,7 @@ export type Database = {
           id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_interests_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       venue_events_staging: {
         Row: {
@@ -788,6 +712,13 @@ export type Database = {
           venue_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "venue_events_staging_events_id_fkey"
+            columns: ["events_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "venue_events_staging_venue_id_fkey"
             columns: ["venue_id"]
@@ -903,6 +834,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_past_events: { Args: never; Returns: number }
       cleanup_unconfirmed_signups: { Args: never; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       truncate_staging: { Args: never; Returns: undefined }

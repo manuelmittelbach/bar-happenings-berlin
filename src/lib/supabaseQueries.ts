@@ -12,7 +12,7 @@ function trimTime(t: string | null | undefined): string {
   return m ? `${m[1].padStart(2, "0")}:${m[2]}` : t;
 }
 
-function mapEventRow(row: Tables<"events">): BarlinEvent {
+function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEvent {
   return {
     id: row.id,
     parentId: row.parent_id ?? "",
@@ -94,23 +94,23 @@ export async function fetchEvents(): Promise<BarlinEvent[]> {
 }
 
 export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("created_by", userId)
-    .order("date", { ascending: false });
-  if (error) throw error;
-  return data.map(mapEventRow);
+  const [live, arch] = await Promise.all([
+    supabase.from("events").select("*").eq("created_by", userId),
+    supabase.from("events_archive").select("*").eq("created_by", userId),
+  ]);
+  if (live.error) throw live.error;
+  if (arch.error) throw arch.error;
+  const rows = [...(live.data ?? []), ...(arch.data ?? [])];
+  rows.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+  return rows.map(mapEventRow);
 }
 
 export async function fetchEventById(id: string): Promise<BarlinEvent | null> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) return null;
-  return mapEventRow(data);
+  const live = await supabase.from("events").select("*").eq("id", id).maybeSingle();
+  if (live.data) return mapEventRow(live.data);
+  const arch = await supabase.from("events_archive").select("*").eq("id", id).maybeSingle();
+  if (arch.data) return mapEventRow(arch.data);
+  return null;
 }
 
 export async function uploadEventImage(file: File, userId: string): Promise<string> {
@@ -285,13 +285,16 @@ export async function cancelEventSeries(seriesId: string, fromDate: string): Pro
 }
 
 export async function fetchEventSeries(seriesId: string): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
-    .order("date");
-  if (error) throw error;
-  return data.map(mapEventRow);
+  const filter = `id.eq.${seriesId},parent_id.eq.${seriesId}`;
+  const [live, arch] = await Promise.all([
+    supabase.from("events").select("*").or(filter),
+    supabase.from("events_archive").select("*").or(filter),
+  ]);
+  if (live.error) throw live.error;
+  if (arch.error) throw arch.error;
+  const rows = [...(live.data ?? []), ...(arch.data ?? [])];
+  rows.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  return rows.map(mapEventRow);
 }
 
 export async function fetchVenues(): Promise<Venue[]> {
@@ -341,16 +344,24 @@ export async function checkInterest(userId: string, eventId: string): Promise<bo
 }
 
 export async function fetchInterestedEvents(userId: string): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
+  const { data: interests, error } = await supabase
     .from("user_interests")
-    .select("event_id, events(*)")
+    .select("event_id, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? [])
-    .map((row) => row.events as Tables<"events"> | null)
-    .filter((e): e is Tables<"events"> => e !== null)
-    .map(mapEventRow);
+  const ids = (interests ?? []).map((r) => r.event_id);
+  if (ids.length === 0) return [];
+
+  const [liveRes, archRes] = await Promise.all([
+    supabase.from("events").select("*").in("id", ids),
+    supabase.from("events_archive").select("*").in("id", ids),
+  ]);
+  if (liveRes.error) throw liveRes.error;
+  if (archRes.error) throw archRes.error;
+
+  const rows = [...(liveRes.data ?? []), ...(archRes.data ?? [])];
+  return rows.map(mapEventRow);
 }
 
 export async function fetchUserRole(userId: string): Promise<"user" | "organizer" | "admin"> {
