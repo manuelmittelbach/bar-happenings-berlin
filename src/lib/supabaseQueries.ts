@@ -791,7 +791,6 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     scrapedAt: row.scraped_at,
     reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
-    isManualTab: row.is_manual_tab ?? false,
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
     eventsId: row.events_id ?? null,
@@ -839,11 +838,11 @@ export async function fetchStagedEventCount(
     .select("*", { count: "exact", head: true })
     .eq("status", statusFilter);
   if (scope === "manual") {
-    query = query.eq("is_manual_tab", true).eq("recurrence", "");
+    query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
-    query = query.eq("is_manual_tab", false);
+    query = query.eq("is_manual", false);
   } else if (scope === "recurring") {
-    query = query.eq("is_manual_tab", true).neq("recurrence", "");
+    query = query.eq("is_manual", true).neq("recurrence", "");
   }
   const { count, error } = await query;
   if (error) throw error;
@@ -862,11 +861,11 @@ export async function fetchStagedEvents(
     query = query.eq("status", statusFilter);
   }
   if (scope === "manual") {
-    query = query.eq("is_manual_tab", true).eq("recurrence", "");
+    query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
-    query = query.eq("is_manual_tab", false);
+    query = query.eq("is_manual", false);
   } else if (scope === "recurring") {
-    query = query.eq("is_manual_tab", true).neq("recurrence", "");
+    query = query.eq("is_manual", true).neq("recurrence", "");
   }
 
   const { data, error } = await query;
@@ -891,7 +890,6 @@ export async function createBlankManualStagedEvent(
       venue_id: venueId,
       status: "pending",
       is_manual: true,
-      is_manual_tab: scope === "manual" || scope === "recurring",
       source_url: sourceUrl,
       recurrence: scope === "recurring" ? "weekly" : "",
       recurrence_until: null,
@@ -940,7 +938,6 @@ export async function duplicateStagedEvent(
       source_url: edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl,
       status: "pending",
       is_manual: true,
-      is_manual_tab: source.isManualTab,
       recurrence: merged.recurrence,
       recurrence_until: merged.recurrenceUntil,
     });
