@@ -173,8 +173,8 @@ export default function EventDetail() {
 				</div>
 
 				{/* Interested row */}
-				<div className="px-4 pb-4 pt-3">
-					<div className="flex items-center gap-3">
+				<div className="px-4 pb-4 pt-3 flex items-center gap-4">
+					<div className="flex-1 flex items-center gap-3">
 						<button
 							onClick={handleSave}
 							disabled={isSaving}
@@ -192,6 +192,9 @@ export default function EventDetail() {
 								{interestedCount}
 							</span>
 						)}
+					</div>
+					<div className="flex-1 md:pl-48">
+						<ShareMenu eventTitle={displayTitle} eventId={event.id} variant="pill" />
 					</div>
 				</div>
 
@@ -227,8 +230,6 @@ export default function EventDetail() {
 							<button onClick={handleMaps} className="cursor-pointer">
 								Open in Maps
 							</button>
-							<span aria-hidden="true" className="text-foreground">·</span>
-							<ShareMenu eventTitle={displayTitle} eventId={event.id} variant="header" />
 						</div>
 					</div>
 				</div>
