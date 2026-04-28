@@ -76,7 +76,12 @@
       "mcp__supabase__list_edge_functions",
       "mcp__supabase__deploy_edge_function",
       "Bash(grep -v \"^\\\\* main$\")",
-      "Bash(xargs -I{} echo \"{} commits behind\")"
+      "Bash(xargs -I{} echo \"{} commits behind\")",
+      "Bash(magick -version)",
+      "Bash(cp live-music.jpg karaoke.jpg)",
+      "Bash(cp comedy.jpg drag-cabaret.jpg)",
+      "Bash(cp pub-quiz.jpg games.jpg)",
+      "Bash(cp social.jpg sports.jpg)"
     ]
   }
 }

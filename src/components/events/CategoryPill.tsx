@@ -1,5 +1,5 @@
 import { getCategoryInfoByLabel, type CategoryInfo } from "@/data/categories";
-import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Wine, Film, Trophy, LayoutGrid } from "lucide-react";
+import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Music2, Crown, Dice5 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface CategoryPillProps {
@@ -11,17 +11,18 @@ interface CategoryPillProps {
 const categoryIcons: Record<string, LucideIcon> = {
   "comedy": Mic,
   "pub-quiz": Brain,
-  "language-exchange": Globe,
-  "social": Handshake,
-  "singles": Heart,
-  "dj-music": Headphones,
   "live-music": Guitar,
-  "other": Sparkles,
+  "dj-music": Headphones,
   "open-mic": MicVocal,
-  "quiz-night": Brain,
-  "promo-date-night": Wine,
+  "karaoke": Music2,
+  "drag-cabaret": Crown,
+  "social": Handshake,
+  "language-exchange": Globe,
+  "singles": Heart,
+  "games": Dice5,
+  "sports": Trophy,
   "screening": Film,
-  "sport": Trophy,
+  "other": Sparkles,
 };
 
 export default function CategoryPill({ label, active, onClick }: CategoryPillProps) {
@@ -39,25 +40,20 @@ export default function CategoryPill({ label, active, onClick }: CategoryPillPro
   );
 }
 
-/* Short labels for desktop scanning */
+/* Short labels for desktop scanning (only categories whose full label is too long for a pill) */
 const desktopShortLabels: Record<string, string> = {
+  "Live Music": "Live",
+  // Inactive labels kept here so re-enabling a category needs no extra wiring:
   "Social / Networking": "Social",
   "Language Exchange": "Language",
-  "DJ / Music Night": "DJ",
-  "Singles & Dating": "Dating",
-  "Promo / Date Night": "Promo",
-  "Sport / Games": "Sport",
-  "Quiz Night": "Quiz",
-  "Live Music": "Live",
-  "Open Mic": "Open Mic",
 };
 
-/* Priority order for desktop — most popular first */
+/* Priority order — controls filter-bar order on desktop and mobile */
 const desktopCategoryOrder: string[] = [
-  "Comedy", "Pub Quiz", "Live Music", "DJ / Music Night",
-  "Social / Networking", "Language Exchange", "Singles & Dating",
-  "Open Mic", "Quiz Night", "Promo / Date Night", "Screening",
-  "Sport / Games", "Other",
+  "Comedy", "Quiz", "Live Music", "DJ", "Karaoke",
+  "Open Mic", "Drag", "Screening", "Dating", "Other",
+  // Inactive (kept for fast re-enable):
+  "Social / Networking", "Language Exchange", "Games", "Sports",
 ];
 
 /* ── Desktop icon-based category row ── */
