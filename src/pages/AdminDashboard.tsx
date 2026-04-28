@@ -39,7 +39,6 @@ import type { StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } fr
 
 type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
-type ScrapedTabFilter = StagedEventStatusFilter | "manual";
 
 const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
 const EVENT_TABS: BarTab[] = ["scraped", "manual", "recurring"];
@@ -98,7 +97,7 @@ export default function AdminDashboard() {
   const [allBarsQuery, setAllBarsQuery] = useState("");
   const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
   const [scrapedLoading, setScrapedLoading] = useState(true);
-  const [scrapedFilter, setScrapedFilter] = useState<ScrapedTabFilter>("pending");
+  const [scrapedFilter, setScrapedFilter] = useState<StagedEventStatusFilter>("pending");
   const [scrapedQuery, setScrapedQuery] = useState("");
   const [manualEvents, setManualEvents] = useState<StagedEvent[]>([]);
   const [manualLoading, setManualLoading] = useState(true);
@@ -154,13 +153,7 @@ export default function AdminDashboard() {
   const loadScrapedEvents = useCallback(async () => {
     setScrapedLoading(true);
     try {
-      if (scrapedFilter === "manual") {
-        // Client-side filter to is_manual=true within scraped scope
-        const all = await fetchStagedEvents("all", "scraped");
-        setScrapedEvents(all.filter(s => s.isManual));
-      } else {
-        setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
-      }
+      setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
     } catch {
       toast.error("Failed to load scraped events.");
     } finally {
@@ -422,7 +415,7 @@ export default function AdminDashboard() {
       };
       if (created.recurrence) {
         setRecurringEvents(insertAfterSource);
-      } else if (created.isManualTab) {
+      } else if (created.isManual) {
         setManualEvents(insertAfterSource);
       } else {
         setScrapedEvents(insertAfterSource);
@@ -685,8 +678,6 @@ export default function AdminDashboard() {
               onFilterChange={setScrapedFilter}
               query={scrapedQuery}
               onQueryChange={setScrapedQuery}
-              showCreatedManuallyPill={true}
-              hideManualBadge={false}
               venues={venues}
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
@@ -704,11 +695,9 @@ export default function AdminDashboard() {
               events={manualEvents}
               loading={manualLoading}
               filter={manualFilter}
-              onFilterChange={(f) => setManualFilter(f as StagedEventStatusFilter)}
+              onFilterChange={setManualFilter}
               query={manualQuery}
               onQueryChange={setManualQuery}
-              showCreatedManuallyPill={false}
-              hideManualBadge={true}
               onCreateBlank={() => handleCreateBlank("manual")}
               venues={venues}
               liveEventsByVenue={liveEventsByVenue}
@@ -727,11 +716,9 @@ export default function AdminDashboard() {
               events={recurringEvents}
               loading={recurringLoading}
               filter={recurringFilter}
-              onFilterChange={(f) => setRecurringFilter(f as StagedEventStatusFilter)}
+              onFilterChange={setRecurringFilter}
               query={recurringQuery}
               onQueryChange={setRecurringQuery}
-              showCreatedManuallyPill={false}
-              hideManualBadge={true}
               onCreateBlank={() => handleCreateBlank("recurring")}
               showRecurrenceEditor={true}
               onRecurrenceChange={handleRecurrenceChange}
@@ -1098,7 +1085,6 @@ function StagedEventCard({
   staged,
   liveEvents,
   venues,
-  hideManualBadge,
   showRecurrenceEditor,
   onRecurrenceChange,
   onApprove,
@@ -1111,7 +1097,6 @@ function StagedEventCard({
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
   venues: Venue[];
-  hideManualBadge: boolean;
   showRecurrenceEditor?: boolean;
   onRecurrenceChange?: (patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   onApprove: (edits: StagedEventEdits) => Promise<void>;
@@ -1317,11 +1302,6 @@ function StagedEventCard({
             <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
           )}
           <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
-          {isManual && !hideManualBadge && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-red-500/10 text-red-600 border border-red-500/40">
-              Created Manually
-            </span>
-          )}
           {!isPending && (
             <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
               {staged.status}
@@ -1748,8 +1728,6 @@ function StagedEventsList({
   onFilterChange,
   query,
   onQueryChange,
-  showCreatedManuallyPill,
-  hideManualBadge,
   onCreateBlank,
   showRecurrenceEditor,
   onRecurrenceChange,
@@ -1765,12 +1743,10 @@ function StagedEventsList({
 }: {
   events: StagedEvent[];
   loading: boolean;
-  filter: ScrapedTabFilter;
-  onFilterChange: (f: ScrapedTabFilter) => void;
+  filter: StagedEventStatusFilter;
+  onFilterChange: (f: StagedEventStatusFilter) => void;
   query: string;
   onQueryChange: (q: string) => void;
-  showCreatedManuallyPill: boolean;
-  hideManualBadge: boolean;
   onCreateBlank?: () => void;
   showRecurrenceEditor?: boolean;
   onRecurrenceChange?: (id: string, patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
@@ -1784,10 +1760,7 @@ function StagedEventsList({
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   emptyLabel: string;
 }) {
-  const statusPills: ScrapedTabFilter[] = ["pending", "rejected", "approved", "all"];
-  const pills: ScrapedTabFilter[] = showCreatedManuallyPill
-    ? [...statusPills, "manual"]
-    : statusPills;
+  const pills: StagedEventStatusFilter[] = ["pending", "rejected", "approved", "all"];
 
   return (
     <div className="space-y-3">
@@ -1803,7 +1776,7 @@ function StagedEventsList({
                   : "border-border hover:bg-muted"
               }`}
             >
-              {f === "manual" ? "Created Manually" : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
           {onCreateBlank && (
@@ -1828,7 +1801,7 @@ function StagedEventsList({
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {!loading && events.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No {filter === "manual" ? "manual" : filter === "all" ? "" : filter} {emptyLabel} events.
+          No {filter === "all" ? "" : filter} {emptyLabel} events.
         </p>
       )}
       {!loading && (() => {
@@ -1848,7 +1821,6 @@ function StagedEventsList({
               staged={staged}
               liveEvents={liveEventsByVenue[staged.venueId] ?? []}
               venues={venues}
-              hideManualBadge={hideManualBadge}
               showRecurrenceEditor={showRecurrenceEditor}
               onRecurrenceChange={
                 onRecurrenceChange

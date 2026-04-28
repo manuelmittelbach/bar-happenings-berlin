@@ -733,7 +733,6 @@ export type Database = {
           events_id: string | null
           id: string
           is_manual: boolean
-          is_manual_tab: boolean
           language: string | null
           recurrence: string
           recurrence_until: string | null
@@ -755,7 +754,6 @@ export type Database = {
           events_id?: string | null
           id?: string
           is_manual?: boolean
-          is_manual_tab?: boolean
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
@@ -777,7 +775,6 @@ export type Database = {
           events_id?: string | null
           id?: string
           is_manual?: boolean
-          is_manual_tab?: boolean
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
