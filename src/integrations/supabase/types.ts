@@ -199,7 +199,6 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           category: string
-          category_id: string | null
           created_at: string | null
           created_by: string | null
           date: string
@@ -227,7 +226,6 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category: string
-          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -255,7 +253,6 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           category?: string
-          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date?: string
@@ -352,7 +349,6 @@ export type Database = {
           approved_by: string | null
           archived_at: string
           category: string
-          category_id: string | null
           created_at: string | null
           created_by: string | null
           date: string
@@ -382,7 +378,6 @@ export type Database = {
           approved_by?: string | null
           archived_at?: string
           category: string
-          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -412,7 +407,6 @@ export type Database = {
           approved_by?: string | null
           archived_at?: string
           category?: string
-          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           date?: string
