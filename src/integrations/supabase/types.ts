@@ -759,6 +759,8 @@ export type Database = {
           is_manual: boolean
           is_manual_tab: boolean
           language: string | null
+          recurrence: string
+          recurrence_until: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           scraped_at: string
@@ -779,6 +781,8 @@ export type Database = {
           is_manual?: boolean
           is_manual_tab?: boolean
           language?: string | null
+          recurrence?: string
+          recurrence_until?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           scraped_at?: string
@@ -799,6 +803,8 @@ export type Database = {
           is_manual?: boolean
           is_manual_tab?: boolean
           language?: string | null
+          recurrence?: string
+          recurrence_until?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           scraped_at?: string

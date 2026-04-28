@@ -796,6 +796,8 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
     isManualTab: row.is_manual_tab ?? false,
+    recurrence: row.recurrence ?? "",
+    recurrenceUntil: row.recurrence_until ?? null,
     eventsId: row.events_id ?? null,
   };
 }
@@ -841,9 +843,11 @@ export async function fetchStagedEventCount(
     .select("*", { count: "exact", head: true })
     .eq("status", statusFilter);
   if (scope === "manual") {
-    query = query.eq("is_manual_tab", true);
+    query = query.eq("is_manual_tab", true).eq("recurrence", "");
   } else if (scope === "scraped") {
     query = query.eq("is_manual_tab", false);
+  } else if (scope === "recurring") {
+    query = query.eq("is_manual_tab", true).neq("recurrence", "");
   }
   const { count, error } = await query;
   if (error) throw error;
@@ -862,9 +866,11 @@ export async function fetchStagedEvents(
     query = query.eq("status", statusFilter);
   }
   if (scope === "manual") {
-    query = query.eq("is_manual_tab", true);
+    query = query.eq("is_manual_tab", true).eq("recurrence", "");
   } else if (scope === "scraped") {
     query = query.eq("is_manual_tab", false);
+  } else if (scope === "recurring") {
+    query = query.eq("is_manual_tab", true).neq("recurrence", "");
   }
 
   const { data, error } = await query;
@@ -878,7 +884,7 @@ export async function fetchStagedEvents(
 
 export async function createBlankManualStagedEvent(
   venueId: string,
-  scope: "scraped" | "manual" = "scraped",
+  scope: "scraped" | "manual" | "recurring" = "scraped",
   sourceUrl: string | null = null,
 ): Promise<StagedEvent> {
   const id = crypto.randomUUID();
@@ -889,8 +895,10 @@ export async function createBlankManualStagedEvent(
       venue_id: venueId,
       status: "pending",
       is_manual: true,
-      is_manual_tab: scope === "manual",
+      is_manual_tab: scope === "manual" || scope === "recurring",
       source_url: sourceUrl,
+      recurrence: scope === "recurring" ? "weekly" : "",
+      recurrence_until: null,
     });
   if (error) throw error;
 
@@ -917,6 +925,8 @@ export async function duplicateStagedEvent(
     language: edits?.language ?? source.language,
     description: edits?.description ?? source.description,
     entryInfo: edits?.entryInfo ?? source.entryInfo,
+    recurrence: edits?.recurrence ?? source.recurrence,
+    recurrenceUntil: edits?.recurrenceUntil !== undefined ? edits.recurrenceUntil : source.recurrenceUntil,
   };
   const { error } = await supabase
     .from("venue_events_staging")
@@ -935,6 +945,8 @@ export async function duplicateStagedEvent(
       status: "pending",
       is_manual: true,
       is_manual_tab: source.isManualTab,
+      recurrence: merged.recurrence,
+      recurrence_until: merged.recurrenceUntil,
     });
   if (error) throw error;
 
@@ -949,11 +961,13 @@ export async function duplicateStagedEvent(
 
 export async function updateStagedEventManualFields(
   stagedId: string,
-  patch: { venueId?: string; sourceUrl?: string | null },
+  patch: { venueId?: string; sourceUrl?: string | null; recurrence?: string; recurrenceUntil?: string | null },
 ): Promise<void> {
   const update: TablesUpdate<"venue_events_staging"> = {};
   if (patch.venueId !== undefined) update.venue_id = patch.venueId;
   if (patch.sourceUrl !== undefined) update.source_url = patch.sourceUrl;
+  if (patch.recurrence !== undefined) update.recurrence = patch.recurrence;
+  if (patch.recurrenceUntil !== undefined) update.recurrence_until = patch.recurrenceUntil;
   if (Object.keys(update).length === 0) return;
   const { error } = await supabase
     .from("venue_events_staging")
@@ -976,6 +990,8 @@ export async function approveStagedEvent(
     language: edits?.language ?? staged.language,
     description: edits?.description ?? staged.description,
     entryInfo: edits?.entryInfo ?? staged.entryInfo,
+    recurrence: edits?.recurrence ?? staged.recurrence,
+    recurrenceUntil: edits?.recurrenceUntil !== undefined ? edits.recurrenceUntil : staged.recurrenceUntil,
   };
 
   if (!merged.title.trim()) throw new Error("Title is required");
@@ -983,19 +999,19 @@ export async function approveStagedEvent(
   if (!merged.startTime) throw new Error("Start time is required");
   if (!merged.category) throw new Error("Category is required");
 
-  const eventRow: TablesInsert<"events"> = {
-    id: crypto.randomUUID(),
-    parent_id: "",
-    recurrence: "",
+  const baseRow = (overrides: { id: string; date: string; parent_id: string; recurrence: string }): TablesInsert<"events"> => ({
+    id: overrides.id,
+    parent_id: overrides.parent_id,
+    recurrence: overrides.recurrence,
     title: merged.title,
     venue: staged.venueName,
     venue_id: staged.venueId,
     address: staged.venueAddress,
     neighborhood: staged.venueNeighborhood,
-    date: merged.date,
-    start_time: trimTime(merged.startTime),
+    date: overrides.date,
+    start_time: trimTime(merged.startTime!),
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
-    category: merged.category,
+    category: merged.category!,
     language: merged.language || null,
     description: merged.description || null,
     url: staged.sourceUrl || null,
@@ -1006,10 +1022,40 @@ export async function approveStagedEvent(
     status: "approved",
     approved_by: adminUserId,
     approved_at: new Date().toISOString(),
-  };
+  });
 
-  const { error: insertError } = await supabase.from("events").insert(eventRow);
-  if (insertError) throw insertError;
+  let parentEventId: string;
+
+  if (merged.recurrence) {
+    if (!merged.recurrenceUntil) throw new Error("Recurrence until date is required");
+    const freq = merged.recurrence as RecurrenceFreq;
+    const dates = generateOccurrences(merged.date, freq, merged.recurrenceUntil);
+    if (dates.length === 0) throw new Error("No occurrences generated for recurring event.");
+
+    const parentId = crypto.randomUUID();
+    const parentRule = formatRule(freq, merged.recurrenceUntil);
+    const rows: TablesInsert<"events">[] = dates.map((date, idx) =>
+      baseRow({
+        id: idx === 0 ? parentId : crypto.randomUUID(),
+        date,
+        parent_id: idx === 0 ? "" : parentId,
+        recurrence: idx === 0 ? parentRule : "",
+      }),
+    );
+    const { error: insertError } = await supabase.from("events").insert(rows);
+    if (insertError) throw insertError;
+    parentEventId = parentId;
+  } else {
+    const eventRow = baseRow({
+      id: crypto.randomUUID(),
+      date: merged.date,
+      parent_id: "",
+      recurrence: "",
+    });
+    const { error: insertError } = await supabase.from("events").insert(eventRow);
+    if (insertError) throw insertError;
+    parentEventId = eventRow.id;
+  }
 
   const { error: updateError } = await supabase
     .from("venue_events_staging")
@@ -1017,7 +1063,7 @@ export async function approveStagedEvent(
       status: "approved",
       reviewed_by: adminUserId,
       reviewed_at: new Date().toISOString(),
-      events_id: eventRow.id,
+      events_id: parentEventId,
     })
     .eq("id", staged.id);
   if (updateError) throw updateError;

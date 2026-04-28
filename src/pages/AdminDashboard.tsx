@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { formatDateShort, formatDateWithDay } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
@@ -10,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categories } from "@/data/categories";
 import { LANGUAGES } from "@/data/languages";
+import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
   fetchPendingOrganizers,
   fetchDecidedOrganizers,
@@ -34,15 +36,15 @@ import {
 } from "@/lib/supabaseQueries";
 import type { StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 
-type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual";
+type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
 type ScrapedTabFilter = StagedEventStatusFilter | "manual";
 
 const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
-const EVENT_TABS: BarTab[] = ["scraped", "manual"];
+const EVENT_TABS: BarTab[] = ["scraped", "manual", "recurring"];
 
 const sectionOf = (tab: BarTab): AdminSection =>
-  tab === "scraped" || tab === "manual" ? "events" : "bars";
+  tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
 
 const defaultTabFor = (section: AdminSection): BarTab =>
   section === "events" ? "scraped" : "pending";
@@ -77,6 +79,7 @@ export default function AdminDashboard() {
     : tabParam === "all-bars" ? "all-bars"
     : tabParam === "scraped" ? "scraped"
     : tabParam === "manual" ? "manual"
+    : tabParam === "recurring" ? "recurring"
     : "pending";
   const setActiveBarTab = (tab: BarTab) => {
     const next = new URLSearchParams(searchParams);
@@ -100,10 +103,15 @@ export default function AdminDashboard() {
   const [manualLoading, setManualLoading] = useState(true);
   const [manualFilter, setManualFilter] = useState<StagedEventStatusFilter>("pending");
   const [manualQuery, setManualQuery] = useState("");
+  const [recurringEvents, setRecurringEvents] = useState<StagedEvent[]>([]);
+  const [recurringLoading, setRecurringLoading] = useState(true);
+  const [recurringFilter, setRecurringFilter] = useState<StagedEventStatusFilter>("pending");
+  const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
   const [venues, setVenues] = useState<Venue[]>([]);
   const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
   const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
+  const [recurringPendingCount, setRecurringPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -170,6 +178,17 @@ export default function AdminDashboard() {
     }
   }, [manualFilter]);
 
+  const loadRecurringEvents = useCallback(async () => {
+    setRecurringLoading(true);
+    try {
+      setRecurringEvents(await fetchStagedEvents(recurringFilter, "recurring"));
+    } catch {
+      toast.error("Failed to load recurring events.");
+    } finally {
+      setRecurringLoading(false);
+    }
+  }, [recurringFilter]);
+
   const loadLiveEvents = useCallback(async () => {
     try {
       setLiveEventsByVenue(await fetchLiveEventsByVenue());
@@ -190,12 +209,14 @@ export default function AdminDashboard() {
 
   const loadPendingEventCounts = useCallback(async () => {
     try {
-      const [scraped, manual] = await Promise.all([
+      const [scraped, manual, recurring] = await Promise.all([
         fetchStagedEventCount("pending", "scraped"),
         fetchStagedEventCount("pending", "manual"),
+        fetchStagedEventCount("pending", "recurring"),
       ]);
       setScrapedPendingCount(scraped);
       setManualPendingCount(manual);
+      setRecurringPendingCount(recurring);
     } catch {
       // Silent — count is informational, not critical.
     }
@@ -216,6 +237,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadManualEvents();
   }, [loadManualEvents]);
+
+  useEffect(() => {
+    loadRecurringEvents();
+  }, [loadRecurringEvents]);
 
   useEffect(() => {
     loadLiveEvents();
@@ -333,6 +358,7 @@ export default function AdminDashboard() {
       toast.success(`"${edits.title ?? staged.title}" approved`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
       loadPendingEventCounts();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to approve event.";
@@ -347,13 +373,14 @@ export default function AdminDashboard() {
       toast.error(`"${staged.title}" rejected`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
       loadPendingEventCounts();
     } catch {
       toast.error("Failed to reject event.");
     }
   };
 
-  const handleCreateBlank = async (scope: "scraped" | "manual") => {
+  const handleCreateBlank = async (scope: "scraped" | "manual" | "recurring") => {
     if (venues.length === 0) {
       toast.error("No venues available.");
       return;
@@ -368,6 +395,9 @@ export default function AdminDashboard() {
       if (scope === "manual") {
         setManualFilter("pending");
         setManualEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
+      } else if (scope === "recurring") {
+        setRecurringFilter("pending");
+        setRecurringEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
       } else {
         // Force a status pill (not "Created Manually") so the new pending blank shows up
         if (scrapedFilter !== "pending") setScrapedFilter("pending");
@@ -388,7 +418,9 @@ export default function AdminDashboard() {
         if (idx === -1) return [created, ...prev];
         return [...prev.slice(0, idx + 1), created, ...prev.slice(idx + 1)];
       };
-      if (created.isManualTab) {
+      if (created.recurrence) {
+        setRecurringEvents(insertAfterSource);
+      } else if (created.isManualTab) {
         setManualEvents(insertAfterSource);
       } else {
         setScrapedEvents(insertAfterSource);
@@ -419,6 +451,7 @@ export default function AdminDashboard() {
         );
       setScrapedEvents(apply);
       setManualEvents(apply);
+      setRecurringEvents(apply);
     } catch {
       toast.error("Failed to update venue.");
     }
@@ -432,8 +465,32 @@ export default function AdminDashboard() {
         prev.map(s => (s.id === stagedId ? { ...s, sourceUrl: value } : s));
       setScrapedEvents(apply);
       setManualEvents(apply);
+      setRecurringEvents(apply);
     } catch {
       toast.error("Failed to update URL.");
+    }
+  };
+
+  const handleRecurrenceChange = async (
+    stagedId: string,
+    patch: { recurrence?: string; recurrenceUntil?: string | null },
+  ) => {
+    try {
+      await updateStagedEventManualFields(stagedId, patch);
+      setRecurringEvents(prev =>
+        prev.map(s =>
+          s.id === stagedId
+            ? {
+                ...s,
+                recurrence: patch.recurrence !== undefined ? patch.recurrence : s.recurrence,
+                recurrenceUntil:
+                  patch.recurrenceUntil !== undefined ? patch.recurrenceUntil : s.recurrenceUntil,
+              }
+            : s,
+        ),
+      );
+    } catch {
+      toast.error("Failed to update recurrence.");
     }
   };
 
@@ -464,6 +521,7 @@ export default function AdminDashboard() {
         });
       setScrapedEvents(apply);
       setManualEvents(apply);
+      setRecurringEvents(apply);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
       toast.error(message);
@@ -530,13 +588,13 @@ export default function AdminDashboard() {
                 <span className="text-xs text-muted-foreground font-medium">Pending Events</span>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </div>
-              {scrapedPendingCount === null || manualPendingCount === null ? (
+              {scrapedPendingCount === null || manualPendingCount === null || recurringPendingCount === null ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
                 <>
-                  <p className="font-heading text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount)}</p>
+                  <p className="font-heading text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount)}</p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {scrapedPendingCount} scraped · {manualPendingCount} manual
+                    {scrapedPendingCount} scraped · {manualPendingCount} manual · {recurringPendingCount} recurring
                   </p>
                 </>
               )}
@@ -579,7 +637,9 @@ export default function AdminDashboard() {
                   ? allBarsLoading ? "All Bars" : `All Bars (${allBars.length})`
                   : tab === "scraped"
                   ? scrapedLoading ? "Scraped Events" : `Scraped Events (${scrapedEvents.length})`
-                  : manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`}
+                  : tab === "manual"
+                  ? manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`
+                  : recurringLoading ? "Recurring Events" : `Recurring Events (${recurringEvents.length})`}
               </button>
             ))}
           </div>
@@ -656,6 +716,31 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="manual"
+            />
+          )}
+
+          {activeBarTab === "recurring" && (
+            <StagedEventsList
+              events={recurringEvents}
+              loading={recurringLoading}
+              filter={recurringFilter}
+              onFilterChange={(f) => setRecurringFilter(f as StagedEventStatusFilter)}
+              query={recurringQuery}
+              onQueryChange={setRecurringQuery}
+              showCreatedManuallyPill={false}
+              hideManualBadge={true}
+              onCreateBlank={() => handleCreateBlank("recurring")}
+              showRecurrenceEditor={true}
+              onRecurrenceChange={handleRecurrenceChange}
+              venues={venues}
+              liveEventsByVenue={liveEventsByVenue}
+              onApprove={handleApproveStaged}
+              onReject={handleRejectStaged}
+              onDuplicate={handleDuplicateStaged}
+              onVenueChange={handleManualVenueChange}
+              onSourceUrlChange={handleManualSourceUrlChange}
+              onSaveApproved={handleSaveApprovedStaged}
+              emptyLabel="recurring"
             />
           )}
 
@@ -1011,6 +1096,8 @@ function StagedEventCard({
   liveEvents,
   venues,
   hideManualBadge,
+  showRecurrenceEditor,
+  onRecurrenceChange,
   onApprove,
   onReject,
   onDuplicate,
@@ -1022,6 +1109,8 @@ function StagedEventCard({
   liveEvents: LiveEventInfo[];
   venues: Venue[];
   hideManualBadge: boolean;
+  showRecurrenceEditor?: boolean;
+  onRecurrenceChange?: (patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
   onDuplicate: (edits: StagedEventEdits) => Promise<void>;
@@ -1037,6 +1126,9 @@ function StagedEventCard({
   const [language, setLanguage] = useState(staged.language);
   const [description, setDescription] = useState(staged.description);
   const [entryInfo, setEntryInfo] = useState(staged.entryInfo);
+  const [entryCustomMode, setEntryCustomMode] = useState<boolean>(
+    () => staged.entryInfo !== "" && !PREDEFINED_ENTRY_OPTIONS.has(staged.entryInfo),
+  );
   const [sourceUrlInput, setSourceUrlInput] = useState(staged.sourceUrl ?? "");
   const [venueIdLocal, setVenueIdLocal] = useState(staged.venueId);
   const [submitting, setSubmitting] = useState(false);
@@ -1052,7 +1144,10 @@ function StagedEventCard({
   useEffect(() => { setCategory(staged.category ?? ""); }, [staged.category]);
   useEffect(() => { setLanguage(staged.language); }, [staged.language]);
   useEffect(() => { setDescription(staged.description); }, [staged.description]);
-  useEffect(() => { setEntryInfo(staged.entryInfo); }, [staged.entryInfo]);
+  useEffect(() => {
+    setEntryInfo(staged.entryInfo);
+    setEntryCustomMode(staged.entryInfo !== "" && !PREDEFINED_ENTRY_OPTIONS.has(staged.entryInfo));
+  }, [staged.entryInfo]);
   useEffect(() => { setSourceUrlInput(staged.sourceUrl ?? ""); }, [staged.sourceUrl]);
   useEffect(() => { setVenueIdLocal(staged.venueId); }, [staged.venueId]);
 
@@ -1130,6 +1225,23 @@ function StagedEventCard({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDateChange = (newDate: string) => {
+    const oldDate = date;
+    setDate(newDate);
+    if (!showRecurrenceEditor || !onRecurrenceChange || !newDate) return;
+    const newStart = parse(newDate, "yyyy-MM-dd", new Date());
+    if (isNaN(newStart.getTime())) return;
+
+    const oldStart = oldDate ? parse(oldDate, "yyyy-MM-dd", new Date()) : null;
+    const oldUntil = staged.recurrenceUntil ? parse(staged.recurrenceUntil, "yyyy-MM-dd", new Date()) : null;
+    const hasValidWindow = oldStart && oldUntil && !isNaN(oldStart.getTime()) && !isNaN(oldUntil.getTime());
+
+    const newUntil = hasValidWindow
+      ? addDays(newStart, differenceInDays(oldUntil, oldStart))
+      : addMonths(newStart, 1);
+    onRecurrenceChange({ recurrenceUntil: format(newUntil, "yyyy-MM-dd") });
   };
 
   const handleCancelApprovedClick = () => {
@@ -1265,7 +1377,7 @@ function StagedEventCard({
         <input
           type="date"
           value={date}
-          onChange={e => setDate(e.target.value)}
+          onChange={e => handleDateChange(e.target.value)}
           disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         />
@@ -1287,14 +1399,41 @@ function StagedEventCard({
             className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
           />
         </div>
-        <input
-          type="text"
-          value={entryInfo}
-          onChange={e => setEntryInfo(e.target.value)}
-          placeholder='Entry (e.g. "Free", "Pay what you want", "8 €")'
-          disabled={!canEdit}
-          className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
-        />
+        <div className="space-y-1.5">
+          <select
+            value={entryCustomMode ? CUSTOM_ENTRY_SENTINEL : entryInfo}
+            onChange={e => {
+              const v = e.target.value;
+              if (v === CUSTOM_ENTRY_SENTINEL) {
+                setEntryCustomMode(true);
+                setEntryInfo("");
+              } else {
+                setEntryCustomMode(false);
+                setEntryInfo(v);
+              }
+            }}
+            disabled={!canEdit}
+            className="w-full h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+          >
+            <option value="">No entry info</option>
+            <option value="Free">Free</option>
+            <option value="Pay what you want">Pay what you want</option>
+            <option value={CUSTOM_ENTRY_SENTINEL}>Custom…</option>
+            {ENTRY_AMOUNTS.map(label => (
+              <option key={label} value={label}>{label}</option>
+            ))}
+          </select>
+          {entryCustomMode && (
+            <input
+              type="text"
+              value={entryInfo}
+              onChange={e => setEntryInfo(e.target.value)}
+              placeholder="e.g. First drink costs double"
+              disabled={!canEdit}
+              className="w-full h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+            />
+          )}
+        </div>
         <select
           value={language}
           onChange={e => setLanguage(e.target.value)}
@@ -1316,6 +1455,29 @@ function StagedEventCard({
         disabled={!canEdit}
         className="w-full px-2 py-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60 resize-y"
       />
+
+      {showRecurrenceEditor && onRecurrenceChange && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <select
+            value={staged.recurrence || ""}
+            onChange={(e) => onRecurrenceChange({ recurrence: e.target.value })}
+            disabled={!isPending}
+            className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Biweekly</option>
+            <option value="monthly_by_weekday">Monthly (by weekday)</option>
+          </select>
+          <input
+            type="date"
+            value={staged.recurrenceUntil ?? ""}
+            onChange={(e) => onRecurrenceChange({ recurrenceUntil: e.target.value || null })}
+            disabled={!isPending}
+            placeholder="Repeat until"
+            className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+          />
+        </div>
+      )}
 
       {isPending && confirmingClash && (
         <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-2">
@@ -1516,6 +1678,8 @@ function StagedEventsList({
   showCreatedManuallyPill,
   hideManualBadge,
   onCreateBlank,
+  showRecurrenceEditor,
+  onRecurrenceChange,
   liveEventsByVenue,
   venues,
   onApprove,
@@ -1535,6 +1699,8 @@ function StagedEventsList({
   showCreatedManuallyPill: boolean;
   hideManualBadge: boolean;
   onCreateBlank?: () => void;
+  showRecurrenceEditor?: boolean;
+  onRecurrenceChange?: (id: string, patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   liveEventsByVenue: Record<string, LiveEventInfo[]>;
   venues: Venue[];
   onApprove: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
@@ -1610,6 +1776,12 @@ function StagedEventsList({
               liveEvents={liveEventsByVenue[staged.venueId] ?? []}
               venues={venues}
               hideManualBadge={hideManualBadge}
+              showRecurrenceEditor={showRecurrenceEditor}
+              onRecurrenceChange={
+                onRecurrenceChange
+                  ? (patch) => onRecurrenceChange(staged.id, patch)
+                  : undefined
+              }
               onApprove={(edits) => onApprove(staged, edits)}
               onReject={() => onReject(staged)}
               onDuplicate={(edits) => onDuplicate(staged, edits)}

@@ -43,7 +43,7 @@ export interface Venue {
 
 export type StagedEventStatus = "pending" | "approved" | "rejected";
 export type StagedEventStatusFilter = "pending" | "rejected" | "approved" | "all";
-export type StagedEventScope = "scraped" | "manual" | "any";
+export type StagedEventScope = "scraped" | "manual" | "recurring" | "any";
 
 export interface StagedEvent {
   id: string;
@@ -65,6 +65,8 @@ export interface StagedEvent {
   reviewedAt: string | null;
   isManual: boolean;
   isManualTab: boolean;
+  recurrence: string;
+  recurrenceUntil: string | null;
   eventsId: string | null;
 }
 
@@ -79,4 +81,6 @@ export interface StagedEventEdits {
   entryInfo?: string;
   sourceUrl?: string | null;
   venueId?: string;
+  recurrence?: string;
+  recurrenceUntil?: string | null;
 }
