@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
+import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
@@ -360,6 +361,7 @@ export default function AdminDashboard() {
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
       setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
       loadPendingEventCounts();
+      loadLiveEvents();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to approve event.";
       toast.error(message);
@@ -522,6 +524,7 @@ export default function AdminDashboard() {
       setScrapedEvents(apply);
       setManualEvents(apply);
       setRecurringEvents(apply);
+      loadLiveEvents();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
       toast.error(message);
@@ -1153,7 +1156,20 @@ function StagedEventCard({
   useEffect(() => { setVenueIdLocal(staged.venueId); }, [staged.venueId]);
 
   const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
-  const sameDayEvents = liveEvents.filter(e => e.date === date);
+  const seriesDates: string[] = (() => {
+    if (!date) return [];
+    if (showRecurrenceEditor && staged.recurrence && staged.recurrenceUntil) {
+      try {
+        const dates = generateOccurrences(date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil);
+        return dates.length > 0 ? dates : [date];
+      } catch {
+        return [date];
+      }
+    }
+    return [date];
+  })();
+  const seriesDateSet = new Set(seriesDates);
+  const sameDayEvents = liveEvents.filter(e => seriesDateSet.has(e.date));
 
   const isPending = staged.status === "pending";
   const isApproved = staged.status === "approved";
@@ -1204,10 +1220,22 @@ function StagedEventCard({
   };
 
   const handleApprove = async () => {
+    // 1. Required fields
+    const missing: string[] = [];
+    if (!title.trim()) missing.push("title");
+    if (!date) missing.push("date");
+    if (!category) missing.push("category");
+    if (showRecurrenceEditor && !staged.recurrenceUntil) missing.push("repeat-until date");
+    if (missing.length > 0) {
+      toast.error(`Missing required field${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`);
+      return;
+    }
+    // 2. Start time warning
     if (!startTime && !confirmingNoStartTime) {
       setConfirmingNoStartTime(true);
       return;
     }
+    // 3. Same-day / series clash warning
     if (sameDayEvents.length > 0 && !confirmingClash) {
       setConfirmingClash(true);
       return;
@@ -1499,9 +1527,13 @@ function StagedEventCard({
       {isPending && confirmingClash && (
         <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-2">
           <p className="text-xs font-medium text-yellow-700">
-            ⚠ {sameDayEvents.length === 1
-              ? "There is already an event that day:"
-              : `There are already ${sameDayEvents.length} events that day:`}
+            ⚠ {seriesDates.length > 1
+              ? sameDayEvents.length === 1
+                ? "There is already an event on a date in this series:"
+                : `There are already ${sameDayEvents.length} events on dates in this series:`
+              : sameDayEvents.length === 1
+                ? "There is already an event that day:"
+                : `There are already ${sameDayEvents.length} events that day:`}
           </p>
           <ul className="space-y-1">
             {sameDayEvents.map(e => (
@@ -1513,7 +1545,7 @@ function StagedEventCard({
                   className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
                 >
                   <ExternalLink className="h-3 w-3" />
-                  {e.title}{e.startTime ? ` · ${e.startTime}` : ""}
+                  {e.title} · {e.date}{e.startTime ? ` · ${e.startTime}` : ""}
                 </a>
               </li>
             ))}
