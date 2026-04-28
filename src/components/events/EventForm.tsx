@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { categories } from "@/data/categories";
 import { LANGUAGES } from "@/data/languages";
 import DateField from "@/components/events/DateField";
+import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
   addOneDay,
   defaultUntil,
@@ -70,12 +71,6 @@ const EMPTY_FORM: EventFormData = {
   imagePosition: DEFAULT_IMAGE_POSITION,
   recurrence: "", recurrenceUntil: "",
 };
-
-const ENTRY_AMOUNTS = Array.from({ length: 100 }, (_, i) => (i + 1) * 0.5).map((n) =>
-  Number.isInteger(n) ? `${n} €` : `${Math.floor(n)},50 €`
-);
-const PREDEFINED_ENTRY_OPTIONS = new Set<string>(["Free", "Pay what you want", ...ENTRY_AMOUNTS]);
-const CUSTOM_ENTRY_SENTINEL = "__custom__";
 
 const inputClass =
   "w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors";
