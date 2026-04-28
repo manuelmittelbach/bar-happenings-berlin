@@ -1133,6 +1133,7 @@ function StagedEventCard({
   const [venueIdLocal, setVenueIdLocal] = useState(staged.venueId);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingClash, setConfirmingClash] = useState(false);
+  const [confirmingNoStartTime, setConfirmingNoStartTime] = useState(false);
 
   // Re-sync local state when the underlying staged row changes from outside
   // (e.g., after a save the parent updates the list — without this the
@@ -1198,10 +1199,15 @@ function StagedEventCard({
     } finally {
       setSubmitting(false);
       setConfirmingClash(false);
+      setConfirmingNoStartTime(false);
     }
   };
 
   const handleApprove = async () => {
+    if (!startTime && !confirmingNoStartTime) {
+      setConfirmingNoStartTime(true);
+      return;
+    }
     if (sameDayEvents.length > 0 && !confirmingClash) {
       setConfirmingClash(true);
       return;
@@ -1479,6 +1485,17 @@ function StagedEventCard({
         </div>
       )}
 
+      {isPending && confirmingNoStartTime && (
+        <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-1">
+          <p className="text-xs font-medium text-yellow-700">
+            ⚠ Approve without a start time?
+          </p>
+          <p className="text-xs text-muted-foreground">
+            The event will show "No info on start time" to users.
+          </p>
+        </div>
+      )}
+
       {isPending && confirmingClash && (
         <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-2">
           <p className="text-xs font-medium text-yellow-700">
@@ -1509,7 +1526,24 @@ function StagedEventCard({
 
       {isPending && (
         <div className="flex justify-end gap-2 flex-shrink-0">
-          {confirmingClash ? (
+          {confirmingNoStartTime ? (
+            <>
+              <button
+                onClick={() => setConfirmingNoStartTime(false)}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApprove}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 bg-yellow-600 text-white rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="h-3 w-3" /> {submitting ? "Approving…" : "OK, approve"}
+              </button>
+            </>
+          ) : confirmingClash ? (
             <>
               <button
                 onClick={() => setConfirmingClash(false)}
@@ -1615,12 +1649,16 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
           ) : (
             <p className="font-body font-bold text-sm text-muted-foreground italic">(no date)</p>
           )}
-          {staged.startTime && (
+          {staged.startTime ? (
             <p className="text-foreground font-mono text-sm mt-0.5">
               {staged.startTime}{staged.endTime ? ` – ${staged.endTime}` : ""}
               {endsNextDay(staged.startTime ?? undefined, staged.endTime ?? undefined) && (
                 <span className="text-muted-foreground text-xs ml-1">(next day)</span>
               )}
+            </p>
+          ) : (
+            <p className="text-muted-foreground font-mono text-xs mt-0.5 italic">
+              No info on start time
             </p>
           )}
         </div>

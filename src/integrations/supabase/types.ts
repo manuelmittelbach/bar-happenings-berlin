@@ -215,7 +215,7 @@ export type Database = {
           neighborhood: string
           parent_id: string | null
           recurrence: string | null
-          start_time: string
+          start_time: string | null
           status: string
           summary: string | null
           tags: string[] | null
@@ -245,7 +245,7 @@ export type Database = {
           neighborhood: string
           parent_id?: string | null
           recurrence?: string | null
-          start_time: string
+          start_time?: string | null
           status?: string
           summary?: string | null
           tags?: string[] | null
@@ -275,7 +275,7 @@ export type Database = {
           neighborhood?: string
           parent_id?: string | null
           recurrence?: string | null
-          start_time?: string
+          start_time?: string | null
           status?: string
           summary?: string | null
           tags?: string[] | null

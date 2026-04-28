@@ -996,7 +996,6 @@ export async function approveStagedEvent(
 
   if (!merged.title.trim()) throw new Error("Title is required");
   if (!merged.date) throw new Error("Date is required");
-  if (!merged.startTime) throw new Error("Start time is required");
   if (!merged.category) throw new Error("Category is required");
 
   const baseRow = (overrides: { id: string; date: string; parent_id: string; recurrence: string }): TablesInsert<"events"> => ({
@@ -1009,7 +1008,7 @@ export async function approveStagedEvent(
     address: staged.venueAddress,
     neighborhood: staged.venueNeighborhood,
     date: overrides.date,
-    start_time: trimTime(merged.startTime!),
+    start_time: merged.startTime ? trimTime(merged.startTime) : null,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category!,
     language: merged.language || null,
@@ -1110,13 +1109,12 @@ export async function updateApprovedStagedEvent(
 
   if (!merged.title.trim()) throw new Error("Title is required");
   if (!merged.date) throw new Error("Date is required");
-  if (!merged.startTime) throw new Error("Start time is required");
   if (!merged.category) throw new Error("Category is required");
 
   const eventsUpdate: TablesUpdate<"events"> = {
     title: merged.title,
     date: merged.date,
-    start_time: trimTime(merged.startTime),
+    start_time: merged.startTime ? trimTime(merged.startTime) : null,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category,
     language: merged.language || null,
@@ -1137,7 +1135,7 @@ export async function updateApprovedStagedEvent(
   const stagingUpdate: TablesUpdate<"venue_events_staging"> = {
     title: merged.title,
     date: merged.date,
-    start_time: trimTime(merged.startTime),
+    start_time: merged.startTime ? trimTime(merged.startTime) : null,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
     category: merged.category,
     language: merged.language || null,

@@ -512,8 +512,8 @@ export default function Index() {
                     className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isLive ? "bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]" : ""} ${rowBadge?.label === "Might be over" ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="shrink-0 font-mono text-[11px] text-accent uppercase tracking-wider w-[52px]">
-                        {event.startTime}
+                      <span className={`shrink-0 font-mono text-[11px] uppercase tracking-wider w-[52px] ${event.startTime ? "text-accent" : "text-muted-foreground"}`}>
+                        {event.startTime || "—"}
                       </span>
                       <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate min-w-0">
                         {cleanEventTitle(event.title, event.venue)}
