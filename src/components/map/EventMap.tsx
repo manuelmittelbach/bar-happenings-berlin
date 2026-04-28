@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { getCategoryInfoByLabel, getCategoryInfo, categoryInfos } from "@/data/categories";
 import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
+import { requestLocationOnce } from "@/hooks/useUserLocation";
 
 interface EventMapProps {
 	events: BarlinEvent[];
@@ -305,7 +306,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			.addTo(map);
 	}, [userLocation]);
 
-	function flyToUser() {
+	async function flyToUser() {
 		const map = mapRef.current;
 		if (!map) return;
 		if (userLocation) {
@@ -314,17 +315,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		}
 		if (!navigator.geolocation) return;
 		setLocating(true);
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				setLocating(false);
-				map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1200 });
-			},
-			() => {
-				setLocating(false);
-				alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
-			},
-			{ timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
-		);
+		const loc = await requestLocationOnce();
+		setLocating(false);
+		if (!loc) {
+			alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
+			return;
+		}
+		map.flyTo({ center: [loc.lng, loc.lat], zoom: 15, duration: 1200 });
 	}
 
 	return (
