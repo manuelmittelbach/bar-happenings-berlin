@@ -40,7 +40,13 @@ export default function ForBars() {
 	const [password, setPassword] = useState("");
 	const [showPass, setShowPass] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState("");
+	const [error, setError] = useState(() => {
+		const p = new URLSearchParams(window.location.search);
+		if (p.get("link_error") === "confirm") {
+			return "Your confirmation link couldn't be verified. Please sign up again.";
+		}
+		return "";
+	});
 	const [success, setSuccess] = useState("");
 
 	function friendlyError(msg: string): string {

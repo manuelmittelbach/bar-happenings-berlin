@@ -125,7 +125,9 @@ export function useAuth() {
           bar_submission: barSubmissionMeta,
           venue_claim: venueClaimMeta,
         },
-        emailRedirectTo: `${window.location.origin}`,
+        emailRedirectTo: isBarOwner
+          ? `${window.location.origin}/?bar=1`
+          : `${window.location.origin}`,
       },
     });
     if (error) throw error;
