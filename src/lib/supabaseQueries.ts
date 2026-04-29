@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatus, StagedEventStatusFilter, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
+import { geocodeAddress } from "@/lib/geocoding";
 
 // Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
 // also contain seconds. Normalize everything to HH:MM at every read/write
@@ -410,6 +411,8 @@ export type OrganizerAccount = {
     website: string | null;
     instagram: string | null;
     phone: string | null;
+    lat: number;
+    lng: number;
   } | null;
   pendingSubmission: {
     name: string;
@@ -418,6 +421,8 @@ export type OrganizerAccount = {
     website: string | null;
     instagram: string | null;
     phone: string | null;
+    lat: number | null;
+    lng: number | null;
   } | null;
   pendingClaim: {
     venueId: string;
@@ -453,11 +458,11 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
   const [ownersRes, submissionsRes, claimsRes] = await Promise.all([
     supabase
       .from("venue_owners")
-      .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone )")
+      .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone, lat, lng )")
       .in("user_id", ids),
     supabase
       .from("pending_bar_submissions")
-      .select("user_id, name, address, neighborhood, website, instagram, phone")
+      .select("user_id, name, address, neighborhood, website, instagram, phone, lat, lng")
       .in("user_id", ids),
     supabase
       .from("pending_venue_claims")
@@ -482,6 +487,8 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       website: string | null;
       instagram: string | null;
       phone: string | null;
+      lat: number | null;
+      lng: number | null;
     };
     submissionByUser.set(r.user_id, {
       name: r.name,
@@ -490,6 +497,8 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       website: r.website,
       instagram: r.instagram,
       phone: r.phone,
+      lat: r.lat,
+      lng: r.lng,
     });
   }
   const claimByUser = new Map<string, OrganizerAccount["pendingClaim"]>();
@@ -604,6 +613,10 @@ export async function updateOrganizerAccount(
     website: string | null;
     instagram: string | null;
     phone: string | null;
+    // Coordinates are optional — claim flow keeps the existing venue's coords,
+    // venue-edit flow passes them explicitly to allow admin corrections.
+    lat?: number;
+    lng?: number;
   },
 ): Promise<void> {
   const { error: profileError } = await supabase
@@ -612,16 +625,20 @@ export async function updateOrganizerAccount(
     .eq("id", userId);
   if (profileError) throw profileError;
 
+  const venuePatch: TablesUpdate<"venues"> = {
+    name: venue.name,
+    address: venue.address,
+    neighborhood: venue.neighborhood,
+    website: venue.website,
+    instagram: venue.instagram,
+    phone: venue.phone,
+  };
+  if (venue.lat !== undefined) venuePatch.lat = venue.lat;
+  if (venue.lng !== undefined) venuePatch.lng = venue.lng;
+
   const { error: venueError } = await supabase
     .from("venues")
-    .update({
-      name: venue.name,
-      address: venue.address,
-      neighborhood: venue.neighborhood,
-      website: venue.website,
-      instagram: venue.instagram,
-      phone: venue.phone,
-    })
+    .update(venuePatch)
     .eq("id", venue.id);
   if (venueError) throw venueError;
 }
@@ -706,15 +723,31 @@ export async function approveOrganizerWithVenueClaim(
 export async function approveOrganizerWithNewBar(
   userId: string,
   approverId: string,
-): Promise<void> {
+): Promise<{ venueId: string; lat: number; lng: number }> {
   // Fetch the latest submission state (admin may have edited it after first load).
   const { data: sub, error: subError } = await supabase
     .from("pending_bar_submissions")
-    .select("name, address, neighborhood, website, instagram, phone")
+    .select("name, address, neighborhood, website, instagram, phone, lat, lng")
     .eq("user_id", userId)
     .maybeSingle();
   if (subError) throw subError;
   if (!sub) throw new Error("No pending submission found for this organizer.");
+
+  // Resolve coordinates BEFORE any DB write — fail loud if neither manual
+  // coords nor geocoding give us a usable lat/lng. Otherwise we'd produce
+  // a venue that never appears on the map.
+  let lat = sub.lat;
+  let lng = sub.lng;
+  if (lat == null || lng == null) {
+    const geo = await geocodeAddress(sub.address);
+    if (!geo) {
+      throw new Error(
+        "Geocoding fehlgeschlagen für die angegebene Adresse. Bitte öffne die Bar-Bearbeitung, trage die Koordinaten manuell ein und versuche dann erneut zu approven.",
+      );
+    }
+    lat = geo.lat;
+    lng = geo.lng;
+  }
 
   // Insert a brand-new venue (FK to bars was dropped — venues is standalone now).
   const { data: venueRow, error: venueError } = await supabase
@@ -726,8 +759,8 @@ export async function approveOrganizerWithNewBar(
       website: sub.website,
       instagram: sub.instagram,
       phone: sub.phone,
-      lat: 0,
-      lng: 0,
+      lat,
+      lng,
     })
     .select("id")
     .single();
@@ -751,6 +784,8 @@ export async function approveOrganizerWithNewBar(
   if (profileError) throw profileError;
 
   await supabase.from("pending_bar_submissions").delete().eq("user_id", userId);
+
+  return { venueId, lat, lng };
 }
 
 export async function updatePendingBarSubmission(
@@ -762,6 +797,8 @@ export async function updatePendingBarSubmission(
     website: string | null;
     instagram: string | null;
     phone: string | null;
+    lat: number | null;
+    lng: number | null;
   },
 ): Promise<void> {
   const { error } = await supabase
@@ -773,6 +810,8 @@ export async function updatePendingBarSubmission(
       website: submission.website,
       instagram: submission.instagram,
       phone: submission.phone,
+      lat: submission.lat,
+      lng: submission.lng,
     })
     .eq("user_id", userId);
   if (error) throw error;
