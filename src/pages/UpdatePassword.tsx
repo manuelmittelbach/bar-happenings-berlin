@@ -25,11 +25,12 @@ export default function UpdatePassword() {
 
     const timeout = setTimeout(() => {
       setError("Reset link could not be verified. Please request a new one.");
-    }, 8000);
+    }, 15000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         clearTimeout(timeout);
+        setError("");
         setReady(true);
       }
     });
