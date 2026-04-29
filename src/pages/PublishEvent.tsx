@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { createEvent, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
-import EventForm, { type EventFormData } from "@/components/events/EventForm";
+import EventForm, { type EventFormData, type EventFormImageState } from "@/components/events/EventForm";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -41,7 +41,7 @@ export default function PublishEvent() {
 	}, [user]);
 
 	const handleSubmit = useMemo(
-		() => async (data: EventFormData, image: { file: File | null }) => {
+		() => async (data: EventFormData, image: EventFormImageState) => {
 			if (!user) return;
 			try {
 				const imageUrl = image.file ? await uploadEventImage(image.file, user.id) : undefined;

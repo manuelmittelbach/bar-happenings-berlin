@@ -15,10 +15,29 @@ export default function UpdatePassword() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const hash = window.location.hash;
+    const hasRecoveryToken = hash.includes("type=recovery") || hash.includes("access_token=");
+
+    if (!hasRecoveryToken) {
+      setError("Invalid or expired reset link. Please request a new one.");
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setError("Reset link could not be verified. Please request a new one.");
+    }, 8000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setReady(true);
+      if (event === "PASSWORD_RECOVERY") {
+        clearTimeout(timeout);
+        setReady(true);
+      }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +65,20 @@ export default function UpdatePassword() {
           </div>
 
           {!ready ? (
-            <p className="text-sm text-muted-foreground text-center">Verifying your reset link…</p>
+            error ? (
+              <div className="text-center space-y-3">
+                <p className="text-sm text-accent font-medium">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="text-sm underline text-muted-foreground hover:text-foreground"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">Verifying your reset link…</p>
+            )
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
