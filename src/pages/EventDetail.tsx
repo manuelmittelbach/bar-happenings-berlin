@@ -75,19 +75,28 @@ export default function EventDetail() {
 		}
 	};
 
+	const removeInterest = async (userId: string, eventId: string) => {
+		setSaved(false);
+		setInterestedCount(prev => prev - 1);
+		setIsSaving(true);
+		try {
+			await deleteInterest(userId, eventId);
+			queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+			queryClient.invalidateQueries({ queryKey: ["my-events", userId] });
+		} catch {
+			setSaved(true);
+			setInterestedCount(prev => prev + 1);
+			toast.error("Couldn't unsave — please try again");
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
 	const handleSave = async () => {
 		if (!event) return;
 
 		if (saved) {
-			// Un-save
-			setSaved(false);
-			setInterestedCount(prev => prev - 1);
-			if (user) {
-				deleteInterest(user.id, event.id).then(() => {
-					queryClient.invalidateQueries({ queryKey: ["event", event.id] });
-					queryClient.invalidateQueries({ queryKey: ["my-events", user.id] });
-				});
-			}
+			if (user) await removeInterest(user.id, event.id);
 			return;
 		}
 
