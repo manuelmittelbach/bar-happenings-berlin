@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay } from "@/lib/dateFormat";
@@ -72,6 +73,7 @@ function openSourceWindow(url: string) {
 
 export default function AdminDashboard() {
   const { user, role, loading, roleResolved } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -350,6 +352,7 @@ export default function AdminDashboard() {
     if (!user) return;
     try {
       await approveStagedEvent(staged, user.id, edits);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
       toast.success(`"${edits.title ?? staged.title}" approved`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
