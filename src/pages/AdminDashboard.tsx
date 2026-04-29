@@ -26,6 +26,7 @@ import {
   fetchStagedEventCount,
   approveStagedEvent,
   rejectStagedEvent,
+  deleteStagedEvent,
   fetchLiveEventsByVenue,
   fetchVenues,
   createBlankManualStagedEvent,
@@ -375,6 +376,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancelStaged = async (staged: StagedEvent) => {
+    try {
+      await deleteStagedEvent(staged.id);
+      toast.success("Card discarded");
+      setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
+      loadPendingEventCounts();
+    } catch {
+      toast.error("Failed to discard card.");
+    }
+  };
+
   const handleCreateBlank = async (scope: "scraped" | "manual" | "recurring") => {
     if (venues.length === 0) {
       toast.error("No venues available.");
@@ -703,11 +716,13 @@ export default function AdminDashboard() {
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
               onReject={handleRejectStaged}
+              onCancel={handleCancelStaged}
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="manual"
+              hideRejectedFilter
             />
           )}
 
@@ -726,11 +741,13 @@ export default function AdminDashboard() {
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
               onReject={handleRejectStaged}
+              onCancel={handleCancelStaged}
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="recurring"
+              hideRejectedFilter
             />
           )}
 
@@ -1089,6 +1106,7 @@ function StagedEventCard({
   onRecurrenceChange,
   onApprove,
   onReject,
+  onCancel,
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
@@ -1101,6 +1119,7 @@ function StagedEventCard({
   onRecurrenceChange?: (patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
+  onCancel?: () => void;
   onDuplicate: (edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (venueId: string) => Promise<void>;
   onSourceUrlChange: (url: string) => Promise<void>;
@@ -1563,13 +1582,23 @@ function StagedEventCard({
             </>
           ) : (
             <>
-              <button
-                onClick={onReject}
-                disabled={submitting}
-                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                <X className="h-3 w-3" /> Reject
-              </button>
+              {isManual && onCancel ? (
+                <button
+                  onClick={onCancel}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <X className="h-3 w-3" /> Cancel
+                </button>
+              ) : (
+                <button
+                  onClick={onReject}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <X className="h-3 w-3" /> Reject
+                </button>
+              )}
               <button
                 onClick={handleApprove}
                 disabled={submitting}
@@ -1721,11 +1750,13 @@ function StagedEventsList({
   venues,
   onApprove,
   onReject,
+  onCancel,
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
   onSaveApproved,
   emptyLabel,
+  hideRejectedFilter,
 }: {
   events: StagedEvent[];
   loading: boolean;
@@ -1740,13 +1771,17 @@ function StagedEventsList({
   venues: Venue[];
   onApprove: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onReject: (s: StagedEvent) => Promise<void>;
+  onCancel?: (s: StagedEvent) => Promise<void>;
   onDuplicate: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   emptyLabel: string;
+  hideRejectedFilter?: boolean;
 }) {
-  const pills: StagedEventStatusFilter[] = ["pending", "rejected", "approved", "all"];
+  const pills: StagedEventStatusFilter[] = hideRejectedFilter
+    ? ["pending", "approved", "all"]
+    : ["pending", "rejected", "approved", "all"];
 
   return (
     <div className="space-y-3">
@@ -1815,6 +1850,7 @@ function StagedEventsList({
               }
               onApprove={(edits) => onApprove(staged, edits)}
               onReject={() => onReject(staged)}
+              onCancel={onCancel ? () => onCancel(staged) : undefined}
               onDuplicate={(edits) => onDuplicate(staged, edits)}
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}

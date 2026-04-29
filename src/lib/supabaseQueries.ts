@@ -1087,6 +1087,14 @@ export async function rejectStagedEvent(
   if (error) throw error;
 }
 
+export async function deleteStagedEvent(stagedId: string): Promise<void> {
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .delete()
+    .eq("id", stagedId);
+  if (error) throw error;
+}
+
 export async function updateApprovedStagedEvent(
   staged: StagedEvent,
   edits: StagedEventEdits,
