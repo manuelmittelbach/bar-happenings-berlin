@@ -108,15 +108,20 @@ export default function Profile() {
       setBarIdentity(null);
       return;
     }
-    fetchOrganizerById(user.id).then((organizer) => {
-      if (organizer?.venue) {
-        setBarIdentity({
-          name: organizer.venue.name,
-          address: organizer.venue.address,
-          neighborhood: organizer.venue.neighborhood,
-        });
-      }
-    });
+    fetchOrganizerById(user.id)
+      .then((organizer) => {
+        if (organizer?.venue) {
+          setBarIdentity({
+            name: organizer.venue.name,
+            address: organizer.venue.address,
+            neighborhood: organizer.venue.neighborhood,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("[Profile] fetchOrganizerById failed", err);
+        setLoadError(true);
+      });
   }, [user, isApprovedOrganizer]);
 
   const handleSave = async (e: React.FormEvent) => {
