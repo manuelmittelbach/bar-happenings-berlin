@@ -270,6 +270,8 @@ export type Database = {
           inside_image_position: string
           inside_image_url: string | null
           instagram: string | null
+          lat: number | null
+          lng: number | null
           name: string
           neighborhood: string
           phone: string | null
@@ -282,6 +284,8 @@ export type Database = {
           inside_image_position?: string
           inside_image_url?: string | null
           instagram?: string | null
+          lat?: number | null
+          lng?: number | null
           name: string
           neighborhood?: string
           phone?: string | null
@@ -294,6 +298,8 @@ export type Database = {
           inside_image_position?: string
           inside_image_url?: string | null
           instagram?: string | null
+          lat?: number | null
+          lng?: number | null
           name?: string
           neighborhood?: string
           phone?: string | null

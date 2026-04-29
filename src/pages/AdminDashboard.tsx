@@ -258,19 +258,23 @@ export default function AdminDashboard() {
         "Bar";
       let approvedVenue: OrganizerAccount["venue"] = organizer.venue;
       if (organizer.pendingSubmission && !organizer.venue) {
-        await approveOrganizerWithNewBar(organizer.id, user.id);
+        const result = await approveOrganizerWithNewBar(organizer.id, user.id);
         approvedVenue = {
-          id: "",
+          id: result.venueId,
           name: organizer.pendingSubmission.name,
           address: organizer.pendingSubmission.address,
           neighborhood: organizer.pendingSubmission.neighborhood,
           website: organizer.pendingSubmission.website,
           instagram: organizer.pendingSubmission.instagram,
           phone: organizer.pendingSubmission.phone,
+          lat: result.lat,
+          lng: result.lng,
         };
         loadAllBars();
       } else if (organizer.pendingClaim && !organizer.venue) {
         await approveOrganizerWithVenueClaim(organizer.id, user.id);
+        // Real coords stay in the DB; lat/lng below are placeholders only —
+        // the decided list shows name/address, EditBarAccount re-fetches.
         approvedVenue = {
           id: organizer.pendingClaim.venueId,
           name: organizer.pendingClaim.venueName,
@@ -279,6 +283,8 @@ export default function AdminDashboard() {
           website: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite,
           instagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram,
           phone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone,
+          lat: 0,
+          lng: 0,
         };
         loadAllBars();
       } else {
@@ -296,8 +302,9 @@ export default function AdminDashboard() {
         pendingClaim: null,
       };
       setDecidedOrganizers(prev => [decided, ...prev]);
-    } catch {
-      toast.error("Failed to approve bar account.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to approve bar account.";
+      toast.error(msg, { duration: 8000 });
     }
   };
 

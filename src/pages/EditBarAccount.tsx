@@ -10,6 +10,7 @@ import {
 	updateProfile,
 } from "@/lib/supabaseQueries";
 import { deriveNeighborhoodFromAddress } from "@/lib/neighborhoodFromAddress";
+import { geocodeAddress } from "@/lib/geocoding";
 import { Spinner } from "@/components/ui/spinner";
 
 type EditMode = "venue" | "pending" | "claim";
@@ -22,6 +23,7 @@ export default function EditBarAccount() {
 		(location.state as { returnPath?: string } | null)?.returnPath ?? "/admin";
 	const { role, loading: authLoading, roleResolved } = useAuth();
 	const [submitting, setSubmitting] = useState(false);
+	const [geocoding, setGeocoding] = useState(false);
 	const [notFound, setNotFound] = useState(false);
 	const [mode, setMode] = useState<EditMode | null>(null);
 	const [venueId, setVenueId] = useState<string | null>(null);
@@ -35,6 +37,8 @@ export default function EditBarAccount() {
 		barWebsite: "",
 		barInstagram: "",
 		barPhone: "",
+		barLat: "",
+		barLng: "",
 	});
 
 	useEffect(() => {
@@ -63,6 +67,8 @@ export default function EditBarAccount() {
 						barWebsite: organizer.venue.website ?? "",
 						barInstagram: organizer.venue.instagram ?? "",
 						barPhone: organizer.venue.phone ?? "",
+						barLat: String(organizer.venue.lat),
+						barLng: String(organizer.venue.lng),
 					});
 				} else if (organizer.pendingSubmission) {
 					setMode("pending");
@@ -75,6 +81,8 @@ export default function EditBarAccount() {
 						barWebsite: organizer.pendingSubmission.website ?? "",
 						barInstagram: organizer.pendingSubmission.instagram ?? "",
 						barPhone: organizer.pendingSubmission.phone ?? "",
+						barLat: organizer.pendingSubmission.lat == null ? "" : String(organizer.pendingSubmission.lat),
+						barLng: organizer.pendingSubmission.lng == null ? "" : String(organizer.pendingSubmission.lng),
 					});
 				} else if (organizer.pendingClaim) {
 					setMode("claim");
@@ -88,6 +96,8 @@ export default function EditBarAccount() {
 						barWebsite: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite ?? "",
 						barInstagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram ?? "",
 						barPhone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone ?? "",
+						barLat: "",
+						barLng: "",
 					});
 				} else {
 					setNotFound(true);
@@ -104,14 +114,83 @@ export default function EditBarAccount() {
 		[form.barAddress],
 	);
 
+	const parseCoord = (s: string, range: number): number | null => {
+		const trimmed = s.trim();
+		if (!trimmed) return null;
+		const n = Number(trimmed);
+		if (!Number.isFinite(n) || n < -range || n > range) return null;
+		return n;
+	};
+
+	const handleGeocode = async () => {
+		const address = form.barAddress.trim();
+		if (!address) {
+			toast.error("Bitte zuerst eine Adresse eingeben.");
+			return;
+		}
+		setGeocoding(true);
+		try {
+			const result = await geocodeAddress(address);
+			if (!result) {
+				toast.error("Adresse nicht gefunden — bitte manuell eintragen.");
+				return;
+			}
+			setForm((prev) => ({
+				...prev,
+				barLat: String(result.lat),
+				barLng: String(result.lng),
+			}));
+			toast.success(`Gefunden: ${result.displayName}`, { duration: 6000 });
+		} catch {
+			toast.error("Geocoding fehlgeschlagen. Bitte später erneut versuchen.");
+		} finally {
+			setGeocoding(false);
+		}
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!id || !mode) return;
 		if ((mode === "venue" || mode === "claim") && !venueId) return;
+
+		const latParsed = parseCoord(form.barLat, 90);
+		const lngParsed = parseCoord(form.barLng, 180);
+		const hasLatInput = form.barLat.trim() !== "";
+		const hasLngInput = form.barLng.trim() !== "";
+		if ((hasLatInput || hasLngInput) && (latParsed === null || lngParsed === null)) {
+			toast.error("Lat/Lng müssen gültige Zahlen sein (Lat -90..90, Lng -180..180).");
+			return;
+		}
+		if (mode === "venue" && (latParsed === null || lngParsed === null)) {
+			toast.error("Eine bestehende Bar braucht gültige Koordinaten.");
+			return;
+		}
+		if (mode === "venue" && latParsed === 0 && lngParsed === 0) {
+			toast.error("Koordinaten dürfen nicht 0,0 sein.");
+			return;
+		}
+
 		setSubmitting(true);
 		try {
 			const neighborhoodToSave = derivedNeighborhood || existingNeighborhood;
-			if ((mode === "venue" || mode === "claim") && venueId) {
+			if (mode === "venue" && venueId) {
+				await updateOrganizerAccount(
+					id,
+					{ firstName: form.firstName, lastName: form.lastName },
+					{
+						id: venueId,
+						name: form.barName,
+						address: form.barAddress,
+						neighborhood: neighborhoodToSave,
+						website: form.barWebsite || null,
+						instagram: form.barInstagram || null,
+						phone: form.barPhone || null,
+						lat: latParsed as number,
+						lng: lngParsed as number,
+					},
+				);
+			} else if (mode === "claim" && venueId) {
+				// Claim mode keeps the existing venue's coords — don't pass lat/lng.
 				await updateOrganizerAccount(
 					id,
 					{ firstName: form.firstName, lastName: form.lastName },
@@ -125,9 +204,7 @@ export default function EditBarAccount() {
 						phone: form.barPhone || null,
 					},
 				);
-				if (mode === "claim") {
-					await clearVenueClaimProposals(id);
-				}
+				await clearVenueClaimProposals(id);
 			} else {
 				await updateProfile(id, { firstName: form.firstName, lastName: form.lastName });
 				await updatePendingBarSubmission(id, {
@@ -137,6 +214,8 @@ export default function EditBarAccount() {
 					website: form.barWebsite || null,
 					instagram: form.barInstagram || null,
 					phone: form.barPhone || null,
+					lat: latParsed,
+					lng: lngParsed,
 				});
 			}
 			toast.success(
@@ -276,6 +355,53 @@ export default function EditBarAccount() {
 									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
+
+							{mode !== "claim" && (
+								<div className="space-y-2 pt-2 border-t border-border">
+									<div className="flex items-center justify-between gap-3">
+										<div>
+											<p className="text-sm font-medium">Koordinaten {mode === "venue" && <span className="text-accent">*</span>}</p>
+											<p className="text-xs text-muted-foreground">
+												{mode === "pending"
+													? "Optional — werden beim Approve automatisch aus der Adresse geholt, falls leer."
+													: "Pflicht — werden auf der Map angezeigt."}
+											</p>
+										</div>
+										<button
+											type="button"
+											onClick={handleGeocode}
+											disabled={geocoding || !form.barAddress.trim()}
+											className="h-9 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50 whitespace-nowrap"
+										>
+											{geocoding ? "Suche…" : "Aus Adresse holen"}
+										</button>
+									</div>
+									<div className="flex gap-2">
+										<div className="flex-1 space-y-1.5">
+											<label className="text-xs text-muted-foreground">Latitude</label>
+											<input
+												type="number"
+												step="any"
+												value={form.barLat}
+												onChange={(e) => update("barLat", e.target.value)}
+												placeholder="52.5200"
+												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+											/>
+										</div>
+										<div className="flex-1 space-y-1.5">
+											<label className="text-xs text-muted-foreground">Longitude</label>
+											<input
+												type="number"
+												step="any"
+												value={form.barLng}
+												onChange={(e) => update("barLng", e.target.value)}
+												placeholder="13.4050"
+												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+											/>
+										</div>
+									</div>
+								</div>
+							)}
 						</div>
 
 						<div className="flex gap-3 pt-4">
