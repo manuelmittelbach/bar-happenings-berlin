@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
 	MapPin, ExternalLink,
 	ChevronDown, Plus, Users
@@ -36,13 +36,7 @@ export default function EventDetail() {
 	const [datesOpen, setDatesOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
-	const baseCount = useMemo(() => {
-		if (!id) return 0;
-		const hash = id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-		return (hash % 42) + 1;
-	}, [id]);
-
-	const [interestedCount, setInterestedCount] = useState(baseCount);
+	const [interestedCount, setInterestedCount] = useState(0);
 
 	// Sync interestedCount with real DB value once event loads
 	useEffect(() => {
