@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { KeyRound, Save, LogOut, Mail, AtSign, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { KeyRound, Save, LogOut, Mail, AtSign, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchOrganizerById, fetchProfile, updateProfile } from "@/lib/supabaseQueries";
@@ -54,6 +54,7 @@ export default function Profile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [initialized, setInitialized] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -87,13 +88,19 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
-    fetchProfile(user.id).then((p) => {
-      if (p) {
-        setFirstName(p.firstName);
-        setLastName(p.lastName);
-      }
-      setInitialized(true);
-    });
+    fetchProfile(user.id)
+      .then((p) => {
+        if (p) {
+          setFirstName(p.firstName);
+          setLastName(p.lastName);
+        }
+        setInitialized(true);
+      })
+      .catch((err) => {
+        console.error("[Profile] fetchProfile failed", err);
+        setLoadError(true);
+        setInitialized(true);
+      });
   }, [user]);
 
   useEffect(() => {
@@ -236,6 +243,12 @@ export default function Profile() {
           <CheckCircle2 className="h-4 w-4" /> Password reset!
         </div>
       )}
+      {loadError && (
+        <div className="mb-6 flex items-start gap-2 px-3 py-2 rounded-sm bg-red-500/10 text-red-600 text-sm font-medium border border-red-500/40">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>Couldn't load your profile data. Please refresh the page to try again.</span>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-10 md:mb-14 border-b-2 border-foreground pb-6">
         <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Profile</h1>
@@ -256,7 +269,7 @@ export default function Profile() {
           </div>
         )}
 
-        {role !== "user" && (
+        {role !== "user" && !loadError && (
           <form onSubmit={handleSave} className="space-y-5">
             {/* First + last name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
