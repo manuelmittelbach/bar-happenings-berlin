@@ -34,6 +34,14 @@ export interface EventFormData {
 
 const MAX_OCCURRENCES = 200;
 
+function todayLocalISO(): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 const RECURRENCE_OPTIONS: { value: "" | RecurrenceFreq; label: string }[] = [
   { value: "", label: "Does not repeat" },
   { value: "weekly", label: "Weekly" },
@@ -195,6 +203,8 @@ export default function EventForm({
     dragStateRef.current = null;
   };
 
+  const todayMin = useMemo(() => todayLocalISO(), []);
+
   const occurrencePreview = useMemo(() => {
     if (!formData.recurrence || !formData.date || !formData.recurrenceUntil) return null;
     const freq = formData.recurrence as RecurrenceFreq;
@@ -325,7 +335,7 @@ export default function EventForm({
             <DateField
               value={formData.date}
               onChange={(iso) => update("date", iso)}
-              min={new Date().toISOString().split("T")[0]}
+              min={todayMin}
               required
             />
           </div>
