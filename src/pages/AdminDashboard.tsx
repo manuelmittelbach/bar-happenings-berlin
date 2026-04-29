@@ -1204,6 +1204,12 @@ function StagedEventCard({
     }
   };
 
+  const isConfirming = confirmingNoStartTime || confirmingClash;
+  const cancelConfirming = () => {
+    setConfirmingClash(false);
+    setConfirmingNoStartTime(false);
+  };
+
   const handleApprove = async () => {
     // 1. Required fields
     const missing: string[] = [];
@@ -1215,15 +1221,15 @@ function StagedEventCard({
       toast.error(`Missing required field${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`);
       return;
     }
-    // 2. Start time warning
-    if (!startTime && !confirmingNoStartTime) {
-      setConfirmingNoStartTime(true);
-      return;
-    }
-    // 3. Same-day / series clash warning
-    if (sameDayEvents.length > 0 && !confirmingClash) {
-      setConfirmingClash(true);
-      return;
+    // 2. Show all applicable warnings together in a single confirmation step
+    if (!isConfirming) {
+      const needsStartTimeWarning = !startTime;
+      const needsClashWarning = sameDayEvents.length > 0;
+      if (needsStartTimeWarning || needsClashWarning) {
+        setConfirmingNoStartTime(needsStartTimeWarning);
+        setConfirmingClash(needsClashWarning);
+        return;
+      }
     }
     await performApprove();
   };
@@ -1493,7 +1499,7 @@ function StagedEventCard({
         </div>
       )}
 
-      {isPending && confirmingNoStartTime && !confirmingClash && (
+      {isPending && confirmingNoStartTime && (
         <div className="border border-yellow-500/50 bg-yellow-500/10 rounded-sm p-3 space-y-1">
           <p className="text-xs font-medium text-yellow-700">
             ⚠ Approve without a start time?
@@ -1538,30 +1544,10 @@ function StagedEventCard({
 
       {isPending && (
         <div className="flex justify-end gap-2 flex-shrink-0">
-          {confirmingNoStartTime ? (
+          {isConfirming ? (
             <>
               <button
-                onClick={() => setConfirmingNoStartTime(false)}
-                disabled={submitting}
-                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApprove}
-                disabled={submitting}
-                className="inline-flex items-center gap-1 h-8 px-3 bg-yellow-600 text-white rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-3 w-3" /> {submitting ? "Approving…" : "OK, approve"}
-              </button>
-            </>
-          ) : confirmingClash ? (
-            <>
-              <button
-                onClick={() => {
-                  setConfirmingClash(false);
-                  setConfirmingNoStartTime(false);
-                }}
+                onClick={cancelConfirming}
                 disabled={submitting}
                 className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
