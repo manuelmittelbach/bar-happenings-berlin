@@ -97,7 +97,13 @@ export default function OrganizerDashboard() {
       const nB = getNextUpcoming(b)!;
       return nA.date.localeCompare(nB.date) || nA.startTime.localeCompare(nB.startTime);
     });
-  const past = parents.filter((p) => getNextUpcoming(p) === null && getLastPast(p) !== null);
+  const past = parents
+    .filter((p) => getNextUpcoming(p) === null && getLastPast(p) !== null)
+    .sort((a, b) => {
+      const lA = getLastPast(a)!;
+      const lB = getLastPast(b)!;
+      return lB.date.localeCompare(lA.date) || lB.startTime.localeCompare(lA.startTime);
+    });
   const displayed = activeTab === "upcoming" ? upcoming : past;
 
   const INITIAL_COUNT = 5;
@@ -180,7 +186,7 @@ export default function OrganizerDashboard() {
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
               { label: "Total Events", value: String(myEvents.filter((e) => e.status !== "canceled").length), icon: CalendarDays },
-              { label: "Upcoming", value: String(upcoming.length), icon: Clock },
+              { label: "Upcoming", value: String(myEvents.filter((e) => e.status !== "canceled" && !isEventInPast(e)).length), icon: Clock },
             ].map((stat) => (
               <div key={stat.label} className="border border-border rounded-sm p-5 space-y-2">
                 <div className="flex items-center justify-between">
@@ -235,7 +241,11 @@ export default function OrganizerDashboard() {
                 const upcomingMembers = liveMembers(parent)
                   .filter((m) => !isEventInPast(m))
                   .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-                const canExpand = activeTab === "upcoming" && upcomingMembers.length > 1;
+                const pastMembers = liveMembers(parent)
+                  .filter((m) => isEventInPast(m))
+                  .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
+                const expandedMembers = activeTab === "upcoming" ? upcomingMembers : pastMembers;
+                const canExpand = expandedMembers.length > 1;
                 const isExpanded = expandedId === parent.id;
                 return (
                   <div
@@ -277,9 +287,9 @@ export default function OrganizerDashboard() {
                           </div>
                         )}
                       </div>
-                      {activeTab === "upcoming" && (
-                        <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
-                          {canExpand ? (
+                      <div className="flex sm:flex-col gap-3 sm:items-end justify-end flex-shrink-0">
+                        {activeTab === "upcoming" ? (
+                          canExpand ? (
                             displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
                               <Link
                                 to={`/edit-event/${displayEvent.id}?scope=future`}
@@ -307,25 +317,34 @@ export default function OrganizerDashboard() {
                                 </Link>
                               )}
                             </>
-                          )}
-                          {canExpand && (
-                            <button
-                              type="button"
-                              onClick={() => setExpandedId((prev) => (prev === parent.id ? null : parent.id))}
-                              aria-expanded={isExpanded}
-                              aria-label={isExpanded ? "Hide all dates" : "Show all dates"}
+                          )
+                        ) : (
+                          !canExpand && displayEvent.status !== "canceled" && (
+                            <Link
+                              to={`/event/${displayEvent.id}`}
                               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
-                              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                              {isExpanded ? "Hide dates" : `All ${upcomingMembers.length} dates`}
-                            </button>
-                          )}
-                        </div>
-                      )}
+                              <Eye className="h-4 w-4" /> View
+                            </Link>
+                          )
+                        )}
+                        {canExpand && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId((prev) => (prev === parent.id ? null : parent.id))}
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded ? "Hide all dates" : "Show all dates"}
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                            {isExpanded ? "Hide dates" : `All ${expandedMembers.length} ${activeTab} dates`}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {canExpand && isExpanded && (
                       <div className="mt-4 pt-2 border-t border-border divide-y divide-border/50">
-                        {upcomingMembers.map((m) => {
+                        {expandedMembers.map((m) => {
                           const canEdit = !hasEventStarted(m);
                           return (
                             <div
