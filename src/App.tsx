@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -64,7 +64,9 @@ function isEmailChangeCallback(): boolean {
 
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { user, role, roleResolved, loading } = useAuth();
   const [pending, setPending] = useState<boolean>(detectAuthCallback);
+  const emailChange = useRef(isEmailChangeCallback()).current;
 
   useEffect(() => {
     if (!pending) return;
@@ -85,33 +87,18 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const emailChange = isEmailChangeCallback();
+    if (loading || !roleResolved || !user) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) return;
-      if (emailChange && (event === "USER_UPDATED" || event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        markEmailJustChanged();
-        navigate("/profile", { replace: true });
-        setPending(false);
-        return;
-      }
-      if (event === "SIGNED_IN") {
-        markEmailJustConfirmed();
-        supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .maybeSingle()
-          .then(({ data }) => {
-            const role = data?.role;
-            const destination = role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events";
-            navigate(destination, { replace: true });
-            setPending(false);
-          });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [pending, navigate]);
+    if (emailChange) {
+      markEmailJustChanged();
+      navigate("/profile", { replace: true });
+    } else {
+      markEmailJustConfirmed();
+      const destination = role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events";
+      navigate(destination, { replace: true });
+    }
+    setPending(false);
+  }, [pending, loading, roleResolved, user, role, emailChange, navigate]);
 
   if (pending) {
     return (
