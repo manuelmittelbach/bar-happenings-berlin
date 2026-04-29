@@ -1,7 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-const EVENT = "discover-active-change";
-
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -15,15 +13,12 @@ export function setDiscoverActive(value: boolean) {
     sessionStorage.removeItem("discover-active");
   }
   notify();
-  window.dispatchEvent(new Event(EVENT));
 }
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  window.addEventListener(EVENT, listener);
   return () => {
     listeners.delete(listener);
-    window.removeEventListener(EVENT, listener);
   };
 }
 
