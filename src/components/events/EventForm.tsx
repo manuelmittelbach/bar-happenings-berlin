@@ -430,8 +430,9 @@ export default function EventForm({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Entry info</label>
+            <label className="text-sm font-medium">Entry info *</label>
             <select
+              required
               value={entryCustomMode ? CUSTOM_ENTRY_SENTINEL : formData.entryInfo}
               onChange={(e) => {
                 const v = e.target.value;
@@ -456,6 +457,7 @@ export default function EventForm({
             {entryCustomMode && (
               <input
                 type="text"
+                required
                 value={formData.entryInfo}
                 onChange={(e) => update("entryInfo", e.target.value)}
                 placeholder="e.g. First drink costs double"
@@ -480,7 +482,7 @@ export default function EventForm({
         {/* Language & Website/Instagram */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Language</label>
+            <label className="text-sm font-medium">Language of the event</label>
             <select
               value={formData.language}
               onChange={(e) => update("language", e.target.value)}
