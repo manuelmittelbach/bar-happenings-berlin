@@ -72,8 +72,17 @@ export function useAuth() {
       }));
       if (sameUser) return;
       lastFetchedUserId = user.id;
-      fetchRoleAndStatus(user).then(({ role, approvalStatus }) =>
-        setState(prev => ({ ...prev, role, approvalStatus, roleResolved: true })));
+      const fetchedForUserId = user.id;
+      fetchRoleAndStatus(user)
+        .then(({ role, approvalStatus }) => {
+          if (lastFetchedUserId !== fetchedForUserId) return;
+          setState(prev => ({ ...prev, role, approvalStatus, roleResolved: true }));
+        })
+        .catch((err) => {
+          if (lastFetchedUserId !== fetchedForUserId) return;
+          console.error("[useAuth] fetchRoleAndStatus failed", err);
+          setState(prev => ({ ...prev, roleResolved: true }));
+        });
     });
 
     return () => subscription.unsubscribe();
