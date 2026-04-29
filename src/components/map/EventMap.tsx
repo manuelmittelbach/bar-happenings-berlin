@@ -237,10 +237,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
 							weekday: "short", day: "numeric", month: "short",
 						});
-						btn.innerHTML = `
-            <p style="font-size:14px;font-weight:600;margin:0;color:#111;">${evt.title}</p>
-            <p style="font-size:12px;color:#888;margin:3px 0 0;">${dateStr}${evt.startTime ? ` · ${evt.startTime}` : ""}</p>
-          `;
+						const titleP = document.createElement("p");
+						titleP.style.cssText = "font-size:14px;font-weight:600;margin:0;color:#111;";
+						titleP.textContent = evt.title;
+						const metaP = document.createElement("p");
+						metaP.style.cssText = "font-size:12px;color:#888;margin:3px 0 0;";
+						metaP.textContent = dateStr + (evt.startTime ? ` · ${evt.startTime}` : "");
+						btn.appendChild(titleP);
+						btn.appendChild(metaP);
 						btn.addEventListener("click", () => {
 							btn.style.background = "#f97316";
 							btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
