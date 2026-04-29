@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Upload, Calendar, Clock, Repeat, Tag, X } from "lucide-react";
 import { toast } from "sonner";
+import { fromZonedTime } from "date-fns-tz";
 import { categories } from "@/data/categories";
 import { LANGUAGES } from "@/data/languages";
 import DateField from "@/components/events/DateField";
@@ -215,7 +216,7 @@ export default function EventForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.date && formData.startTime) {
-      const eventStart = new Date(`${formData.date}T${formData.startTime}`);
+      const eventStart = fromZonedTime(`${formData.date}T${formData.startTime}`, "Europe/Berlin");
       if (eventStart.getTime() <= Date.now()) {
         toast.error("Event date and start time must be in the future.");
         return;

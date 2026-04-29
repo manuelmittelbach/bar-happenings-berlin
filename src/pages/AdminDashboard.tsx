@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
-import { formatDateShort, formatDateWithDay } from "@/lib/dateFormat";
+import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -951,8 +951,8 @@ function OrganizerCard({
   returnPath: string;
 }) {
   const fullName = `${organizer.firstName} ${organizer.lastName}`.trim();
-  const submitted = organizer.createdAt ? formatDateShort(organizer.createdAt.split("T")[0]) : null;
-  const decided = organizer.approvedAt ? formatDateShort(organizer.approvedAt.split("T")[0]) : null;
+  const submitted = organizer.createdAt ? formatTimestampAsBerlinDate(organizer.createdAt) : null;
+  const decided = organizer.approvedAt ? formatTimestampAsBerlinDate(organizer.approvedAt) : null;
   const statusPill =
     organizer.approvalStatus === "approved"
       ? "bg-green-500/10 text-green-600"
