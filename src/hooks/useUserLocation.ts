@@ -79,10 +79,12 @@ export function useUserLocation(): {
             notifyStatus("denied");
           }
         })
-        .catch(() => {
+        .catch((err) => {
           // permissions.query can reject on Safari private mode, strict tracking
-          // protection, or older mobile browsers. Silent fallback — user can
-          // still trigger location explicitly.
+          // protection, or older mobile browsers. Fallback: user can still
+          // trigger location explicitly. console.debug for DevTools visibility
+          // without polluting production logs.
+          console.debug("[useUserLocation] permissions.query rejected", err);
         });
     }
 
