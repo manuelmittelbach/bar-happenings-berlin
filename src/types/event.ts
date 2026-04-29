@@ -17,7 +17,7 @@ export interface BarlinEvent {
   image?: string;
   imagePosition: string;
   endTime?: string;
-  interestedCount?: number;
+  interestedCount: number;
   status?: string;
   createdBy?: string;
 }
