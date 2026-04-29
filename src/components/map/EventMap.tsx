@@ -94,7 +94,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	const sourceReadyRef = useRef(false);
 	const [locating, setLocating] = useState(false);
 
-	useEffect(() => { onEventClickRef.current = onEventClick; });
+	useEffect(() => { onEventClickRef.current = onEventClick; }, [onEventClick]);
 
 	const venueEvents = useMemo(() => {
 		const map = new Map<string, BarlinEvent[]>();
