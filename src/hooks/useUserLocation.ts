@@ -71,13 +71,19 @@ export function useUserLocation(): {
 
     // If browser already granted permission previously, request silently
     if (navigator.permissions) {
-      navigator.permissions.query({ name: "geolocation" }).then((result) => {
-        if (result.state === "granted" && permissionStatus === "idle") {
-          triggerLocationRequest();
-        } else if (result.state === "denied") {
-          notifyStatus("denied");
-        }
-      });
+      navigator.permissions.query({ name: "geolocation" })
+        .then((result) => {
+          if (result.state === "granted" && permissionStatus === "idle") {
+            triggerLocationRequest();
+          } else if (result.state === "denied") {
+            notifyStatus("denied");
+          }
+        })
+        .catch(() => {
+          // permissions.query can reject on Safari private mode, strict tracking
+          // protection, or older mobile browsers. Silent fallback — user can
+          // still trigger location explicitly.
+        });
     }
 
     return () => {
