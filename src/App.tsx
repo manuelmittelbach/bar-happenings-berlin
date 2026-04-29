@@ -74,7 +74,13 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
 
     if (hasError) {
       const isReset = window.location.pathname.includes("reset-password");
-      navigate(isReset ? "/login?link_error=reset" : "/login?link_error=confirm", { replace: true });
+      const isBar = params.get("bar") === "1";
+      const target = isReset
+        ? "/login?link_error=reset"
+        : isBar
+          ? "/for-bars?link_error=confirm"
+          : "/login?link_error=confirm";
+      navigate(target, { replace: true });
       setPending(false);
       return;
     }
@@ -130,6 +136,7 @@ import ForBars from "./pages/ForBars";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import MyEvents from "./pages/MyEvents";
+import ConfirmEmail from "./pages/ConfirmEmail";
 import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
 import EditEvent from "./pages/EditEvent";
@@ -172,6 +179,7 @@ const App = () => (
             <Route path="/edit-event/:id" element={<EditEvent />} />
             <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
             <Route path="/reset-password" element={<UpdatePassword />} />
+            <Route path="/confirm" element={<ConfirmEmail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
