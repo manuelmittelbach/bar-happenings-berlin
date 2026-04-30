@@ -1915,8 +1915,8 @@ function StagedEventsList({
   hideRejectedFilter?: boolean;
 }) {
   const pills: StagedEventStatusFilter[] = hideRejectedFilter
-    ? ["pending", "approved", "all"]
-    : ["pending", "rejected", "approved", "all"];
+    ? ["pending", "approved"]
+    : ["pending", "rejected", "approved"];
 
   return (
     <div className="space-y-3">
@@ -1957,7 +1957,7 @@ function StagedEventsList({
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {!loading && events.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No {filter === "all" ? "" : filter} {emptyLabel} events.
+          No {filter} {emptyLabel} events.
         </p>
       )}
       {!loading && (() => {
