@@ -412,6 +412,7 @@ export type Database = {
       venue_events_staging: {
         Row: {
           category: string | null
+          created_by_admin: boolean
           date: string | null
           description: string | null
           end_time: string | null
@@ -433,6 +434,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          created_by_admin?: boolean
           date?: string | null
           description?: string | null
           end_time?: string | null
@@ -454,6 +456,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          created_by_admin?: boolean
           date?: string | null
           description?: string | null
           end_time?: string | null

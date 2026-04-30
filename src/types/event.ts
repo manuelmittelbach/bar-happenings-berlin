@@ -60,6 +60,7 @@ export interface StagedEvent {
   scrapedAt: string;
   reviewedAt: string | null;
   isManual: boolean;
+  createdByAdmin: boolean;
   recurrence: string;
   recurrenceUntil: string | null;
   eventsId: string | null;
