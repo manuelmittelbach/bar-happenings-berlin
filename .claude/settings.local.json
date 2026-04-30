@@ -98,7 +98,11 @@
       "Bash(curl -s 'https://uybvrxqleutguucrifuf.supabase.co/rest/v1/events?select=id,title,status&id=eq.ecaffb14-759c-4710-8f56-79cbcc71f070' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YnZyeHFsZXV0Z3V1Y3JpZnVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2MTgsImV4cCI6MjA5MDk4MDYxOH0.5QihSnNe9cwnbPdQf2Vtq4T0-GuSQbZQ1FEKRk18raU')",
       "Bash(curl -s 'https://uybvrxqleutguucrifuf.supabase.co/rest/v1/venues?select=id,name&id=eq.a20f673e-2a1c-4ceb-ac2c-9e6a15620847' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YnZyeHFsZXV0Z3V1Y3JpZnVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2MTgsImV4cCI6MjA5MDk4MDYxOH0.5QihSnNe9cwnbPdQf2Vtq4T0-GuSQbZQ1FEKRk18raU')",
       "Bash(curl -s 'https://uybvrxqleutguucrifuf.supabase.co/rest/v1/events?select=id,title&id=eq.spam-test-001' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YnZyeHFsZXV0Z3V1Y3JpZnVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2MTgsImV4cCI6MjA5MDk4MDYxOH0.5QihSnNe9cwnbPdQf2Vtq4T0-GuSQbZQ1FEKRk18raU')",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(grep *)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(echo \"Done with exit: $?\")",
+      "Bash(bun add *)"
     ]
   }
 }
