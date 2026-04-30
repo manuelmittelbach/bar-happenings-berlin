@@ -7,7 +7,7 @@ import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from 
 import { isEventInPast } from "@/lib/eventStatus";
 import EventDetailView from "@/components/events/EventDetailView";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2 } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -38,6 +38,7 @@ import {
   updateStagedEventManualFields,
   updateApprovedEvent,
   deleteApprovedEvent,
+  cancelEvent,
   fetchEventsByCreator,
   type OrganizerAccount,
   type LiveEventInfo,
@@ -550,6 +551,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleMoveManualToRecurring = async (staged: StagedEvent) => {
+    setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+    try {
+      await moveStagedEventToRecurring(staged.id);
+      toast.success(`"${staged.title}" moved to Recurring.`);
+      loadRecurringEvents({ silent: true });
+      loadPendingEventCounts();
+    } catch {
+      toast.error("Failed to move event to Recurring.");
+      loadManualEvents();
+    }
+  };
+
   const handleCancelStaged = async (staged: StagedEvent) => {
     try {
       await deleteStagedEvent(staged.id);
@@ -748,6 +762,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancelOccurrence = async (staged: StagedEvent) => {
+    // Cancels just this one date of a series. Index.tsx already filters
+    // canceled events to only show on today/tomorrow — so distant cancellations
+    // are silently hidden, near ones stay visible with a "canceled" badge.
+    // The extend_recurring_series cron skips dates that already exist (any
+    // status), so canceled rows aren't regenerated.
+    const today = new Date().toISOString().split("T")[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const staysVisible = staged.date === today || staged.date === tomorrow;
+    const confirmMsg = staysVisible
+      ? `Cancel this occurrence on ${staged.date}? It stays visible on the homepage marked as canceled. The rest of the series continues.`
+      : `Skip this occurrence on ${staged.date}? It will be hidden from the homepage. The rest of the series continues.`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      await cancelEvent(staged.id, "admin");
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", staged.id] });
+      toast.success(staysVisible ? "Occurrence canceled" : "Occurrence skipped");
+      loadRecurringEvents({ silent: true });
+      loadLiveEvents();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to cancel occurrence.";
+      toast.error(message);
+    }
+  };
+
   const handleRejectOrganizer = async (organizer: OrganizerAccount) => {
     try {
       await updateOrganizerApprovalStatus(organizer.id, "rejected");
@@ -937,6 +977,7 @@ export default function AdminDashboard() {
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onMoveToRecurring={handleMoveManualToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
               emptyLabel="manual"
@@ -966,6 +1007,7 @@ export default function AdminDashboard() {
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
+              onCancelOccurrence={handleCancelOccurrence}
               emptyLabel="recurring"
             />
           )}
@@ -1462,6 +1504,7 @@ function StagedEventCard({
   onMoveToRecurring,
   onSaveApproved,
   onDeleteApproved,
+  onCancelOccurrence,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
@@ -1478,6 +1521,7 @@ function StagedEventCard({
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: () => Promise<void>;
+  onCancelOccurrence?: () => Promise<void>;
 }) {
   const [title, setTitle] = useState(staged.title);
   const [date, setDate] = useState(staged.date);
@@ -1605,7 +1649,6 @@ function StagedEventCard({
     if (!title.trim()) missing.push("title");
     if (!date) missing.push("date");
     if (!category) missing.push("category");
-    if (showRecurrenceEditor && !staged.recurrenceUntil) missing.push("repeat-until date");
     if (missing.length > 0) {
       toast.error(`Missing required field${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`);
       return;
@@ -1645,12 +1688,13 @@ function StagedEventCard({
     const oldDate = date;
     setDate(newDate);
     if (!showRecurrenceEditor || !onRecurrenceChange || !newDate) return;
+    if (staged.recurrenceUntil == null) return; // indefinite — no window to preserve
     const newStart = parse(newDate, "yyyy-MM-dd", new Date());
     if (isNaN(newStart.getTime())) return;
 
     const oldStart = oldDate ? parse(oldDate, "yyyy-MM-dd", new Date()) : null;
-    const oldUntil = staged.recurrenceUntil ? parse(staged.recurrenceUntil, "yyyy-MM-dd", new Date()) : null;
-    const hasValidWindow = oldStart && oldUntil && !isNaN(oldStart.getTime()) && !isNaN(oldUntil.getTime());
+    const oldUntil = parse(staged.recurrenceUntil, "yyyy-MM-dd", new Date());
+    const hasValidWindow = oldStart && !isNaN(oldStart.getTime()) && !isNaN(oldUntil.getTime());
 
     const newUntil = hasValidWindow
       ? addDays(newStart, differenceInDays(oldUntil, oldStart))
@@ -1970,25 +2014,48 @@ function StagedEventCard({
       />
 
       {showRecurrenceEditor && onRecurrenceChange && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <select
-            value={staged.recurrence || ""}
-            onChange={(e) => onRecurrenceChange({ recurrence: e.target.value })}
-            disabled={!isPending}
-            className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
-          >
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Biweekly</option>
-            <option value="monthly_by_weekday">Monthly (by weekday)</option>
-          </select>
-          <input
-            type="date"
-            value={staged.recurrenceUntil ?? ""}
-            onChange={(e) => onRecurrenceChange({ recurrenceUntil: e.target.value || null })}
-            disabled={!isPending}
-            placeholder="Repeat until"
-            className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
-          />
+        <div className="space-y-2">
+          <div className={`grid grid-cols-1 ${staged.recurrenceUntil != null ? "sm:grid-cols-2" : ""} gap-2`}>
+            <select
+              value={staged.recurrence || ""}
+              onChange={(e) => onRecurrenceChange({ recurrence: e.target.value })}
+              disabled={!isPending}
+              className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+            >
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
+              <option value="monthly_by_weekday">Monthly (by weekday)</option>
+            </select>
+            {staged.recurrenceUntil != null && (
+              <input
+                type="date"
+                value={staged.recurrenceUntil}
+                onChange={(e) => onRecurrenceChange({ recurrenceUntil: e.target.value || null })}
+                disabled={!isPending}
+                placeholder="Repeat until"
+                className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+              />
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={staged.recurrenceUntil == null}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  onRecurrenceChange({ recurrenceUntil: null });
+                } else {
+                  const startStr = date || staged.date;
+                  const start = startStr ? parse(startStr, "yyyy-MM-dd", new Date()) : new Date();
+                  const fallback = isNaN(start.getTime()) ? addMonths(new Date(), 6) : addMonths(start, 6);
+                  onRecurrenceChange({ recurrenceUntil: format(fallback, "yyyy-MM-dd") });
+                }
+              }}
+              disabled={!isPending}
+              className="h-3.5 w-3.5"
+            />
+            No end date — series runs until you delete it
+          </label>
         </div>
       )}
 
@@ -2095,17 +2162,31 @@ function StagedEventCard({
         </div>
       )}
 
-      {isApproved && (onDeleteApproved || (canEdit && isDirty)) && (
+      {isApproved && (onDeleteApproved || onCancelOccurrence || (canEdit && isDirty)) && (
         <div className="flex items-center justify-between gap-2 flex-shrink-0">
-          {onDeleteApproved ? (
-            <button
-              onClick={onDeleteApproved}
-              disabled={submitting}
-              title="Delete this event from the site"
-              className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
-            >
-              <Trash2 className="h-3 w-3" /> Delete
-            </button>
+          {(onDeleteApproved || onCancelOccurrence) ? (
+            <div className="flex gap-2">
+              {onCancelOccurrence && (
+                <button
+                  onClick={onCancelOccurrence}
+                  disabled={submitting}
+                  title="Cancel just this date — the rest of the series continues"
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <Ban className="h-3 w-3" /> Cancel date
+                </button>
+              )}
+              {onDeleteApproved && (
+                <button
+                  onClick={onDeleteApproved}
+                  disabled={submitting}
+                  title="Delete this event from the site"
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </button>
+              )}
+            </div>
           ) : (
             <span />
           )}
@@ -2234,6 +2315,7 @@ function StagedEventsList({
   onMoveToRecurring,
   onSaveApproved,
   onDeleteApproved,
+  onCancelOccurrence,
   emptyLabel,
 }: {
   events: StagedEvent[];
@@ -2258,6 +2340,7 @@ function StagedEventsList({
   onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: (s: StagedEvent) => Promise<void>;
+  onCancelOccurrence?: (s: StagedEvent) => Promise<void>;
   emptyLabel: string;
 }) {
   const pills: StagedEventStatusFilter[] = ["pending", "approved"];
@@ -2337,6 +2420,7 @@ function StagedEventsList({
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
               onDeleteApproved={onDeleteApproved ? () => onDeleteApproved(staged) : undefined}
+              onCancelOccurrence={onCancelOccurrence ? () => onCancelOccurrence(staged) : undefined}
             />
           );
           if (filter === "approved") {

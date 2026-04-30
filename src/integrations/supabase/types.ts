@@ -103,6 +103,7 @@ export type Database = {
           address: string
           approved_at: string | null
           approved_by: string | null
+          canceled_by: string | null
           category: string
           created_at: string | null
           created_by: string | null
@@ -131,6 +132,7 @@ export type Database = {
           address: string
           approved_at?: string | null
           approved_by?: string | null
+          canceled_by?: string | null
           category: string
           created_at?: string | null
           created_by?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           address?: string
           approved_at?: string | null
           approved_by?: string | null
+          canceled_by?: string | null
           category?: string
           created_at?: string | null
           created_by?: string | null
@@ -191,6 +194,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           archived_at: string
+          canceled_by: string | null
           category: string
           created_at: string | null
           created_by: string | null
@@ -219,6 +223,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           archived_at?: string
+          canceled_by?: string | null
           category: string
           created_at?: string | null
           created_by?: string | null
@@ -247,6 +252,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           archived_at?: string
+          canceled_by?: string | null
           category?: string
           created_at?: string | null
           created_by?: string | null

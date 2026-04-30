@@ -22,6 +22,7 @@ export interface BarlinEvent {
   status?: string;
   createdBy?: string;
   isManual: boolean;
+  canceledBy?: "organizer" | "admin" | null;
 }
 
 export interface Venue {
