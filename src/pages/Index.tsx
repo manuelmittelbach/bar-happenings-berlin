@@ -13,7 +13,6 @@ import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/eve
 
 import { categories } from "@/data/categories";
 import { neighborhoods } from "@/data/neighborhoods";
-import { getVenueById } from "@/data/legacyVenueLookup";
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues, useHasEventsAfter } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -173,18 +172,21 @@ export default function Index() {
       return n !== null && n <= 10;
     });
 
-    const WALK_20MIN_M = 1600;
+    const WALK_30MIN_M = 2400;
 
     const getEventDist = (e: typeof result[0]) => {
       if (!userLocation) return Infinity;
-      const v = getVenueById(e.venueId);
+      const v = venueMap[e.venueId];
       return v?.lat && v?.lng ? haversineMeters(userLocation.lat, userLocation.lng, v.lat, v.lng) : Infinity;
     };
 
     // 0 = walking distance (top), 1 = normal, 2 = might be over (always bottom)
+    // Walking-boost only applies to today/tomorrow — for "Later" events distance
+    // matters less since users are planning, not deciding spontaneously.
     const getSortGroup = (e: typeof result[0], dist: number): number => {
       if (getEventBadge(e, 0)?.label === "Might be over") return 2;
-      if (dist <= WALK_20MIN_M) return 0;
+      const isNearTerm = e.date === today || e.date === tomorrow;
+      if (isNearTerm && dist <= WALK_30MIN_M) return 0;
       return 1;
     };
 
