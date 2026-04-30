@@ -48,6 +48,10 @@ export type StagedEventScope = "scraped" | "manual" | "recurring" | "any";
 
 export interface StagedEvent {
   id: string;
+  // Real staging rows never have a parent (staging holds templates, not
+  // occurrences). Set only by the admin adapter when it wraps a child of an
+  // approved series whose parent has already been archived.
+  parentId: string;
   venueId: string;
   venueName: string;
   venueAddress: string;

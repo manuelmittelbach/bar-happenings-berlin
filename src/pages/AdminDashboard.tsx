@@ -47,6 +47,7 @@ import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilte
 function eventToAdminStaged(event: BarlinEvent): StagedEvent {
   return {
     id: event.id,
+    parentId: event.parentId,
     venueId: event.venueId,
     venueName: event.venue,
     venueAddress: event.address,
@@ -626,10 +627,13 @@ export default function AdminDashboard() {
 
   const handleSaveApprovedStaged = async (staged: StagedEvent, edits: StagedEventEdits) => {
     try {
-      // Approved events live in `events` — staged.id IS the event id (set by
-      // the adapter). Recurring parents apply edits across the series.
-      const isSeriesParent = !!staged.recurrence;
-      await updateApprovedEvent(staged.id, edits, venues, isSeriesParent);
+      // Approved events live in `events`; staged.id IS the displayed event id
+      // (set by the adapter). seriesId picks the right scope for shared fields:
+      //   • orphan child  → staged.parentId (parent already archived)
+      //   • live parent   → staged.id (parent still alive, has recurrence rule)
+      //   • singleton     → null
+      const seriesId = staged.parentId || (staged.recurrence ? staged.id : null);
+      await updateApprovedEvent(staged.id, seriesId, edits, venues);
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", staged.id] });
       toast.success("Event updated");
