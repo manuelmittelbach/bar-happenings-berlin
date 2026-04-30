@@ -114,6 +114,7 @@ export type Database = {
           image: string | null
           image_position: string
           interested_count: number | null
+          is_manual: boolean
           language: string | null
           neighborhood: string
           parent_id: string | null
@@ -140,6 +141,7 @@ export type Database = {
           image?: string | null
           image_position?: string
           interested_count?: number | null
+          is_manual?: boolean
           language?: string | null
           neighborhood: string
           parent_id?: string | null
@@ -166,6 +168,7 @@ export type Database = {
           image?: string | null
           image_position?: string
           interested_count?: number | null
+          is_manual?: boolean
           language?: string | null
           neighborhood?: string
           parent_id?: string | null
@@ -388,6 +391,38 @@ export type Database = {
         }
         Relationships: []
       }
+      scrape_logs: {
+        Row: {
+          error_message: string | null
+          id: string
+          scraped_at: string
+          status: string
+          venue_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          scraped_at?: string
+          status: string
+          venue_id: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          scraped_at?: string
+          status?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrape_logs_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_interests: {
         Row: {
           created_at: string | null
@@ -417,7 +452,6 @@ export type Database = {
           description: string | null
           end_time: string | null
           entry_info: string | null
-          events_id: string | null
           id: string
           is_manual: boolean
           language: string | null
@@ -428,7 +462,6 @@ export type Database = {
           scraped_at: string
           source_url: string | null
           start_time: string | null
-          status: string
           title: string | null
           venue_id: string
         }
@@ -439,7 +472,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          events_id?: string | null
           id?: string
           is_manual?: boolean
           language?: string | null
@@ -450,7 +482,6 @@ export type Database = {
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
-          status?: string
           title?: string | null
           venue_id: string
         }
@@ -461,7 +492,6 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           entry_info?: string | null
-          events_id?: string | null
           id?: string
           is_manual?: boolean
           language?: string | null
@@ -472,18 +502,10 @@ export type Database = {
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
-          status?: string
           title?: string | null
           venue_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "venue_events_staging_events_id_fkey"
-            columns: ["events_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venue_events_staging_venue_id_fkey"
             columns: ["venue_id"]

@@ -20,6 +20,7 @@ export interface BarlinEvent {
   interestedCount: number;
   status?: string;
   createdBy?: string;
+  isManual: boolean;
 }
 
 export interface Venue {
@@ -37,6 +38,10 @@ export interface Venue {
   lng: number;
 }
 
+// Virtual status field — `status` is no longer stored in the staging table.
+// It's derived: real staging rows are pending (reviewed_at IS NULL) or
+// rejected (reviewed_at IS NOT NULL). The "approved" value is set by the
+// admin-side adapter when wrapping a row from the `events` table.
 export type StagedEventStatus = "pending" | "approved" | "rejected";
 export type StagedEventStatusFilter = "pending" | "rejected" | "approved" | "all";
 export type StagedEventScope = "scraped" | "manual" | "recurring" | "any";
@@ -63,7 +68,6 @@ export interface StagedEvent {
   createdByAdmin: boolean;
   recurrence: string;
   recurrenceUntil: string | null;
-  eventsId: string | null;
 }
 
 export interface StagedEventEdits {
