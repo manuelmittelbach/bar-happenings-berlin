@@ -941,19 +941,30 @@ function BarCard({
   const [website, setWebsite] = useState(venue.website ?? "");
   const [instagram, setInstagram] = useState(venue.instagram ?? "");
   const [websiteEvents, setWebsiteEvents] = useState(venue.websiteEvents ?? "");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { setWebsite(venue.website ?? ""); }, [venue.website]);
   useEffect(() => { setInstagram(venue.instagram ?? ""); }, [venue.instagram]);
   useEffect(() => { setWebsiteEvents(venue.websiteEvents ?? ""); }, [venue.websiteEvents]);
 
-  const persistIfChanged = (
-    field: "website" | "instagram" | "websiteEvents",
-    current: string,
-    original: string | undefined,
-  ) => {
-    const next = current.trim() || null;
-    if (next === (original ?? null)) return;
-    onLinkChange(venue.id, { [field]: next });
+  const normalize = (v: string) => v.trim() || null;
+  const websiteDirty = normalize(website) !== (venue.website ?? null);
+  const instagramDirty = normalize(instagram) !== (venue.instagram ?? null);
+  const websiteEventsDirty = normalize(websiteEvents) !== (venue.websiteEvents ?? null);
+  const dirty = websiteDirty || instagramDirty || websiteEventsDirty;
+
+  const handleSave = async () => {
+    if (!dirty || saving) return;
+    const patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null } = {};
+    if (websiteDirty) patch.website = normalize(website);
+    if (instagramDirty) patch.instagram = normalize(instagram);
+    if (websiteEventsDirty) patch.websiteEvents = normalize(websiteEvents);
+    setSaving(true);
+    try {
+      await onLinkChange(venue.id, patch);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const instagramHref = instagram
@@ -986,7 +997,6 @@ function BarCard({
               type="text"
               value={website}
               onChange={e => setWebsite(e.target.value)}
-              onBlur={() => persistIfChanged("website", website, venue.website)}
               placeholder="Website…"
               className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
             />
@@ -1008,7 +1018,6 @@ function BarCard({
               type="text"
               value={instagram}
               onChange={e => setInstagram(e.target.value)}
-              onBlur={() => persistIfChanged("instagram", instagram, venue.instagram)}
               placeholder="Instagram…"
               className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
             />
@@ -1030,7 +1039,6 @@ function BarCard({
               type="text"
               value={websiteEvents}
               onChange={e => setWebsiteEvents(e.target.value)}
-              onBlur={() => persistIfChanged("websiteEvents", websiteEvents, venue.websiteEvents)}
               placeholder="Events page URL…"
               className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
             />
@@ -1049,6 +1057,16 @@ function BarCard({
         </div>
       </div>
       <div className="flex gap-2 flex-shrink-0">
+        {dirty && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border bg-foreground text-background border-foreground hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onToggleOnline(venue.id, venue.online === "yes" ? "no" : "yes")}
@@ -1260,6 +1278,8 @@ function StagedEventCard({
   const [date, setDate] = useState(staged.date);
   const [startTime, setStartTime] = useState(staged.startTime ?? "");
   const [endTime, setEndTime] = useState(staged.endTime ?? "");
+  const [doorsTime, setDoorsTime] = useState(staged.doorsTime ?? "");
+  const [showDoors, setShowDoors] = useState(!!staged.doorsTime);
   const [category, setCategory] = useState(staged.category ?? "");
   const [language, setLanguage] = useState(staged.language);
   const [description, setDescription] = useState(staged.description);
@@ -1280,6 +1300,10 @@ function StagedEventCard({
   useEffect(() => { setDate(staged.date); }, [staged.date]);
   useEffect(() => { setStartTime(staged.startTime ?? ""); }, [staged.startTime]);
   useEffect(() => { setEndTime(staged.endTime ?? ""); }, [staged.endTime]);
+  useEffect(() => {
+    setDoorsTime(staged.doorsTime ?? "");
+    setShowDoors(!!staged.doorsTime);
+  }, [staged.doorsTime]);
   useEffect(() => { setCategory(staged.category ?? ""); }, [staged.category]);
   useEffect(() => { setLanguage(staged.language); }, [staged.language]);
   useEffect(() => { setDescription(staged.description); }, [staged.description]);
@@ -1316,6 +1340,7 @@ function StagedEventCard({
     date !== staged.date ||
     startTime !== (staged.startTime ?? "") ||
     endTime !== (staged.endTime ?? "") ||
+    doorsTime !== (staged.doorsTime ?? "") ||
     category !== (staged.category ?? "") ||
     language !== staged.language ||
     description !== staged.description ||
@@ -1332,6 +1357,7 @@ function StagedEventCard({
     date,
     startTime: startTime || null,
     endTime: endTime || null,
+    doorsTime: doorsTime || null,
     category: category || null,
     language,
     description,
@@ -1548,23 +1574,60 @@ function StagedEventCard({
           disabled={!canEdit}
           className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
         />
-        <div className="flex gap-2">
-          <input
-            type="time"
-            value={startTime}
-            onChange={e => setStartTime(e.target.value)}
-            disabled={!canEdit}
-            placeholder="Start"
-            className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
-          />
-          <input
-            type="time"
-            value={endTime}
-            onChange={e => setEndTime(e.target.value)}
-            disabled={!canEdit}
-            placeholder="End"
-            className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
-          />
+        <div className="space-y-1">
+          <div className="flex gap-2 items-center">
+            <input
+              type="time"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              disabled={!canEdit}
+              placeholder="Start"
+              title="Start"
+              className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+            />
+            <input
+              type="time"
+              value={endTime}
+              onChange={e => setEndTime(e.target.value)}
+              disabled={!canEdit}
+              placeholder="End"
+              title="End"
+              className="flex-1 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+            />
+            {!showDoors ? (
+              <button
+                type="button"
+                onClick={() => setShowDoors(true)}
+                disabled={!canEdit}
+                className="h-9 px-3 border border-dashed border-border rounded-sm text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                + Doors
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 flex-1">
+                <span className="text-xs text-muted-foreground flex-shrink-0">Doors:</span>
+                <input
+                  type="time"
+                  value={doorsTime}
+                  onChange={e => setDoorsTime(e.target.value)}
+                  disabled={!canEdit}
+                  className="flex-1 min-w-0 h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setDoorsTime(""); setShowDoors(false); }}
+                  disabled={!canEdit}
+                  title="Doors-Zeit entfernen"
+                  className="h-9 w-9 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+          {showDoors && doorsTime && startTime && doorsTime >= startTime && (
+            <p className="text-xs text-muted-foreground">Doors are usually before the start time</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <select
