@@ -457,8 +457,6 @@ export type Database = {
           language: string | null
           recurrence: string
           recurrence_until: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
           scraped_at: string
           source_url: string | null
           start_time: string | null
@@ -477,8 +475,6 @@ export type Database = {
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
@@ -497,8 +493,6 @@ export type Database = {
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
