@@ -72,6 +72,9 @@ export interface StagedEvent {
   createdByAdmin: boolean;
   recurrence: string;
   recurrenceUntil: string | null;
+  // Only set on rows wrapped from `events` (filter='approved' in admin) via
+  // eventToAdminStaged. Real staging rows don't track interest, so this is 0.
+  interestedCount?: number;
 }
 
 export interface StagedEventEdits {
