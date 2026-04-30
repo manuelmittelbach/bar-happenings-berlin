@@ -38,12 +38,11 @@ export interface Venue {
   lng: number;
 }
 
-// Virtual status field — `status` is no longer stored in the staging table.
-// It's derived: real staging rows are pending (reviewed_at IS NULL) or
-// rejected (reviewed_at IS NOT NULL). The "approved" value is set by the
-// admin-side adapter when wrapping a row from the `events` table.
-export type StagedEventStatus = "pending" | "approved" | "rejected";
-export type StagedEventStatusFilter = "pending" | "rejected" | "approved";
+// Virtual status field — `status` is not stored anywhere. Real staging rows
+// are always pending (reject deletes the row outright); "approved" is set by
+// the admin-side adapter when wrapping a row from the `events` table.
+export type StagedEventStatus = "pending" | "approved";
+export type StagedEventStatusFilter = "pending" | "approved";
 export type StagedEventScope = "scraped" | "manual" | "recurring" | "any";
 
 export interface StagedEvent {
@@ -67,7 +66,6 @@ export interface StagedEvent {
   sourceUrl: string | null;
   status: StagedEventStatus;
   scrapedAt: string;
-  reviewedAt: string | null;
   isManual: boolean;
   createdByAdmin: boolean;
   recurrence: string;
