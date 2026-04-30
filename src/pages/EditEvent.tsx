@@ -60,6 +60,7 @@ export default function EditEvent() {
         date: event.date,
         startTime: event.startTime,
         endTime: event.endTime ?? "",
+        doorsTime: event.doorsTime ?? "",
         category: event.category,
         description: event.description,
         entryInfo: event.entryInfo || "",

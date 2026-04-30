@@ -23,6 +23,7 @@ export interface EventFormData {
   date: string;
   startTime: string;
   endTime: string;
+  doorsTime: string;
   category: string;
   description: string;
   entryInfo: string;
@@ -75,7 +76,7 @@ const DEFAULT_IMAGE_POSITION = "50% 50%";
 
 const EMPTY_FORM: EventFormData = {
   title: "", venue: "", address: "", neighborhood: "", date: "",
-  startTime: "", endTime: "", category: "", description: "",
+  startTime: "", endTime: "", doorsTime: "", category: "", description: "",
   entryInfo: "", language: "", website: "",
   imagePosition: DEFAULT_IMAGE_POSITION,
   recurrence: "", recurrenceUntil: "",
@@ -330,7 +331,7 @@ export default function EventForm({
         </div>
 
         {/* Date & Time */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium flex items-center gap-1"><Calendar className="h-3 w-3" /> Date *</label>
             <DateField
@@ -360,6 +361,17 @@ export default function EventForm({
             )}
             {formData.startTime && formData.endTime && formData.endTime === formData.startTime && (
               <p className="text-xs text-destructive mt-1">End time must differ from start</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> Doors</label>
+            <input
+              type="time" value={formData.doorsTime}
+              onChange={(e) => update("doorsTime", e.target.value)}
+              className={inputClass}
+            />
+            {formData.doorsTime && formData.startTime && formData.doorsTime >= formData.startTime && (
+              <p className="text-xs text-muted-foreground mt-1">Doors are usually before the start time</p>
             )}
           </div>
         </div>
