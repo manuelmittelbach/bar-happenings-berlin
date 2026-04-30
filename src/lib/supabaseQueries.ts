@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatusFilter, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { geocodeAddress } from "@/lib/geocoding";
 
@@ -968,7 +968,7 @@ export async function fetchApprovedEvents(
 }
 
 export async function fetchStagedEvents(
-  statusFilter: StagedEventStatusFilter = "pending",
+  statusFilter: "pending" | "rejected" = "pending",
   scope: StagedEventScope = "any",
 ): Promise<StagedEvent[]> {
   let query = supabase
@@ -976,10 +976,10 @@ export async function fetchStagedEvents(
     .select("*, venues!inner(name, address, neighborhood)");
 
   // Approved is served by fetchApprovedEvents (reads `events`); this query
-  // only knows pending/rejected/all on the staging table.
+  // only handles pending/rejected on the staging table.
   if (statusFilter === "pending") {
     query = query.is("reviewed_at", null);
-  } else if (statusFilter === "rejected") {
+  } else {
     query = query.not("reviewed_at", "is", null);
   }
   if (scope === "manual") {
