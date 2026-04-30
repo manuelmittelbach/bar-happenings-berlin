@@ -13,6 +13,30 @@ function trimTime(t: string | null | undefined): string {
   return m ? `${m[1].padStart(2, "0")}:${m[2]}` : t;
 }
 
+// Strip third-party click/tracking params before persisting URLs — otherwise
+// every visitor that clicks an event link forwards Facebook/Google/etc. tracking
+// without consent. Non-URL strings pass through unchanged so we don't destroy
+// what the user typed.
+const TRACKING_PARAMS = new Set([
+  "fbclid", "gclid", "yclid", "dclid", "msclkid",
+  "mc_cid", "mc_eid", "_hsenc", "_hsmi",
+  "igshid", "twclid", "ttclid", "li_fat_id",
+]);
+function cleanUrl(raw: string | null | undefined): string {
+  if (!raw) return "";
+  try {
+    const u = new URL(raw);
+    [...u.searchParams.keys()].forEach(k => {
+      if (TRACKING_PARAMS.has(k) || k.startsWith("utm_")) {
+        u.searchParams.delete(k);
+      }
+    });
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
 function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEvent {
   return {
     id: row.id,
@@ -158,7 +182,7 @@ function buildEventRow(
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
     language: formData.language || null,
-    url: formData.website || null,
+    url: cleanUrl(formData.website) || null,
     image: imageUrl || null,
     image_position: formData.imagePosition,
     created_by: userId,
@@ -212,7 +236,7 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
     language: formData.language || null,
-    url: formData.website || null,
+    url: cleanUrl(formData.website) || null,
     image_position: formData.imagePosition,
   };
   if (includeDateTime) {
@@ -1006,7 +1030,7 @@ export async function createBlankManualStagedEvent(
       venue_id: venueId,
       is_manual: isManual,
       created_by_admin: true,
-      source_url: sourceUrl,
+      source_url: cleanUrl(sourceUrl) || null,
       recurrence: scope === "recurring" ? "weekly" : "",
       recurrence_until: null,
     });
@@ -1062,7 +1086,7 @@ export async function duplicateStagedEvent(
       language: merged.language || null,
       description: merged.description || null,
       entry_info: merged.entryInfo || null,
-      source_url: edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl,
+      source_url: cleanUrl(edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl) || null,
       is_manual: isManual,
       created_by_admin: true,
       recurrence,
@@ -1085,7 +1109,7 @@ export async function updateStagedEventManualFields(
 ): Promise<void> {
   const update: TablesUpdate<"venue_events_staging"> = {};
   if (patch.venueId !== undefined) update.venue_id = patch.venueId;
-  if (patch.sourceUrl !== undefined) update.source_url = patch.sourceUrl;
+  if (patch.sourceUrl !== undefined) update.source_url = cleanUrl(patch.sourceUrl) || null;
   if (patch.recurrence !== undefined) update.recurrence = patch.recurrence;
   if (patch.recurrenceUntil !== undefined) update.recurrence_until = patch.recurrenceUntil;
   if (Object.keys(update).length === 0) return;
@@ -1135,7 +1159,7 @@ export async function approveStagedEvent(
     category: merged.category!,
     language: merged.language || null,
     description: merged.description || null,
-    url: staged.sourceUrl || null,
+    url: cleanUrl(staged.sourceUrl) || null,
     entry_info: merged.entryInfo || null,
     image: null,
     image_position: "50% 50%",
@@ -1232,7 +1256,7 @@ export async function updateApprovedEvent(
     language: edits.language || null,
     description: edits.description || null,
     entry_info: edits.entryInfo || null,
-    url: edits.sourceUrl ?? null,
+    url: cleanUrl(edits.sourceUrl) || null,
     venue: venue.name,
     venue_id: venue.id,
     address: venue.address,
