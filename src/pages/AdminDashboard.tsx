@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
@@ -242,6 +243,34 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadLiveEvents();
   }, [loadLiveEvents]);
+
+  // Realtime: when the Python scraper (or any source) writes to
+  // venue_events_staging, refresh the affected lists + counts without a reload.
+  // Debounced 500ms so a scrape burst (~40 inserts in 1-2s) collapses into one
+  // fetch round instead of 40.
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-staging")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "venue_events_staging" },
+        () => {
+          if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+          reloadTimerRef.current = setTimeout(() => {
+            loadScrapedEvents();
+            loadManualEvents();
+            loadRecurringEvents();
+            loadPendingEventCounts();
+          }, 500);
+        },
+      )
+      .subscribe();
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [loadScrapedEvents, loadManualEvents, loadRecurringEvents, loadPendingEventCounts]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
