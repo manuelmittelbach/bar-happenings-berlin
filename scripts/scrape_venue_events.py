@@ -196,16 +196,17 @@ def log_scrape(client, venue_id: str, status: str, error_message: str | None = N
 
 
 def ensure_placeholder(client, venue_id: str, source_url: str) -> bool:
-    """Insert an empty pending placeholder row for a venue when no events were
+    """Insert an empty placeholder row for a venue when no events were
     extracted, so it still shows up in the admin review for manual entry.
-    Skips insertion if a pending placeholder already exists for this venue.
+    Skips insertion if a placeholder already exists for this venue.
+    All staging rows are pending by definition (approved live in `events`,
+    rejected get deleted), so there is no `status` column to filter on.
     Returns True if a new placeholder was created."""
     try:
         existing = (
             client.table("venue_events_staging")
             .select("id")
             .eq("venue_id", venue_id)
-            .eq("status", "pending")
             .is_("title", "null")
             .limit(1)
             .execute()
@@ -218,7 +219,6 @@ def ensure_placeholder(client, venue_id: str, source_url: str) -> bool:
                 "title": None,
                 "date": None,
                 "source_url": source_url,
-                "status": "pending",
                 "is_manual": True,
             }
         ).execute()
