@@ -41,13 +41,18 @@ import {
   fetchEventsByCreator,
   type OrganizerAccount,
   type LiveEventInfo,
+  type ApprovedEventListItem,
 } from "@/lib/supabaseQueries";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 
 // Approved events live in the `events` table. To keep the existing card UI
 // working, adapt them to the StagedEvent shape used by StagedEventCard.
 // `status: "approved"` is the virtual marker — staging never stores that.
-function eventToAdminStaged(event: BarlinEvent): StagedEvent {
+// siblingDates come from fetchApprovedEvents (sibling rows in `events`); they
+// can't be derived from the row alone because recurrence_until isn't stored
+// post-approval.
+function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
+  const { event, siblingDates } = item;
   return {
     id: event.id,
     parentId: event.parentId,
@@ -72,6 +77,7 @@ function eventToAdminStaged(event: BarlinEvent): StagedEvent {
     recurrence: event.recurrence,
     recurrenceUntil: null,
     interestedCount: event.interestedCount,
+    approvedSiblingDates: siblingDates,
   };
 }
 
@@ -226,8 +232,8 @@ export default function AdminDashboard() {
     if (!silent) setScrapedLoading(true);
     try {
       if (scrapedFilter === "approved") {
-        const events = await fetchApprovedEvents("scraped");
-        setScrapedEvents(events.map(eventToAdminStaged));
+        const items = await fetchApprovedEvents("scraped");
+        setScrapedEvents(items.map(approvedItemToAdminStaged));
       } else {
         setScrapedEvents(await fetchStagedEvents("scraped"));
       }
@@ -242,8 +248,8 @@ export default function AdminDashboard() {
     if (!silent) setManualLoading(true);
     try {
       if (manualFilter === "approved") {
-        const events = await fetchApprovedEvents("manual");
-        setManualEvents(events.map(eventToAdminStaged));
+        const items = await fetchApprovedEvents("manual");
+        setManualEvents(items.map(approvedItemToAdminStaged));
       } else {
         setManualEvents(await fetchStagedEvents("manual"));
       }
@@ -258,8 +264,8 @@ export default function AdminDashboard() {
     if (!silent) setRecurringLoading(true);
     try {
       if (recurringFilter === "approved") {
-        const events = await fetchApprovedEvents("recurring");
-        setRecurringEvents(events.map(eventToAdminStaged));
+        const items = await fetchApprovedEvents("recurring");
+        setRecurringEvents(items.map(approvedItemToAdminStaged));
       } else {
         setRecurringEvents(await fetchStagedEvents("recurring"));
       }
@@ -2140,13 +2146,17 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
     );
   };
 
-  // Future-only occurrences for recurring staged events. Approved events
-  // shown in admin via eventToAdminStaged also carry recurrence on the
-  // wrapped row, so the same generator works for both.
+  // Future-only occurrences for the live preview. Two sources:
+  //   • Approved rows: real sibling rows from `events`, attached by
+  //     fetchApprovedEvents (recurrence_until isn't stored post-approval).
+  //   • Pending staging rows: derive from recurrence + recurrenceUntil.
   const today = new Date();
   today.setHours(6, 0, 0, 0);
   const todayStr = today.toISOString().split("T")[0];
   const siblingDates: string[] = (() => {
+    if (staged.approvedSiblingDates) {
+      return staged.approvedSiblingDates.filter(d => d >= todayStr);
+    }
     if (!staged.date || !staged.recurrence || !staged.recurrenceUntil) return [];
     try {
       return generateOccurrences(staged.date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil)
