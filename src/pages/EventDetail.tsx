@@ -21,6 +21,7 @@ export default function EventDetail() {
 	const [saved, setSaved] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [interestedCount, setInterestedCount] = useState(0);
+	const [upcomingOpen, setUpcomingOpen] = useState(false);
 
 	// Sync interestedCount with real DB value once event loads
 	useEffect(() => {
@@ -139,6 +140,8 @@ export default function EventDetail() {
 				onSelectSibling={handleSelectSibling}
 				onOpenMaps={handleMaps}
 				showShare={true}
+				upcomingOpen={upcomingOpen}
+				onToggleUpcoming={() => setUpcomingOpen(o => !o)}
 			/>
 		</div>
 	);

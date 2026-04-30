@@ -69,6 +69,12 @@ export interface EventDetailViewProps {
   // Optional banner rendered above the hero (admin preview uses this for
   // the "Live preview" strip).
   headerBanner?: ReactNode;
+
+  // Controlled state for the "Upcoming events in this bar" accordion.
+  // When provided, lets the parent persist open/closed across sibling
+  // navigations (so the panel doesn't snap shut while a new event loads).
+  upcomingOpen?: boolean;
+  onToggleUpcoming?: () => void;
 }
 
 export default function EventDetailView({
@@ -85,6 +91,8 @@ export default function EventDetailView({
   showShare,
   compact = false,
   headerBanner,
+  upcomingOpen,
+  onToggleUpcoming,
 }: EventDetailViewProps) {
   const displayTitle = cleanEventTitle(event.title || "(untitled)", event.venue);
   const hasRealImage = !!event.image;
@@ -232,6 +240,8 @@ export default function EventDetailView({
               dates={siblingDates}
               activeDate={event.date}
               onSelectSibling={onSelectSibling}
+              open={upcomingOpen}
+              onToggleOpen={onToggleUpcoming}
             />
           )}
 
@@ -258,17 +268,26 @@ function UpcomingDatesAccordion({
   dates,
   activeDate,
   onSelectSibling,
+  open: controlledOpen,
+  onToggleOpen,
 }: {
   dates: string[];
   activeDate: string;
   onSelectSibling?: (date: string) => void;
+  open?: boolean;
+  onToggleOpen?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : localOpen;
+  const toggle = isControlled
+    ? (onToggleOpen ?? (() => {}))
+    : () => setLocalOpen(o => !o);
   return (
     <div className="border-b border-border">
       <button
         className="w-full flex items-center justify-between py-3.5 text-sm text-foreground hover:text-accent transition-colors"
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
       >
         <span className="font-medium">Upcoming events in this bar</span>
         <ChevronDown
