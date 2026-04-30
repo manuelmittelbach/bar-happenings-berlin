@@ -62,6 +62,7 @@ function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEv
     status: row.status,
     createdBy: row.created_by ?? undefined,
     isManual: "is_manual" in row ? (row as Tables<"events">).is_manual : false,
+    canceledBy: (row.canceled_by ?? null) as "organizer" | "admin" | null,
   };
 }
 
@@ -109,15 +110,25 @@ export async function updateVenueLinks(
   if (error) throw error;
 }
 
-export async function fetchEvents(): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
+export async function fetchEvents(untilDate?: string): Promise<BarlinEvent[]> {
+  let query = supabase
     .from("events")
     .select("*")
-    .in("status", ["approved", "canceled"])
-    .order("date")
-    .order("start_time");
+    .in("status", ["approved", "canceled"]);
+  if (untilDate) query = query.lte("date", untilDate);
+  const { data, error } = await query.order("date").order("start_time");
   if (error) throw error;
   return data.map(mapEventRow);
+}
+
+export async function hasEventsAfter(date: string): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("events")
+    .select("*", { count: "exact", head: true })
+    .in("status", ["approved", "canceled"])
+    .gt("date", date);
+  if (error) throw error;
+  return (count ?? 0) > 0;
 }
 
 export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[]> {
@@ -274,12 +285,15 @@ export async function updateEventSeries(
   if (error) throw error;
 }
 
-export async function cancelEvent(id: string): Promise<void> {
-  const { error } = await supabase.from("events").update({ status: "canceled" }).eq("id", id);
+export async function cancelEvent(id: string, by: "organizer" | "admin"): Promise<void> {
+  const { error } = await supabase
+    .from("events")
+    .update({ status: "canceled", canceled_by: by })
+    .eq("id", id);
   if (error) throw error;
 }
 
-export async function cancelEventSeries(seriesId: string, fromDate: string): Promise<void> {
+export async function cancelEventSeries(seriesId: string, fromDate: string, by: "organizer" | "admin"): Promise<void> {
   // Fetch IDs of later events in the series (date > fromDate) — these get deleted.
   const { data: laterRows, error: fetchErr } = await supabase
     .from("events")
@@ -308,7 +322,7 @@ export async function cancelEventSeries(seriesId: string, fromDate: string): Pro
   // The event at fromDate stays visible, marked as canceled.
   const { error: updateErr } = await supabase
     .from("events")
-    .update({ status: "canceled" })
+    .update({ status: "canceled", canceled_by: by })
     .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
     .eq("date", fromDate);
   if (updateErr) throw updateErr;
@@ -1206,13 +1220,17 @@ export async function approveStagedEvent(
   });
 
   if (merged.recurrence) {
-    if (!merged.recurrenceUntil) throw new Error("Recurrence until date is required");
     const freq = merged.recurrence as RecurrenceFreq;
-    const dates = generateOccurrences(merged.date, freq, merged.recurrenceUntil);
+    // Indefinite when recurrenceUntil is null/undefined: materialize next 8w
+    // window now; the extend_recurring_series cron job extends it daily.
+    const isIndefinite = !merged.recurrenceUntil;
+    const effectiveUntil = merged.recurrenceUntil
+      ?? new Date(Date.now() + 56 * 86400000).toISOString().split("T")[0];
+    const dates = generateOccurrences(merged.date, freq, effectiveUntil);
     if (dates.length === 0) throw new Error("No occurrences generated for recurring event.");
 
     const parentId = crypto.randomUUID();
-    const parentRule = formatRule(freq, merged.recurrenceUntil);
+    const parentRule = formatRule(freq, isIndefinite ? null : merged.recurrenceUntil);
     const rows: TablesInsert<"events">[] = dates.map((date, idx) =>
       baseRow({
         id: idx === 0 ? parentId : crypto.randomUUID(),

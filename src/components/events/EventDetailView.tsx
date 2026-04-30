@@ -125,7 +125,7 @@ export default function EventDetailView({
           {event.status === "canceled" && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <span className="-rotate-12 border-2 border-red-600 text-red-600 bg-background/80 font-body text-sm md:text-base font-extrabold uppercase tracking-wider px-4 py-1.5 shadow-md whitespace-nowrap">
-                Canceled by the organizer
+                {event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer"}
               </span>
             </div>
           )}

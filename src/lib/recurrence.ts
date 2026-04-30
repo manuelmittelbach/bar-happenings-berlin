@@ -4,7 +4,9 @@ export type RecurrenceFreq = "weekly" | "biweekly" | "monthly_by_weekday";
 
 export interface RecurrenceRule {
   freq: RecurrenceFreq;
-  until: string;
+  // null = indefinite (no end date). Series gets extended by the
+  // extend_recurring_series pg_cron job.
+  until: string | null;
 }
 
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -15,18 +17,18 @@ const FREQ_VALUES: RecurrenceFreq[] = ["weekly", "biweekly", "monthly_by_weekday
 export function parseRule(recurrence: string | null | undefined): RecurrenceRule | null {
   if (!recurrence) return null;
   const parts = recurrence.split(";").map((p) => p.trim()).filter(Boolean);
-  if (parts.length < 2) return null;
+  if (parts.length === 0) return null;
   const freq = parts[0] as RecurrenceFreq;
   if (!FREQ_VALUES.includes(freq)) return null;
   const untilPart = parts.find((p) => p.startsWith("until="));
-  if (!untilPart) return null;
+  if (!untilPart) return { freq, until: null };
   const until = untilPart.slice("until=".length);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return null;
   return { freq, until };
 }
 
-export function formatRule(freq: RecurrenceFreq, until: string): string {
-  return `${freq};until=${until}`;
+export function formatRule(freq: RecurrenceFreq, until: string | null): string {
+  return until ? `${freq};until=${until}` : freq;
 }
 
 function toIso(d: Date): string {

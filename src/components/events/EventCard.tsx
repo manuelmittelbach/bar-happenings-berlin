@@ -83,10 +83,11 @@ export default function EventCard({ event, layout = "grid", featured = false, on
     );
   };
 
+  const canceledLabel = event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer";
   const canceledOverlay = isCanceled ? (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
       <span className="-rotate-12 border-2 border-red-600 text-red-600 bg-background/80 font-body text-[10px] md:text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 shadow-md whitespace-nowrap">
-        Canceled by the organizer
+        {canceledLabel}
       </span>
     </div>
   ) : null;
