@@ -935,9 +935,19 @@ export async function fetchStagedEventCount(
 // archive cron eventually removes the series parent, the series survives in
 // the tab via its earliest remaining child (which still carries parent_id).
 // Scope splits by is_manual + "is row part of a series".
+//
+// Returns each row paired with its future-only sibling dates (sorted asc) so
+// the admin live preview can show the "Upcoming events in this bar" accordion
+// — the events table doesn't store recurrence_until, so we can't derive these
+// post-hoc via generateOccurrences.
+export interface ApprovedEventListItem {
+  event: BarlinEvent;
+  siblingDates: string[];
+}
+
 export async function fetchApprovedEvents(
   scope: StagedEventScope = "any",
-): Promise<BarlinEvent[]> {
+): Promise<ApprovedEventListItem[]> {
   const today = new Date().toISOString().slice(0, 10);
   let query = supabase
     .from("events")
@@ -956,8 +966,11 @@ export async function fetchApprovedEvents(
   // parent's uuid (children reference it via parent_id; the parent — if still
   // alive — has parent_id='' and uses its own id as the key).
   const byKey = new Map<string, Tables<"events">>();
+  // All future dates per series (deduped, sorted) — used by the admin preview.
+  const datesByKey = new Map<string, Set<string>>();
   for (const row of data) {
     const seriesKey = row.parent_id || row.id;
+    if (row.date) (datesByKey.get(seriesKey) ?? datesByKey.set(seriesKey, new Set()).get(seriesKey)!).add(row.date);
     const existing = byKey.get(seriesKey);
     if (!existing) {
       byKey.set(seriesKey, row);
@@ -979,11 +992,15 @@ export async function fetchApprovedEvents(
 
   return Array.from(byKey.values())
     .filter(matchesScope)
-    .map(mapEventRow)
+    .map((row): ApprovedEventListItem => {
+      const seriesKey = row.parent_id || row.id;
+      const dates = Array.from(datesByKey.get(seriesKey) ?? []).sort();
+      return { event: mapEventRow(row), siblingDates: dates };
+    })
     .sort((a, b) =>
-      a.venue.localeCompare(b.venue, "de", { sensitivity: "base" })
-      || a.date.localeCompare(b.date)
-      || (a.startTime ?? "").localeCompare(b.startTime ?? ""),
+      a.event.venue.localeCompare(b.event.venue, "de", { sensitivity: "base" })
+      || a.event.date.localeCompare(b.event.date)
+      || (a.event.startTime ?? "").localeCompare(b.event.startTime ?? ""),
     );
 }
 
