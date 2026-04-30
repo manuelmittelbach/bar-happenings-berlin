@@ -63,7 +63,6 @@ function eventToAdminStaged(event: BarlinEvent): StagedEvent {
     sourceUrl: event.url || null,
     status: "approved",
     scrapedAt: "",
-    reviewedAt: null,
     isManual: event.isManual,
     createdByAdmin: false,
     recurrence: event.recurrence,
@@ -225,7 +224,7 @@ export default function AdminDashboard() {
         const events = await fetchApprovedEvents("scraped");
         setScrapedEvents(events.map(eventToAdminStaged));
       } else {
-        setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
+        setScrapedEvents(await fetchStagedEvents("scraped"));
       }
     } catch {
       toast.error("Failed to load scraped events.");
@@ -241,7 +240,7 @@ export default function AdminDashboard() {
         const events = await fetchApprovedEvents("manual");
         setManualEvents(events.map(eventToAdminStaged));
       } else {
-        setManualEvents(await fetchStagedEvents(manualFilter, "manual"));
+        setManualEvents(await fetchStagedEvents("manual"));
       }
     } catch {
       toast.error("Failed to load manual events.");
@@ -257,7 +256,7 @@ export default function AdminDashboard() {
         const events = await fetchApprovedEvents("recurring");
         setRecurringEvents(events.map(eventToAdminStaged));
       } else {
-        setRecurringEvents(await fetchStagedEvents(recurringFilter, "recurring"));
+        setRecurringEvents(await fetchStagedEvents("recurring"));
       }
     } catch {
       toast.error("Failed to load recurring events.");
@@ -287,9 +286,9 @@ export default function AdminDashboard() {
   const loadPendingEventCounts = useCallback(async () => {
     try {
       const [scraped, manual, recurring] = await Promise.all([
-        fetchStagedEventCount("pending", "scraped"),
-        fetchStagedEventCount("pending", "manual"),
-        fetchStagedEventCount("pending", "recurring"),
+        fetchStagedEventCount("scraped"),
+        fetchStagedEventCount("manual"),
+        fetchStagedEventCount("recurring"),
       ]);
       setScrapedPendingCount(scraped);
       setManualPendingCount(manual);
@@ -485,7 +484,7 @@ export default function AdminDashboard() {
   const handleRejectStaged = async (staged: StagedEvent) => {
     if (!user) return;
     try {
-      await rejectStagedEvent(staged.id, user.id);
+      await rejectStagedEvent(staged.id);
       toast.error(`"${staged.title}" rejected`);
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
@@ -855,7 +854,6 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="manual"
-              hideRejectedFilter
             />
           )}
 
@@ -881,7 +879,6 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="recurring"
-              hideRejectedFilter
             />
           )}
 
@@ -1328,8 +1325,6 @@ function StagedEventCard({
   const statusPill =
     staged.status === "approved"
       ? "bg-green-500/10 text-green-600"
-      : staged.status === "rejected"
-      ? "bg-red-500/10 text-red-600"
       : "bg-yellow-500/10 text-yellow-600";
 
   const collectEdits = (): StagedEventEdits => ({
@@ -1890,7 +1885,6 @@ function StagedEventsList({
   onSourceUrlChange,
   onSaveApproved,
   emptyLabel,
-  hideRejectedFilter,
 }: {
   events: StagedEvent[];
   loading: boolean;
@@ -1912,11 +1906,8 @@ function StagedEventsList({
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   emptyLabel: string;
-  hideRejectedFilter?: boolean;
 }) {
-  const pills: StagedEventStatusFilter[] = hideRejectedFilter
-    ? ["pending", "approved"]
-    : ["pending", "rejected", "approved"];
+  const pills: StagedEventStatusFilter[] = ["pending", "approved"];
 
   return (
     <div className="space-y-3">

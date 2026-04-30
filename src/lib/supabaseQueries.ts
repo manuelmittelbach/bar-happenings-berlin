@@ -840,11 +840,9 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     description: row.description ?? "",
     entryInfo: row.entry_info ?? "",
     sourceUrl: row.source_url,
-    // Status is derived: reviewed_at set means rejected (rejectStagedEvent
-    // stamps it), otherwise pending. Approved rows no longer live here.
-    status: row.reviewed_at ? "rejected" : "pending",
+    // All staging rows are pending — approved live in `events`, reject deletes.
+    status: "pending",
     scrapedAt: row.scraped_at,
-    reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
     createdByAdmin: row.created_by_admin ?? false,
     recurrence: row.recurrence ?? "",
@@ -884,20 +882,14 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
   return map;
 }
 
-// Counts pending or rejected staging rows. Approved rows no longer live here
-// (they're in `events`), so the filter is restricted to those two states.
+// Counts staging rows for the given scope. Staging only holds pending events
+// (approved live in `events`, rejected get deleted), so no status filter.
 export async function fetchStagedEventCount(
-  statusFilter: "pending" | "rejected",
   scope: StagedEventScope = "any",
 ): Promise<number> {
   let query = supabase
     .from("venue_events_staging")
     .select("*", { count: "exact", head: true });
-  if (statusFilter === "pending") {
-    query = query.is("reviewed_at", null);
-  } else {
-    query = query.not("reviewed_at", "is", null);
-  }
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
@@ -967,21 +959,15 @@ export async function fetchApprovedEvents(
     );
 }
 
+// Returns all pending staging rows for the scope. Approved is served by
+// fetchApprovedEvents (reads `events`); rejected rows don't exist (delete).
 export async function fetchStagedEvents(
-  statusFilter: "pending" | "rejected" = "pending",
   scope: StagedEventScope = "any",
 ): Promise<StagedEvent[]> {
   let query = supabase
     .from("venue_events_staging")
     .select("*, venues!inner(name, address, neighborhood)");
 
-  // Approved is served by fetchApprovedEvents (reads `events`); this query
-  // only handles pending/rejected on the staging table.
-  if (statusFilter === "pending") {
-    query = query.is("reviewed_at", null);
-  } else {
-    query = query.not("reviewed_at", "is", null);
-  }
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
@@ -1190,18 +1176,14 @@ export async function approveStagedEvent(
   if (deleteError) throw deleteError;
 }
 
-export async function rejectStagedEvent(
-  stagedId: string,
-  adminUserId: string,
-): Promise<void> {
-  // Stamping reviewed_at is what marks the row as rejected — no separate
-  // status column anymore.
+// Reject hard-deletes the row from staging — no soft-state. The scraper's
+// dedup is keyed on the live `events` table + remaining staging rows; once
+// gone, a subsequent scrape may re-stage the same event (which is fine, the
+// admin can reject again or approve it this time).
+export async function rejectStagedEvent(stagedId: string): Promise<void> {
   const { error } = await supabase
     .from("venue_events_staging")
-    .update({
-      reviewed_by: adminUserId,
-      reviewed_at: new Date().toISOString(),
-    })
+    .delete()
     .eq("id", stagedId);
   if (error) throw error;
 }
