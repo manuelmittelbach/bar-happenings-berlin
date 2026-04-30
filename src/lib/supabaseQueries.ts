@@ -841,6 +841,7 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     scrapedAt: row.scraped_at,
     reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
+    createdByAdmin: row.created_by_admin ?? false,
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
     eventsId: row.events_id ?? null,
@@ -933,13 +934,18 @@ export async function createBlankManualStagedEvent(
   sourceUrl: string | null = null,
 ): Promise<StagedEvent> {
   const id = crypto.randomUUID();
+  // Scraped tab: row stays in scraped (is_manual=false) but is flagged
+  // created_by_admin so the "Created manually" badge shows. Manual/recurring
+  // tabs keep is_manual=true (their tab filter requires it).
+  const isManual = scope !== "scraped";
   const { error } = await supabase
     .from("venue_events_staging")
     .insert({
       id,
       venue_id: venueId,
       status: "pending",
-      is_manual: true,
+      is_manual: isManual,
+      created_by_admin: true,
       source_url: sourceUrl,
       recurrence: scope === "recurring" ? "weekly" : "",
       recurrence_until: null,
@@ -958,6 +964,7 @@ export async function createBlankManualStagedEvent(
 export async function duplicateStagedEvent(
   source: StagedEvent,
   edits?: StagedEventEdits,
+  scope: "scraped" | "manual" | "recurring" = "scraped",
 ): Promise<StagedEvent> {
   const id = crypto.randomUUID();
   const merged = {
@@ -972,6 +979,14 @@ export async function duplicateStagedEvent(
     recurrence: edits?.recurrence ?? source.recurrence,
     recurrenceUntil: edits?.recurrenceUntil !== undefined ? edits.recurrenceUntil : source.recurrenceUntil,
   };
+  // Scope drives where the duplicate appears:
+  //   scraped   -> is_manual=false, recurrence='' (stays in scraped tab)
+  //   manual    -> is_manual=true,  recurrence='' (stays in manual tab)
+  //   recurring -> is_manual=true,  recurrence kept non-empty
+  // created_by_admin always true so the "Created manually" badge shows.
+  const isManual = scope !== "scraped";
+  const recurrence = scope === "recurring" ? (merged.recurrence || "weekly") : "";
+  const recurrenceUntil = scope === "recurring" ? merged.recurrenceUntil : null;
   const { error } = await supabase
     .from("venue_events_staging")
     .insert({
@@ -987,9 +1002,10 @@ export async function duplicateStagedEvent(
       entry_info: merged.entryInfo || null,
       source_url: edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl,
       status: "pending",
-      is_manual: true,
-      recurrence: merged.recurrence,
-      recurrence_until: merged.recurrenceUntil,
+      is_manual: isManual,
+      created_by_admin: true,
+      recurrence,
+      recurrence_until: recurrenceUntil,
     });
   if (error) throw error;
 

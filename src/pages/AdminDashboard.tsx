@@ -446,7 +446,6 @@ export default function AdminDashboard() {
         setRecurringFilter("pending");
         setRecurringEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
       } else {
-        // Force a status pill (not "Created Manually") so the new pending blank shows up
         if (scrapedFilter !== "pending") setScrapedFilter("pending");
         setScrapedEvents(prev => [created, ...prev.filter(s => s.id !== created.id)]);
       }
@@ -457,17 +456,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDuplicateStaged = async (source: StagedEvent, edits: StagedEventEdits) => {
+  const handleDuplicateStaged = async (
+    source: StagedEvent,
+    edits: StagedEventEdits,
+    scope: "scraped" | "manual" | "recurring",
+  ) => {
     try {
-      const created = await duplicateStagedEvent(source, edits);
+      const created = await duplicateStagedEvent(source, edits, scope);
       const insertAfterSource = (prev: StagedEvent[]) => {
         const idx = prev.findIndex(s => s.id === source.id);
         if (idx === -1) return [created, ...prev];
         return [...prev.slice(0, idx + 1), created, ...prev.slice(idx + 1)];
       };
-      if (created.recurrence) {
+      if (scope === "recurring") {
         setRecurringEvents(insertAfterSource);
-      } else if (created.isManual) {
+      } else if (scope === "manual") {
         setManualEvents(insertAfterSource);
       } else {
         setScrapedEvents(insertAfterSource);
@@ -731,6 +734,7 @@ export default function AdminDashboard() {
               query={scrapedQuery}
               onQueryChange={setScrapedQuery}
               venues={venues}
+              scope="scraped"
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
               onReject={handleRejectStaged}
@@ -752,6 +756,7 @@ export default function AdminDashboard() {
               onQueryChange={setManualQuery}
               onCreateBlank={() => handleCreateBlank("manual")}
               venues={venues}
+              scope="manual"
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
               onReject={handleRejectStaged}
@@ -777,6 +782,7 @@ export default function AdminDashboard() {
               showRecurrenceEditor={true}
               onRecurrenceChange={handleRecurrenceChange}
               venues={venues}
+              scope="recurring"
               liveEventsByVenue={liveEventsByVenue}
               onApprove={handleApproveStaged}
               onReject={handleRejectStaged}
@@ -1366,6 +1372,11 @@ function StagedEventCard({
             <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
           )}
           <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
+          {staged.createdByAdmin && (
+            <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
+              Created manually
+            </span>
+          )}
           {!isPending && (
             <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
               {staged.status}
@@ -1787,6 +1798,7 @@ function StagedEventsList({
   onRecurrenceChange,
   liveEventsByVenue,
   venues,
+  scope,
   onApprove,
   onReject,
   onCancel,
@@ -1808,10 +1820,11 @@ function StagedEventsList({
   onRecurrenceChange?: (id: string, patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   liveEventsByVenue: Record<string, LiveEventInfo[]>;
   venues: Venue[];
+  scope: "scraped" | "manual" | "recurring";
   onApprove: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onReject: (s: StagedEvent) => Promise<void>;
   onCancel?: (s: StagedEvent) => Promise<void>;
-  onDuplicate: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
+  onDuplicate: (s: StagedEvent, edits: StagedEventEdits, scope: "scraped" | "manual" | "recurring") => Promise<void>;
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
@@ -1890,7 +1903,7 @@ function StagedEventsList({
               onApprove={(edits) => onApprove(staged, edits)}
               onReject={() => onReject(staged)}
               onCancel={onCancel ? () => onCancel(staged) : undefined}
-              onDuplicate={(edits) => onDuplicate(staged, edits)}
+              onDuplicate={(edits) => onDuplicate(staged, edits, scope)}
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
