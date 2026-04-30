@@ -103,7 +103,8 @@
       "Bash(echo \"Exit code: $?\")",
       "Bash(echo \"Done with exit: $?\")",
       "Bash(bun add *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

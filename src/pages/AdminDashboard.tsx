@@ -2,12 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
-import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
-import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
-import { cleanEventTitle } from "@/lib/cleanTitle";
-import { endsNextDay } from "@/lib/eventStatus";
+import { generateOccurrences, formatRecurrenceLabel, type RecurrenceFreq } from "@/lib/recurrence";
+import { formatDateShort, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
+import EventDetailView from "@/components/events/EventDetailView";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, MapPin, Users, Repeat } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -57,6 +56,7 @@ function eventToAdminStaged(event: BarlinEvent): StagedEvent {
     date: event.date,
     startTime: event.startTime || null,
     endTime: event.endTime ?? null,
+    doorsTime: event.doorsTime ?? null,
     category: event.category,
     language: event.language,
     description: event.description,
@@ -68,6 +68,7 @@ function eventToAdminStaged(event: BarlinEvent): StagedEvent {
     createdByAdmin: false,
     recurrence: event.recurrence,
     recurrenceUntil: null,
+    interestedCount: event.interestedCount,
   };
 }
 
@@ -1966,10 +1967,10 @@ function StagedEventCard({
 }
 
 function StagedEventPreview({ staged }: { staged: StagedEvent }) {
-  const displayTitle = cleanEventTitle(staged.title || "(untitled)", staged.venueName);
-  const detailsLine = [staged.entryInfo, staged.language ? `in ${staged.language}` : ""]
-    .filter(Boolean)
-    .join(" · ");
+  // Synthesize a BarlinEvent-shaped object from the staged row so we can reuse
+  // the same EventDetailView the public /event/:id page renders. The only
+  // intentional difference vs. the live page is the disabled Interested
+  // button + hidden Share menu (admin can't act-as-user from preview).
   const handleMaps = () => {
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(staged.venueAddress || staged.venueName)}`,
@@ -1978,92 +1979,63 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
     );
   };
 
+  // Future-only occurrences for recurring staged events. Approved events
+  // shown in admin via eventToAdminStaged also carry recurrence on the
+  // wrapped row, so the same generator works for both.
+  const today = new Date();
+  today.setHours(6, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+  const siblingDates: string[] = (() => {
+    if (!staged.date || !staged.recurrence || !staged.recurrenceUntil) return [];
+    try {
+      return generateOccurrences(staged.date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil)
+        .filter(d => d >= todayStr);
+    } catch {
+      return [];
+    }
+  })();
+
+  const event = {
+    id: staged.id,
+    title: staged.title,
+    venue: staged.venueName,
+    address: staged.venueAddress,
+    neighborhood: staged.venueNeighborhood,
+    date: staged.date,
+    startTime: staged.startTime ?? "",
+    endTime: staged.endTime ?? undefined,
+    doorsTime: staged.doorsTime ?? undefined,
+    category: staged.category ?? "",
+    language: staged.language,
+    description: staged.description,
+    entryInfo: staged.entryInfo,
+    url: staged.sourceUrl ?? "",
+    image: undefined,
+    imagePosition: "50% 50%",
+    status: staged.status,
+  };
+
   return (
-    <div className="border border-border rounded-sm overflow-hidden bg-background">
-      <div className="px-3 py-1.5 bg-muted/60 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-        Live preview
-      </div>
-      <div className="relative h-[120px] bg-muted overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-      </div>
-      <div className="px-4 pt-3 pb-1">
-        <h3 className="font-body text-lg font-extrabold leading-[1.1] tracking-tight">{displayTitle}</h3>
-      </div>
-      <div className="px-4 pb-3 pt-2">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            disabled
-            className="h-10 px-5 flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-body rounded-full border-2 bg-transparent text-foreground border-accent opacity-90 cursor-default"
-          >
-            <Plus className="h-4 w-4" /> Interested
-          </button>
-          <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
-            <Users className="h-4 w-4" /> 0
-          </span>
-        </div>
-      </div>
-      <div className="border-t border-border mx-4" />
-      <div className="px-4 pt-3 pb-3 flex items-start gap-4">
-        <div className="flex-1 min-w-0">
-          {staged.date ? (
-            <p className="font-body font-bold text-sm">{formatDateWithDay(staged.date)}</p>
-          ) : (
-            <p className="font-body font-bold text-sm text-muted-foreground italic">(no date)</p>
-          )}
-          {staged.startTime ? (
-            <p className="text-foreground font-mono text-sm mt-0.5">
-              {staged.startTime}{staged.endTime ? ` – ${staged.endTime}` : ""}
-              {endsNextDay(staged.startTime ?? undefined, staged.endTime ?? undefined) && (
-                <span className="text-muted-foreground text-xs ml-1">(next day)</span>
-              )}
-            </p>
-          ) : (
-            <p className="text-muted-foreground font-mono text-xs mt-0.5 italic">
-              No info on start time
-            </p>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 text-left">
-          <p className="font-body font-bold text-sm truncate">{staged.venueName}</p>
-          {staged.venueAddress && (
-            <p className="text-muted-foreground text-[13px] mt-0.5">
-              {staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
-            </p>
-          )}
-          <p className="text-muted-foreground text-[13px] mt-0.5 flex items-center gap-1">
-            <MapPin className="h-3 w-3 shrink-0" /> {staged.venueNeighborhood}
-          </p>
-          <div className="mt-1 flex items-center gap-2 text-xs font-mono text-accent">
-            <button onClick={handleMaps} className="cursor-pointer hover:underline">
-              Open in Maps
-            </button>
+    <div className="border border-border rounded-sm overflow-hidden">
+      <EventDetailView
+        event={event}
+        siblingDates={siblingDates}
+        recurrenceLabel={formatRecurrenceLabel(staged.recurrence)}
+        interestedCount={staged.interestedCount ?? 0}
+        // Admins always see the count for moderation context, regardless of
+        // SHOW_INTEREST_COUNT (which gates the public-facing display).
+        showInterestCount
+        saved={false}
+        isSaving={false}
+        onOpenMaps={handleMaps}
+        showShare={false}
+        compact
+        headerBanner={
+          <div className="px-3 py-1.5 bg-muted/60 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            Live preview
           </div>
-        </div>
-      </div>
-      <div className="border-t border-border mx-4" />
-      <div className="px-4 py-4 space-y-3">
-        <h4 className="font-body text-xs font-bold uppercase tracking-[0.12em]">About this event</h4>
-        {detailsLine && <p className="text-xs text-muted-foreground">{detailsLine}</p>}
-        {staged.description ? (
-          staged.description.split("\n\n").map((p, i) => (
-            <p key={i} className="text-sm text-muted-foreground/80 leading-[1.7] font-body">{p}</p>
-          ))
-        ) : (
-          <p className="text-xs italic text-muted-foreground/70">(no description)</p>
-        )}
-      </div>
-      {staged.sourceUrl && (
-        <a
-          href={staged.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center justify-between mx-4 py-3 border-t border-border text-sm text-foreground hover:text-accent transition-colors"
-        >
-          <span className="font-medium">Event link</span>
-          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
-        </a>
-      )}
+        }
+      />
     </div>
   );
 }
