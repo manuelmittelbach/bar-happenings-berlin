@@ -26,6 +26,7 @@ import {
   updateVenueLinks,
   fetchStagedEvents,
   fetchStagedEventCount,
+  fetchApprovedEvents,
   approveStagedEvent,
   rejectStagedEvent,
   deleteStagedEvent,
@@ -34,11 +35,40 @@ import {
   createBlankManualStagedEvent,
   duplicateStagedEvent,
   updateStagedEventManualFields,
-  updateApprovedStagedEvent,
+  updateApprovedEvent,
   type OrganizerAccount,
   type LiveEventInfo,
 } from "@/lib/supabaseQueries";
-import type { StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
+
+// Approved events live in the `events` table. To keep the existing card UI
+// working, adapt them to the StagedEvent shape used by StagedEventCard.
+// `status: "approved"` is the virtual marker — staging never stores that.
+function eventToAdminStaged(event: BarlinEvent): StagedEvent {
+  return {
+    id: event.id,
+    venueId: event.venueId,
+    venueName: event.venue,
+    venueAddress: event.address,
+    venueNeighborhood: event.neighborhood,
+    title: event.title,
+    date: event.date,
+    startTime: event.startTime || null,
+    endTime: event.endTime ?? null,
+    category: event.category,
+    language: event.language,
+    description: event.description,
+    entryInfo: event.entryInfo,
+    sourceUrl: event.url || null,
+    status: "approved",
+    scrapedAt: "",
+    reviewedAt: null,
+    isManual: event.isManual,
+    createdByAdmin: false,
+    recurrence: event.recurrence,
+    recurrenceUntil: null,
+  };
+}
 
 type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
@@ -184,10 +214,18 @@ export default function AdminDashboard() {
   // Loaders take a { silent } option: silent=true skips toggling the loading
   // state, so a background refresh (e.g. realtime-triggered reload after a
   // duplicate or a scrape insert) doesn't unmount the cards and reset scroll.
+  // Approved-filter reads from `events` (single source of truth post-approval);
+  // pending/rejected/all stay on `venue_events_staging`. Adapter converts the
+  // BarlinEvent shape so the existing StagedEventCard UI works unchanged.
   const loadScrapedEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!silent) setScrapedLoading(true);
     try {
-      setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
+      if (scrapedFilter === "approved") {
+        const events = await fetchApprovedEvents("scraped");
+        setScrapedEvents(events.map(eventToAdminStaged));
+      } else {
+        setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
+      }
     } catch {
       toast.error("Failed to load scraped events.");
     } finally {
@@ -198,7 +236,12 @@ export default function AdminDashboard() {
   const loadManualEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!silent) setManualLoading(true);
     try {
-      setManualEvents(await fetchStagedEvents(manualFilter, "manual"));
+      if (manualFilter === "approved") {
+        const events = await fetchApprovedEvents("manual");
+        setManualEvents(events.map(eventToAdminStaged));
+      } else {
+        setManualEvents(await fetchStagedEvents(manualFilter, "manual"));
+      }
     } catch {
       toast.error("Failed to load manual events.");
     } finally {
@@ -209,7 +252,12 @@ export default function AdminDashboard() {
   const loadRecurringEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!silent) setRecurringLoading(true);
     try {
-      setRecurringEvents(await fetchStagedEvents(recurringFilter, "recurring"));
+      if (recurringFilter === "approved") {
+        const events = await fetchApprovedEvents("recurring");
+        setRecurringEvents(events.map(eventToAdminStaged));
+      } else {
+        setRecurringEvents(await fetchStagedEvents(recurringFilter, "recurring"));
+      }
     } catch {
       toast.error("Failed to load recurring events.");
     } finally {
@@ -578,7 +626,12 @@ export default function AdminDashboard() {
 
   const handleSaveApprovedStaged = async (staged: StagedEvent, edits: StagedEventEdits) => {
     try {
-      await updateApprovedStagedEvent(staged, edits, venues);
+      // Approved events live in `events` — staged.id IS the event id (set by
+      // the adapter). Recurring parents apply edits across the series.
+      const isSeriesParent = !!staged.recurrence;
+      await updateApprovedEvent(staged.id, edits, venues, isSeriesParent);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", staged.id] });
       toast.success("Event updated");
       const newVenue = edits.venueId ? venues.find(v => v.id === edits.venueId) : null;
       const apply = (prev: StagedEvent[]) =>
@@ -1254,8 +1307,7 @@ function StagedEventCard({
 
   const isPending = staged.status === "pending";
   const isApproved = staged.status === "approved";
-  const isOrphanedApproved = isApproved && !staged.eventsId;
-  const canEdit = isPending || (isApproved && !!staged.eventsId);
+  const canEdit = isPending || isApproved;
   const isManual = staged.isManual;
   const canEditManualFields = canEdit && (isManual || isApproved);
   const isDirty =
@@ -1380,11 +1432,6 @@ function StagedEventCard({
 
   return (
     <div className="border border-border rounded-sm p-4 space-y-3">
-      {isOrphanedApproved && (
-        <p className="text-xs text-muted-foreground italic border border-border rounded-sm px-2 py-1.5 bg-muted/30">
-          Cannot edit — link to live event missing.
-        </p>
-      )}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
           {canEditManualFields ? (

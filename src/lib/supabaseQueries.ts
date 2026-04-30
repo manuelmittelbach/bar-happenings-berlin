@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatus, StagedEventStatusFilter, Venue } from "@/types/event";
+import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, StagedEventStatusFilter, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { geocodeAddress } from "@/lib/geocoding";
 
@@ -36,6 +36,7 @@ function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEv
     interestedCount: row.interested_count ?? 0,
     status: row.status,
     createdBy: row.created_by ?? undefined,
+    isManual: "is_manual" in row ? (row as Tables<"events">).is_manual : false,
   };
 }
 
@@ -160,6 +161,7 @@ function buildEventRow(
     image_position: formData.imagePosition,
     created_by: userId,
     status: "approved",
+    is_manual: true,
   };
 }
 
@@ -837,14 +839,15 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     description: row.description ?? "",
     entryInfo: row.entry_info ?? "",
     sourceUrl: row.source_url,
-    status: row.status as StagedEventStatus,
+    // Status is derived: reviewed_at set means rejected (rejectStagedEvent
+    // stamps it), otherwise pending. Approved rows no longer live here.
+    status: row.reviewed_at ? "rejected" : "pending",
     scrapedAt: row.scraped_at,
     reviewedAt: row.reviewed_at,
     isManual: row.is_manual ?? false,
     createdByAdmin: row.created_by_admin ?? false,
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
-    eventsId: row.events_id ?? null,
   };
 }
 
@@ -880,14 +883,20 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
   return map;
 }
 
+// Counts pending or rejected staging rows. Approved rows no longer live here
+// (they're in `events`), so the filter is restricted to those two states.
 export async function fetchStagedEventCount(
-  statusFilter: StagedEventStatus,
+  statusFilter: "pending" | "rejected",
   scope: StagedEventScope = "any",
 ): Promise<number> {
   let query = supabase
     .from("venue_events_staging")
-    .select("*", { count: "exact", head: true })
-    .eq("status", statusFilter);
+    .select("*", { count: "exact", head: true });
+  if (statusFilter === "pending") {
+    query = query.is("reviewed_at", null);
+  } else {
+    query = query.not("reviewed_at", "is", null);
+  }
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
@@ -900,6 +909,37 @@ export async function fetchStagedEventCount(
   return count ?? 0;
 }
 
+// Approved events live in `events` (not staging). The Approved tab in admin
+// shows only upcoming, parent-only rows (1 row per series). Scope splits by
+// is_manual + recurrence — same semantics as the staging-side filter.
+export async function fetchApprovedEvents(
+  scope: StagedEventScope = "any",
+): Promise<BarlinEvent[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  let query = supabase
+    .from("events")
+    .select("*")
+    .eq("status", "approved")
+    .gte("date", today)
+    .eq("parent_id", "");
+  if (scope === "manual") {
+    query = query.eq("is_manual", true).eq("recurrence", "");
+  } else if (scope === "scraped") {
+    query = query.eq("is_manual", false).eq("recurrence", "");
+  } else if (scope === "recurring") {
+    query = query.neq("recurrence", "");
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data
+    .map(mapEventRow)
+    .sort((a, b) =>
+      a.venue.localeCompare(b.venue, "de", { sensitivity: "base" })
+      || a.date.localeCompare(b.date)
+      || (a.startTime ?? "").localeCompare(b.startTime ?? ""),
+    );
+}
+
 export async function fetchStagedEvents(
   statusFilter: StagedEventStatusFilter = "pending",
   scope: StagedEventScope = "any",
@@ -908,8 +948,12 @@ export async function fetchStagedEvents(
     .from("venue_events_staging")
     .select("*, venues!inner(name, address, neighborhood)");
 
-  if (statusFilter !== "all") {
-    query = query.eq("status", statusFilter);
+  // Approved is served by fetchApprovedEvents (reads `events`); this query
+  // only knows pending/rejected/all on the staging table.
+  if (statusFilter === "pending") {
+    query = query.is("reviewed_at", null);
+  } else if (statusFilter === "rejected") {
+    query = query.not("reviewed_at", "is", null);
   }
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
@@ -943,7 +987,6 @@ export async function createBlankManualStagedEvent(
     .insert({
       id,
       venue_id: venueId,
-      status: "pending",
       is_manual: isManual,
       created_by_admin: true,
       source_url: sourceUrl,
@@ -1001,7 +1044,6 @@ export async function duplicateStagedEvent(
       description: merged.description || null,
       entry_info: merged.entryInfo || null,
       source_url: edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl,
-      status: "pending",
       is_manual: isManual,
       created_by_admin: true,
       recurrence,
@@ -1080,9 +1122,8 @@ export async function approveStagedEvent(
     status: "approved",
     approved_by: adminUserId,
     approved_at: new Date().toISOString(),
+    is_manual: staged.isManual,
   });
-
-  let parentEventId: string;
 
   if (merged.recurrence) {
     if (!merged.recurrenceUntil) throw new Error("Recurrence until date is required");
@@ -1102,7 +1143,6 @@ export async function approveStagedEvent(
     );
     const { error: insertError } = await supabase.from("events").insert(rows);
     if (insertError) throw insertError;
-    parentEventId = parentId;
   } else {
     const eventRow = baseRow({
       id: crypto.randomUUID(),
@@ -1112,29 +1152,26 @@ export async function approveStagedEvent(
     });
     const { error: insertError } = await supabase.from("events").insert(eventRow);
     if (insertError) throw insertError;
-    parentEventId = eventRow.id;
   }
 
-  const { error: updateError } = await supabase
+  // Approval moves the event to `events`; the staging row is no longer needed.
+  // `events` is the single source of truth for approved events from now on.
+  const { error: deleteError } = await supabase
     .from("venue_events_staging")
-    .update({
-      status: "approved",
-      reviewed_by: adminUserId,
-      reviewed_at: new Date().toISOString(),
-      events_id: parentEventId,
-    })
+    .delete()
     .eq("id", staged.id);
-  if (updateError) throw updateError;
+  if (deleteError) throw deleteError;
 }
 
 export async function rejectStagedEvent(
   stagedId: string,
   adminUserId: string,
 ): Promise<void> {
+  // Stamping reviewed_at is what marks the row as rejected — no separate
+  // status column anymore.
   const { error } = await supabase
     .from("venue_events_staging")
     .update({
-      status: "rejected",
       reviewed_by: adminUserId,
       reviewed_at: new Date().toISOString(),
     })
@@ -1150,70 +1187,62 @@ export async function deleteStagedEvent(stagedId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function updateApprovedStagedEvent(
-  staged: StagedEvent,
+// Updates an approved event directly in the `events` table. Replaces the
+// previous staging-side update — approved events live only in `events` now.
+// For a recurring series parent, non-date/time fields apply to the whole
+// series; date and start/end time stay on the parent occurrence only.
+export async function updateApprovedEvent(
+  eventId: string,
   edits: StagedEventEdits,
   venues: Venue[],
+  isSeriesParent: boolean,
 ): Promise<void> {
-  if (!staged.eventsId) {
-    throw new Error("Cannot edit — no link to live event");
-  }
-  const newVenueId = edits.venueId ?? staged.venueId;
-  const venue = venues.find(v => v.id === newVenueId);
+  if (!edits.venueId) throw new Error("Venue is required");
+  const venue = venues.find(v => v.id === edits.venueId);
   if (!venue) throw new Error("Venue not found");
+  if (!edits.title?.trim()) throw new Error("Title is required");
+  if (!edits.date) throw new Error("Date is required");
+  if (!edits.category) throw new Error("Category is required");
 
-  const merged = {
-    title: edits.title ?? staged.title,
-    date: edits.date ?? staged.date,
-    startTime: edits.startTime !== undefined ? edits.startTime : staged.startTime,
-    endTime: edits.endTime !== undefined ? edits.endTime : staged.endTime,
-    category: edits.category !== undefined ? edits.category : staged.category,
-    language: edits.language ?? staged.language,
-    description: edits.description ?? staged.description,
-    entryInfo: edits.entryInfo ?? staged.entryInfo,
-    sourceUrl: edits.sourceUrl !== undefined ? edits.sourceUrl : staged.sourceUrl,
-  };
-
-  if (!merged.title.trim()) throw new Error("Title is required");
-  if (!merged.date) throw new Error("Date is required");
-  if (!merged.category) throw new Error("Category is required");
-
-  const eventsUpdate: TablesUpdate<"events"> = {
-    title: merged.title,
-    date: merged.date,
-    start_time: merged.startTime ? trimTime(merged.startTime) : null,
-    end_time: merged.endTime ? trimTime(merged.endTime) : null,
-    category: merged.category,
-    language: merged.language || null,
-    description: merged.description || null,
-    entry_info: merged.entryInfo || null,
-    url: merged.sourceUrl,
+  const seriesWide: TablesUpdate<"events"> = {
+    title: edits.title,
+    category: edits.category,
+    language: edits.language || null,
+    description: edits.description || null,
+    entry_info: edits.entryInfo || null,
+    url: edits.sourceUrl ?? null,
     venue: venue.name,
     venue_id: venue.id,
     address: venue.address,
     neighborhood: venue.neighborhood,
   };
-  const { error: eventsErr } = await supabase
-    .from("events")
-    .update(eventsUpdate)
-    .eq("id", staged.eventsId);
-  if (eventsErr) throw eventsErr;
 
-  const stagingUpdate: TablesUpdate<"venue_events_staging"> = {
-    title: merged.title,
-    date: merged.date,
-    start_time: merged.startTime ? trimTime(merged.startTime) : null,
-    end_time: merged.endTime ? trimTime(merged.endTime) : null,
-    category: merged.category,
-    language: merged.language || null,
-    description: merged.description || null,
-    entry_info: merged.entryInfo || null,
-    source_url: merged.sourceUrl,
-    venue_id: venue.id,
+  if (isSeriesParent) {
+    const { error: seriesErr } = await supabase
+      .from("events")
+      .update(seriesWide)
+      .or(`id.eq.${eventId},parent_id.eq.${eventId}`);
+    if (seriesErr) throw seriesErr;
+
+    const parentOnly: TablesUpdate<"events"> = {
+      date: edits.date,
+      start_time: edits.startTime ? trimTime(edits.startTime) : null,
+      end_time: edits.endTime ? trimTime(edits.endTime) : null,
+    };
+    const { error: parentErr } = await supabase
+      .from("events")
+      .update(parentOnly)
+      .eq("id", eventId);
+    if (parentErr) throw parentErr;
+    return;
+  }
+
+  const update: TablesUpdate<"events"> = {
+    ...seriesWide,
+    date: edits.date,
+    start_time: edits.startTime ? trimTime(edits.startTime) : null,
+    end_time: edits.endTime ? trimTime(edits.endTime) : null,
   };
-  const { error: stagingErr } = await supabase
-    .from("venue_events_staging")
-    .update(stagingUpdate)
-    .eq("id", staged.id);
-  if (stagingErr) throw stagingErr;
+  const { error } = await supabase.from("events").update(update).eq("id", eventId);
+  if (error) throw error;
 }
