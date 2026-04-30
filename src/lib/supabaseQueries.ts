@@ -1120,6 +1120,24 @@ export async function updateStagedEventManualFields(
   if (error) throw error;
 }
 
+// Reclassifies a scraped staging row as a recurring one by flipping the
+// scope-defining columns. The row stays put — only `is_manual`, `recurrence`,
+// and `created_by_admin` change — so the realtime listener on
+// venue_events_staging then routes the row to the Recurring tab on next fetch.
+// recurrence_until stays null; the admin fills it in (and edits the freq if
+// needed) in the Recurring tab before approving.
+export async function moveStagedEventToRecurring(stagedId: string): Promise<void> {
+  const { error } = await supabase
+    .from("venue_events_staging")
+    .update({
+      is_manual: true,
+      recurrence: "weekly",
+      created_by_admin: true,
+    })
+    .eq("id", stagedId);
+  if (error) throw error;
+}
+
 export async function approveStagedEvent(
   staged: StagedEvent,
   adminUserId: string,
