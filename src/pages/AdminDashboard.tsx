@@ -53,6 +53,10 @@ const defaultTabFor = (section: AdminSection): BarTab =>
   section === "events" ? "scraped" : "pending";
 
 function openSourceWindow(url: string) {
+  // Protocol-less URLs ("example.com/events") would be treated as relative
+  // by the browser and 404 on our domain. Force https:// when missing.
+  const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
   // Anchor to the monitor the user's browser is currently on (multi-monitor safe).
   const monitor = window.screen as Screen & { availLeft?: number; availTop?: number };
   const screenLeft = monitor.availLeft ?? 0;
@@ -65,11 +69,34 @@ function openSourceWindow(url: string) {
   const popupLeft = screenLeft + (screenW - popupW);
   const popupTop = screenTop;
 
-  window.open(
-    url,
-    "verify-source",
-    `popup=true,left=${popupLeft},top=${popupTop},width=${popupW},height=${popupH},noopener,noreferrer`,
-  );
+  // Safari notes:
+  //  - Named targets ("verify-source") + feature string trigger the popup
+  //    blocker silently. _blank works.
+  //  - `popup=true` and `noopener,noreferrer` *inside* the feature string
+  //    confuse Safari's parser; some versions reject the whole feature list.
+  //    Specify only width/height/left/top here, and detach `opener` after.
+  //  - Only width+height present makes Safari open it as a sized popup window
+  //    rather than a tab.
+  const features = `width=${popupW},height=${popupH},left=${popupLeft},top=${popupTop}`;
+  const popup = window.open(normalized, "_blank", features);
+
+  if (popup) {
+    // After-open positioning: Safari occasionally ignores left/top in the
+    // feature string and centers the popup. Re-issuing moveTo/resizeTo from
+    // JS forces the placement.
+    try {
+      popup.moveTo(popupLeft, popupTop);
+      popup.resizeTo(popupW, popupH);
+    } catch {
+      /* cross-origin once navigated — ignore */
+    }
+    // noopener equivalent without polluting the feature string.
+    popup.opener = null;
+  } else {
+    // Popup blocker bit. Last-resort: open in a regular new tab so the user
+    // at least lands on the page.
+    window.open(normalized, "_blank");
+  }
 }
 
 export default function AdminDashboard() {
