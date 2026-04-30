@@ -104,7 +104,8 @@
       "Bash(echo \"Done with exit: $?\")",
       "Bash(bun add *)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(bunx tsc *)"
     ]
   }
 }

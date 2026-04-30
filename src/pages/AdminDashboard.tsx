@@ -7,7 +7,7 @@ import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from 
 import { isEventInPast } from "@/lib/eventStatus";
 import EventDetailView from "@/components/events/EventDetailView";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -37,6 +37,7 @@ import {
   duplicateStagedEvent,
   updateStagedEventManualFields,
   updateApprovedEvent,
+  deleteApprovedEvent,
   fetchEventsByCreator,
   type OrganizerAccount,
   type LiveEventInfo,
@@ -715,6 +716,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteApproved = async (staged: StagedEvent) => {
+    // seriesId resolution mirrors handleSaveApprovedStaged: orphan child →
+    // parentId; live parent → own id; singleton → null. For series we wipe
+    // the whole thing, including past occurrences, so the bar's history is
+    // cleared too.
+    const seriesId = staged.parentId || (staged.recurrence ? staged.id : null);
+    const isSeries = seriesId !== null;
+    const confirmMsg = isSeries
+      ? `Delete "${staged.title}" and ALL occurrences in this series? This removes them from the site for everyone.`
+      : `Delete "${staged.title}"? This removes it from the site for everyone.`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      await deleteApprovedEvent(staged.id, seriesId);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", staged.id] });
+      toast.success(isSeries ? "Series deleted" : "Event deleted");
+      setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
+      setManualEvents(prev => prev.filter(s => s.id !== staged.id));
+      setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
+      loadLiveEvents();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete event.";
+      toast.error(message);
+    }
+  };
+
   const handleRejectOrganizer = async (organizer: OrganizerAccount) => {
     try {
       await updateOrganizerApprovalStatus(organizer.id, "rejected");
@@ -880,6 +907,7 @@ export default function AdminDashboard() {
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onMoveToRecurring={handleMoveScrapedToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
+              onDeleteApproved={handleDeleteApproved}
               emptyLabel="scraped"
             />
           )}
@@ -904,6 +932,7 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
+              onDeleteApproved={handleDeleteApproved}
               emptyLabel="manual"
             />
           )}
@@ -930,6 +959,7 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
+              onDeleteApproved={handleDeleteApproved}
               emptyLabel="recurring"
             />
           )}
@@ -1425,6 +1455,7 @@ function StagedEventCard({
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
+  onDeleteApproved,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
@@ -1440,6 +1471,7 @@ function StagedEventCard({
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
+  onDeleteApproved?: () => Promise<void>;
 }) {
   const [title, setTitle] = useState(staged.title);
   const [date, setDate] = useState(staged.date);
@@ -2057,22 +2089,38 @@ function StagedEventCard({
         </div>
       )}
 
-      {isApproved && canEdit && isDirty && (
-        <div className="flex justify-end gap-2 flex-shrink-0">
-          <button
-            onClick={handleCancelApprovedClick}
-            disabled={submitting}
-            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-          >
-            <X className="h-3 w-3" /> Cancel
-          </button>
-          <button
-            onClick={handleSaveApprovedClick}
-            disabled={submitting}
-            className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Check className="h-3 w-3" /> {submitting ? "Saving…" : "Save changes"}
-          </button>
+      {isApproved && (onDeleteApproved || (canEdit && isDirty)) && (
+        <div className="flex items-center justify-between gap-2 flex-shrink-0">
+          {onDeleteApproved ? (
+            <button
+              onClick={onDeleteApproved}
+              disabled={submitting}
+              title="Delete this event from the site"
+              className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <Trash2 className="h-3 w-3" /> Delete
+            </button>
+          ) : (
+            <span />
+          )}
+          {canEdit && isDirty && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelApprovedClick}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <X className="h-3 w-3" /> Cancel
+              </button>
+              <button
+                onClick={handleSaveApprovedClick}
+                disabled={submitting}
+                className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Check className="h-3 w-3" /> {submitting ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -2175,6 +2223,7 @@ function StagedEventsList({
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
+  onDeleteApproved,
   emptyLabel,
 }: {
   events: StagedEvent[];
@@ -2198,6 +2247,7 @@ function StagedEventsList({
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
+  onDeleteApproved?: (s: StagedEvent) => Promise<void>;
   emptyLabel: string;
 }) {
   const pills: StagedEventStatusFilter[] = ["pending", "approved"];
@@ -2276,6 +2326,7 @@ function StagedEventsList({
               onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
+              onDeleteApproved={onDeleteApproved ? () => onDeleteApproved(staged) : undefined}
             />
           );
           if (filter === "approved") {
