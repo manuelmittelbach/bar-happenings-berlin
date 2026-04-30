@@ -181,36 +181,39 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const loadScrapedEvents = useCallback(async () => {
-    setScrapedLoading(true);
+  // Loaders take a { silent } option: silent=true skips toggling the loading
+  // state, so a background refresh (e.g. realtime-triggered reload after a
+  // duplicate or a scrape insert) doesn't unmount the cards and reset scroll.
+  const loadScrapedEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setScrapedLoading(true);
     try {
       setScrapedEvents(await fetchStagedEvents(scrapedFilter, "scraped"));
     } catch {
       toast.error("Failed to load scraped events.");
     } finally {
-      setScrapedLoading(false);
+      if (!silent) setScrapedLoading(false);
     }
   }, [scrapedFilter]);
 
-  const loadManualEvents = useCallback(async () => {
-    setManualLoading(true);
+  const loadManualEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setManualLoading(true);
     try {
       setManualEvents(await fetchStagedEvents(manualFilter, "manual"));
     } catch {
       toast.error("Failed to load manual events.");
     } finally {
-      setManualLoading(false);
+      if (!silent) setManualLoading(false);
     }
   }, [manualFilter]);
 
-  const loadRecurringEvents = useCallback(async () => {
-    setRecurringLoading(true);
+  const loadRecurringEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setRecurringLoading(true);
     try {
       setRecurringEvents(await fetchStagedEvents(recurringFilter, "recurring"));
     } catch {
       toast.error("Failed to load recurring events.");
     } finally {
-      setRecurringLoading(false);
+      if (!silent) setRecurringLoading(false);
     }
   }, [recurringFilter]);
 
@@ -285,9 +288,11 @@ export default function AdminDashboard() {
         () => {
           if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
           reloadTimerRef.current = setTimeout(() => {
-            loadScrapedEvents();
-            loadManualEvents();
-            loadRecurringEvents();
+            // silent: true so the lists refresh in-place without flipping
+            // loading=true (which would unmount cards and lose scroll).
+            loadScrapedEvents({ silent: true });
+            loadManualEvents({ silent: true });
+            loadRecurringEvents({ silent: true });
             loadPendingEventCounts();
           }, 500);
         },
