@@ -171,7 +171,7 @@ Do not include any explanation, just the JSON array."""
                 "stream": False,
                 "format": "json",
             },
-            timeout=180,
+            timeout=240,
         )
         resp.raise_for_status()
         raw = resp.json().get("response", "[]")
@@ -180,7 +180,7 @@ Do not include any explanation, just the JSON array."""
             return [], None
         return json.loads(match.group()), None
     except requests.exceptions.Timeout:
-        return [], "Ollama timeout (180s)"
+        return [], "Ollama timeout (240s)"
     except Exception as e:
         return [], str(e)[:100]
 
