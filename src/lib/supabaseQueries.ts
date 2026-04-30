@@ -1246,6 +1246,48 @@ export async function deleteStagedEvent(stagedId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Hard-deletes an approved event from the `events` table, removing it from
+// the public site entirely. When the row belongs to a series (parent_id set
+// or recurrence rule on the parent), the whole series is wiped — admin
+// "Delete" on an approved recurring card means "remove this from the site",
+// not "skip one occurrence".
+//
+// Mirrors the user_interests cleanup pattern used by cancelEventSeries:
+// clear user_interests first, then events. (RLS limits cross-user interest
+// deletion, so a few orphan rows may remain — they become invisible because
+// the events read RLS hides rows whose status isn't approved/canceled, and
+// the underlying event is gone.)
+export async function deleteApprovedEvent(
+  displayedId: string,
+  seriesId: string | null,
+): Promise<void> {
+  let eventIds: string[];
+  if (seriesId) {
+    const { data, error } = await supabase
+      .from("events")
+      .select("id")
+      .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
+    if (error) throw error;
+    eventIds = (data ?? []).map(r => r.id);
+  } else {
+    eventIds = [displayedId];
+  }
+
+  if (eventIds.length === 0) return;
+
+  const { error: interestErr } = await supabase
+    .from("user_interests")
+    .delete()
+    .in("event_id", eventIds);
+  if (interestErr) throw interestErr;
+
+  const { error: deleteErr } = await supabase
+    .from("events")
+    .delete()
+    .in("id", eventIds);
+  if (deleteErr) throw deleteErr;
+}
+
 // Updates an approved event directly in the `events` table. When seriesId is
 // non-null, shared fields apply across the whole series (parent if still
 // alive, plus all children referencing it); date/time stay on the displayed
