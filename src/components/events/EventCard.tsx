@@ -6,8 +6,8 @@ import { MapPin, Star, Users } from "lucide-react";
 
 
 import type { BarlinEvent } from "@/types/event";
-import { getVenueById } from "@/data/legacyVenueLookup";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useVenues } from "@/hooks/useEvents";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
@@ -30,6 +30,7 @@ const badgeChipClasses: Record<EventBadge["variant"], string> = {
 export default function EventCard({ event, layout = "grid", featured = false, onClick }: EventCardProps) {
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
   const { location: userLocation } = useUserLocation();
+  const { data: venues = [] } = useVenues();
   const isCanceled = event.status === "canceled";
 
   const interestedCount = event.interestedCount ?? 0;
@@ -38,11 +39,11 @@ export default function EventCard({ event, layout = "grid", featured = false, on
 
   const walkingMins = useMemo(() => {
     if (!userLocation) return null;
-    const venue = getVenueById(event.venueId);
+    const venue = venues.find((v) => v.id === event.venueId);
     if (!venue?.lat || !venue?.lng) return null;
     const meters = haversineMeters(userLocation.lat, userLocation.lng, venue.lat, venue.lng);
     return walkingMinutes(meters);
-  }, [userLocation, event.venueId]);
+  }, [userLocation, event.venueId, venues]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -67,7 +68,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
     const iconClass = size === "xs" ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5";
     const padClass = size === "xs" ? "px-1.5 md:px-2" : "px-2";
 
-    if (walkingMins !== null && walkingMins <= 20) {
+    if (walkingMins !== null && walkingMins <= 30) {
       return (
         <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-foreground font-mono`}>
           <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>
