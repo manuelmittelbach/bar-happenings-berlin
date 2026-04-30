@@ -210,7 +210,7 @@ export default function EventDetail() {
 						<p className="font-body font-bold text-sm">{formatDateWithDay(event.date)}</p>
 						{event.startTime ? (
 							<p className="text-foreground font-mono text-sm mt-0.5">
-								{event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
+								{event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}{event.doorsTime ? `, Doors: ${event.doorsTime}` : ''}
 								{endsNextDay(event.startTime, event.endTime) && (
 									<span className="text-muted-foreground text-xs ml-1">(next day)</span>
 								)}

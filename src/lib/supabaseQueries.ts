@@ -25,6 +25,7 @@ function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEv
     date: row.date,
     startTime: trimTime(row.start_time),
     endTime: row.end_time ? trimTime(row.end_time) : undefined,
+    doorsTime: row.doors_time ? trimTime(row.doors_time) : undefined,
     category: row.category,
     description: row.description ?? "",
     entryInfo: row.entry_info ?? "",
@@ -129,7 +130,7 @@ export async function uploadEventImage(file: File, userId: string): Promise<stri
 
 interface EventWriteData {
   title: string; venue: string; address: string; neighborhood: string;
-  date: string; startTime: string; endTime: string; category: string;
+  date: string; startTime: string; endTime: string; doorsTime: string; category: string;
   description: string; entryInfo: string; language: string; website: string;
   imagePosition: string;
   recurrence: string; recurrenceUntil: string;
@@ -152,6 +153,7 @@ function buildEventRow(
     date: overrides.date,
     start_time: trimTime(formData.startTime),
     end_time: formData.endTime ? trimTime(formData.endTime) : null,
+    doors_time: formData.doorsTime ? trimTime(formData.doorsTime) : null,
     category: formData.category,
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
@@ -217,6 +219,7 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
     update.date = formData.date;
     update.start_time = trimTime(formData.startTime);
     update.end_time = formData.endTime ? trimTime(formData.endTime) : null;
+    update.doors_time = formData.doorsTime ? trimTime(formData.doorsTime) : null;
   }
   if (imageUrl !== undefined) update.image = imageUrl;
   return update;
@@ -835,6 +838,7 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     date: row.date ?? "",
     startTime: trimTime(row.start_time) || null,
     endTime: trimTime(row.end_time) || null,
+    doorsTime: trimTime(row.doors_time) || null,
     category: row.category,
     language: row.language ?? "",
     description: row.description ?? "",
@@ -1028,6 +1032,7 @@ export async function duplicateStagedEvent(
     date: edits?.date ?? source.date,
     startTime: edits?.startTime !== undefined ? edits.startTime : source.startTime,
     endTime: edits?.endTime !== undefined ? edits.endTime : source.endTime,
+    doorsTime: edits?.doorsTime !== undefined ? edits.doorsTime : source.doorsTime,
     category: edits?.category !== undefined ? edits.category : source.category,
     language: edits?.language ?? source.language,
     description: edits?.description ?? source.description,
@@ -1052,6 +1057,7 @@ export async function duplicateStagedEvent(
       date: merged.date || null,
       start_time: merged.startTime ? trimTime(merged.startTime) : null,
       end_time: merged.endTime ? trimTime(merged.endTime) : null,
+      doors_time: merged.doorsTime ? trimTime(merged.doorsTime) : null,
       category: merged.category,
       language: merged.language || null,
       description: merged.description || null,
@@ -1100,6 +1106,7 @@ export async function approveStagedEvent(
     date: edits?.date ?? staged.date,
     startTime: edits?.startTime !== undefined ? edits.startTime : staged.startTime,
     endTime: edits?.endTime !== undefined ? edits.endTime : staged.endTime,
+    doorsTime: edits?.doorsTime !== undefined ? edits.doorsTime : staged.doorsTime,
     category: edits?.category !== undefined ? edits.category : staged.category,
     language: edits?.language ?? staged.language,
     description: edits?.description ?? staged.description,
@@ -1124,6 +1131,7 @@ export async function approveStagedEvent(
     date: overrides.date,
     start_time: merged.startTime ? trimTime(merged.startTime) : null,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
+    doors_time: merged.doorsTime ? trimTime(merged.doorsTime) : null,
     category: merged.category!,
     language: merged.language || null,
     description: merged.description || null,
@@ -1242,6 +1250,7 @@ export async function updateApprovedEvent(
       date: edits.date,
       start_time: edits.startTime ? trimTime(edits.startTime) : null,
       end_time: edits.endTime ? trimTime(edits.endTime) : null,
+      doors_time: edits.doorsTime ? trimTime(edits.doorsTime) : null,
     };
     const { error: occErr } = await supabase
       .from("events")
@@ -1256,6 +1265,7 @@ export async function updateApprovedEvent(
     date: edits.date,
     start_time: edits.startTime ? trimTime(edits.startTime) : null,
     end_time: edits.endTime ? trimTime(edits.endTime) : null,
+    doors_time: edits.doorsTime ? trimTime(edits.doorsTime) : null,
   };
   const { error } = await supabase.from("events").update(update).eq("id", displayedId);
   if (error) throw error;

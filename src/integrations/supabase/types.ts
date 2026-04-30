@@ -108,6 +108,7 @@ export type Database = {
           created_by: string | null
           date: string
           description: string | null
+          doors_time: string | null
           end_time: string | null
           entry_info: string | null
           id: string
@@ -135,6 +136,7 @@ export type Database = {
           created_by?: string | null
           date: string
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id: string
@@ -162,6 +164,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id?: string
@@ -193,6 +196,7 @@ export type Database = {
           created_by: string | null
           date: string
           description: string | null
+          doors_time: string | null
           end_time: string | null
           entry_info: string | null
           id: string
@@ -220,6 +224,7 @@ export type Database = {
           created_by?: string | null
           date: string
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id: string
@@ -247,6 +252,7 @@ export type Database = {
           created_by?: string | null
           date?: string
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id?: string
@@ -450,6 +456,7 @@ export type Database = {
           created_by_admin: boolean
           date: string | null
           description: string | null
+          doors_time: string | null
           end_time: string | null
           entry_info: string | null
           id: string
@@ -468,6 +475,7 @@ export type Database = {
           created_by_admin?: boolean
           date?: string | null
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id?: string
@@ -486,6 +494,7 @@ export type Database = {
           created_by_admin?: boolean
           date?: string | null
           description?: string | null
+          doors_time?: string | null
           end_time?: string | null
           entry_info?: string | null
           id?: string

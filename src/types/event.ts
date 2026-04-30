@@ -17,6 +17,7 @@ export interface BarlinEvent {
   image?: string;
   imagePosition: string;
   endTime?: string;
+  doorsTime?: string;
   interestedCount: number;
   status?: string;
   createdBy?: string;
@@ -59,6 +60,7 @@ export interface StagedEvent {
   date: string;
   startTime: string | null;
   endTime: string | null;
+  doorsTime: string | null;
   category: string | null;
   language: string;
   description: string;
@@ -77,6 +79,7 @@ export interface StagedEventEdits {
   date?: string;
   startTime?: string | null;
   endTime?: string | null;
+  doorsTime?: string | null;
   category?: string | null;
   language?: string;
   description?: string;
