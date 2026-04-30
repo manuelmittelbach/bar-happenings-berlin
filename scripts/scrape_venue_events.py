@@ -13,7 +13,7 @@ SETUP:
 
 RUN:
     python3 scrape_venue_events.py            # normal scrape
-    python3 scrape_venue_events.py --clear    # wipe ALL rows from venue_events_staging and exit
+    python3 scrape_venue_events.py --clear    # wipe scraped + manual rows from venue_events_staging (keeps recurring) and exit
 """
 
 import argparse
@@ -220,7 +220,6 @@ def ensure_placeholder(client, venue_id: str, source_url: str) -> bool:
                 "source_url": source_url,
                 "status": "pending",
                 "is_manual": True,
-                "is_manual_tab": True,
             }
         ).execute()
         return True
@@ -335,15 +334,21 @@ def fetch_existing_staged_keys_by_venue(client) -> dict[str, set[tuple[str, str]
 
 
 def clear_staging(client) -> int:
-    """Delete EVERY row from venue_events_staging. Returns number deleted.
-    Used by the --clear flag to wipe stale staged events before a fresh scrape."""
-    # Count first so we can report. Supabase delete() needs a filter, so we use
-    # a date condition that always matches (scraped_at has a NOT NULL default).
-    count_res = client.table("venue_events_staging").select("id", count="exact").execute()
+    """Delete scraped + manual rows from venue_events_staging, keeping recurring ones.
+    Recurring rows are admin-curated (is_manual=true with a non-empty recurrence)
+    and must survive a --clear so the recurring tab stays intact between scrapes."""
+    # "Not recurring" = is_manual=false OR recurrence=''. PostgREST `or` filter.
+    not_recurring = "is_manual.eq.false,recurrence.eq."
+    count_res = (
+        client.table("venue_events_staging")
+        .select("id", count="exact")
+        .or_(not_recurring)
+        .execute()
+    )
     count = count_res.count or 0
     if count == 0:
         return 0
-    client.table("venue_events_staging").delete().gte("scraped_at", "1970-01-01").execute()
+    client.table("venue_events_staging").delete().or_(not_recurring).execute()
     return count
 
 
@@ -354,8 +359,8 @@ def parse_args():
     p.add_argument(
         "--clear",
         action="store_true",
-        help="Delete ALL rows from venue_events_staging and exit (no scraping). "
-             "Use this to start a fresh review batch.",
+        help="Delete scraped + manual rows from venue_events_staging and exit (no scraping). "
+             "Recurring rows are kept. Use this to start a fresh review batch.",
     )
     return p.parse_args()
 
@@ -370,7 +375,7 @@ def main():
 
     if args.clear:
         deleted = clear_staging(client)
-        print(f"Cleared venue_events_staging: {deleted} row(s) deleted.")
+        print(f"Cleared venue_events_staging (recurring kept): {deleted} row(s) deleted.")
         return
 
     print("Fetching venues with website_events and online='yes'...")
