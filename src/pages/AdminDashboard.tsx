@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, formatRecurrenceLabel, type RecurrenceFreq } from "@/lib/recurrence";
-import { formatDateShort, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
+import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
+import { isEventInPast } from "@/lib/eventStatus";
 import EventDetailView from "@/components/events/EventDetailView";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -36,6 +37,7 @@ import {
   duplicateStagedEvent,
   updateStagedEventManualFields,
   updateApprovedEvent,
+  fetchEventsByCreator,
   type OrganizerAccount,
   type LiveEventInfo,
 } from "@/lib/supabaseQueries";
@@ -1189,8 +1191,51 @@ function OrganizerCard({
   const isSubmittedBar = !organizer.venue && !!organizer.pendingSubmission;
   const isClaim = !organizer.venue && !!organizer.pendingClaim;
 
+  const canShowEvents = organizer.approvalStatus === "approved";
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const [events, setEvents] = useState<BarlinEvent[] | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!canShowEvents) return;
+    let cancelled = false;
+    setEventsLoading(true);
+    setEventsError(null);
+    fetchEventsByCreator(organizer.id)
+      .then((rows) => { if (!cancelled) setEvents(rows); })
+      .catch(() => { if (!cancelled) setEventsError("Failed to load events."); })
+      .finally(() => { if (!cancelled) setEventsLoading(false); });
+    return () => { cancelled = true; };
+  }, [canShowEvents, organizer.id]);
+
+  const handleToggleEvents = () => setEventsOpen((prev) => !prev);
+
+  const upcomingSeries = (() => {
+    if (!events) return [];
+    const parents = events.filter((e) => !e.parentId);
+    const membersBySeries = new Map<string, BarlinEvent[]>();
+    for (const e of events) {
+      const seriesId = e.parentId || e.id;
+      const arr = membersBySeries.get(seriesId) ?? [];
+      arr.push(e);
+      membersBySeries.set(seriesId, arr);
+    }
+    const nextOf = (parent: BarlinEvent): BarlinEvent | null => {
+      const upc = (membersBySeries.get(parent.id) ?? [parent])
+        .filter((m) => m.status !== "canceled" && !isEventInPast(m))
+        .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+      return upc[0] ?? null;
+    };
+    return parents
+      .map((p) => ({ parent: p, next: nextOf(p) }))
+      .filter((x): x is { parent: BarlinEvent; next: BarlinEvent } => x.next !== null)
+      .sort((a, b) => a.next.date.localeCompare(b.next.date) || a.next.startTime.localeCompare(b.next.startTime));
+  })();
+
   return (
-    <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+    <div className="border border-border rounded-sm">
+      <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-heading text-sm font-semibold">{display?.name ?? "(no venue)"}</p>
@@ -1263,7 +1308,23 @@ function OrganizerCard({
           {decided && organizer.approvalStatus === "approved" && <> · Approved {decided}</>}
         </p>
       </div>
-      <div className="flex gap-2 flex-shrink-0">
+      <div className="flex gap-2 flex-shrink-0 flex-wrap">
+        {canShowEvents && (
+          <button
+            type="button"
+            onClick={handleToggleEvents}
+            aria-expanded={eventsOpen}
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+            title={eventsOpen ? "Hide events" : "Show events"}
+          >
+            <CalendarDays className="h-3 w-3" />
+            {eventsOpen ? "Hide Events" : "Show Events"}
+            {events !== null && (
+              <span className="text-muted-foreground">({upcomingSeries.length})</span>
+            )}
+            <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${eventsOpen ? "rotate-180" : ""}`} />
+          </button>
+        )}
         {(organizer.venue || organizer.pendingSubmission || organizer.pendingClaim) && (
           <Link
             to={`/admin/bar-account/${organizer.id}`}
@@ -1293,6 +1354,58 @@ function OrganizerCard({
           </button>
         )}
       </div>
+      </div>
+      {canShowEvents && eventsOpen && (
+        <div className="border-t border-border px-4 py-3">
+          {eventsLoading && (
+            <div className="flex justify-center py-4"><Spinner /></div>
+          )}
+          {!eventsLoading && eventsError && (
+            <p className="text-xs text-red-600">{eventsError}</p>
+          )}
+          {!eventsLoading && !eventsError && upcomingSeries.length === 0 && (
+            <p className="text-xs text-muted-foreground">No upcoming events.</p>
+          )}
+          {!eventsLoading && !eventsError && upcomingSeries.length > 0 && (
+            <ul className="divide-y divide-border/50">
+              {upcomingSeries.map(({ parent, next }) => {
+                const recurrenceLabel = formatRecurrenceLabel(parent.recurrence);
+                const statusClass =
+                  next.status === "approved"
+                    ? "bg-green-500/10 text-green-600"
+                    : next.status === "rejected"
+                    ? "bg-red-500/10 text-red-600"
+                    : "bg-yellow-500/10 text-yellow-600";
+                const statusLabel = next.status === "approved" ? "online" : next.status ?? "pending";
+                return (
+                  <li key={parent.id} className="flex items-center gap-3 py-2 text-xs">
+                    <span className="text-muted-foreground whitespace-nowrap">
+                      {formatDateWithDay(next.date)}
+                      {next.startTime ? ` · ${next.startTime}` : ""}
+                    </span>
+                    <span className="font-medium truncate flex-1 min-w-0">{parent.title}</span>
+                    {recurrenceLabel && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-muted text-muted-foreground whitespace-nowrap">
+                        <Repeat className="h-3 w-3" /> {recurrenceLabel}
+                      </span>
+                    )}
+                    <span className={`px-2 py-0.5 rounded-sm font-medium capitalize whitespace-nowrap ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                    <Link
+                      to={`/event/${next.id}`}
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground whitespace-nowrap"
+                      title="View event"
+                    >
+                      <Eye className="h-3 w-3" /> View
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
