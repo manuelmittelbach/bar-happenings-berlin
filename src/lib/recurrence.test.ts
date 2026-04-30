@@ -2,16 +2,21 @@ import { describe, it, expect } from "vitest";
 import { describeRule, formatRule, generateOccurrences, parseRule } from "./recurrence";
 
 describe("parseRule / formatRule", () => {
-  it("round-trips a rule", () => {
+  it("round-trips a bounded rule", () => {
     const encoded = formatRule("weekly", "2026-10-28");
     expect(encoded).toBe("weekly;until=2026-10-28");
     expect(parseRule(encoded)).toEqual({ freq: "weekly", until: "2026-10-28" });
   });
 
+  it("round-trips an indefinite rule (no until)", () => {
+    const encoded = formatRule("weekly", null);
+    expect(encoded).toBe("weekly");
+    expect(parseRule(encoded)).toEqual({ freq: "weekly", until: null });
+  });
+
   it("returns null for empty or malformed strings", () => {
     expect(parseRule("")).toBeNull();
     expect(parseRule(null)).toBeNull();
-    expect(parseRule("weekly")).toBeNull();
     expect(parseRule("bogus;until=2026-10-28")).toBeNull();
     expect(parseRule("weekly;until=not-a-date")).toBeNull();
   });
