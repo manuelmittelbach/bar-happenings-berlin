@@ -7,7 +7,7 @@ import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from 
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, MapPin, Users } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, MapPin, Users, Repeat } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,6 +29,7 @@ import {
   fetchApprovedEvents,
   approveStagedEvent,
   rejectStagedEvent,
+  moveStagedEventToRecurring,
   deleteStagedEvent,
   fetchLiveEventsByVenue,
   fetchVenues,
@@ -444,6 +445,33 @@ export default function AdminDashboard() {
     }
   };
 
+  // Inline editor on event cards (scraped/manual/recurring) updates
+  // venues.website_events for the row's bar. Mirrors the optimistic
+  // update pattern of handleVenueLinkChange and additionally syncs the
+  // `venues` array so the StagedEventCard editor reseeds correctly when
+  // another event of the same bar is opened.
+  const handleVenueWebsiteEventsChange = async (venueId: string, value: string | null) => {
+    const next = value && value.trim() ? value.trim() : null;
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId
+          ? { ...item, venue: { ...item.venue, websiteEvents: next ?? undefined } }
+          : item,
+      ),
+    );
+    setVenues(prev =>
+      prev.map(v => (v.id === venueId ? { ...v, websiteEvents: next ?? undefined } : v)),
+    );
+    try {
+      await updateVenueLinks(venueId, { websiteEvents: next });
+      toast.success(next ? "Events page URL updated." : "Events page URL cleared.");
+    } catch {
+      toast.error("Failed to update events page URL.");
+      loadAllBars();
+      loadVenues();
+    }
+  };
+
   const handleToggleOnline = async (venueId: string, next: "yes" | "no") => {
     setAllBars(prev =>
       prev.map(item =>
@@ -492,6 +520,23 @@ export default function AdminDashboard() {
       loadPendingEventCounts();
     } catch {
       toast.error("Failed to reject event.");
+    }
+  };
+
+  // Reclassify a scraped staging row as recurring. Optimistically remove from
+  // scraped list, then DB update — the realtime listener on
+  // venue_events_staging will surface the row in the Recurring tab on the
+  // next reload tick. We also refetch counts immediately for the tab badges.
+  const handleMoveScrapedToRecurring = async (staged: StagedEvent) => {
+    setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
+    try {
+      await moveStagedEventToRecurring(staged.id);
+      toast.success(`"${staged.title}" moved to Recurring.`);
+      loadRecurringEvents({ silent: true });
+      loadPendingEventCounts();
+    } catch {
+      toast.error("Failed to move event to Recurring.");
+      loadScrapedEvents();
     }
   };
 
@@ -829,6 +874,8 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onMoveToRecurring={handleMoveScrapedToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="scraped"
             />
@@ -852,6 +899,7 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="manual"
             />
@@ -877,6 +925,7 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               emptyLabel="recurring"
             />
@@ -1259,6 +1308,8 @@ function StagedEventCard({
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
+  onVenueWebsiteEventsChange,
+  onMoveToRecurring,
   onSaveApproved,
 }: {
   staged: StagedEvent;
@@ -1272,6 +1323,8 @@ function StagedEventCard({
   onDuplicate: (edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (venueId: string) => Promise<void>;
   onSourceUrlChange: (url: string) => Promise<void>;
+  onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
+  onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
 }) {
   const [title, setTitle] = useState(staged.title);
@@ -1313,6 +1366,17 @@ function StagedEventCard({
   }, [staged.entryInfo]);
   useEffect(() => { setSourceUrlInput(staged.sourceUrl ?? ""); }, [staged.sourceUrl]);
   useEffect(() => { setVenueIdLocal(staged.venueId); }, [staged.venueId]);
+
+  // Inline editor for venues.website_events (the bar's events page URL).
+  // Seeded from the venues prop so a save in one card is reflected when
+  // another card of the same bar is opened (parent updates `venues`).
+  const currentVenue = venues.find(v => v.id === staged.venueId);
+  const [eventsUrlOpen, setEventsUrlOpen] = useState(false);
+  const [eventsUrlInput, setEventsUrlInput] = useState(currentVenue?.websiteEvents ?? "");
+  const [eventsUrlSubmitting, setEventsUrlSubmitting] = useState(false);
+  useEffect(() => {
+    setEventsUrlInput(currentVenue?.websiteEvents ?? "");
+  }, [staged.venueId, currentVenue?.websiteEvents]);
 
   const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
   const seriesDates: string[] = (() => {
@@ -1475,7 +1539,19 @@ function StagedEventCard({
           ) : (
             <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
           )}
-          <span className="text-xs text-muted-foreground">{staged.venueNeighborhood}</span>
+          <button
+            type="button"
+            onClick={() => setEventsUrlOpen(o => !o)}
+            title="Change venues.website_events for this bar"
+            className="text-xs px-2 py-0.5 border border-border rounded-sm hover:bg-muted"
+          >
+            change website_events
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {staged.venueAddress
+              ? staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")
+              : staged.venueNeighborhood}
+          </span>
           {staged.createdByAdmin && (
             <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
               Created manually
@@ -1498,6 +1574,61 @@ function StagedEventCard({
           </button>
         )}
       </div>
+
+      {eventsUrlOpen && (
+        <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-sm">
+          <input
+            type="url"
+            value={eventsUrlInput}
+            onChange={e => setEventsUrlInput(e.target.value)}
+            placeholder="venues.website_events URL (leave empty + Set NULL to clear)"
+            className="flex-1 h-9 px-2 bg-background border border-border rounded-sm text-sm outline-none focus:border-foreground"
+          />
+          <button
+            type="button"
+            disabled={eventsUrlSubmitting}
+            onClick={async () => {
+              setEventsUrlSubmitting(true);
+              try {
+                await onVenueWebsiteEventsChange(staged.venueId, eventsUrlInput);
+                setEventsUrlOpen(false);
+              } finally {
+                setEventsUrlSubmitting(false);
+              }
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted disabled:opacity-50"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            disabled={eventsUrlSubmitting}
+            onClick={async () => {
+              setEventsUrlSubmitting(true);
+              try {
+                await onVenueWebsiteEventsChange(staged.venueId, null);
+                setEventsUrlInput("");
+                setEventsUrlOpen(false);
+              } finally {
+                setEventsUrlSubmitting(false);
+              }
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted text-muted-foreground disabled:opacity-50"
+          >
+            Set NULL
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEventsUrlInput(currentVenue?.websiteEvents ?? "");
+              setEventsUrlOpen(false);
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {canEdit ? (
         <div className="flex items-center gap-2">
@@ -1773,6 +1904,16 @@ function StagedEventCard({
             </>
           ) : (
             <>
+              {onMoveToRecurring && (
+                <button
+                  onClick={onMoveToRecurring}
+                  disabled={submitting}
+                  title="Move this card to the Recurring tab (sets is_manual=true, recurrence=weekly)"
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <Repeat className="h-3 w-3" /> Move to Recurring
+                </button>
+              )}
               {isManual && onCancel ? (
                 <button
                   onClick={onCancel}
@@ -1946,6 +2087,8 @@ function StagedEventsList({
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
+  onVenueWebsiteEventsChange,
+  onMoveToRecurring,
   onSaveApproved,
   emptyLabel,
 }: {
@@ -1967,6 +2110,8 @@ function StagedEventsList({
   onDuplicate: (s: StagedEvent, edits: StagedEventEdits, scope: "scraped" | "manual" | "recurring") => Promise<void>;
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
+  onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
+  onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   emptyLabel: string;
 }) {
@@ -2043,6 +2188,8 @@ function StagedEventsList({
               onDuplicate={(edits) => onDuplicate(staged, edits, scope)}
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
+              onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
+              onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
             />
           );
