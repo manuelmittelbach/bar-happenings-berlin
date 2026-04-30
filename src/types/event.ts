@@ -43,7 +43,7 @@ export interface Venue {
 // rejected (reviewed_at IS NOT NULL). The "approved" value is set by the
 // admin-side adapter when wrapping a row from the `events` table.
 export type StagedEventStatus = "pending" | "approved" | "rejected";
-export type StagedEventStatusFilter = "pending" | "rejected" | "approved" | "all";
+export type StagedEventStatusFilter = "pending" | "rejected" | "approved";
 export type StagedEventScope = "scraped" | "manual" | "recurring" | "any";
 
 export interface StagedEvent {
