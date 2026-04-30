@@ -826,6 +826,7 @@ type StagedEventRow = Tables<"venue_events_staging"> & {
 function mapStagedEventRow(row: StagedEventRow): StagedEvent {
   return {
     id: row.id,
+    parentId: "",
     venueId: row.venue_id,
     venueName: row.venues?.name ?? "(unknown venue)",
     venueAddress: row.venues?.address ?? "",
@@ -909,9 +910,11 @@ export async function fetchStagedEventCount(
   return count ?? 0;
 }
 
-// Approved events live in `events` (not staging). The Approved tab in admin
-// shows only upcoming, parent-only rows (1 row per series). Scope splits by
-// is_manual + recurrence — same semantics as the staging-side filter.
+// Approved events live in `events` (not staging). The Approved tab shows only
+// upcoming, one row per series (= the earliest non-past occurrence). When the
+// archive cron eventually removes the series parent, the series survives in
+// the tab via its earliest remaining child (which still carries parent_id).
+// Scope splits by is_manual + "is row part of a series".
 export async function fetchApprovedEvents(
   scope: StagedEventScope = "any",
 ): Promise<BarlinEvent[]> {
@@ -920,18 +923,42 @@ export async function fetchApprovedEvents(
     .from("events")
     .select("*")
     .eq("status", "approved")
-    .gte("date", today)
-    .eq("parent_id", "");
-  if (scope === "manual") {
-    query = query.eq("is_manual", true).eq("recurrence", "");
+    .gte("date", today);
+  if (scope === "manual" || scope === "recurring") {
+    query = query.eq("is_manual", true);
   } else if (scope === "scraped") {
-    query = query.eq("is_manual", false).eq("recurrence", "");
-  } else if (scope === "recurring") {
-    query = query.neq("recurrence", "");
+    query = query.eq("is_manual", false);
   }
   const { data, error } = await query;
   if (error) throw error;
-  return data
+
+  // Collapse each series to its earliest upcoming occurrence. Series id is the
+  // parent's uuid (children reference it via parent_id; the parent — if still
+  // alive — has parent_id='' and uses its own id as the key).
+  const byKey = new Map<string, Tables<"events">>();
+  for (const row of data) {
+    const seriesKey = row.parent_id || row.id;
+    const existing = byKey.get(seriesKey);
+    if (!existing) {
+      byKey.set(seriesKey, row);
+      continue;
+    }
+    const existingTime = `${existing.date} ${existing.start_time ?? ""}`;
+    const rowTime = `${row.date} ${row.start_time ?? ""}`;
+    if (rowTime < existingTime) byKey.set(seriesKey, row);
+  }
+
+  // A row belongs to a series if it's a child (parent_id set) or a parent
+  // (recurrence rule set). Singletons have neither.
+  const matchesScope = (row: Tables<"events">) => {
+    const inSeries = !!row.parent_id || !!row.recurrence;
+    if (scope === "recurring") return inSeries;
+    if (scope === "manual" || scope === "scraped") return !inSeries;
+    return true;
+  };
+
+  return Array.from(byKey.values())
+    .filter(matchesScope)
     .map(mapEventRow)
     .sort((a, b) =>
       a.venue.localeCompare(b.venue, "de", { sensitivity: "base" })
@@ -1187,15 +1214,20 @@ export async function deleteStagedEvent(stagedId: string): Promise<void> {
   if (error) throw error;
 }
 
-// Updates an approved event directly in the `events` table. Replaces the
-// previous staging-side update — approved events live only in `events` now.
-// For a recurring series parent, non-date/time fields apply to the whole
-// series; date and start/end time stay on the parent occurrence only.
+// Updates an approved event directly in the `events` table. When seriesId is
+// non-null, shared fields apply across the whole series (parent if still
+// alive, plus all children referencing it); date/time stay on the displayed
+// row only — every occurrence keeps its own date.
+//
+//   • Singleton:           displayedId = row.id,        seriesId = null
+//   • Live series parent:  displayedId = parent.id,     seriesId = parent.id
+//   • Orphan series child: displayedId = child.id,      seriesId = parent.id
+//     (parent already archived; the series id still anchors all children)
 export async function updateApprovedEvent(
-  eventId: string,
+  displayedId: string,
+  seriesId: string | null,
   edits: StagedEventEdits,
   venues: Venue[],
-  isSeriesParent: boolean,
 ): Promise<void> {
   if (!edits.venueId) throw new Error("Venue is required");
   const venue = venues.find(v => v.id === edits.venueId);
@@ -1217,23 +1249,23 @@ export async function updateApprovedEvent(
     neighborhood: venue.neighborhood,
   };
 
-  if (isSeriesParent) {
+  if (seriesId) {
     const { error: seriesErr } = await supabase
       .from("events")
       .update(seriesWide)
-      .or(`id.eq.${eventId},parent_id.eq.${eventId}`);
+      .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
     if (seriesErr) throw seriesErr;
 
-    const parentOnly: TablesUpdate<"events"> = {
+    const occurrenceOnly: TablesUpdate<"events"> = {
       date: edits.date,
       start_time: edits.startTime ? trimTime(edits.startTime) : null,
       end_time: edits.endTime ? trimTime(edits.endTime) : null,
     };
-    const { error: parentErr } = await supabase
+    const { error: occErr } = await supabase
       .from("events")
-      .update(parentOnly)
-      .eq("id", eventId);
-    if (parentErr) throw parentErr;
+      .update(occurrenceOnly)
+      .eq("id", displayedId);
+    if (occErr) throw occErr;
     return;
   }
 
@@ -1243,6 +1275,6 @@ export async function updateApprovedEvent(
     start_time: edits.startTime ? trimTime(edits.startTime) : null,
     end_time: edits.endTime ? trimTime(edits.endTime) : null,
   };
-  const { error } = await supabase.from("events").update(update).eq("id", eventId);
+  const { error } = await supabase.from("events").update(update).eq("id", displayedId);
   if (error) throw error;
 }
