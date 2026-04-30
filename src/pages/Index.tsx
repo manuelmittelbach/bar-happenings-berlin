@@ -15,7 +15,7 @@ import { categories } from "@/data/categories";
 import { neighborhoods } from "@/data/neighborhoods";
 import { getVenueById } from "@/data/legacyVenueLookup";
 import type { BarlinEvent } from "@/types/event";
-import { useEvents, useVenues } from "@/hooks/useEvents";
+import { useEvents, useVenues, useHasEventsAfter } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
@@ -117,7 +117,15 @@ export default function Index() {
   }, [location.key]);
 
 
-  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
+  const today = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const cutoffDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+  const isLateNight = new Date().getHours() < 6;
+
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const { data: eventsData = [], isLoading: eventsLoading, isFetching: eventsFetching } = useEvents(showAllUpcoming ? undefined : cutoffDate);
+  const { data: hasMoreUpcoming = false } = useHasEventsAfter(cutoffDate, !showAllUpcoming);
   const { data: venuesData = [] } = useVenues();
 
   const venueMap = useMemo(
@@ -128,10 +136,6 @@ export default function Index() {
   const { location: userLocation, status: locationStatus, request: requestLocation } = useUserLocation();
   const [locationBannerDismissed, setLocationBannerDismissed] = useState(false);
   const showLocationBanner = locationStatus === "idle" && !locationBannerDismissed;
-  const today = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const isLateNight = new Date().getHours() < 6;
 
   const filtered = useMemo(() => {
     let result = [...eventsData];
@@ -567,6 +571,17 @@ export default function Index() {
                         {section.events.map((event, i) => (
                           <EventCard key={event.id} event={event} index={i} onClick={handleEventClick} />
                         ))}
+                      </div>
+                    )}
+                    {section.label === "Later" && hasMoreUpcoming && !showAllUpcoming && (
+                      <div className="flex justify-center pt-8">
+                        <button
+                          onClick={() => setShowAllUpcoming(true)}
+                          disabled={eventsFetching}
+                          className="font-mono font-bold text-xs uppercase tracking-wider px-6 py-3 border-2 border-border hover:border-accent hover:text-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {eventsFetching ? "Loading…" : "Show more events"}
+                        </button>
                       </div>
                     )}
                   </div>

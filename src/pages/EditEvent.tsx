@@ -117,11 +117,12 @@ export default function EditEvent() {
         : "Cancel this event? This action cannot be undone. The event will be removed from the listings.";
     if (!window.confirm(confirmMessage)) return;
     try {
+      const by = isAdmin ? "admin" : "organizer";
       if (applyToSeries) {
-        await cancelEventSeries(seriesInfo.seriesId, seriesInfo.eventDate);
+        await cancelEventSeries(seriesInfo.seriesId, seriesInfo.eventDate, by);
         toast.success("Series marked as canceled.");
       } else {
-        await cancelEvent(id);
+        await cancelEvent(id, by);
         toast.success("Event marked as canceled.");
       }
       navigate(isAdmin ? "/admin" : "/dashboard");
