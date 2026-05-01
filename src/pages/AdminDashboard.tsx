@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useEvents";
+import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { LANGUAGES } from "@/data/languages";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -768,8 +769,8 @@ export default function AdminDashboard() {
     // are silently hidden, near ones stay visible with a "canceled" badge.
     // The extend_recurring_series cron skips dates that already exist (any
     // status), so canceled rows aren't regenerated.
-    const today = new Date().toISOString().split("T")[0];
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const today = berlinDateString();
+    const tomorrow = berlinDateStringOffset(1);
     const staysVisible = staged.date === today || staged.date === tomorrow;
     const confirmMsg = staysVisible
       ? `Cancel this occurrence on ${staged.date}? It stays visible on the homepage marked as canceled. The rest of the series continues.`
@@ -2236,9 +2237,7 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
   //   • Approved rows: real sibling rows from `events`, attached by
   //     fetchApprovedEvents (recurrence_until isn't stored post-approval).
   //   • Pending staging rows: derive from recurrence + recurrenceUntil.
-  const today = new Date();
-  today.setHours(6, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
+  const todayStr = berlinDateString();
   const siblingDates: string[] = (() => {
     if (staged.approvedSiblingDates) {
       return staged.approvedSiblingDates.filter(d => d >= todayStr);

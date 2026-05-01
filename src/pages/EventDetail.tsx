@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
+import { berlinDateString } from "@/lib/dateFormat";
 import EventDetailView from "@/components/events/EventDetailView";
 
 export default function EventDetail() {
@@ -100,9 +101,7 @@ export default function EventDetail() {
 		);
 	}
 
-	const today = new Date();
-	today.setHours(6, 0, 0, 0);
-	const todayStr = today.toISOString().split("T")[0];
+	const todayStr = berlinDateString();
 	const siblingDates = seriesMembers
 		.filter(e => e.status !== "canceled")
 		.map(e => e.date)

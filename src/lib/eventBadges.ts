@@ -1,5 +1,6 @@
 import { Clock, TrendingUp, type LucideIcon } from "lucide-react";
 import type { BarlinEvent } from "@/types/event";
+import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
 
 export interface EventBadge {
   label: string;
@@ -33,9 +34,9 @@ export function getEventBadge(
   interestedCount: number
 ): EventBadge | null {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  const isLateNight = now.getHours() < 6;
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const todayStr = berlinDateString(now);
+  const isLateNight = berlinHour(now) < 6;
+  const yesterday = berlinDateStringOffset(-1, now);
   const cutoff = isLateNight ? yesterday : todayStr;
   if (event.date < cutoff) return null;
 
