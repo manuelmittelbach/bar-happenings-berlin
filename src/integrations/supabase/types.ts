@@ -81,18 +81,21 @@ export type Database = {
         Row: {
           color: string
           emoji: string
+          enabled: boolean
           id: string
           label: string
         }
         Insert: {
           color: string
           emoji: string
+          enabled?: boolean
           id: string
           label: string
         }
         Update: {
           color?: string
           emoji?: string
+          enabled?: boolean
           id?: string
           label?: string
         }

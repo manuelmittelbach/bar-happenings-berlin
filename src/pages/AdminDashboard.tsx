@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useEvents";
 import { LANGUAGES } from "@/data/languages";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -1523,6 +1523,11 @@ function StagedEventCard({
   onDeleteApproved?: () => Promise<void>;
   onCancelOccurrence?: () => Promise<void>;
 }) {
+  const { data: categoriesData = [] } = useCategories();
+  const categories = useMemo(
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    [categoriesData],
+  );
   const [title, setTitle] = useState(staged.title);
   const [date, setDate] = useState(staged.date);
   const [startTime, setStartTime] = useState(staged.startTime ?? "");

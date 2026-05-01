@@ -11,9 +11,8 @@ import { Spinner } from "@/components/ui/spinner";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
-import { categories } from "@/data/categories";
 import type { BarlinEvent } from "@/types/event";
-import { useEvents, useVenues, useHasEventsAfter } from "@/hooks/useEvents";
+import { useEvents, useVenues, useHasEventsAfter, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
@@ -125,6 +124,11 @@ export default function Index() {
   const { data: eventsData = [], isLoading: eventsLoading, isFetching: eventsFetching } = useEvents(showAllUpcoming ? undefined : cutoffDate);
   const { data: hasMoreUpcoming = false } = useHasEventsAfter(cutoffDate, !showAllUpcoming);
   const { data: venuesData = [] } = useVenues();
+  const { data: categoriesData = [] } = useCategories();
+  const categories = useMemo(
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    [categoriesData],
+  );
 
   const venueMap = useMemo(
     () => Object.fromEntries(venuesData.map((v) => [v.id, v])),
