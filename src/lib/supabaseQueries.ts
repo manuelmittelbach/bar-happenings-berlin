@@ -347,6 +347,22 @@ export async function fetchVenues(): Promise<Venue[]> {
   return data.map(mapVenueRow);
 }
 
+export interface CategoryRow {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+  enabled: boolean;
+}
+
+export async function fetchCategories(): Promise<CategoryRow[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, label, emoji, color, enabled");
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchVenuesWithOwnership(): Promise<{ venue: Venue; hasOwner: boolean }[]> {
   const [venuesRes, ownersRes] = await Promise.all([
     supabase.from("venues").select("*").order("name", { ascending: true }),

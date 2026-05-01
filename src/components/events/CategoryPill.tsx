@@ -1,4 +1,4 @@
-import { getCategoryInfoByLabel, type CategoryInfo } from "@/data/categories";
+import { useCategories } from "@/hooks/useEvents";
 import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Crown, Dice5, Laugh } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -66,6 +66,8 @@ export function CategoryIconRow({
   activeCategory: string;
   onSelect: (cat: string) => void;
 }) {
+  const { data: catData = [] } = useCategories();
+
   // Sort categories by priority order
   const sorted = [...categories].sort((a, b) => {
     const ai = desktopCategoryOrder.indexOf(a);
@@ -95,7 +97,7 @@ export function CategoryIconRow({
       </button>
 
       {sorted.map((cat) => {
-        const info = getCategoryInfoByLabel(cat);
+        const info = catData.find((c) => c.label === cat);
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
@@ -136,6 +138,8 @@ export function CategoryIconBar({
   activeCategory: string;
   onSelect: (cat: string) => void;
 }) {
+  const { data: catData = [] } = useCategories();
+
   // Same sort order as desktop
   const sorted = [...categories].sort((a, b) => {
     const ai = desktopCategoryOrder.indexOf(a);
@@ -163,7 +167,7 @@ export function CategoryIconBar({
       </button>
 
       {sorted.map((cat) => {
-        const info = getCategoryInfoByLabel(cat);
+        const info = catData.find((c) => c.label === cat);
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
