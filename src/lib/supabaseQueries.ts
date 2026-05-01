@@ -1336,14 +1336,21 @@ export async function updateApprovedEvent(
   displayedId: string,
   seriesId: string | null,
   edits: StagedEventEdits,
-  venues: Venue[],
 ): Promise<void> {
   if (!edits.venueId) throw new Error("Venue is required");
-  const venue = venues.find(v => v.id === edits.venueId);
-  if (!venue) throw new Error("Venue not found");
   if (!edits.title?.trim()) throw new Error("Title is required");
   if (!edits.date) throw new Error("Date is required");
   if (!edits.category) throw new Error("Category is required");
+
+  // Fetch the venue from the DB directly so this stays correct even if the
+  // caller's local venues state is stale (other admin added/removed venues
+  // since the dashboard was loaded).
+  const { data: venue, error: venueErr } = await supabase
+    .from("venues")
+    .select("id, name, address, neighborhood")
+    .eq("id", edits.venueId)
+    .maybeSingle();
+  if (venueErr || !venue) throw new Error("Venue not found");
 
   const seriesWide: TablesUpdate<"events"> = {
     title: edits.title,
