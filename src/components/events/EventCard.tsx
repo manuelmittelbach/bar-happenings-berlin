@@ -21,7 +21,6 @@ interface EventCardProps {
 
 /* Compact chip styles per badge variant */
 const badgeChipClasses: Record<EventBadge["variant"], string> = {
-  live: "bg-[hsl(0,72%,51%)] text-white shadow-[0_0_8px_hsl(0_72%_51%/0.4)]",
   soon: "bg-muted text-foreground border border-border",
   popular: "border border-accent/40 text-accent bg-accent/10",
 };
@@ -56,7 +55,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
   const BadgeChip = () => {
     if (!badge) return null;
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-extrabold uppercase tracking-wide ${badgeChipClasses[badge.variant]} ${badge.variant === "live" ? "animate-pulse" : ""}`}>
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-body font-extrabold uppercase tracking-wide ${badgeChipClasses[badge.variant]}`}>
         <badge.icon className="h-2.5 w-2.5" />
         {badge.label}
       </span>
@@ -167,7 +166,6 @@ export default function EventCard({ event, layout = "grid", featured = false, on
   }
 
   /* ─── DEFAULT GRID card ─── */
-  const isLive = badge?.variant === "live";
   const mightBeOver = badge?.label === "Might be over";
 
   return (
@@ -176,12 +174,8 @@ export default function EventCard({ event, layout = "grid", featured = false, on
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`group relative flex flex-col border-2 transition-colors overflow-hidden card-hover-lift ${
+        className={`group relative flex flex-col border-2 border-border hover:border-foreground bg-background transition-colors overflow-hidden card-hover-lift ${
           isCanceled ? "opacity-50" : ""
-        } ${
-          isLive
-            ? "border-[hsl(0,72%,51%)]/50 hover:border-[hsl(0,72%,51%)] bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]"
-            : "border-border hover:border-foreground bg-background"
         }`}
       >
         <div className="flex flex-1">

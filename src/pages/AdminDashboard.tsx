@@ -701,7 +701,7 @@ export default function AdminDashboard() {
       //   • live parent   → staged.id (parent still alive, has recurrence rule)
       //   • singleton     → null
       const seriesId = staged.parentId || (staged.recurrence ? staged.id : null);
-      await updateApprovedEvent(staged.id, seriesId, edits, venues);
+      await updateApprovedEvent(staged.id, seriesId, edits);
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", staged.id] });
       toast.success("Event updated");

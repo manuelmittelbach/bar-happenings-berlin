@@ -3,7 +3,7 @@ import type { BarlinEvent } from "@/types/event";
 
 export interface EventBadge {
   label: string;
-  variant: "live" | "soon" | "popular";
+  variant: "soon" | "popular";
   icon: LucideIcon;
 }
 
