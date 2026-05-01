@@ -1,8 +1,7 @@
-import { neighborhoods } from "@/data/neighborhoods";
-
-type Neighborhood = (typeof neighborhoods)[number];
-
-const PLZ_MAP: Record<string, Neighborhood> = {
+// Single source of truth for valid Berlin neighborhoods. Add a PLZ here and
+// the `Neighborhood` union type updates automatically — no second list to keep
+// in sync.
+const PLZ_MAP = {
 	"10115": "Mitte", "10117": "Mitte", "10119": "Mitte", "10178": "Mitte", "10179": "Mitte",
 	"10551": "Moabit", "10553": "Moabit", "10555": "Moabit", "10557": "Moabit", "10559": "Moabit",
 	"10405": "Prenzlauer Berg", "10407": "Prenzlauer Berg", "10409": "Prenzlauer Berg",
@@ -36,7 +35,9 @@ const PLZ_MAP: Record<string, Neighborhood> = {
 	"12157": "Steglitz", "12159": "Steglitz", "12161": "Steglitz", "12163": "Steglitz",
 	"12165": "Steglitz", "12167": "Steglitz", "12169": "Steglitz",
 	"14193": "Steglitz", "14195": "Steglitz", "14197": "Steglitz", "14199": "Steglitz",
-};
+} as const;
+
+type Neighborhood = (typeof PLZ_MAP)[keyof typeof PLZ_MAP];
 
 const AMBIGUOUS: Record<string, { default: Neighborhood; streetOverrides: { pattern: RegExp; value: Neighborhood }[] }> = {
 	"10315": {

@@ -12,7 +12,6 @@ import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/eve
 
 
 import { categories } from "@/data/categories";
-import { neighborhoods } from "@/data/neighborhoods";
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues, useHasEventsAfter } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -206,6 +205,17 @@ export default function Index() {
 
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation, eventsData, venueMap]);
+
+  // Filter dropdown shows only neighborhoods that actually have events — avoids
+  // empty filter clicks. Derived from currently loaded events; refreshes when
+  // the user clicks "Show more events" and more data flows in.
+  const availableNeighborhoods = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of eventsData) {
+      if (e.neighborhood && e.neighborhood.trim()) set.add(e.neighborhood);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "de"));
+  }, [eventsData]);
 
   useLayoutEffect(() => {
     if (sessionStorage.getItem("inside-bars-scroll-to-filter") === "1") {
@@ -406,7 +416,7 @@ export default function Index() {
                 <label className="mono-label text-muted-foreground mb-2 block">Neighborhood</label>
                 <div className="flex flex-wrap gap-2">
                   <CategoryPill label="All" active={!activeNeighborhood} onClick={() => setActiveNeighborhood("")} />
-                  {neighborhoods.map((n) => (
+                  {availableNeighborhoods.map((n) => (
                     <CategoryPill key={n} label={n} active={activeNeighborhood === n} onClick={() => setActiveNeighborhood(n)} />
                   ))}
                 </div>
@@ -497,12 +507,11 @@ export default function Index() {
                 const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
                 const interested = (hash % 42) + 1;
                 const rowBadge = getEventBadge(event, interested);
-                const isLive = rowBadge?.variant === "live";
-        
+
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
-                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${isLive ? "bg-[hsl(0,72%,51%)]/[0.04] shadow-[inset_4px_0_0_hsl(0,72%,51%)]" : ""} ${rowBadge?.label === "Might be over" ? "opacity-60" : ""}`}
+                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${rowBadge?.label === "Might be over" ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`shrink-0 font-mono text-[11px] uppercase tracking-wider w-[52px] ${event.startTime ? "text-accent" : "text-muted-foreground"}`}>
@@ -513,11 +522,9 @@ export default function Index() {
                       </span>
                       {rowBadge && (
                         <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide ${
-                          rowBadge.variant === "live"
-                            ? "bg-[hsl(0,72%,51%)] text-white animate-pulse"
-                            : rowBadge.variant === "popular"
-                              ? "border border-accent/40 text-accent bg-accent/10"
-                              : "bg-muted text-foreground border border-border"
+                          rowBadge.variant === "popular"
+                            ? "border border-accent/40 text-accent bg-accent/10"
+                            : "bg-muted text-foreground border border-border"
                         }`}>
                           <rowBadge.icon className="h-2.5 w-2.5" />
                           {rowBadge.label}
