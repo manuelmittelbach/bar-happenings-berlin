@@ -4,6 +4,7 @@ import {
   fetchEventById,
   fetchEventSeries,
   fetchVenues,
+  fetchCategories,
   fetchInterestedEvents,
   checkInterest,
   fetchProfile,
@@ -44,6 +45,10 @@ export function useEventSeries(seriesId: string) {
 
 export function useVenues() {
   return useQuery({ queryKey: ["venues"], queryFn: fetchVenues });
+}
+
+export function useCategories() {
+  return useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
 }
 
 export function useMyEvents(userId: string | null) {

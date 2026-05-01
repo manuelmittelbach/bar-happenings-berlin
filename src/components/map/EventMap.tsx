@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getCategoryInfoByLabel, getCategoryInfo, categoryInfos } from "@/data/categories";
+import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { requestLocationOnce } from "@/hooks/useUserLocation";
@@ -94,6 +94,16 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	const sourceReadyRef = useRef(false);
 	const [locating, setLocating] = useState(false);
 
+	const { data: categoryInfos = [] } = useCategories();
+	const categoryById = useMemo(
+		() => Object.fromEntries(categoryInfos.map((c) => [c.id, c])),
+		[categoryInfos],
+	);
+	const categoryByLabel = useMemo(
+		() => Object.fromEntries(categoryInfos.map((c) => [c.label, c])),
+		[categoryInfos],
+	);
+
 	useEffect(() => { onEventClickRef.current = onEventClick; }, [onEventClick]);
 
 	const venueEvents = useMemo(() => {
@@ -112,7 +122,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		type: "FeatureCollection",
 		features: Array.from(venueEvents.entries()).map(([venueId, evts]) => {
 			const venue = venueMap[venueId];
-			const info = getCategoryInfoByLabel(evts[0].category);
+			const info = categoryByLabel[evts[0].category];
 			const categoryId = info?.id ?? "other";
 			return {
 				type: "Feature",
@@ -134,7 +144,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				},
 			};
 		}),
-	}), [venueEvents, venueMap]);
+	}), [venueEvents, venueMap, categoryByLabel]);
 
 	// Initialize map, load icons, add layers
 	useEffect(() => {
@@ -174,7 +184,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						const key = imageKey(categoryId, count);
 						if (!seen.has(key) && !map.hasImage(key)) {
 							seen.add(key);
-							const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+							const color = categoryById[categoryId]?.color ?? "#6b7280";
 							map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
 						}
 					})
@@ -287,7 +297,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				needed.map(async ({ categoryId, count }) => {
 					const key = imageKey(categoryId, count);
 					if (!map.hasImage(key)) {
-						const color = getCategoryInfo(categoryId)?.color ?? "#6b7280";
+						const color = categoryById[categoryId]?.color ?? "#6b7280";
 						map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
 					}
 				})

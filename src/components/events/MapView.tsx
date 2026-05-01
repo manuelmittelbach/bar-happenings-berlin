@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { BarlinEvent } from "@/types/event";
-import { useVenues } from "@/hooks/useEvents";
-import { categoryInfos } from "@/data/categories";
+import { useVenues, useCategories } from "@/hooks/useEvents";
 
 interface MapViewProps {
   events: BarlinEvent[];
@@ -14,6 +13,7 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const { data: venues = [] } = useVenues();
+  const { data: categoryInfos = [] } = useCategories();
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -130,7 +130,7 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
         });
       });
     });
-  }, [events, onEventClick, venues]);
+  }, [events, onEventClick, venues, categoryInfos]);
 
   return (
     <>

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Upload, Calendar, Clock, Repeat, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
-import { categories } from "@/data/categories";
 import { LANGUAGES } from "@/data/languages";
+import { useCategories } from "@/hooks/useEvents";
 import DateField from "@/components/events/DateField";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -97,6 +97,11 @@ export default function EventForm({
   footer,
   recurrenceLocked = false,
 }: EventFormProps) {
+  const { data: categoriesData = [] } = useCategories();
+  const categories = useMemo(
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    [categoriesData],
+  );
   const [formData, setFormData] = useState<EventFormData>({ ...EMPTY_FORM, ...initialValues });
   const [submitting, setSubmitting] = useState(false);
   const [entryCustomMode, setEntryCustomMode] = useState<boolean>(
