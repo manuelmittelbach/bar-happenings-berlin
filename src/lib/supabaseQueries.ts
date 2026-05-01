@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, Venue } from "@/types/event";
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
+import { berlinDateStringOffset } from "@/lib/dateFormat";
 import { geocodeAddress } from "@/lib/geocoding";
 
 // Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
@@ -1241,7 +1242,7 @@ export async function approveStagedEvent(
     // window now; the extend_recurring_series cron job extends it daily.
     const isIndefinite = !merged.recurrenceUntil;
     const effectiveUntil = merged.recurrenceUntil
-      ?? new Date(Date.now() + 56 * 86400000).toISOString().split("T")[0];
+      ?? berlinDateStringOffset(56);
     const dates = generateOccurrences(merged.date, freq, effectiveUntil);
     if (dates.length === 0) throw new Error("No occurrences generated for recurring event.");
 

@@ -105,7 +105,9 @@
       "Bash(bun add *)",
       "Bash(echo \"Exit: $?\")",
       "Bash(echo \"EXIT: $?\")",
-      "Bash(bunx tsc *)"
+      "Bash(bunx tsc *)",
+      "Bash(sed -n '103,107p' /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/src/pages/EventDetail.tsx)",
+      "Bash(sed -n '2238,2245p' /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin/src/pages/AdminDashboard.tsx)"
     ]
   }
 }
