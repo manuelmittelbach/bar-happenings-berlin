@@ -17,6 +17,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
 import { isEventStillOnline } from "@/lib/eventStatus";
+import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
@@ -114,11 +115,11 @@ export default function Index() {
   }, [location.key]);
 
 
-  const today = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  const cutoffDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-  const isLateNight = new Date().getHours() < 6;
+  const today = berlinDateString();
+  const tomorrow = berlinDateStringOffset(1);
+  const yesterday = berlinDateStringOffset(-1);
+  const cutoffDate = berlinDateStringOffset(30);
+  const isLateNight = berlinHour() < 6;
 
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const { data: eventsData = [], isLoading: eventsLoading, isFetching: eventsFetching } = useEvents(showAllUpcoming ? undefined : cutoffDate);

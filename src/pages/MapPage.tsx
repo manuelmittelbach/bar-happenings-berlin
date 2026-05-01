@@ -6,6 +6,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
 import { isEventStillOnline } from "@/lib/eventStatus";
+import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
@@ -39,8 +40,8 @@ export default function MapPage() {
     [venuesData]
   );
 
-  const today = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const today = berlinDateString();
+  const tomorrow = berlinDateStringOffset(1);
 
   const filtered = useMemo(() => {
     let result = [...eventsData];
