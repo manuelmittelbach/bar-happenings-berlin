@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { List, SlidersHorizontal } from "lucide-react";
-import { categories } from "@/data/categories";
-import { useEvents, useVenues } from "@/hooks/useEvents";
+import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
@@ -28,6 +27,11 @@ export default function MapPage() {
 
   const { data: eventsData = [] } = useEvents();
   const { data: venuesData = [] } = useVenues();
+  const { data: categoriesData = [] } = useCategories();
+  const categories = useMemo(
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    [categoriesData],
+  );
   const { location: userLocation } = useUserLocation();
 
   const venueMap = useMemo(
