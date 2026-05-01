@@ -11,6 +11,7 @@ import {
   uploadEventImage,
 } from "@/lib/supabaseQueries";
 import { hasEventStarted } from "@/lib/eventStatus";
+import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -105,8 +106,8 @@ export default function EditEvent() {
 
   const handleDelete = async () => {
     if (!id || !seriesInfo) return;
-    const today = new Date().toISOString().split("T")[0];
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const today = berlinDateString();
+    const tomorrow = berlinDateStringOffset(1);
     const staysVisible = seriesInfo.eventDate === today || seriesInfo.eventDate === tomorrow;
     const confirmMessage = applyToSeries
       ? staysVisible

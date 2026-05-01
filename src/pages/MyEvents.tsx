@@ -8,11 +8,12 @@ import { Spinner } from "@/components/ui/spinner";
 import type { BarlinEvent } from "@/types/event";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
+import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
 
 function formatDateHeader(dateStr: string) {
-	const today = new Date().toISOString().split("T")[0];
-	const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-	const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+	const today = berlinDateString();
+	const tomorrow = berlinDateStringOffset(1);
+	const yesterday = berlinDateStringOffset(-1);
 
 	if (dateStr === today) return "Today";
 	if (dateStr === tomorrow) return "Tomorrow";
@@ -63,9 +64,9 @@ export default function MyEvents() {
 		return clearJustConfirmedSoon();
 	}, [justConfirmed]);
 
-	const isLateNight = new Date().getHours() < 6;
-	const today = new Date().toISOString().split("T")[0];
-	const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+	const isLateNight = berlinHour() < 6;
+	const today = berlinDateString();
+	const yesterday = berlinDateStringOffset(-1);
 	const cutoff = isLateNight ? yesterday : today;
 
 	const sorted = [...events].sort(
