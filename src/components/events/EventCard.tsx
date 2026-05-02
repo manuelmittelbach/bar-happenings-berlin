@@ -166,10 +166,10 @@ export default function EventCard({ event, layout = "grid", featured = false, on
   }
 
   /* ─── DEFAULT GRID card ─── */
-  const mightBeOver = badge?.label === "Might be over";
+  const isPastEvent = badge?.label === "Might be over" || badge?.label === "Over";
 
   return (
-    <div className={`relative ${mightBeOver ? "opacity-60" : ""}`}>
+    <div className={`relative ${isPastEvent ? "opacity-60" : ""}`}>
       {canceledOverlay}
       <Link
         to={`/event/${event.id}`}
