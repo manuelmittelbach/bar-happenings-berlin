@@ -184,11 +184,13 @@ export default function Index() {
       return v?.lat && v?.lng ? haversineMeters(userLocation.lat, userLocation.lng, v.lat, v.lng) : Infinity;
     };
 
-    // 0 = walking distance (top), 1 = normal, 2 = might be over (always bottom)
+    // 0 = walking distance (top), 1 = normal, 2 = might be over, 3 = over (very bottom)
     // Walking-boost only applies to today/tomorrow — for "Later" events distance
     // matters less since users are planning, not deciding spontaneously.
     const getSortGroup = (e: typeof result[0], dist: number): number => {
-      if (getEventBadge(e, 0)?.label === "Might be over") return 2;
+      const label = getEventBadge(e, 0)?.label;
+      if (label === "Over") return 3;
+      if (label === "Might be over") return 2;
       const isNearTerm = e.date === today || e.date === tomorrow;
       if (isNearTerm && dist <= WALK_30MIN_M) return 0;
       return 1;
@@ -516,7 +518,7 @@ export default function Index() {
                 return (
                   <button
                     onClick={() => handleEventClick(event.id)}
-                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${rowBadge?.label === "Might be over" ? "opacity-60" : ""}`}
+                    className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${rowBadge?.label === "Might be over" || rowBadge?.label === "Over" ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`shrink-0 font-mono text-[11px] uppercase tracking-wider w-[52px] ${event.startTime ? "text-accent" : "text-muted-foreground"}`}>
