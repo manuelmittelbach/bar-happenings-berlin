@@ -15,7 +15,7 @@ export default function EventDetail() {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { user } = useAuth();
+	const { user, role, roleResolved } = useAuth();
 	const { data: event, isLoading } = useEventById(id || "");
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
@@ -125,6 +125,8 @@ export default function EventDetail() {
 		if (sibling) navigate(`/event/${sibling.id}`);
 	};
 
+	const canEdit = roleResolved && role === "admin";
+
 	return (
 		<div className="bg-background pb-24">
 			<EventDetailView
@@ -141,6 +143,7 @@ export default function EventDetail() {
 				showShare={true}
 				upcomingOpen={upcomingOpen}
 				onToggleUpcoming={() => setUpcomingOpen(o => !o)}
+				onEdit={canEdit ? () => navigate(`/edit-event/${event.id}`) : undefined}
 			/>
 		</div>
 	);

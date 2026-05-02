@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { MapPin, ExternalLink, ChevronDown, Plus, Users } from "lucide-react";
+import { MapPin, ExternalLink, ChevronDown, Plus, Users, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -75,6 +75,10 @@ export interface EventDetailViewProps {
   // navigations (so the panel doesn't snap shut while a new event loads).
   upcomingOpen?: boolean;
   onToggleUpcoming?: () => void;
+
+  // Admin-only edit shortcut. When provided, renders a pencil button in
+  // the hero that jumps to the edit page.
+  onEdit?: () => void;
 }
 
 export default function EventDetailView({
@@ -93,6 +97,7 @@ export default function EventDetailView({
   headerBanner,
   upcomingOpen,
   onToggleUpcoming,
+  onEdit,
 }: EventDetailViewProps) {
   const displayTitle = cleanEventTitle(event.title || "(untitled)", event.venue);
   const hasRealImage = !!event.image;
@@ -128,6 +133,15 @@ export default function EventDetailView({
                 {event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer"}
               </span>
             </div>
+          )}
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              aria-label="Edit event"
+              className="absolute top-3 right-3 z-20 h-9 w-9 flex items-center justify-center rounded-full bg-background/80 backdrop-blur-sm border border-border text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
           )}
         </div>
 
