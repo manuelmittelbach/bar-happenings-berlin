@@ -137,6 +137,11 @@ export default function EventDetailView({
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          {event.category && (
+            <div className="absolute top-3 left-3 z-20 inline-flex items-center bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
+              {event.category}
+            </div>
+          )}
           {event.status === "canceled" && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <span className="-rotate-12 border-2 border-red-600 text-red-600 bg-background/80 font-body text-sm md:text-base font-extrabold uppercase tracking-wider px-4 py-1.5 shadow-md whitespace-nowrap">
