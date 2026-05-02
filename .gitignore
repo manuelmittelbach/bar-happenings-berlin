@@ -33,3 +33,6 @@ Tipsy Tiger/
 
 # Scraper secrets
 scripts/.env
+
+# Claude Code local permissions (per-machine, not shared)
+.claude/settings.local.json
