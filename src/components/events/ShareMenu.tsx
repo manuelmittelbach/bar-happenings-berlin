@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { Share2, Copy, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -14,6 +14,20 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/event/${eventId}`;
   const text = `Check out "${eventTitle}" on Inside Bars!`;
+
+  const canNativeShare =
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({ title: eventTitle, text, url });
+    } catch (err) {
+      // User dismissed the sheet — silent. Anything else surfaces a toast.
+      if (err instanceof Error && err.name !== "AbortError") {
+        toast.error("Could not share");
+      }
+    }
+  };
 
   const handleCopy = async () => {
     try {
@@ -66,30 +80,48 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
     },
   ];
 
+  const renderTriggerButton = (onClick?: () => void): ReactNode =>
+    variant === "full" ? (
+      <button onClick={onClick} className="w-full h-12 bg-accent/10 border-2 border-accent/40 text-[13px] font-heading font-bold uppercase tracking-wider text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_18px_hsl(18_85%_52%/0.3)] transition-all duration-300 flex items-center justify-center gap-2">
+        <Share2 className="h-4 w-4" /> Share with friends
+      </button>
+    ) : variant === "header" ? (
+      <button onClick={onClick} className="text-xs font-mono text-accent cursor-pointer">
+        Share event
+      </button>
+    ) : variant === "pill" ? (
+      <button onClick={onClick} className="h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 bg-transparent text-foreground border-accent hover:bg-accent/10 transition-all duration-200 active:scale-[0.98]">
+        <Share2 className="h-4 w-4" />
+        Share
+      </button>
+    ) : (
+      <button onClick={onClick} className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
+        <Share2 className="h-5 w-5" />
+        Share
+      </button>
+    );
+
+  if (canNativeShare) {
+    return <>{renderTriggerButton(handleNativeShare)}</>;
+  }
+
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        {variant === "full" ? (
-          <button className="w-full h-12 bg-accent/10 border-2 border-accent/40 text-[13px] font-heading font-bold uppercase tracking-wider text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_18px_hsl(18_85%_52%/0.3)] transition-all duration-300 flex items-center justify-center gap-2">
-            <Share2 className="h-4 w-4" /> Share with friends
-          </button>
-        ) : variant === "header" ? (
-          <button className="text-xs font-mono text-accent cursor-pointer">
-            Share event
-          </button>
-        ) : variant === "pill" ? (
-          <button className="h-12 px-6 flex items-center gap-2 text-sm font-bold uppercase tracking-wider font-body rounded-full border-2 bg-transparent text-foreground border-accent hover:bg-accent/10 transition-all duration-200 active:scale-[0.98]">
-            <Share2 className="h-4 w-4" />
-            Share
-          </button>
-        ) : (
-          <button className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
-            <Share2 className="h-5 w-5" />
-            Share
-          </button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-2 border-2 border-foreground" align="end">
+      <PopoverTrigger asChild>{renderTriggerButton()}</PopoverTrigger>
+      <PopoverContent className="w-56 p-2 border-2 border-foreground" align="end">
+        {shareLinks.map((link) => (
+          <a
+            key={link.name}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-muted transition-colors w-full"
+          >
+            {link.icon}
+            <span>{link.name}</span>
+          </a>
+        ))}
+        <div className="my-1 border-t border-border" />
         <button
           onClick={handleCopy}
           className="flex items-center gap-3 px-2 py-2 text-sm hover:bg-muted transition-colors w-full"
