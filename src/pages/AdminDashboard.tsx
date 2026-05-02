@@ -2238,17 +2238,26 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
   //     fetchApprovedEvents (recurrence_until isn't stored post-approval).
   //   • Pending staging rows: derive from recurrence + recurrenceUntil.
   const todayStr = berlinDateString();
-  const siblingDates: string[] = (() => {
+  const upcomingEvents = (() => {
+    let dates: string[] = [];
     if (staged.approvedSiblingDates) {
-      return staged.approvedSiblingDates.filter(d => d >= todayStr);
+      dates = staged.approvedSiblingDates.filter(d => d >= todayStr);
+    } else if (staged.date && staged.recurrence && staged.recurrenceUntil) {
+      try {
+        dates = generateOccurrences(staged.date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil)
+          .filter(d => d >= todayStr);
+      } catch {
+        dates = [];
+      }
     }
-    if (!staged.date || !staged.recurrence || !staged.recurrenceUntil) return [];
-    try {
-      return generateOccurrences(staged.date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil)
-        .filter(d => d >= todayStr);
-    } catch {
-      return [];
-    }
+    // Synthesize event-shaped objects for the accordion. The pill matching
+    // staged.date gets staged.id so it renders as the active pill; siblings
+    // get synthetic ids (not clickable in admin preview anyway).
+    return dates.map(d => ({
+      id: d === staged.date ? staged.id : `${staged.id}-${d}`,
+      date: d,
+      startTime: d === staged.date ? (staged.startTime ?? undefined) : undefined,
+    }));
   })();
 
   const event = {
@@ -2275,7 +2284,7 @@ function StagedEventPreview({ staged }: { staged: StagedEvent }) {
     <div className="border border-border rounded-sm overflow-hidden">
       <EventDetailView
         event={event}
-        siblingDates={siblingDates}
+        upcomingEvents={upcomingEvents}
         recurrenceLabel={formatRecurrenceLabel(staged.recurrence)}
         interestedCount={staged.interestedCount ?? 0}
         // Admins always see the count for moderation context, regardless of

@@ -3,6 +3,7 @@ import {
   fetchEvents,
   fetchEventById,
   fetchEventSeries,
+  fetchEventsByVenue,
   fetchVenues,
   fetchCategories,
   fetchInterestedEvents,
@@ -40,6 +41,14 @@ export function useEventSeries(seriesId: string) {
     queryKey: ["events", "series", seriesId],
     queryFn: () => fetchEventSeries(seriesId),
     enabled: !!seriesId,
+  });
+}
+
+export function useEventsByVenue(venueId: string, fromDate: string) {
+  return useQuery({
+    queryKey: ["events", "venue", venueId, fromDate],
+    queryFn: () => fetchEventsByVenue(venueId, fromDate),
+    enabled: !!venueId && !!fromDate,
   });
 }
 

@@ -8,6 +8,13 @@ import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
 
 
+export interface UpcomingEvent {
+  id: string;
+  date: string;
+  startTime?: string;
+  status?: string;
+}
+
 export interface EventDetailViewProps {
   // Core event payload. The admin preview synthesizes this from a staged row.
   event: Pick<
@@ -31,9 +38,10 @@ export interface EventDetailViewProps {
     | "status"
   >;
 
-  // Future-only sibling dates of the same series, sorted ascending. Empty
-  // array = no "Upcoming events in this bar" accordion.
-  siblingDates: string[];
+  // Future-only events at the same venue, sorted by date+startTime. The
+  // current event is included; the accordion marks it as the active pill.
+  // Length <= 1 hides the accordion.
+  upcomingEvents: UpcomingEvent[];
 
   // Pre-computed recurrence label (e.g. "Every Tuesday"). null = hide.
   recurrenceLabel: string | null;
@@ -48,8 +56,9 @@ export interface EventDetailViewProps {
   isSaving: boolean;
   onToggleInterest?: () => void;
 
-  // Pill click for sibling-date navigation. undefined → pills are inert.
-  onSelectSibling?: (date: string) => void;
+  // Pill click for sibling navigation. Receives the target event id. When
+  // undefined, pills render inert (used by admin preview).
+  onSelectSibling?: (eventId: string) => void;
 
   // "Open in Maps" handler.
   onOpenMaps: () => void;
@@ -79,7 +88,7 @@ export interface EventDetailViewProps {
 
 export default function EventDetailView({
   event,
-  siblingDates,
+  upcomingEvents,
   recurrenceLabel,
   interestedCount,
   showInterestCount,
@@ -258,10 +267,10 @@ export default function EventDetailView({
 
         {/* Utility rows */}
         <div className="px-4">
-          {siblingDates.length > 1 && (
+          {upcomingEvents.length > 1 && (
             <UpcomingDatesAccordion
-              dates={siblingDates}
-              activeDate={event.date}
+              events={upcomingEvents}
+              activeId={event.id}
               onSelectSibling={onSelectSibling}
               open={upcomingOpen}
               onToggleOpen={onToggleUpcoming}
@@ -288,15 +297,15 @@ export default function EventDetailView({
 }
 
 function UpcomingDatesAccordion({
-  dates,
-  activeDate,
+  events,
+  activeId,
   onSelectSibling,
   open: controlledOpen,
   onToggleOpen,
 }: {
-  dates: string[];
-  activeDate: string;
-  onSelectSibling?: (date: string) => void;
+  events: UpcomingEvent[];
+  activeId: string;
+  onSelectSibling?: (eventId: string) => void;
   open?: boolean;
   onToggleOpen?: () => void;
 }) {
@@ -306,6 +315,12 @@ function UpcomingDatesAccordion({
   const toggle = isControlled
     ? (onToggleOpen ?? (() => {}))
     : () => setLocalOpen(o => !o);
+
+  // Only show the start time on a pill when the same date has multiple
+  // events — otherwise the date alone is unambiguous and reads cleaner.
+  const dateCounts: Record<string, number> = {};
+  events.forEach(e => { dateCounts[e.date] = (dateCounts[e.date] ?? 0) + 1; });
+
   return (
     <div className="border-b border-border">
       <button
@@ -319,20 +334,24 @@ function UpcomingDatesAccordion({
       </button>
       {open && (
         <div className="flex flex-wrap gap-2 pb-3.5">
-          {dates.map(d => {
-            const isActive = d === activeDate;
+          {events.map(e => {
+            const isActive = e.id === activeId;
             const clickable = !!onSelectSibling && !isActive;
+            const showTime = (dateCounts[e.date] ?? 0) > 1 && !!e.startTime;
+            const label = showTime
+              ? `${formatDateShort(e.date)} · ${e.startTime}`
+              : formatDateShort(e.date);
             return (
               <button
-                key={d}
-                onClick={clickable ? () => onSelectSibling!(d) : undefined}
+                key={e.id}
+                onClick={clickable ? () => onSelectSibling!(e.id) : undefined}
                 className={`inline-flex items-center px-3 py-1.5 text-[11px] font-mono font-bold transition-all active:scale-95 ${
                   isActive
                     ? "bg-accent text-accent-foreground"
                     : `border-2 border-border text-muted-foreground ${clickable ? "hover:border-foreground hover:text-foreground cursor-pointer" : "cursor-default"}`
                 }`}
               >
-                {formatDateShort(d)}
+                {label}
               </button>
             );
           })}
