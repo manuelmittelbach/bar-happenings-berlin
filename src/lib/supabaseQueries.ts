@@ -342,6 +342,22 @@ export async function fetchEventSeries(seriesId: string): Promise<BarlinEvent[]>
   return rows.map(mapEventRow);
 }
 
+export async function fetchEventsByVenue(
+  venueId: string,
+  fromDate: string,
+): Promise<BarlinEvent[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("venue_id", venueId)
+    .gte("date", fromDate)
+    .in("status", ["approved", "canceled"])
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapEventRow);
+}
+
 export async function fetchVenues(): Promise<Venue[]> {
   const { data, error } = await supabase.from("venues").select("*");
   if (error) throw error;

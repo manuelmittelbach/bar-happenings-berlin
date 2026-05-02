@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useEventById, useEventSeries } from "@/hooks/useEvents";
+import { useEventById, useEventSeries, useEventsByVenue } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueries";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
@@ -19,6 +19,8 @@ export default function EventDetail() {
 	const { data: event, isLoading } = useEventById(id || "");
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
+	const todayStr = berlinDateString();
+	const { data: venueEvents = [] } = useEventsByVenue(event?.venueId ?? "", todayStr);
 	const [saved, setSaved] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [interestedCount, setInterestedCount] = useState(0);
@@ -101,12 +103,9 @@ export default function EventDetail() {
 		);
 	}
 
-	const todayStr = berlinDateString();
-	const siblingDates = seriesMembers
-		.filter(e => e.status !== "canceled")
-		.map(e => e.date)
-		.filter((d, i, arr) => arr.indexOf(d) === i && d >= todayStr)
-		.sort();
+	const upcomingEvents = venueEvents
+		.filter(e => e.status !== "canceled" && e.date >= todayStr)
+		.map(e => ({ id: e.id, date: e.date, startTime: e.startTime, status: e.status }));
 
 	const seriesRule = seriesMembers.find((m) => m.recurrence)?.recurrence ?? "";
 	const seriesLastDate = seriesMembers.reduce((max, m) => (m.date > max ? m.date : max), "");
@@ -120,9 +119,8 @@ export default function EventDetail() {
 		);
 	};
 
-	const handleSelectSibling = (date: string) => {
-		const sibling = seriesMembers.find(e => e.date === date);
-		if (sibling) navigate(`/event/${sibling.id}`);
+	const handleSelectSibling = (eventId: string) => {
+		navigate(`/event/${eventId}`);
 	};
 
 	const canEdit = roleResolved && role === "admin";
@@ -131,7 +129,7 @@ export default function EventDetail() {
 		<div className="bg-background pb-24">
 			<EventDetailView
 				event={event}
-				siblingDates={siblingDates}
+				upcomingEvents={upcomingEvents}
 				recurrenceLabel={recurrenceLabel}
 				interestedCount={interestedCount}
 				showInterestCount={SHOW_INTEREST_COUNT}
