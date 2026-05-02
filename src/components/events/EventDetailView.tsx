@@ -158,31 +158,27 @@ export default function EventDetailView({
         </div>
 
         {/* Interested + Share */}
-        <div className="px-4 pb-4 pt-3 flex items-center gap-4">
-          <div className="flex-1 flex items-center gap-3">
-            <button
-              onClick={onToggleInterest}
-              disabled={interestDisabled}
-              className={`${interestButtonSize} flex items-center gap-2 font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
-                saved
-                  ? "bg-accent text-accent-foreground border-accent"
-                  : "bg-transparent text-foreground border-accent hover:bg-accent/10"
-              } ${!onToggleInterest ? "cursor-default" : ""}`}
-            >
-              {!saved && <Plus className="h-4 w-4" />}
-              Interested
-            </button>
-            {showInterestCount && (
-              <span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
-                <Users className="h-4 w-4" />
-                {interestedCount}
-              </span>
-            )}
-          </div>
+        <div className="px-4 pb-4 pt-3 flex items-center gap-3">
+          <button
+            onClick={onToggleInterest}
+            disabled={interestDisabled}
+            className={`${interestButtonSize} flex items-center gap-2 font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
+              saved
+                ? "bg-accent text-accent-foreground border-accent"
+                : "bg-transparent text-foreground border-accent hover:bg-accent/10"
+            } ${!onToggleInterest ? "cursor-default" : ""}`}
+          >
+            {!saved && <Plus className="h-4 w-4" />}
+            Interested
+          </button>
           {showShare && (
-            <div className={`flex-1 ${whereOffset}`}>
-              <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="pill" />
-            </div>
+            <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="icon-circle" />
+          )}
+          {showInterestCount && (
+            <span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
+              <Users className="h-4 w-4" />
+              {interestedCount}
+            </span>
           )}
         </div>
 
