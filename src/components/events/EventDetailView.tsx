@@ -1,5 +1,5 @@
-import { ReactNode, useState } from "react";
-import { MapPin, ExternalLink, ChevronDown, Plus, Users, Pencil } from "lucide-react";
+import { ReactNode, Fragment, useState } from "react";
+import { MapPin, ExternalLink, ChevronDown, Plus, Users, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -7,10 +7,6 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
 
-function formatLanguage(raw: string | undefined | null): string | null {
-  if (!raw) return null;
-  return `in ${raw}`;
-}
 
 export interface EventDetailViewProps {
   // Core event payload. The admin preview synthesizes this from a staged row.
@@ -107,9 +103,14 @@ export default function EventDetailView({
   const titleSize = compact ? "text-lg" : "text-[22px] md:text-3xl";
   const interestButtonSize = compact ? "h-10 px-5 text-xs" : "h-12 px-6 text-sm";
   const whereOffset = compact ? "" : "md:pl-48";
-  const detailsLine = [event.entryInfo, recurrenceLabel, formatLanguage(event.language)]
-    .filter(Boolean)
-    .join(" · ");
+  // Strip € from price text since the Euro icon already conveys it. Spaces
+  // are preserved as written.
+  const priceText = event.entryInfo?.replace(/€/g, "");
+  const detailItems: { icon: LucideIcon; text: string }[] = [
+    priceText ? { icon: Euro, text: priceText } : null,
+    recurrenceLabel ? { icon: Repeat, text: recurrenceLabel } : null,
+    event.language ? { icon: Languages, text: event.language } : null,
+  ].filter((x): x is { icon: LucideIcon; text: string } => x !== null);
 
   return (
     <div className="bg-background">
@@ -230,8 +231,20 @@ export default function EventDetailView({
 
         {/* About this event */}
         <div className="px-4 py-5 space-y-4">
+          {detailItems.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+              {detailItems.map((item, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <span className="text-muted-foreground/60">·</span>}
+                  <span className="inline-flex items-center gap-1.5">
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span>{item.text}</span>
+                  </span>
+                </Fragment>
+              ))}
+            </div>
+          )}
           <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
-          {detailsLine && <p className="text-sm text-muted-foreground">{detailsLine}</p>}
           {event.description ? (
             event.description.split("\n\n").map((p, i) => (
               <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{p}</p>
