@@ -181,8 +181,19 @@ export default function EventCard({ event, layout = "grid", featured = false, on
         <div className="flex flex-1">
           <div className="p-3 md:p-4 flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {badge?.variant === "soon" ? (
+                <>
+                  <BadgeChip />
+                  <span className="text-muted-foreground text-[10px] md:text-xs">·</span>
+                </>
+              ) : event.startTime ? (
+                <>
+                  <span className="font-mono text-accent font-bold text-[10px] md:text-xs uppercase tracking-wider">{event.startTime}</span>
+                  <span className="text-muted-foreground text-[10px] md:text-xs">·</span>
+                </>
+              ) : null}
               <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
-              <BadgeChip />
+              {badge && badge.variant !== "soon" && <BadgeChip />}
             </div>
             <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
               {displayTitle}
