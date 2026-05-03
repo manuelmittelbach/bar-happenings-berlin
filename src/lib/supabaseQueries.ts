@@ -253,7 +253,7 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
   };
   if (includeDateTime) {
     update.date = formData.date;
-    update.start_time = trimTime(formData.startTime);
+    update.start_time = formData.startTime ? trimTime(formData.startTime) : null;
     update.end_time = formData.endTime ? trimTime(formData.endTime) : null;
     update.doors_time = formData.doorsTime ? trimTime(formData.doorsTime) : null;
   }

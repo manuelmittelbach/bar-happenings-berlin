@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -20,6 +21,7 @@ export default function EditEvent() {
   const [searchParams] = useSearchParams();
   const scopeParam = searchParams.get("scope");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, role, loading: authLoading, roleResolved } = useAuth();
   const isAdmin = role === "admin";
 
@@ -96,12 +98,14 @@ export default function EditEvent() {
           await updateEvent(id, data, imageUrl);
           toast.success("Event updated!");
         }
-        navigate(isAdmin ? "/admin" : "/dashboard");
+        queryClient.invalidateQueries({ queryKey: ["events"] });
+        queryClient.invalidateQueries({ queryKey: ["event", id] });
+        navigate(isAdmin ? "/" : "/dashboard");
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate, seriesInfo, applyToSeries],
+    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient],
   );
 
   const handleDelete = async () => {
@@ -126,7 +130,9 @@ export default function EditEvent() {
         await cancelEvent(id, by);
         toast.success("Event marked as canceled.");
       }
-      navigate(isAdmin ? "/admin" : "/dashboard");
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
+      navigate(isAdmin ? "/" : "/dashboard");
     } catch {
       toast.error("Couldn't cancel the event. Please try again.");
     }
@@ -166,9 +172,11 @@ export default function EditEvent() {
       submittingLabel="Saving…"
       onSubmit={handleSubmit}
       recurrenceLocked={seriesInfo.isSeries}
+      optionalStartTime={isAdmin}
+      optionalDescription={isAdmin}
       secondaryActions={
         <Link
-          to={isAdmin ? "/admin" : "/dashboard"}
+          to={isAdmin ? "/" : "/dashboard"}
           className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel

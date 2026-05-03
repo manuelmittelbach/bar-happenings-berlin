@@ -67,6 +67,8 @@ interface EventFormProps {
   secondaryActions?: ReactNode;
   footer?: ReactNode;
   recurrenceLocked?: boolean;
+  optionalStartTime?: boolean;
+  optionalDescription?: boolean;
 }
 
 const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -96,6 +98,8 @@ export default function EventForm({
   secondaryActions,
   footer,
   recurrenceLocked = false,
+  optionalStartTime = false,
+  optionalDescription = false,
 }: EventFormProps) {
   const { data: categoriesData = [] } = useCategories();
   const categories = useMemo(
@@ -347,9 +351,13 @@ export default function EventForm({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> Start *</label>
+            <label className="text-sm font-medium flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Start{optionalStartTime ? "" : " *"}
+            </label>
             <input
-              type="time" required value={formData.startTime}
+              type="time"
+              required={!optionalStartTime}
+              value={formData.startTime}
               onChange={(e) => update("startTime", e.target.value)}
               className={inputClass}
             />
@@ -497,9 +505,10 @@ export default function EventForm({
 
         {/* Description */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Description *</label>
+          <label className="text-sm font-medium">Description{optionalDescription ? "" : " *"}</label>
           <textarea
-            required value={formData.description}
+            required={!optionalDescription}
+            value={formData.description}
             onChange={(e) => update("description", e.target.value)}
             placeholder="Tell people what to expect..."
             rows={6}
