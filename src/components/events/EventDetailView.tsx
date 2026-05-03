@@ -36,6 +36,7 @@ export interface EventDetailViewProps {
     | "image"
     | "imagePosition"
     | "status"
+    | "canceledBy"
   >;
 
   // Future-only events at the same venue, sorted by date+startTime. The
