@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useLayoutEffect, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, Users, Map, SlidersHorizontal } from "lucide-react";
+import { Search, Users, Map, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
 import EventCard from "@/components/events/EventCard";
@@ -32,6 +33,11 @@ const parseEntryEuro = (s: string): number | null => {
 };
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
+// Module-level flag: hero animation runs only on the first mount per page-load.
+// Internal navigation (Header/Footer "Inside Bars" links) re-mounts Index but skips it.
+// Hard refresh reloads the module → flag resets → animation plays again.
+let heroAnimationPlayed = false;
+
 export default function Index() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -51,6 +57,10 @@ export default function Index() {
   );
   const [activeEntry, setActiveEntry] = useSessionState("bhb-shared-entry", "All");
   const [showFilters, setShowFilters] = useState(false);
+  const [animateHero] = useState(() => !heroAnimationPlayed);
+  useEffect(() => {
+    if (animateHero) heroAnimationPlayed = true;
+  }, [animateHero]);
   
   
 
@@ -305,32 +315,100 @@ export default function Index() {
 
   return (
     <>
-        <section className="border-b-2 border-foreground bg-muted/40">
-          <div className="container py-12 md:py-16 lg:py-20 relative z-[45]">
-            <div>
-              <p className="mono-label text-accent mb-4">Berlin's independent bar guide</p>
-              <h1 className="heading-display text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-4xl">
-                What's on
-                <br />
-                <span className="heading-editorial lowercase italic">tonight</span>
-                <br />
-                in Berlin bars?
-              </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Live music, quiz nights, open mics, and community events in small independent bars across the city.
-              </p>
-            </div>
+        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100svh-56px)] flex flex-col justify-center">
+          <div className="container relative z-[45] py-16">
+            <motion.p
+              className="mono-label text-accent mb-4"
+              initial={animateHero ? { opacity: 0 } : false}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1.7 }}
+            >
+              Berlin's independent bar guide
+            </motion.p>
+            <h1 className="heading-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
+              <span className="block whitespace-nowrap">
+                {["What's", "on"].map((w, i) => (
+                  <motion.span
+                    key={`l1-${i}`}
+                    className="inline-block mr-[0.25em] last:mr-0"
+                    initial={animateHero ? { opacity: 0, y: 20 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: i * 0.18 }}
+                  >
+                    {w}
+                  </motion.span>
+                ))}
+              </span>
+              <span className="block whitespace-nowrap">
+                <motion.span
+                  className="heading-editorial lowercase italic inline-block pr-[0.15em]"
+                  initial={animateHero ? { opacity: 0, y: 20 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 2 * 0.18 }}
+                >
+                  tonight
+                </motion.span>
+              </span>
+              <span className="block whitespace-nowrap">
+                {["in", "Berlin"].map((w, i) => (
+                  <motion.span
+                    key={`l3-${i}`}
+                    className="inline-block mr-[0.25em] last:mr-0"
+                    initial={animateHero ? { opacity: 0, y: 20 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: (3 + i) * 0.18 }}
+                  >
+                    {w}
+                  </motion.span>
+                ))}
+              </span>
+              <span className="block whitespace-nowrap">
+                <motion.span
+                  className="inline-block"
+                  initial={animateHero ? { opacity: 0, y: 20 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 5 * 0.18 }}
+                >
+                  bars
+                </motion.span>
+                <motion.span
+                  className="inline-block text-accent"
+                  initial={animateHero ? { opacity: 0, y: 20 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 6 * 0.18 }}
+                >
+                  ?
+                </motion.span>
+              </span>
+            </h1>
+          </div>
 
-            {/* Location permission primer */}
-            {showLocationBanner && (
-              <div className="mt-10 max-w-lg flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
+          <motion.div
+            className="absolute bottom-6 inset-x-0 flex flex-col items-center gap-1 text-muted-foreground pointer-events-none"
+            initial={animateHero ? { opacity: 0 } : false}
+            animate={{ opacity: 1, y: [0, 6, 0] }}
+            transition={{
+              opacity: { delay: animateHero ? 2.1 : 0, duration: 0.6 },
+              y: { delay: animateHero ? 2.1 : 0, repeat: Infinity, duration: 1.8, ease: "easeInOut" },
+            }}
+          >
+            <span className="mono-label">Scroll</span>
+            <ChevronDown className="h-4 w-4" />
+          </motion.div>
+        </section>
+
+        {/* Location permission primer — under the hero, above date filter */}
+        {showLocationBanner && (
+          <div className="border-b border-border bg-background">
+            <div className="container py-4">
+              <div className="max-w-lg flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
                 <p className="text-sm text-muted-foreground flex-1">
                   <button
                     onClick={() => requestLocation()}
                     className="text-foreground font-semibold underline underline-offset-2 hover:text-accent transition-colors"
                   >
-                        Show nearby events first
+                    Show nearby events first
                   </button>
                   {" "}— uses your location to sort
                 </p>
@@ -342,10 +420,9 @@ export default function Index() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-            )}
-
+            </div>
           </div>
-        </section>
+        )}
 
         {/* Date filter bar — Map-style with thick black border */}
         <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 56 }} className="bg-background border-b border-border">
