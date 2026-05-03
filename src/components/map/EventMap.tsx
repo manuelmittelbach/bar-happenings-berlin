@@ -16,6 +16,22 @@ interface EventMapProps {
 const BERLIN_CENTER: [number, number] = [13.405, 52.52];
 const SOURCE_ID = "venues";
 const LAYER_ICONS = "venue-icons";
+const VIEW_STORAGE_KEY = "bhb-map-view";
+
+function readStoredView(): { center: [number, number]; zoom: number } | null {
+	try {
+		const raw = sessionStorage.getItem(VIEW_STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		const lng = Number(parsed?.center?.[0]);
+		const lat = Number(parsed?.center?.[1]);
+		const zoom = Number(parsed?.zoom);
+		if (!Number.isFinite(lng) || !Number.isFinite(lat) || !Number.isFinite(zoom)) return null;
+		return { center: [lng, lat], zoom };
+	} catch {
+		return null;
+	}
+}
 
 const imageKey = (categoryId: string, count: number) =>
 	count > 1 ? `cat-${categoryId}-${count}` : `cat-${categoryId}`;
@@ -151,14 +167,31 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		const container = containerRef.current;
 		if (!container) return;
 
+		const stored = readStoredView();
 		const map = new maplibregl.Map({
 			container,
 			style: "https://tiles.openfreemap.org/styles/positron",
-			center: BERLIN_CENTER,
-			zoom: 12,
+			center: stored?.center ?? BERLIN_CENTER,
+			zoom: stored?.zoom ?? 12,
 			minZoom: 10,
 			maxBounds: [[13.0, 52.3], [13.8, 52.75]],
 			attributionControl: false,
+		});
+
+		// Persist current view to sessionStorage on every settled pan/zoom so
+		// that navigating away (e.g. to an event detail) and using the browser
+		// back button restores the user's exact map position. We deliberately
+		// don't use URL params to avoid React re-renders during interaction.
+		map.on("moveend", () => {
+			try {
+				const c = map.getCenter();
+				sessionStorage.setItem(
+					VIEW_STORAGE_KEY,
+					JSON.stringify({ center: [c.lng, c.lat], zoom: map.getZoom() }),
+				);
+			} catch {
+				// quota exceeded / disabled storage — silent
+			}
 		});
 
 		map.on("load", () => {

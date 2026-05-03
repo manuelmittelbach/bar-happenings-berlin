@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { List, SlidersHorizontal } from "lucide-react";
+import { List, SlidersHorizontal, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import EventMap from "@/components/map/EventMap";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
+import { useSessionState } from "@/lib/useSessionState";
+import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
@@ -21,9 +23,14 @@ const parseEntryEuro = (s: string): number | null => {
 
 export default function MapPage() {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState("");
-  const [activeDate, setActiveDate] = useState("All");
-  const [activeEntry, setActiveEntry] = useState("All");
+  // Shared keys with Index so filters carry across list/map views.
+  const [activeCategory, setActiveCategory] = useSessionState("bhb-shared-category", "");
+  const [activeDate, setActiveDate] = useSessionState("bhb-shared-date", "All");
+  const [activeEntry, setActiveEntry] = useSessionState("bhb-shared-entry", "All");
+  // List-only filters that still carry into Map silently. Map exposes them
+  // as removable chips since there's no native Map UI to edit them.
+  const [searchQuery, setSearchQuery] = useSessionState("bhb-shared-search", "");
+  const [activeNeighborhood, setActiveNeighborhood] = useSessionState("bhb-shared-neighborhood", "");
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: eventsData = [] } = useEvents();
@@ -46,7 +53,9 @@ export default function MapPage() {
   const filtered = useMemo(() => {
     let result = [...eventsData];
     result = result.filter((e) => isEventStillOnline(e));
+    if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
+    if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry === "Free") result = result.filter((e) => e.entryInfo === "Free");
@@ -64,7 +73,7 @@ export default function MapPage() {
       return n !== null && n <= 10;
     });
     return result;
-  }, [eventsData, activeCategory, activeDate, activeEntry, today, tomorrow]);
+  }, [eventsData, activeCategory, activeNeighborhood, activeDate, activeEntry, searchQuery, today, tomorrow]);
 
   const activeFilterCount = activeEntry !== "All" ? 1 : 0;
 
@@ -151,6 +160,30 @@ export default function MapPage() {
         <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
           {filtered.length} events
         </div>
+        {(searchQuery || activeNeighborhood) && (
+          <div className="absolute top-2 left-2 z-[9999] flex flex-wrap items-center gap-2 max-w-[calc(100%-7rem)]">
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background border-2 border-foreground text-[11px] font-mono uppercase tracking-wider hover:bg-muted transition-colors shadow-md"
+              >
+                <Search className="h-3 w-3" />
+                <span className="normal-case">{searchQuery}</span>
+                <X className="h-3 w-3 ml-0.5 opacity-60" />
+              </button>
+            )}
+            {activeNeighborhood && (
+              <button
+                onClick={() => setActiveNeighborhood("")}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background border-2 border-foreground text-[11px] font-mono uppercase tracking-wider hover:bg-muted transition-colors shadow-md"
+              >
+                <MapPin className="h-3 w-3" />
+                <span>{activeNeighborhood}</span>
+                <X className="h-3 w-3 ml-0.5 opacity-60" />
+              </button>
+            )}
+          </div>
+        )}
         <EventMap
           events={filtered}
           venueMap={venueMap}

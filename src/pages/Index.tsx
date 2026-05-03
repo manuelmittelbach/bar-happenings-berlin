@@ -18,6 +18,7 @@ import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
+import { useSessionState } from "@/lib/useSessionState";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
@@ -35,12 +36,20 @@ export default function Index() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const [activeCategory, setActiveCategory] = useState(() => searchParams.get("category") ?? "");
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
-  const [activeDate, setActiveDate] = useState(() => searchParams.get("date") ?? "All");
-  const [activeEntry, setActiveEntry] = useState("All");
+  // Shared keys with MapPage so filters carry across list/map views.
+  const [searchQuery, setSearchQuery] = useSessionState("bhb-shared-search", "");
+  const [activeCategory, setActiveCategory] = useSessionState(
+    "bhb-shared-category",
+    "",
+    searchParams.get("category"),
+  );
+  const [activeNeighborhood, setActiveNeighborhood] = useSessionState("bhb-shared-neighborhood", "");
+  const [activeDate, setActiveDate] = useSessionState(
+    "bhb-shared-date",
+    "All",
+    searchParams.get("date"),
+  );
+  const [activeEntry, setActiveEntry] = useSessionState("bhb-shared-entry", "All");
   const [showFilters, setShowFilters] = useState(false);
   
   
@@ -98,10 +107,13 @@ export default function Index() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
-    const cat = searchParams.get("category") ?? "";
-    const date = searchParams.get("date") ?? "All";
-    setActiveCategory(cat);
-    setActiveDate(date);
+    // Only apply URL params when they're actually present — empty/missing
+    // params must NOT clobber the session-restored filter state on back
+    // navigation (where the URL has no ?category/?date).
+    const cat = searchParams.get("category");
+    const date = searchParams.get("date");
+    if (cat !== null) setActiveCategory(cat);
+    if (date !== null) setActiveDate(date);
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
