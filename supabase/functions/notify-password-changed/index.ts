@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const FROM = "Inside Bars Security <security@insidebars.co>";
+const FROM = "Inside Bars Security <security@send.insidebars.co>";
 const REPLY_TO = "hello@insidebars.co";
 
 Deno.serve(async (req) => {
