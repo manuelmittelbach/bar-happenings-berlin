@@ -184,7 +184,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			container,
 			style: "https://tiles.openfreemap.org/styles/positron",
 			center: stored?.center ?? BERLIN_CENTER,
-			zoom: stored?.zoom ?? 12,
+			zoom: stored?.zoom ?? 11,
 			minZoom: 10,
 			maxBounds: [[13.0, 52.3], [13.8, 52.75]],
 			attributionControl: false,
