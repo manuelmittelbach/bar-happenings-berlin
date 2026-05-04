@@ -159,7 +159,21 @@ export default function Index() {
   );
 
   const { location: userLocation, status: locationStatus, request: requestLocation } = useUserLocation();
-  const [locationBannerDismissed, setLocationBannerDismissed] = useState(false);
+  const [locationBannerDismissed, setLocationBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("bhb-nearby-banner-dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const dismissLocationBanner = useCallback(() => {
+    setLocationBannerDismissed(true);
+    try {
+      localStorage.setItem("bhb-nearby-banner-dismissed", "1");
+    } catch {
+      // quota / disabled — silent
+    }
+  }, []);
   const showLocationBanner = locationStatus === "idle" && !locationBannerDismissed;
 
   const filtered = useMemo(() => {
@@ -405,14 +419,17 @@ export default function Index() {
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
                 <p className="text-sm text-muted-foreground">
                   <button
-                    onClick={() => requestLocation()}
+                    onClick={() => {
+                      dismissLocationBanner();
+                      requestLocation();
+                    }}
                     className="text-foreground font-semibold underline underline-offset-2 hover:text-accent transition-colors"
                   >
                     Click here to show nearby events first
                   </button>
                 </p>
                 <button
-                  onClick={() => setLocationBannerDismissed(true)}
+                  onClick={dismissLocationBanner}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   aria-label="Dismiss"
                 >
