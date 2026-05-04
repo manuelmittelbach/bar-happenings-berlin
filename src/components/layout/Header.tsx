@@ -98,9 +98,11 @@ export default function Header() {
               setTimeout(() => scrollToTop(), 50);
             }
           }}
-          className="font-heading text-xl font-extrabold uppercase tracking-tight"
+          className="font-heading text-xl font-extrabold uppercase tracking-tight inline-flex items-center gap-1.5"
         >
-          Inside Bars
+          Inside
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+          Bars
         </button>
 
         {/* Desktop nav */}
