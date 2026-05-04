@@ -120,6 +120,18 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		[categoryInfos],
 	);
 
+	// Refs mirror the latest category data so the map "load" callback (whose
+	// closure is captured at mount time with empty arrays) sees current values
+	// when it fires after data has arrived. Without this, base/badge icons get
+	// registered with the gray fallback and stay gray forever (since hasImage
+	// returns true and re-registration is skipped).
+	const categoryInfosRef = useRef(categoryInfos);
+	const categoryByIdRef = useRef(categoryById);
+	useEffect(() => {
+		categoryInfosRef.current = categoryInfos;
+		categoryByIdRef.current = categoryById;
+	}, [categoryInfos, categoryById]);
+
 	useEffect(() => { onEventClickRef.current = onEventClick; }, [onEventClick]);
 
 	const venueEvents = useMemo(() => {
@@ -196,9 +208,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 
 		map.on("load", () => {
 			(async () => {
-				// Register base category images
+				// Register base category images (uses refs so we see latest data
+				// even though this callback was captured at mount time)
 				await Promise.all([
-					...categoryInfos.map(async (cat) => {
+					...categoryInfosRef.current.map(async (cat) => {
 						if (!map.hasImage(`cat-${cat.id}`))
 							map.addImage(`cat-${cat.id}`, await buildCategoryImage(cat.id, cat.color), { pixelRatio: 2 });
 					}),
@@ -217,7 +230,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						const key = imageKey(categoryId, count);
 						if (!seen.has(key) && !map.hasImage(key)) {
 							seen.add(key);
-							const color = categoryById[categoryId]?.color ?? "#6b7280";
+							const color = categoryByIdRef.current[categoryId]?.color ?? "#6b7280";
 							map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
 						}
 					})
