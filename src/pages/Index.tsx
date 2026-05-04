@@ -401,16 +401,15 @@ export default function Index() {
         {showLocationBanner && (
           <div className="border-b border-border bg-background">
             <div className="container py-4">
-              <div className="max-w-lg flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
+              <div className="inline-flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
                 <MapPin className="h-4 w-4 text-accent shrink-0" />
-                <p className="text-sm text-muted-foreground flex-1">
+                <p className="text-sm text-muted-foreground">
                   <button
                     onClick={() => requestLocation()}
                     className="text-foreground font-semibold underline underline-offset-2 hover:text-accent transition-colors"
                   >
-                    Show nearby events first
+                    Click here to show nearby events first
                   </button>
-                  {" "}— uses your location to sort
                 </p>
                 <button
                   onClick={() => setLocationBannerDismissed(true)}
