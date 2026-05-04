@@ -70,15 +70,24 @@ export default function Index() {
   const [targetSection, setTargetSection] = useState<string | null>(null);
 
   useEffect(() => {
+    const el = categoryBarRef.current;
+    if (!el) return;
     const measure = () => {
-      if (categoryBarRef.current) {
-        // Header is sticky at top-0 with height ~58px; category bar sticky at top-[57px]
-        setStickyOffset(57 + categoryBarRef.current.offsetHeight);
-      }
+      // Header is sticky at top-0 with height ~58px; category bar sticky at top-[57px]
+      setStickyOffset(57 + el.offsetHeight);
     };
     measure();
+    // ResizeObserver catches category-bar height changes that fire after mount
+    // (categories loading async, font swaps, content wraps), which window
+    // resize alone misses — that's why TODAY/TOMORROW labels were clipping
+    // under a stale stickyOffset.
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   // Find which time section is currently "active" at the sticky top position
