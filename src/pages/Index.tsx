@@ -246,7 +246,11 @@ export default function Index() {
 
       if (groupA !== groupB) return groupA - groupB;
       if (groupA === 0) return dA - dB; // walking distance: nearest first
-      return a.startTime.localeCompare(b.startTime);
+      // Events ohne Startzeit ans Ende sortieren — sonst landen sie vor allen
+      // Zeit-Events, weil "" lexikographisch < "20:00" ist.
+      const tA = a.startTime || "99:99";
+      const tB = b.startTime || "99:99";
+      return tA.localeCompare(tB);
     });
 
     return result;
@@ -662,10 +666,7 @@ export default function Index() {
                     className={`w-full flex flex-col gap-0.5 py-3.5 px-4 hover:bg-muted/50 transition-colors text-left group ${rowBadge?.label === "Might be over" || rowBadge?.label === "Over" ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`shrink-0 font-mono font-bold text-[11px] uppercase tracking-wider w-[52px] ${event.startTime ? "" : "text-muted-foreground"}`}>
-                        {event.startTime || "—"}
-                      </span>
-                      <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate min-w-0">
+                      <span className="font-body font-bold text-sm group-hover:text-accent transition-colors truncate min-w-0 flex-1">
                         {cleanEventTitle(event.title, event.venue)}
                       </span>
                       {rowBadge && (
@@ -679,7 +680,7 @@ export default function Index() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 pl-[60px]">
+                    <div className="flex items-center gap-2">
                       <span className="text-xs font-mono truncate">
                         {event.category && (
                           <>
