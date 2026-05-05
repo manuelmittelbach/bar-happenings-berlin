@@ -100,7 +100,7 @@ export default function EditEvent() {
         }
         queryClient.invalidateQueries({ queryKey: ["events"] });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
-        navigate(isAdmin ? "/" : "/dashboard");
+        navigate(isAdmin ? `/event/${id}` : "/dashboard");
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
@@ -176,7 +176,7 @@ export default function EditEvent() {
       optionalDescription={isAdmin}
       secondaryActions={
         <Link
-          to={isAdmin ? "/" : "/dashboard"}
+          to={isAdmin ? `/event/${id}` : "/dashboard"}
           className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel
