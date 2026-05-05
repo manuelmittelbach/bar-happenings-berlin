@@ -14,6 +14,7 @@ export default function PublishEvent() {
 	const queryClient = useQueryClient();
 	const { user, role, approvalStatus, loading, roleResolved } = useAuth();
 	const [venuePrefill, setVenuePrefill] = useState<Partial<EventFormData>>({});
+	const [venueId, setVenueId] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (loading) return;
@@ -37,6 +38,7 @@ export default function PublishEvent() {
 				address: v.address ?? "",
 				neighborhood: v.neighborhood ?? "",
 			});
+			setVenueId(v.id ?? null);
 		});
 	}, [user]);
 
@@ -45,7 +47,7 @@ export default function PublishEvent() {
 			if (!user) return;
 			try {
 				const imageUrl = image.file ? await uploadEventImage(image.file, user.id) : undefined;
-				await createEvent(data, user.id, imageUrl);
+				await createEvent({ ...data, venueId: venueId ?? undefined }, user.id, imageUrl);
 				queryClient.invalidateQueries({ queryKey: ["events"] });
 				if (data.recurrence && data.recurrenceUntil) {
 					const count = generateOccurrences(data.date, data.recurrence as RecurrenceFreq, data.recurrenceUntil).length;
@@ -58,7 +60,7 @@ export default function PublishEvent() {
 				toast.error("Something went wrong. Please try again.");
 			}
 		},
-		[user, navigate, queryClient]
+		[user, navigate, queryClient, venueId]
 	);
 
 	if (loading || !roleResolved) {

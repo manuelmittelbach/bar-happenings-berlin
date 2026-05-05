@@ -29,6 +29,7 @@ export default function EditEvent() {
   const [initialValues, setInitialValues] = useState<Partial<EventFormData> | null>(null);
   const [initialImageUrl, setInitialImageUrl] = useState<string | null>(null);
   const [seriesInfo, setSeriesInfo] = useState<{ isSeries: boolean; seriesId: string; eventDate: string } | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
 
   const applyToSeries = seriesInfo?.isSeries && scopeParam === "future";
 
@@ -74,6 +75,7 @@ export default function EditEvent() {
         recurrenceUntil: "",
       });
       setInitialImageUrl(event.image ?? null);
+      setVenueId(event.venueId || null);
       const isSeries = !!event.recurrence || !!event.parentId;
       setSeriesInfo({
         isSeries,
@@ -91,11 +93,12 @@ export default function EditEvent() {
         if (image.changed) {
           imageUrl = image.file ? await uploadEventImage(image.file, user.id) : null;
         }
+        const dataWithVenueId = { ...data, venueId: venueId ?? undefined };
         if (applyToSeries) {
-          await updateEventSeries(seriesInfo.seriesId, seriesInfo.eventDate, data, imageUrl);
+          await updateEventSeries(seriesInfo.seriesId, seriesInfo.eventDate, dataWithVenueId, imageUrl);
           toast.success("Series updated!");
         } else {
-          await updateEvent(id, data, imageUrl);
+          await updateEvent(id, dataWithVenueId, imageUrl);
           toast.success("Event updated!");
         }
         queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -105,7 +108,7 @@ export default function EditEvent() {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient],
+    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId],
   );
 
   const handleDelete = async () => {
