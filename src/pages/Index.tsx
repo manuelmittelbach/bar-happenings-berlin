@@ -364,7 +364,7 @@ export default function Index() {
             >
               Berlin's independent bar guide
             </motion.p>
-            <h1 className="heading-display text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
+            <h1 className="heading-display text-[2.25rem] sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
               <span className="block whitespace-nowrap">
                 {["What's", "on"].map((w, i) => (
                   <motion.span
