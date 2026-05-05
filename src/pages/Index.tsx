@@ -461,7 +461,7 @@ export default function Index() {
         )}
 
         {/* Date filter bar — Map-style with thick black border */}
-        <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 56 }} className="bg-background border-b border-border">
+        <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 58 }} className="bg-background border-b border-border">
           <div className="container flex items-center gap-2 py-2.5">
             {dateFilters.map((d) => (
               <button
