@@ -349,7 +349,7 @@ export default function EventForm({
               value={formData.date}
               min={todayMin}
               onChange={(e) => update("date", e.target.value)}
-              className={inputClass}
+              className={`${inputClass} appearance-none min-w-0`}
             />
           </div>
           <div className="space-y-1.5 min-w-0">
@@ -361,7 +361,7 @@ export default function EventForm({
               required={!optionalStartTime}
               value={formData.startTime}
               onChange={(e) => update("startTime", e.target.value)}
-              className={inputClass}
+              className={`${inputClass} appearance-none min-w-0`}
             />
           </div>
           <div className="space-y-1.5 min-w-0">
@@ -369,7 +369,7 @@ export default function EventForm({
             <input
               type="time" value={formData.endTime}
               onChange={(e) => update("endTime", e.target.value)}
-              className={inputClass}
+              className={`${inputClass} appearance-none min-w-0`}
             />
             {formData.startTime && formData.endTime && formData.endTime < formData.startTime && (
               <p className="text-xs text-accent mt-1">→ ends next day</p>
@@ -383,7 +383,7 @@ export default function EventForm({
             <input
               type="time" value={formData.doorsTime}
               onChange={(e) => update("doorsTime", e.target.value)}
-              className={inputClass}
+              className={`${inputClass} appearance-none min-w-0`}
             />
             {formData.doorsTime && formData.startTime && formData.doorsTime >= formData.startTime && (
               <p className="text-xs text-muted-foreground mt-1">Doors are usually before the start time</p>
@@ -426,7 +426,7 @@ export default function EventForm({
                     min={formData.date ? addOneDay(formData.date) : undefined}
                     max={formData.date ? defaultUntil(formData.date) : undefined}
                     onChange={(e) => update("recurrenceUntil", e.target.value)}
-                    className={inputClass}
+                    className={`${inputClass} appearance-none min-w-0`}
                   />
                 </div>
               )}
