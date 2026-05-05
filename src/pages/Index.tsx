@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useLayoutEffect, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -13,13 +13,13 @@ import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/eve
 
 
 import type { BarlinEvent } from "@/types/event";
-import { useEvents, useVenues, useHasEventsAfter, useCategories } from "@/hooks/useEvents";
+import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { MapPin, X } from "lucide-react";
 import { haversineMeters } from "@/lib/distance";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
-import { useSessionState } from "@/lib/useSessionState";
+import { useFilterParams } from "@/lib/useFilterParams";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
@@ -40,22 +40,14 @@ let heroAnimationPlayed = false;
 
 export default function Index() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
-  // Shared keys with MapPage so filters carry across list/map views.
-  const [searchQuery, setSearchQuery] = useSessionState("bhb-shared-search", "");
-  const [activeCategory, setActiveCategory] = useSessionState(
-    "bhb-shared-category",
-    "",
-    searchParams.get("category"),
-  );
-  const [activeNeighborhood, setActiveNeighborhood] = useSessionState("bhb-shared-neighborhood", "");
-  const [activeDate, setActiveDate] = useSessionState(
-    "bhb-shared-date",
-    "All",
-    searchParams.get("date"),
-  );
-  const [activeEntry, setActiveEntry] = useSessionState("bhb-shared-entry", "All");
+  const {
+    searchQuery, setSearchQuery,
+    activeCategory, setActiveCategory,
+    activeNeighborhood, setActiveNeighborhood,
+    activeDate, setActiveDate,
+    activeEntry, setActiveEntry,
+  } = useFilterParams();
   const [showFilters, setShowFilters] = useState(false);
   const [animateHero] = useState(() => !heroAnimationPlayed);
   useEffect(() => {
@@ -67,7 +59,10 @@ export default function Index() {
   const categoryBarRef = useRef<HTMLDivElement>(null);
   const [stickyOffset, setStickyOffset] = useState(160); // fallback estimate
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [targetSection, setTargetSection] = useState<string | null>(null);
+  // Captured in handleCategorySelect, consumed by the layout-effect after the
+  // category change has rendered. Ref (not state) so a split render between
+  // setTargetSection and setActiveCategory can't fire the scroll early.
+  const targetSectionRef = useRef<string | null>(null);
 
   useEffect(() => {
     const el = categoryBarRef.current;
@@ -90,49 +85,48 @@ export default function Index() {
     };
   }, []);
 
-  // Find which time section is currently "active" at the sticky top position
+  // Find which time section the user is currently scrolled to (the one whose
+  // sticky header is glued just below the categories bar). Walks sections in
+  // render order and picks the LAST whose top has crossed the threshold.
   const getCurrentVisibleSection = useCallback((): string | null => {
     const threshold = stickyOffset + 5;
     let active: string | null = null;
     for (const [label, el] of Object.entries(sectionRefs.current)) {
+      if (label === "__datefilter") continue;
       if (!el) continue;
-      const { top, bottom } = el.getBoundingClientRect();
-      if (top <= threshold && bottom > threshold) {
-        active = label;
-        break;
-      }
+      const { top } = el.getBoundingClientRect();
+      if (top <= threshold) active = label;
     }
     return active;
   }, [stickyOffset]);
 
-  // When switching category, preserve current time section
+  // When switching category, capture the current section and let the
+  // layout-effect below restore it after the category-change re-render.
   const handleCategorySelect = useCallback((cat: string) => {
-    const current = getCurrentVisibleSection();
-    if (current) setTargetSection(current);
+    targetSectionRef.current = getCurrentVisibleSection();
     setActiveCategory(cat);
-  }, [getCurrentVisibleSection]);
+  }, [getCurrentVisibleSection, setActiveCategory]);
 
-  // After re-render, scroll to the preserved section
-  useEffect(() => {
-    if (!targetSection) return;
-    const el = sectionRefs.current[targetSection];
-    if (!el) { setTargetSection(null); return; }
+  // After the category change has rendered the new sections, scroll back to
+  // the section the user was on. useLayoutEffect runs synchronously after the
+  // DOM commit so there's no flash of wrong scroll position.
+  useLayoutEffect(() => {
+    const target = targetSectionRef.current;
+    if (!target) return;
+    targetSectionRef.current = null;
+    const el = sectionRefs.current[target];
+    if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - stickyOffset;
     window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
-    setTargetSection(null);
-  }, [targetSection, stickyOffset]);
+  }, [activeCategory, stickyOffset]);
 
   const location = useLocation();
   const isFirstMount = useRef(true);
 
+  // Scroll to the date filter on real navigations to this page (pathname change),
+  // but NOT on filter updates that only change ?search params — otherwise every
+  // filter click bounces the page.
   useEffect(() => {
-    // Only apply URL params when they're actually present — empty/missing
-    // params must NOT clobber the session-restored filter state on back
-    // navigation (where the URL has no ?category/?date).
-    const cat = searchParams.get("category");
-    const date = searchParams.get("date");
-    if (cat !== null) setActiveCategory(cat);
-    if (date !== null) setActiveDate(date);
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
@@ -143,7 +137,7 @@ export default function Index() {
       const top = el.getBoundingClientRect().top + window.scrollY - 57;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }));
-  }, [location.key]);
+  }, [location.pathname]);
 
 
   const today = berlinDateString();
@@ -153,8 +147,7 @@ export default function Index() {
   const isLateNight = berlinHour() < 6;
 
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
-  const { data: eventsData = [], isLoading: eventsLoading, isFetching: eventsFetching } = useEvents(showAllUpcoming ? undefined : cutoffDate);
-  const { data: hasMoreUpcoming = false } = useHasEventsAfter(cutoffDate, !showAllUpcoming);
+  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
   const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   const categories = useMemo(
@@ -258,9 +251,16 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation, eventsData, venueMap]);
 
+  // True when there are filtered events past the 30-day cutoff. Recomputed on
+  // every filter change so the "Show more events" button only appears when the
+  // current filter actually has events further out.
+  const hasMoreUpcoming = useMemo(
+    () => filtered.some((e) => e.date > cutoffDate),
+    [filtered, cutoffDate],
+  );
+
   // Filter dropdown shows only neighborhoods that actually have events — avoids
-  // empty filter clicks. Derived from currently loaded events; refreshes when
-  // the user clicks "Show more events" and more data flows in.
+  // empty filter clicks.
   const availableNeighborhoods = useMemo(() => {
     const set = new Set<string>();
     for (const e of eventsData) {
@@ -609,7 +609,9 @@ export default function Index() {
                 const yesterdayEvents = isLateNight ? filtered.filter((e) => e.date === yesterday) : [];
                 const todayEvents = filtered.filter((e) => e.date === today);
                 const tomorrowEvents = filtered.filter((e) => e.date === tomorrow);
-                const laterEvents = filtered.filter((e) => e.date > tomorrow);
+                const laterEvents = filtered.filter(
+                  (e) => e.date > tomorrow && (showAllUpcoming || e.date <= cutoffDate),
+                );
         
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
                 sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
@@ -678,6 +680,12 @@ export default function Index() {
                 <section
                   key={section.label}
                   ref={(el) => { sectionRefs.current[section.label] = el; }}
+                  // Last section gets a dynamic min-height so any earlier
+                  // section can be scrolled to the sticky top, even when the
+                  // current filter only leaves a handful of events. With many
+                  // events the natural content height exceeds the min — no
+                  // padding visible.
+                  style={si === sections.length - 1 ? { minHeight: `calc(100dvh - ${stickyOffset}px)` } : undefined}
                   className={`${sectionBgs[si % sectionBgs.length]} ${si > 0 ? "border-t border-border" : ""}`}
                 >
                   <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b border-border" style={{ top: stickyOffset }}>
@@ -718,10 +726,9 @@ export default function Index() {
                       <div className="flex justify-center pt-8">
                         <button
                           onClick={() => setShowAllUpcoming(true)}
-                          disabled={eventsFetching}
-                          className="font-mono font-bold text-xs uppercase tracking-wider px-6 py-3 border-2 border-border hover:border-accent hover:text-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="font-mono font-bold text-xs uppercase tracking-wider px-6 py-3 border-2 border-border hover:border-accent hover:text-accent transition-colors"
                         >
-                          {eventsFetching ? "Loading…" : "Show more events"}
+                          Show more events
                         </button>
                       </div>
                     )}
@@ -736,7 +743,7 @@ export default function Index() {
       <button
         onClick={() => {
           sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
-          navigate("/map");
+          navigate({ pathname: "/map", search: location.search });
         }}
         className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
       >

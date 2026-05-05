@@ -9,7 +9,6 @@ import {
   fetchInterestedEvents,
   checkInterest,
   fetchProfile,
-  hasEventsAfter,
 } from "@/lib/supabaseQueries";
 
 export function useEvents(untilDate?: string) {
@@ -17,14 +16,6 @@ export function useEvents(untilDate?: string) {
     queryKey: untilDate ? ["events", "until", untilDate] : ["events"],
     queryFn: () => fetchEvents(untilDate),
     placeholderData: keepPreviousData,
-  });
-}
-
-export function useHasEventsAfter(date: string, enabled = true) {
-  return useQuery({
-    queryKey: ["events", "has-after", date],
-    queryFn: () => hasEventsAfter(date),
-    enabled,
   });
 }
 

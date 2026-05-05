@@ -11,6 +11,7 @@ function ScrollManager() {
   const location = useLocation();
   const navigationType = useNavigationType();
   const positions = useRef(new Map<string, number>());
+  const prevPathname = useRef(location.pathname);
 
   useEffect(() => {
     const key = location.key;
@@ -22,6 +23,11 @@ function ScrollManager() {
   }, [location.key]);
 
   useLayoutEffect(() => {
+    const pathnameChanged = prevPathname.current !== location.pathname;
+    prevPathname.current = location.pathname;
+    // Filter-only updates (?q=, ?c=, etc) don't change pathname — leave scroll
+    // where the user is. Page navigations behave as before.
+    if (!pathnameChanged) return;
     if (navigationType === "POP") {
       const saved = positions.current.get(location.key) ?? 0;
       window.scrollTo(0, saved);
@@ -30,7 +36,7 @@ function ScrollManager() {
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
     }
-  }, [location.key, navigationType]);
+  }, [location.key, location.pathname, navigationType]);
 
   return null;
 }
