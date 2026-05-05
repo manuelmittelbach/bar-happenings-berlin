@@ -183,11 +183,12 @@ export default function EditEvent() {
         </Link>
       }
       footer={
-        <div className="pt-6 border-t border-border">
+        <div className="relative z-10 pt-6 border-t border-border">
           <button
             type="button"
             onClick={handleDelete}
-            className="w-full h-12 bg-background border border-accent text-accent rounded-sm text-sm font-semibold hover:opacity-70 transition-opacity"
+            style={{ touchAction: "manipulation" }}
+            className="w-full h-12 bg-background border border-accent text-accent rounded-sm text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
           >
             {applyToSeries ? "Cancel Series" : "Cancel Event"}
           </button>
