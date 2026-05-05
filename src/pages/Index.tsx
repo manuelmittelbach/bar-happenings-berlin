@@ -272,18 +272,29 @@ export default function Index() {
   useLayoutEffect(() => {
     if (sessionStorage.getItem("inside-bars-scroll-to-filter") === "1") {
       sessionStorage.removeItem("inside-bars-scroll-to-filter");
+      // Re-scroll across several frames + timeouts because layout above the
+      // filter can shift after the initial scroll: the location banner can
+      // disappear when useUserLocation flips status from idle→loading in a
+      // post-mount useEffect, fonts swap in, dvh changes on mobile.
+      // scrollIntoView respects the element's scrollMarginTop: 56.
       const scrollToFilter = () => {
-        const el = document.getElementById("date-filter-bar");
-        if (!el) return;
-        const top = el.getBoundingClientRect().top + window.scrollY - 56;
-        window.scrollTo({ top: Math.max(0, top), left: 0, behavior: "auto" });
+        document.getElementById("date-filter-bar")?.scrollIntoView({
+          block: "start",
+          behavior: "auto",
+        });
       };
-      const f1 = requestAnimationFrame(() => {
+      const rafs: number[] = [];
+      const timeouts: number[] = [];
+      rafs.push(requestAnimationFrame(() => {
         scrollToFilter();
-        const f2 = requestAnimationFrame(scrollToFilter);
-        return () => cancelAnimationFrame(f2);
-      });
-      return () => cancelAnimationFrame(f1);
+        rafs.push(requestAnimationFrame(scrollToFilter));
+      }));
+      timeouts.push(window.setTimeout(scrollToFilter, 100));
+      timeouts.push(window.setTimeout(scrollToFilter, 300));
+      return () => {
+        rafs.forEach(cancelAnimationFrame);
+        timeouts.forEach(clearTimeout);
+      };
     }
 
     const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
@@ -338,7 +349,7 @@ export default function Index() {
 
   return (
     <>
-        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100svh-56px)] flex flex-col justify-center">
+        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100dvh-56px)] flex flex-col justify-center">
           <div className="container relative z-[45] py-16">
             <motion.p
               className="mono-label text-accent mb-4"
