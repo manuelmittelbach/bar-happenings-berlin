@@ -191,16 +191,19 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			(async () => {
 				// Register base category images (uses refs so we see latest data
 				// even though this callback was captured at mount time)
-				await Promise.all([
-					...categoryInfosRef.current.map(async (cat) => {
+				await Promise.all(
+					categoryInfosRef.current.map(async (cat) => {
 						if (!map.hasImage(`cat-${cat.id}`))
 							map.addImage(`cat-${cat.id}`, await buildCategoryImage(cat.id, cat.color), { pixelRatio: 2 });
-					}),
-					(async () => {
-						if (!map.hasImage("cat-other"))
-							map.addImage("cat-other", await buildCategoryImage("other", "#6b7280"), { pixelRatio: 2 });
-					})(),
-				]);
+					})
+				);
+				// Gray fallback only if the DB doesn't define an "other" category
+				// — otherwise the iteration above already registered cat-other with
+				// the real DB color and a hardcoded gray here would shadow it.
+				const hasOther = categoryInfosRef.current.some((c) => c.id === "other");
+				if (!hasOther && !map.hasImage("cat-other")) {
+					map.addImage("cat-other", await buildCategoryImage("other", "#6b7280"), { pixelRatio: 2 });
+				}
 
 				// Pre-register badge images for data already in ref
 				const seen = new Set<string>();
@@ -318,6 +321,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		if (!sourceReadyRef.current) return;
 		const map = mapRef.current;
 		if (!map) return;
+		// Wait for category metadata before registering images: otherwise the first
+		// pass caches every icon with the gray fallback color, and MapLibre's
+		// hasImage() check stops us from ever re-registering with the real color.
+		if (categoryInfos.length === 0) return;
 
 		const needed = geojson.features
 			.map((f) => ({ categoryId: f.properties!.categoryId as string, count: f.properties!.count as number }))
@@ -339,7 +346,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			);
 			apply();
 		})();
-	}, [geojson]);
+	}, [geojson, categoryInfos, categoryById]);
 
 	// User location dot
 	useEffect(() => {
