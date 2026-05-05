@@ -40,20 +40,22 @@ export default function CategoryPill({ label, active, onClick }: CategoryPillPro
   );
 }
 
-/* Short labels for desktop scanning (only categories whose full label is too long for a pill) */
+/* Short labels for desktop scanning (only categories whose full label is too long for a pill).
+   Keys are category slug-IDs (categories.id), values are the rendered short text. */
 const desktopShortLabels: Record<string, string> = {
-  "Live Music": "Live",
-  // Inactive labels kept here so re-enabling a category needs no extra wiring:
-  "Social / Networking": "Social",
-  "Language Exchange": "Language",
+  "live-music": "Live",
+  // Inactive entries kept here so re-enabling a category needs no extra wiring:
+  "social": "Social",
+  "language-exchange": "Language",
 };
 
-/* Priority order — controls filter-bar order on desktop and mobile */
+/* Priority order — controls filter-bar order on desktop and mobile.
+   Values are category slug-IDs (categories.id). */
 const desktopCategoryOrder: string[] = [
-  "Live Music", "Open Mic", "Comedy", "DJ", "Quiz",
-  "Karaoke", "Drag", "Screening", "Dating", "Other",
+  "live-music", "open-mic", "comedy", "dj-music", "pub-quiz",
+  "karaoke", "drag-cabaret", "screening", "singles", "other",
   // Inactive (kept for fast re-enable):
-  "Social / Networking", "Language Exchange", "Games", "Sports",
+  "social", "language-exchange", "games", "sports",
 ];
 
 /* ── Desktop icon-based category row ── */
@@ -97,10 +99,10 @@ export function CategoryIconRow({
       </button>
 
       {sorted.map((cat) => {
-        const info = catData.find((c) => c.label === cat);
+        const info = catData.find((c) => c.id === cat);
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
-        const shortLabel = desktopShortLabels[cat] || cat;
+        const shortLabel = desktopShortLabels[cat] || info?.label || cat;
         const activeColor = info?.color;
         return (
           <button
@@ -170,10 +172,10 @@ export function CategoryIconBar({
       </button>
 
       {sorted.map((cat) => {
-        const info = catData.find((c) => c.label === cat);
+        const info = catData.find((c) => c.id === cat);
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
-        const shortLabel = desktopShortLabels[cat] || cat;
+        const shortLabel = desktopShortLabels[cat] || info?.label || cat;
         const activeColor = info?.color;
         return (
           <button

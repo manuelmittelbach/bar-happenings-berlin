@@ -102,8 +102,9 @@ export default function EventForm({
   optionalDescription = false,
 }: EventFormProps) {
   const { data: categoriesData = [] } = useCategories();
+  // Form holds the slug-id (categories.id) as the value; we display the label.
   const categories = useMemo(
-    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    () => categoriesData.filter((c) => c.enabled),
     [categoriesData],
   );
   const [formData, setFormData] = useState<EventFormData>({ ...EMPTY_FORM, ...initialValues });
@@ -462,7 +463,7 @@ export default function EventForm({
               className={inputClass}
             >
               <option value="" disabled hidden>Select category</option>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">

@@ -71,16 +71,16 @@ export function getMomentLine(
     : (recurrence ?? "").toLowerCase();
   const dayPart = recurrenceText ? ` ${recurrenceText}` : "";
   
+  // Keys are category slug-IDs (categories.id).
   const moments: Record<string, string[]> = {
-    "Comedy": [`Live laughs in ${neighborhood}`, `Comedy night vibes${dayPart}`],
-    "Pub Quiz": [`Test your brain in ${neighborhood}`, `A cozy quiz night in ${neighborhood}`],
-    "Language Exchange": [`Meet the world in ${neighborhood}`, `Languages & drinks${dayPart}`],
-    "Social / Networking": [`Connect with new people in ${neighborhood}`, `Social drinks & good energy`],
-    "Singles & Dating": [`Sparks fly in ${neighborhood}`, `Meet someone new${dayPart}`],
-    "DJ / Music Night": [`Feel the beat in ${neighborhood}`, `Late-night energy${dayPart}`],
-    "Live Music": [`Live sounds in ${neighborhood}`, `Music & atmosphere${dayPart}`],
-    "Open Mic": [`Take the stage in ${neighborhood}`, `Open mic energy${dayPart}`],
-    "Quiz Night": [`Test your brain in ${neighborhood}`, `A cozy quiz night in ${neighborhood}`],
+    "comedy": [`Live laughs in ${neighborhood}`, `Comedy night vibes${dayPart}`],
+    "pub-quiz": [`Test your brain in ${neighborhood}`, `A cozy quiz night in ${neighborhood}`],
+    "language-exchange": [`Meet the world in ${neighborhood}`, `Languages & drinks${dayPart}`],
+    "social": [`Connect with new people in ${neighborhood}`, `Social drinks & good energy`],
+    "singles": [`Sparks fly in ${neighborhood}`, `Meet someone new${dayPart}`],
+    "dj-music": [`Feel the beat in ${neighborhood}`, `Late-night energy${dayPart}`],
+    "live-music": [`Live sounds in ${neighborhood}`, `Music & atmosphere${dayPart}`],
+    "open-mic": [`Take the stage in ${neighborhood}`, `Open mic energy${dayPart}`],
   };
 
   const options = moments[category] || [`A night out in ${neighborhood}`];

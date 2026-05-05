@@ -150,8 +150,9 @@ export default function Index() {
   const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
   const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
+  // Slug-IDs (categories.id) — passed to CategoryPill and used as activeCategory value.
   const categories = useMemo(
-    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
     [categoriesData],
   );
 
@@ -641,7 +642,9 @@ export default function Index() {
                 const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
                 const interested = (hash % 42) + 1;
                 const rowBadge = getEventBadge(event, interested);
-                const catColor = categoriesData.find((c) => c.label === event.category)?.color;
+                const catInfo = categoriesData.find((c) => c.id === event.category);
+                const catColor = catInfo?.color;
+                const catLabel = catInfo?.label ?? event.category;
 
                 return (
                   <button
@@ -671,7 +674,7 @@ export default function Index() {
                         {event.category && (
                           <>
                             <span className="font-bold" style={catColor ? { color: catColor } : undefined}>
-                              {event.category}
+                              {catLabel}
                             </span>
                             <span className="text-muted-foreground"> · </span>
                           </>
