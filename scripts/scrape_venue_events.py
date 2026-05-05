@@ -339,6 +339,32 @@ def clear_staging(client) -> int:
     return count
 
 
+def purge_past_staging(client) -> int:
+    """Delete non-recurring staging rows whose date is already in the past.
+    Recurring rows (is_manual=true with non-empty recurrence) are preserved —
+    their `date` is the series anchor, not a single occurrence, and may legitimately
+    sit in the past while the series stays active."""
+    not_recurring = "is_manual.eq.false,recurrence.eq."
+    count_res = (
+        client.table("venue_events_staging")
+        .select("id", count="exact")
+        .lt("date", TODAY_ISO)
+        .or_(not_recurring)
+        .execute()
+    )
+    count = count_res.count or 0
+    if count == 0:
+        return 0
+    (
+        client.table("venue_events_staging")
+        .delete()
+        .lt("date", TODAY_ISO)
+        .or_(not_recurring)
+        .execute()
+    )
+    return count
+
+
 def parse_args():
     p = argparse.ArgumentParser(
         description="Scrape venue website_events into venue_events_staging."
@@ -368,6 +394,10 @@ def main():
     global CATEGORIES
     CATEGORIES = load_enabled_categories(client)
     print(f"Allowed categories ({len(CATEGORIES)}): {', '.join(CATEGORIES)}\n")
+
+    print("Purging past events from venue_events_staging (recurring kept)...")
+    purged = purge_past_staging(client)
+    print(f"  {purged} past row(s) removed\n")
 
     print("Fetching venues with website_events and online='yes'...")
     result = (
