@@ -159,7 +159,7 @@ export default function MapPage() {
       {/* Map fills remaining height */}
       <div className="flex-1 min-h-0 relative">
         <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
-          {filtered.length} events
+          {filtered.length} {filtered.length === 1 ? "event" : "events"}
         </div>
         {(searchQuery || activeNeighborhood) && (
           <div className="absolute top-2 left-2 z-[9999] flex flex-wrap items-center gap-2 max-w-[calc(100%-7rem)]">
