@@ -322,9 +322,19 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		// hasImage() check stops us from ever re-registering with the real color.
 		if (categoryInfos.length === 0) return;
 
-		const needed = geojson.features
-			.map((f) => ({ categoryId: f.properties!.categoryId as string, count: f.properties!.count as number }))
-			.filter(({ categoryId, count }) => !map.hasImage(imageKey(categoryId, count)));
+		// Dedupe by image key — multiple clusters can share the same icon
+		// (same category + count). Without this, parallel addImage calls race
+		// past the hasImage() check and MapLibre throws "image already exists".
+		const seen = new Set<string>();
+		const needed: { categoryId: string; count: number }[] = [];
+		for (const f of geojson.features) {
+			const categoryId = f.properties!.categoryId as string;
+			const count = f.properties!.count as number;
+			const key = imageKey(categoryId, count);
+			if (seen.has(key) || map.hasImage(key)) continue;
+			seen.add(key);
+			needed.push({ categoryId, count });
+		}
 
 		const apply = () => {
 			(map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource)?.setData(geojson);
@@ -334,10 +344,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			await Promise.all(
 				needed.map(async ({ categoryId, count }) => {
 					const key = imageKey(categoryId, count);
-					if (!map.hasImage(key)) {
-						const color = categoryById[categoryId]?.color ?? "#6b7280";
-						map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
-					}
+					if (map.hasImage(key)) return;
+					const color = categoryById[categoryId]?.color ?? "#6b7280";
+					map.addImage(key, await buildCategoryImage(categoryId, color, count), { pixelRatio: 2 });
 				})
 			);
 			apply();

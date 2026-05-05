@@ -523,16 +523,26 @@ export default function Index() {
                     onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
-                    className="w-full h-12 pl-10 pr-4 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none transition-colors"
+                    className="w-full h-12 pl-10 pr-10 bg-background border-2 border-foreground text-sm font-mono placeholder:text-muted-foreground outline-none transition-colors"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      aria-label="Clear search"
+                      onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                   {showSuggestions && suggestions.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background">
                       {suggestions.map((s) => (
                         <button
                           key={s.label}
                           type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
                             setSearchQuery(s.label);
                             setShowSuggestions(false);
                           }}
@@ -703,7 +713,7 @@ export default function Index() {
                   <div className="sticky z-30 bg-background/95 backdrop-blur-sm border-b border-border" style={{ top: stickyOffset }}>
                     <div className="container flex items-center justify-between h-11">
                       <h2 className="font-heading text-xl font-extrabold uppercase tracking-tight">{section.label}</h2>
-                      <span className="mono-label text-muted-foreground">{section.events.length} events found</span>
+                      <span className="mono-label text-muted-foreground">{section.events.length} {section.events.length === 1 ? "event" : "events"} found</span>
                     </div>
                   </div>
         
