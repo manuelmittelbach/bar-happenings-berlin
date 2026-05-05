@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { LANGUAGES } from "@/data/languages";
 import { useCategories } from "@/hooks/useEvents";
-import DateField from "@/components/events/DateField";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
   addOneDay,
@@ -342,16 +341,18 @@ export default function EventForm({
 
         {/* Date & Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-sm font-medium flex items-center gap-1"><Calendar className="h-3 w-3" /> Date *</label>
-            <DateField
-              value={formData.date}
-              onChange={(iso) => update("date", iso)}
-              min={todayMin}
+            <input
+              type="date"
               required
+              value={formData.date}
+              min={todayMin}
+              onChange={(e) => update("date", e.target.value)}
+              className={inputClass}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-sm font-medium flex items-center gap-1">
               <Clock className="h-3 w-3" /> Start{optionalStartTime ? "" : " *"}
             </label>
@@ -363,7 +364,7 @@ export default function EventForm({
               className={inputClass}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> End</label>
             <input
               type="time" value={formData.endTime}
@@ -377,7 +378,7 @@ export default function EventForm({
               <p className="text-xs text-destructive mt-1">End time must differ from start</p>
             )}
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> Doors</label>
             <input
               type="time" value={formData.doorsTime}
@@ -419,11 +420,13 @@ export default function EventForm({
               </select>
               {formData.recurrence && (
                 <div className="space-y-1.5">
-                  <DateField
+                  <input
+                    type="date"
                     value={formData.recurrenceUntil}
-                    onChange={(iso) => update("recurrenceUntil", iso)}
                     min={formData.date ? addOneDay(formData.date) : undefined}
                     max={formData.date ? defaultUntil(formData.date) : undefined}
+                    onChange={(e) => update("recurrenceUntil", e.target.value)}
+                    className={inputClass}
                   />
                 </div>
               )}
