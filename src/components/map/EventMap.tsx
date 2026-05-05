@@ -105,10 +105,6 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		() => Object.fromEntries(categoryInfos.map((c) => [c.id, c])),
 		[categoryInfos],
 	);
-	const categoryByLabel = useMemo(
-		() => Object.fromEntries(categoryInfos.map((c) => [c.label, c])),
-		[categoryInfos],
-	);
 
 	// Refs mirror the latest category data so the map "load" callback (whose
 	// closure is captured at mount time with empty arrays) sees current values
@@ -140,7 +136,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		type: "FeatureCollection",
 		features: Array.from(venueEvents.entries()).map(([venueId, evts]) => {
 			const venue = venueMap[venueId];
-			const info = categoryByLabel[evts[0].category];
+			const info = categoryById[evts[0].category];
 			const categoryId = info?.id ?? "other";
 			return {
 				type: "Feature",
@@ -162,7 +158,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				},
 			};
 		}),
-	}), [venueEvents, venueMap, categoryByLabel]);
+	}), [venueEvents, venueMap, categoryById]);
 
 	// Initialize map, load icons, add layers
 	useEffect(() => {

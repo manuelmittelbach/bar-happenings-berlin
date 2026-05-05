@@ -36,8 +36,9 @@ export default function MapPage() {
   const { data: eventsData = [] } = useEvents();
   const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
+  // Slug-IDs (categories.id) — passed to CategoryPill and used as activeCategory value.
   const categories = useMemo(
-    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
     [categoriesData],
   );
   const { location: userLocation } = useUserLocation();

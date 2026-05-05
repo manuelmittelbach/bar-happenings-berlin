@@ -80,7 +80,7 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
       const venue = venues.find((v) => v.id === event.venueId);
       if (!venue) return;
 
-      const catInfo = categoryInfos.find((c) => c.label === event.category);
+      const catInfo = categoryInfos.find((c) => c.id === event.category);
       const svgIcon = (catInfo?.id && categoryIcons[catInfo.id]) || defaultIcon;
 
       const icon = L.divIcon({

@@ -1525,8 +1525,9 @@ function StagedEventCard({
   onCancelOccurrence?: () => Promise<void>;
 }) {
   const { data: categoriesData = [] } = useCategories();
+  // Form holds the slug-id (categories.id) as the value; we display the label.
   const categories = useMemo(
-    () => categoriesData.filter((c) => c.enabled).map((c) => c.label),
+    () => categoriesData.filter((c) => c.enabled),
     [categoriesData],
   );
   const [title, setTitle] = useState(staged.title);
@@ -1897,7 +1898,7 @@ function StagedEventCard({
         >
           <option value="">— No category —</option>
           {categories.map(c => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
         <input

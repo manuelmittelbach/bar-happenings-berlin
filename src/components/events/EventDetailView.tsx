@@ -110,7 +110,9 @@ export default function EventDetailView({
   const hasRealImage = !!event.image;
   const interestDisabled = !onToggleInterest || isSaving;
   const { data: categories = [] } = useCategories();
-  const categoryColor = categories.find((c) => c.label === event.category)?.color;
+  const categoryInfo = categories.find((c) => c.id === event.category);
+  const categoryColor = categoryInfo?.color;
+  const categoryLabel = categoryInfo?.label ?? event.category;
 
   const heroHeight = compact ? "h-[120px]" : "h-[180px] md:h-[260px]";
   const titleSize = compact ? "text-lg" : "text-[22px] md:text-3xl";
@@ -146,7 +148,7 @@ export default function EventDetailView({
               className="absolute top-3 left-3 z-20 inline-flex items-center bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md"
               style={categoryColor ? { backgroundColor: categoryColor } : undefined}
             >
-              {event.category}
+              {categoryLabel}
             </div>
           )}
           {event.status === "canceled" && (
