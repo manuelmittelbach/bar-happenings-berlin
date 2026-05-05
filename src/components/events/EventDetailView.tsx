@@ -236,7 +236,7 @@ export default function EventDetailView({
             </p>
             <div className="mt-1 flex items-center gap-2 text-xs font-mono text-accent">
               <button onClick={onOpenMaps} className="cursor-pointer hover:underline">
-                Open in Maps
+                Open in Google Maps
               </button>
             </div>
           </div>
