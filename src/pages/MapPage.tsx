@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { List, SlidersHorizontal, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -7,7 +7,7 @@ import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/eve
 import EventMap from "@/components/map/EventMap";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
-import { useSessionState } from "@/lib/useSessionState";
+import { useFilterParams } from "@/lib/useFilterParams";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
@@ -23,14 +23,14 @@ const parseEntryEuro = (s: string): number | null => {
 
 export default function MapPage() {
   const navigate = useNavigate();
-  // Shared keys with Index so filters carry across list/map views.
-  const [activeCategory, setActiveCategory] = useSessionState("bhb-shared-category", "");
-  const [activeDate, setActiveDate] = useSessionState("bhb-shared-date", "All");
-  const [activeEntry, setActiveEntry] = useSessionState("bhb-shared-entry", "All");
-  // List-only filters that still carry into Map silently. Map exposes them
-  // as removable chips since there's no native Map UI to edit them.
-  const [searchQuery, setSearchQuery] = useSessionState("bhb-shared-search", "");
-  const [activeNeighborhood, setActiveNeighborhood] = useSessionState("bhb-shared-neighborhood", "");
+  const location = useLocation();
+  const {
+    searchQuery, setSearchQuery,
+    activeCategory, setActiveCategory,
+    activeNeighborhood, setActiveNeighborhood,
+    activeDate, setActiveDate,
+    activeEntry, setActiveEntry,
+  } = useFilterParams();
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: eventsData = [] } = useEvents();
@@ -194,7 +194,7 @@ export default function MapPage() {
 
       {/* List button — same style as Map button on main page */}
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate({ pathname: "/", search: location.search })}
         className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
       >
         <List className="h-4 w-4" />

@@ -122,16 +122,6 @@ export async function fetchEvents(untilDate?: string): Promise<BarlinEvent[]> {
   return data.map(mapEventRow);
 }
 
-export async function hasEventsAfter(date: string): Promise<boolean> {
-  const { count, error } = await supabase
-    .from("events")
-    .select("*", { count: "exact", head: true })
-    .in("status", ["approved", "canceled"])
-    .gt("date", date);
-  if (error) throw error;
-  return (count ?? 0) > 0;
-}
-
 export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[]> {
   const [live, arch] = await Promise.all([
     supabase.from("events").select("*").eq("created_by", userId),
