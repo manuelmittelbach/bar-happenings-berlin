@@ -13,25 +13,6 @@ let permissionStatus: LocationPermissionStatus = "idle";
 const subscribers = new Set<(loc: UserLocation | null) => void>();
 const statusSubscribers = new Set<(status: LocationPermissionStatus) => void>();
 
-const CONSENT_STORAGE_KEY = "bhb-geo-consent";
-
-function readStoredConsent(): boolean {
-  try {
-    return localStorage.getItem(CONSENT_STORAGE_KEY) === "granted";
-  } catch {
-    return false;
-  }
-}
-
-function writeStoredConsent(granted: boolean) {
-  try {
-    if (granted) localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
-    else localStorage.removeItem(CONSENT_STORAGE_KEY);
-  } catch {
-    // quota / disabled — silent
-  }
-}
-
 function notifyStatus(s: LocationPermissionStatus) {
   permissionStatus = s;
   statusSubscribers.forEach((fn) => fn(s));
@@ -49,12 +30,10 @@ export function triggerLocationRequest() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       cached = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      writeStoredConsent(true);
       notifyStatus("granted");
       subscribers.forEach((fn) => fn(cached));
     },
     () => {
-      writeStoredConsent(false);
       notifyStatus("denied");
       subscribers.forEach((fn) => fn(null));
     },
@@ -90,28 +69,23 @@ export function useUserLocation(): {
     subscribers.add(setLocation);
     statusSubscribers.add(setStatus);
 
-    // Primary path: persisted consent flag. Survives refresh on Safari/iOS
-    // where navigator.permissions.query for geolocation is unreliable.
-    if (permissionStatus === "idle" && readStoredConsent()) {
-      triggerLocationRequest();
-    }
-
-    // Secondary signal: keep state in sync if the browser explicitly knows
-    // the permission outcome (handles user revoking via browser settings).
+    // No auto-trigger of getCurrentPosition on mount. The location prompt
+    // must be initiated by an explicit user action (banner click), otherwise
+    // iOS Safari surfaces its "Would you like to allow access" popup as soon
+    // as the page loads — confusing UX for first-time visitors.
+    //
+    // Still sync with the browser's permission state to detect denial: if the
+    // user revoked geolocation via browser settings, the banner should hide
+    // (clicking it wouldn't do anything anyway). We do NOT auto-trigger on
+    // "granted" — the user still has to confirm via the banner.
     if (navigator.permissions) {
       navigator.permissions.query({ name: "geolocation" })
         .then((result) => {
           if (result.state === "denied") {
-            writeStoredConsent(false);
             notifyStatus("denied");
-          } else if (result.state === "granted" && permissionStatus === "idle") {
-            triggerLocationRequest();
           }
         })
         .catch((err) => {
-          // permissions.query can reject on Safari private mode, strict tracking
-          // protection, or older mobile browsers — the localStorage path above
-          // already handles the "previously granted" case.
           console.debug("[useUserLocation] permissions.query rejected", err);
         });
     }
