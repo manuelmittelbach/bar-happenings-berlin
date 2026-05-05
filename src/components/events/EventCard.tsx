@@ -7,7 +7,7 @@ import { MapPin, Star, Users } from "lucide-react";
 
 import type { BarlinEvent } from "@/types/event";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { useVenues } from "@/hooks/useEvents";
+import { useVenues, useCategories } from "@/hooks/useEvents";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
@@ -30,6 +30,8 @@ export default function EventCard({ event, layout = "grid", featured = false, on
   const displayTitle = useMemo(() => cleanEventTitle(event.title, event.venue), [event.title, event.venue]);
   const { location: userLocation } = useUserLocation();
   const { data: venues = [] } = useVenues();
+  const { data: categories = [] } = useCategories();
+  const categoryColor = categories.find((c) => c.label === event.category)?.color;
   const isCanceled = event.status === "canceled";
 
   const interestedCount = event.interestedCount ?? 0;
@@ -100,7 +102,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
         <Link to={`/event/${event.id}`} onClick={handleClick} className={`group flex gap-4 py-4 border-b-2 border-border hover:border-foreground transition-colors card-hover-lift ${isCanceled ? "opacity-50" : ""}`}>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="mono-label text-accent font-bold">{event.category}</span>
+              <span className="mono-label text-accent font-bold" style={categoryColor ? { color: categoryColor } : undefined}>{event.category}</span>
               <span className="mono-label text-muted-foreground">·</span>
               <span className="mono-label text-muted-foreground">{event.neighborhood}</span>
               <BadgeChip />
@@ -143,7 +145,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
               <BadgeChip />
             </div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="mono-label text-accent font-bold">{event.category}</span>
+              <span className="mono-label text-accent font-bold" style={categoryColor ? { color: categoryColor } : undefined}>{event.category}</span>
             </div>
             <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
               {displayTitle}
@@ -188,11 +190,11 @@ export default function EventCard({ event, layout = "grid", featured = false, on
                 </>
               ) : event.startTime ? (
                 <>
-                  <span className="font-mono text-accent font-bold text-[10px] md:text-xs uppercase tracking-wider">{event.startTime}</span>
+                  <span className="font-mono font-bold text-[10px] md:text-xs uppercase tracking-wider">{event.startTime}</span>
                   <span className="text-muted-foreground text-[10px] md:text-xs">·</span>
                 </>
               ) : null}
-              <span className="mono-label text-accent font-bold text-[10px] md:text-xs">{event.category}</span>
+              <span className="mono-label text-accent font-bold text-[10px] md:text-xs" style={categoryColor ? { color: categoryColor } : undefined}>{event.category}</span>
               {badge && badge.variant !== "soon" && <BadgeChip />}
             </div>
             <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">

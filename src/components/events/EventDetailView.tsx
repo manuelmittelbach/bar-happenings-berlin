@@ -6,6 +6,7 @@ import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
+import { useCategories } from "@/hooks/useEvents";
 
 
 export interface UpcomingEvent {
@@ -108,6 +109,8 @@ export default function EventDetailView({
   const displayTitle = cleanEventTitle(event.title || "(untitled)", event.venue);
   const hasRealImage = !!event.image;
   const interestDisabled = !onToggleInterest || isSaving;
+  const { data: categories = [] } = useCategories();
+  const categoryColor = categories.find((c) => c.label === event.category)?.color;
 
   const heroHeight = compact ? "h-[120px]" : "h-[180px] md:h-[260px]";
   const titleSize = compact ? "text-lg" : "text-[22px] md:text-3xl";
@@ -139,7 +142,10 @@ export default function EventDetailView({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           {event.category && (
-            <div className="absolute top-3 left-3 z-20 inline-flex items-center bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md">
+            <div
+              className="absolute top-3 left-3 z-20 inline-flex items-center bg-accent text-accent-foreground px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider shadow-md"
+              style={categoryColor ? { backgroundColor: categoryColor } : undefined}
+            >
               {event.category}
             </div>
           )}
