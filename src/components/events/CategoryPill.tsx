@@ -101,24 +101,27 @@ export function CategoryIconRow({
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
+        const activeColor = info?.color;
         return (
           <button
             key={cat}
             onClick={() => onSelect(cat)}
+            style={isActive && activeColor ? { color: activeColor } : undefined}
             className={`group shrink-0 flex flex-col items-center gap-1 px-2.5 py-2 transition-all ${
-              isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
+              isActive ? "" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <div className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
-              isActive
-                ? "bg-accent text-background  scale-105"
-                : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
-            }`}>
+            <div
+              style={isActive && activeColor ? { backgroundColor: activeColor } : undefined}
+              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
+                isActive
+                  ? "text-background scale-105"
+                  : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
+              }`}
+            >
               {Icon ? <Icon className="h-[22px] w-[22px]" /> : <span className="text-[22px] leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
-            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors ${
-              isActive ? "text-accent" : ""
-            }`}>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors">
               {shortLabel}
             </span>
           </button>
@@ -171,24 +174,27 @@ export function CategoryIconBar({
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || cat;
+        const activeColor = info?.color;
         return (
           <button
             key={cat}
             onClick={() => onSelect(cat)}
+            style={isActive && activeColor ? { color: activeColor } : undefined}
             className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
-              isActive ? "text-accent" : "text-muted-foreground"
+              isActive ? "" : "text-muted-foreground"
             }`}
           >
-            <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
-              isActive
-                ? "bg-accent text-background  scale-105"
-                : "bg-muted border-2 border-border"
-            }`}>
+            <div
+              style={isActive && activeColor ? { backgroundColor: activeColor } : undefined}
+              className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
+                isActive
+                  ? "text-background scale-105"
+                  : "bg-muted border-2 border-border"
+              }`}
+            >
               {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
-            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
-              isActive ? "text-accent" : ""
-            }`}>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors">
               {shortLabel}
             </span>
           </button>
