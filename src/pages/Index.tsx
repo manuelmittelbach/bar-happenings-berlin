@@ -349,7 +349,7 @@ export default function Index() {
 
   return (
     <>
-        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100dvh-56px)] flex flex-col justify-center">
+        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100dvh-56px)] flex flex-col justify-center pb-32 md:pb-0">
           <div className="container relative z-[45] py-16">
             <motion.p
               className="mono-label text-accent mb-4"
@@ -359,7 +359,7 @@ export default function Index() {
             >
               Berlin's independent bar guide
             </motion.p>
-            <h1 className="heading-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
+            <h1 className="heading-display text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
               <span className="block whitespace-nowrap">
                 {["What's", "on"].map((w, i) => (
                   <motion.span
