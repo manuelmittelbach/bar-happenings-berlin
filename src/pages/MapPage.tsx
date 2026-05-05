@@ -54,6 +54,11 @@ export default function MapPage() {
   const filtered = useMemo(() => {
     let result = [...eventsData];
     result = result.filter((e) => isEventStillOnline(e));
+    // Hide canceled events unless they're today or tomorrow — same rule as list view.
+    result = result.filter((e) => {
+      if (e.status !== "canceled") return true;
+      return e.date === today || e.date === tomorrow;
+    });
     if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);

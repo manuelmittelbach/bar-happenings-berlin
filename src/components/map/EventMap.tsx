@@ -138,6 +138,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			const venue = venueMap[venueId];
 			const info = categoryById[evts[0].category];
 			const categoryId = info?.id ?? "other";
+			const allCanceled = evts.every((e) => e.status === "canceled");
 			return {
 				type: "Feature",
 				geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
@@ -147,12 +148,15 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					neighborhood: venue.neighborhood,
 					categoryId,
 					count: evts.length,
+					allCanceled,
 					eventsJson: JSON.stringify(
 						evts.map((e) => ({
 							id: e.id,
 							title: cleanEventTitle(e.title, e.venue),
 							date: e.date,
 							startTime: e.startTime ?? "",
+							status: e.status,
+							canceledBy: e.canceledBy ?? null,
 						}))
 					),
 				},
@@ -237,6 +241,11 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						"icon-size": 1,
 						"icon-allow-overlap": true,
 					},
+					paint: {
+						// Dim venues whose events are all canceled — at-a-glance signal
+						// that the marker still exists but nothing is happening there.
+						"icon-opacity": ["case", ["get", "allCanceled"], 0.45, 1.0],
+					},
 				});
 
 				map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
@@ -250,8 +259,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						eventsJson: string;
 					};
 					const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
-					const evts: { id: string; title: string; date: string; startTime: string }[] =
-						JSON.parse(props.eventsJson);
+					const evts: {
+						id: string;
+						title: string;
+						date: string;
+						startTime: string;
+						status?: string;
+						canceledBy?: "organizer" | "admin" | null;
+					}[] = JSON.parse(props.eventsJson);
 
 					const popupEl = document.createElement("div");
 					popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
@@ -268,17 +283,24 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					evts.forEach((evt) => {
 						const btn = document.createElement("button");
 						const isLast = evts.indexOf(evt) === evts.length - 1;
+						const isCanceled = evt.status === "canceled";
 						btn.className = "map-popup-btn";
 						btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
 						const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
 							weekday: "short", day: "numeric", month: "short",
 						});
 						const titleP = document.createElement("p");
-						titleP.style.cssText = "font-size:14px;font-weight:600;margin:0;color:#111;";
+						titleP.style.cssText = `font-size:14px;font-weight:600;margin:0;color:${isCanceled ? "#888" : "#111"};${isCanceled ? "text-decoration:line-through;" : ""}`;
 						titleP.textContent = evt.title;
 						const metaP = document.createElement("p");
 						metaP.style.cssText = "font-size:12px;color:#888;margin:3px 0 0;";
-						metaP.textContent = dateStr + (evt.startTime ? ` · ${evt.startTime}` : "");
+						if (isCanceled) {
+							const badge = document.createElement("span");
+							badge.textContent = evt.canceledBy === "admin" ? "CANCELED" : "CANCELED BY ORGANIZER";
+							badge.style.cssText = "display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.5px;color:#dc2626;background:#fee2e2;padding:1px 6px;margin-right:6px;border-radius:2px;";
+							metaP.appendChild(badge);
+						}
+						metaP.appendChild(document.createTextNode(dateStr + (evt.startTime ? ` · ${evt.startTime}` : "")));
 						btn.appendChild(titleP);
 						btn.appendChild(metaP);
 						btn.addEventListener("click", () => {
