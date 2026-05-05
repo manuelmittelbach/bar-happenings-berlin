@@ -94,6 +94,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+	const popupRef = useRef<maplibregl.Popup | null>(null);
 	const onEventClickRef = useRef(onEventClick);
 	const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
 	const sourceReadyRef = useRef(false);
@@ -264,7 +265,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 
 					const scrollEl = document.createElement("div");
 					scrollEl.className = "map-popup-scroll";
-					scrollEl.style.cssText = "max-height:220px;overflow-y:auto;padding:4px 12px;";
+					scrollEl.style.cssText = "max-height:220px;overflow-x:hidden;overflow-y:auto;padding:4px 12px;";
 					evts.forEach((evt) => {
 						const btn = document.createElement("button");
 						const isLast = evts.indexOf(evt) === evts.length - 1;
@@ -291,10 +292,15 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					});
 					popupEl.appendChild(scrollEl);
 
-					new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
+					popupRef.current?.remove();
+					const popup = new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
 						.setLngLat(coords)
 						.setDOMContent(popupEl)
 						.addTo(map);
+					popup.on("close", () => {
+						if (popupRef.current === popup) popupRef.current = null;
+					});
+					popupRef.current = popup;
 				});
 			})();
 		});
@@ -306,6 +312,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	// Update data when events change — register any missing badge images first
 	useEffect(() => {
 		geojsonRef.current = geojson;
+		// Filter changed → close any open popup, since its event list is now stale.
+		popupRef.current?.remove();
+		popupRef.current = null;
 		if (!sourceReadyRef.current) return;
 		const map = mapRef.current;
 		if (!map) return;
