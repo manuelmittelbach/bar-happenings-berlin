@@ -69,7 +69,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
     const iconClass = size === "xs" ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5";
     const padClass = size === "xs" ? "px-1.5 md:px-2" : "px-2";
 
-    if (walkingMins !== null && walkingMins <= 30) {
+    if (walkingMins !== null && walkingMins <= 20) {
       return (
         <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-foreground font-mono`}>
           <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>
