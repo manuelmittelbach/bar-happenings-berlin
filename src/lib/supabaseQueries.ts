@@ -155,7 +155,7 @@ export async function uploadEventImage(file: File, userId: string): Promise<stri
 }
 
 interface EventWriteData {
-  title: string; venue: string; address: string; neighborhood: string;
+  title: string; venue: string; venueId?: string; address: string; neighborhood: string;
   date: string; startTime: string; endTime: string; doorsTime: string; category: string;
   description: string; entryInfo: string; language: string; website: string;
   imagePosition: string;
@@ -174,6 +174,7 @@ function buildEventRow(
     recurrence: overrides.recurrence,
     title: formData.title,
     venue: formData.venue,
+    venue_id: formData.venueId || null,
     address: formData.address,
     neighborhood: formData.neighborhood,
     date: overrides.date,
@@ -232,6 +233,7 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
   const update: TablesUpdate<"events"> = {
     title: formData.title,
     venue: formData.venue,
+    ...(formData.venueId ? { venue_id: formData.venueId } : {}),
     address: formData.address,
     neighborhood: formData.neighborhood,
     category: formData.category,
