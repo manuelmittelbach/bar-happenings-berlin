@@ -142,7 +142,7 @@ For each future event return a JSON object with these exact keys:
       (exactly: integer or integer,50 + space + €)
     * Free-text fallback only if none above fit, e.g. "Booking required"
     * null if no pricing info found
-- description (string): one short sentence describing the event, or null
+- description (string): the full event description as written on the page (preserve all details — line-up, themes, hosts, special notes). Do not summarize or shorten. null only if the page has no descriptive text for this event.
 - source_url (string): the website URL where the event was found
 
 Return ONLY a valid JSON array. If no upcoming events found, return [].
