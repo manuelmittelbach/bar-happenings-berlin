@@ -84,7 +84,7 @@ COMMON_LANGUAGES = [
 ]
 
 
-def fetch_page_text(url: str, max_chars: int = 4000) -> tuple[str | None, str | None]:
+def fetch_page_text(url: str, max_chars: int = 16000) -> tuple[str | None, str | None]:
     """Fetch a website and return (cleaned_text, error_message)."""
     try:
         resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
