@@ -133,7 +133,7 @@ For each future event return a JSON object with these exact keys:
 - date (string): YYYY-MM-DD format, MUST be between {TODAY_ISO} and {max_iso}
 - start_time (string): HH:MM (24h), or null
 - end_time (string): HH:MM (24h), or null
-- category (string): MUST be EXACTLY one of these values, or null if no good fit: {categories_str}
+- category (string): MUST be EXACTLY one of these values: {categories_str}. Use "Other" if no specific category fits — do NOT return null.
 - language (string): the spoken language of the event, prefer one of these common values: {languages_str}. Use "English / German" for bilingual events. null if unclear.
 - entry_info (string): pricing info. Use ONE of these formats so app filters work:
     * "Free" — for events with no entry charge of any kind
@@ -215,13 +215,16 @@ def ensure_placeholder(client, venue_id: str, source_url: str) -> bool:
 
 
 def normalize_category(value: str | None) -> str | None:
-    """Ensure category matches an allowed value, else None."""
+    """Ensure category matches an allowed value. Falls back to 'Other' so admin
+    sees a labeled card instead of an empty one — only returns None if 'Other'
+    itself was disabled in the categories table."""
+    other = next((c for c in CATEGORIES if c.lower() == "other"), None)
     if not value:
-        return None
+        return other
     for c in CATEGORIES:
         if c.lower() == value.strip().lower():
             return c
-    return None
+    return other
 
 
 def normalize_language(value: str | None) -> str:
