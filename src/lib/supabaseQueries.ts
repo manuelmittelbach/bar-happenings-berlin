@@ -503,6 +503,11 @@ export type OrganizerAccount = {
     proposedWebsite: string | null;
     proposedInstagram: string | null;
     proposedPhone: string | null;
+    // Conflict info — populated by hydrateOrganizers so the admin sees
+    // when a pending claim targets a venue that's already owned or also
+    // requested by someone else. Empty arrays = no conflict.
+    existingOwners: { userId: string; name: string; email: string | null }[];
+    otherPendingClaims: { userId: string; name: string; email: string | null }[];
   } | null;
   // True if organizer is in pending state but has no submission AND no claim
   // (e.g. claim's venue was deleted and CASCADE removed the claim row).
@@ -569,25 +574,95 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       lng: r.lng,
     });
   }
-  const claimByUser = new Map<string, OrganizerAccount["pendingClaim"]>();
-  for (const row of claimsRes.data ?? []) {
-    const r = row as {
-      user_id: string;
-      venue_id: string;
-      proposed_website: string | null;
-      proposed_instagram: string | null;
-      proposed_phone: string | null;
-      venues: {
+  type ClaimSource = {
+    user_id: string;
+    venue_id: string;
+    proposed_website: string | null;
+    proposed_instagram: string | null;
+    proposed_phone: string | null;
+    venues: {
+      id: string;
+      name: string;
+      address: string;
+      neighborhood: string;
+      website: string | null;
+      instagram: string | null;
+      phone: string | null;
+    } | null;
+  };
+  const claimRows = (claimsRes.data ?? []) as ClaimSource[];
+
+  // For every venue that any of the input organizers is claiming, also load
+  // existing venue_owners + ALL pending claims for that venue. Lets the admin
+  // see double-claim situations on the approve card. Skip the extra round-trips
+  // entirely when there are no claims in this batch.
+  // venue_owners.user_id and pending_venue_claims.user_id reference auth.users,
+  // not profiles, so PostgREST won't auto-join — fetch profiles separately.
+  const claimVenueIds = Array.from(
+    new Set(claimRows.map((r) => r.venue_id).filter((id): id is string => !!id)),
+  );
+  type ConflictParty = { userId: string; name: string; email: string | null };
+  const ownersByVenue = new Map<string, ConflictParty[]>();
+  const claimantsByVenue = new Map<string, ConflictParty[]>();
+  if (claimVenueIds.length > 0) {
+    const [conflictOwnersRes, conflictClaimsRes] = await Promise.all([
+      supabase
+        .from("venue_owners")
+        .select("venue_id, user_id")
+        .in("venue_id", claimVenueIds),
+      supabase
+        .from("pending_venue_claims")
+        .select("venue_id, user_id")
+        .in("venue_id", claimVenueIds),
+    ]);
+    if (conflictOwnersRes.error) throw conflictOwnersRes.error;
+    if (conflictClaimsRes.error) throw conflictClaimsRes.error;
+    const ownerRows = (conflictOwnersRes.data ?? []) as { venue_id: string; user_id: string }[];
+    const claimRowsAll = (conflictClaimsRes.data ?? []) as { venue_id: string; user_id: string }[];
+    const conflictUserIds = Array.from(
+      new Set([...ownerRows.map((r) => r.user_id), ...claimRowsAll.map((r) => r.user_id)]),
+    );
+    const partyByUser = new Map<string, ConflictParty>();
+    if (conflictUserIds.length > 0) {
+      const profilesRes = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", conflictUserIds);
+      if (profilesRes.error) throw profilesRes.error;
+      for (const p of (profilesRes.data ?? []) as {
         id: string;
-        name: string;
-        address: string;
-        neighborhood: string;
-        website: string | null;
-        instagram: string | null;
-        phone: string | null;
-      } | null;
-    };
+        first_name: string;
+        last_name: string;
+        email: string | null;
+      }[]) {
+        partyByUser.set(p.id, {
+          userId: p.id,
+          name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "(no name)",
+          email: p.email ?? null,
+        });
+      }
+    }
+    const fallbackParty = (userId: string): ConflictParty =>
+      partyByUser.get(userId) ?? { userId, name: "(unknown user)", email: null };
+    for (const row of ownerRows) {
+      const arr = ownersByVenue.get(row.venue_id) ?? [];
+      arr.push(fallbackParty(row.user_id));
+      ownersByVenue.set(row.venue_id, arr);
+    }
+    for (const row of claimRowsAll) {
+      const arr = claimantsByVenue.get(row.venue_id) ?? [];
+      arr.push(fallbackParty(row.user_id));
+      claimantsByVenue.set(row.venue_id, arr);
+    }
+  }
+
+  const claimByUser = new Map<string, OrganizerAccount["pendingClaim"]>();
+  for (const r of claimRows) {
     if (!r.venues) continue;
+    const existingOwners = ownersByVenue.get(r.venue_id) ?? [];
+    const otherPendingClaims = (claimantsByVenue.get(r.venue_id) ?? []).filter(
+      (p) => p.userId !== r.user_id,
+    );
     claimByUser.set(r.user_id, {
       venueId: r.venue_id,
       venueName: r.venues.name,
@@ -599,6 +674,8 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
       proposedWebsite: r.proposed_website,
       proposedInstagram: r.proposed_instagram,
       proposedPhone: r.proposed_phone,
+      existingOwners,
+      otherPendingClaims,
     });
   }
   return profiles.map((row) => {
