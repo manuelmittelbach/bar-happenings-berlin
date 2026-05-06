@@ -134,7 +134,11 @@ For each future event return a JSON object with these exact keys:
 - start_time (string): HH:MM (24h), or null
 - end_time (string): HH:MM (24h), or null
 - category (string): MUST be EXACTLY one of these values: {categories_str}. Use "Other" if no specific category fits — do NOT return null.
-- language (string): the spoken language of the event, prefer one of these common values: {languages_str}. Use "English / German" for bilingual events. null if unclear.
+- language (string): the spoken/performed language of the event ITSELF — NOT the language of the website. STRONG PREFERENCE: null over a guess. A wrong language is worse than no language. Only fill this when the event page text EXPLICITLY states it (e.g. "in English", "auf Deutsch", "bilingual", "spanish-speaking comedy"). When set, prefer one of: {languages_str}. Use "English / German" only when the page explicitly says the event is bilingual. Return null when:
+    * no language is stated for the event,
+    * the event is language-agnostic (instrumental music, DJ sets, dance events, karaoke without specified language),
+    * the only signal is the website's language or the event title — those are NOT sufficient.
+  When in doubt, return null. Do NOT default to the website's language.
 - entry_info (string): pricing info. Use ONE of these formats so app filters work:
     * "Free" — for events with no entry charge of any kind
     * "Pay what you want" — for donation-based / sliding-scale events
