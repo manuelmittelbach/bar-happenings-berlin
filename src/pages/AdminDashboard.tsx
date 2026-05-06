@@ -371,6 +371,13 @@ export default function AdminDashboard() {
       toast.error("Can't approve — venue was deleted. Please reject this organizer.");
       return;
     }
+    if (organizer.pendingClaim && organizer.pendingClaim.existingOwners.length > 0) {
+      const ownerList = organizer.pendingClaim.existingOwners.map((o) => o.name).join(", ");
+      const ok = window.confirm(
+        `This bar already has ${organizer.pendingClaim.existingOwners.length} owner(s): ${ownerList}.\n\nReally add another owner?`,
+      );
+      if (!ok) return;
+    }
     try {
       const label =
         organizer.venue?.name ??
@@ -1349,6 +1356,22 @@ function OrganizerCard({
           {fullName || "(no name)"}
           {organizer.email ? ` · ${organizer.email}` : ""}
         </p>
+        {isClaim && organizer.pendingClaim && organizer.pendingClaim.existingOwners.length > 0 && (
+          <div className="text-xs px-2 py-1.5 rounded-sm bg-red-500/10 text-red-700 border border-red-500/20">
+            Already claimed by:{" "}
+            {organizer.pendingClaim.existingOwners
+              .map((o) => `${o.name}${o.email ? ` (${o.email})` : ""}`)
+              .join(", ")}
+          </div>
+        )}
+        {isClaim && organizer.pendingClaim && organizer.pendingClaim.otherPendingClaims.length > 0 && (
+          <div className="text-xs px-2 py-1.5 rounded-sm bg-orange-500/10 text-orange-700 border border-orange-500/20">
+            Other pending claim(s) for this venue:{" "}
+            {organizer.pendingClaim.otherPendingClaims
+              .map((c) => `${c.name}${c.email ? ` (${c.email})` : ""}`)
+              .join(", ")}
+          </div>
+        )}
         {display && (display.website || display.instagram || display.phone) && (
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
             {display.website && (
