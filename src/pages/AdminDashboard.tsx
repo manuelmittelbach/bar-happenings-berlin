@@ -1604,7 +1604,6 @@ function StagedEventCard({
     setEventsUrlInput(currentVenue?.websiteEvents ?? "");
   }, [staged.venueId, currentVenue?.websiteEvents]);
 
-  const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
   const seriesDates: string[] = (() => {
     if (!date) return [];
     if (showRecurrenceEditor && staged.recurrence && staged.recurrenceUntil) {
@@ -1898,9 +1897,23 @@ function StagedEventCard({
         )
       )}
 
-      {liveDates.length > 0 && (
+      {liveEvents.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Already live ({liveDates.length}): {liveDates.map(formatDateShort).join(", ")}
+          Already live ({liveEvents.length}):{" "}
+          {liveEvents.map((event, i) => (
+            <span key={event.id}>
+              {i > 0 && ", "}
+              <Link
+                to={`/event/${event.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+                title={event.title}
+              >
+                {formatDateShort(event.date)}
+              </Link>
+            </span>
+          ))}
         </p>
       )}
 
