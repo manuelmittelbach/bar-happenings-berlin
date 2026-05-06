@@ -35,10 +35,9 @@ OLLAMA_URL   = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "gemma3:12b"
 TODAY        = date.today()
 TODAY_ISO    = TODAY.isoformat()
-# Hard upper bound for accepted events. The LLM expands recurring events 4 weeks
-# out; we accept up to 8 weeks to give a safety margin without admitting random
-# far-future entries.
-MAX_DATE     = TODAY + timedelta(weeks=8)
+# Hard upper bound for accepted events. 2 weeks matches the typical user
+# planning horizon and keeps each scrape focused on what's actionable now.
+MAX_DATE     = TODAY + timedelta(weeks=2)
 
 # Allowed event categories: enabled rows in the public.categories table.
 # Loaded fresh from the DB at the start of main() — toggling `enabled` in the
@@ -126,7 +125,7 @@ CRITICAL RULES — read carefully:
 3. INCLUDE events whose date is ambiguous but COULD be in the future. A human admin reviews each event afterwards, so it's fine to include uncertain candidates.
    - "March 15" with no year → use the next future March 15 (>= {TODAY_ISO}).
    - "this Friday" / "tonight" → compute from today ({TODAY_ISO}).
-4. EXCLUDE events clearly later than {max_iso} (~8 weeks from today).
+4. EXCLUDE events clearly later than {max_iso} (~2 weeks from today).
 5. For recurring events ("every Friday"), only include occurrences that are EXPLICITLY listed on the page. Do NOT generate or expand a series of dates yourself unless the page itself lists each date.
 
 For each future event return a JSON object with these exact keys:
