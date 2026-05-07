@@ -35,9 +35,7 @@ from supabase import create_client
 from scrape_helpers import (
     CATEGORIES,
     MAX_DATE,
-    TODAY,
     TODAY_ISO,
-    _norm_for_compare,
     _trim_time,
     compare_event_fields,
     ensure_placeholder,
