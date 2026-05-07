@@ -1,11 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-07 — change: tightened invoke prompt, made per-venue
-     loop explicit, added crash-recovery + precise importer-summary handling
-     (incl. covered-by-recurring as expected skip + .env requirement), moved
-     pre-import checklist to per-venue, merged step 4/5. Earlier change:
-     incremental write+import per venue (was: single write at end). Earlier:
-     live-date pre-filter removed; importer handles match-and-compare. -->
+<!-- last-updated: 2026-05-07 -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -122,6 +117,16 @@ Tips that worked well:
   skip — no need to fetch detail or stage.
 - If a page fails (timeout, 404, anti-bot block): move on, don't retry more
   than once. The next nightly auto-scrape will pick it up if temporary.
+- **If `innerText` yields little or no content (< ~200 chars of real text):**
+  don't skip immediately. Check for two patterns:
+  1. **iFrame**: `document.querySelectorAll('iframe')` — if present, navigate
+     directly to the `src` URL instead (e.g. Donau115 embeds a Google Sheet).
+  2. **Event image**: `document.querySelectorAll('img')` — if an image with an
+     event-related `alt` or filename (e.g. "Mai Events.png") is found, use
+     `mcp__playwright__browser_navigate` to open the image URL directly, then
+     `mcp__playwright__browser_take_screenshot` and read the screenshot with the
+     `Read` tool to extract events visually (e.g. Jatz Bar publishes a monthly
+     PNG). Use the venue's `website_events` URL as `source_url` in this case.
 
 ### Step 3 — Write + import for THIS venue (incremental)
 
@@ -131,26 +136,37 @@ pre-import checklist (bottom of this doc) over the venue's events before
 writing.
 
 **3a.** Write the current venue's events (and only this venue's) to
-`/tmp/visual_scrape_events_batch.json` using the `Write` tool. The file is
-overwritten each iteration — that's intentional; the importer is what
-persists state, the batch file is just a handoff.
+`/tmp/visual_scrape_events_batch.json`. The file is overwritten each
+iteration — that's intentional; the importer is what persists state, the
+batch file is just a handoff.
 
-```json
-[
+**Always use `python3 + json.dumps` — never the `Write` tool directly.**
+Descriptions frequently contain German typographic quotes like `„word"` where
+the closing character is a plain ASCII `"` (U+0022). Written by hand this
+silently terminates the JSON string and causes a parse error. `json.dumps`
+escapes everything correctly regardless of content.
+
+```python
+python3 << 'EOF'
+import json
+events = [
   {
     "venue_id": "uuid",
     "title": "Event title as written on the page",
     "date": "YYYY-MM-DD",
-    "start_time": "HH:MM" or null,
-    "end_time": "HH:MM" or null,
-    "doors_time": "HH:MM" or null,
-    "category": "live-music" | "dj-music" | ... | null,
-    "language": "English" | "German" | "English / German" | ... | null,
-    "description": "verbatim page text, or null — see Field rules → description",
-    "entry_info": "Free" | "Pay what you want" | "5 €" | "12,50 €" | null,
+    "start_time": "HH:MM",   # or None
+    "end_time": "HH:MM",     # or None
+    "doors_time": "HH:MM",   # or None
+    "category": "live-music",  # slug-id or None
+    "language": "English",   # or None
+    "description": "verbatim page text",  # or None
+    "entry_info": "5 €",     # or None
     "source_url": "https://venue.example/path/to/this-event"
   }
 ]
+with open('/tmp/visual_scrape_events_batch.json', 'w', encoding='utf-8') as f:
+    json.dump(events, f, ensure_ascii=False, indent=2)
+EOF
 ```
 
 If the venue had no events in the window, skip Step 3 entirely and move to
@@ -183,11 +199,10 @@ Per-event lines are also printed:
 - `✗ insert error` — real problem.
 
 Decision rules:
-- Hard error (script crashes / SystemExit) → STOP, report to user.
-- `✗ insert error` for any event → STOP, report to user.
-- `0 new + 0 update inserted` and you scraped events you expected to be
-  new (not just updates / dupes) → STOP, check for `venue_id` typo.
-- Otherwise (any successful inserts, or all skips were dedup) → continue.
+- Hard crash or any `✗ insert error` → STOP, report to user.
+- `0 new + 0 update inserted` despite scraping events expected to be new
+  (not just updates/dupes) → STOP, check for `venue_id` typo.
+- Otherwise → continue.
 
 Then go back to Step 2 with the next venue.
 
@@ -320,15 +335,21 @@ event-specific content remains (e.g. page just says "tba" or has only
 title+date already captured in other fields). NEVER invent content.
 
 ### `entry_info`
-Must match one of these formats exactly, otherwise `null`:
-- `"Free"` — no entry charge
-- `"Pay what you want"` — donation / sliding scale
-- `"5 €"`, `"12 €"`, `"15,50 €"` — fixed price (integer or integer,50 + space + €)
-- `null` — anything else, including "Donation €10–€15", "Reservation required",
-  "Tickets via …" or no info
+Hierarchy — use the most specific that fits the page:
+1. `"Free"` — no entry charge
+2. `"Pay what you want"` — donation / sliding scale
+3. `"5 €"`, `"12 €"`, `"15,50 €"` — fixed price (integer or integer,50 + space + €)
+4. **Free-text fallback** — pricing IS stated on the page but doesn't fit
+   1–3. Copy the page's wording verbatim, single line, ≤80 chars. Examples
+   that should be kept (not nulled): `"Donation suggested"`,
+   `"Donations 5–10 €"`, `"Tickets via Eventim"`,
+   `"First drink costs double"`, `"Reservation required"`.
+5. `null` — only when the page says nothing about pricing at all.
 
-Do not invent free-text values. The auto-scraper's `normalize_entry_info`
-will reject anything not in the above list anyway.
+Never invent — the value must come from the page text. The Admin UI
+auto-detects free-text values and shows them in `Custom…` mode, so they
+round-trip cleanly. The importer caps free-text at 80 chars and collapses
+whitespace.
 
 ### `source_url`
 The actual URL of the event's detail page that you navigated to. NEVER invent
@@ -340,9 +361,6 @@ as fallback.
 
 - 14-day window: `[today, today + 14 days]` inclusive
 - Title-based dedup against `staged_keys_by_venue` (existing pending staging)
-- Live-event match-and-compare happens in the **importer**, not here — stage
-  events whose date already has a live event; importer drops unchanged ones
-  and flags real changes as updates
 - All staging rows: `is_manual=false`
 - All categories: slug-ID format (lowercase, kebab-case)
 - Never invent: titles, dates, times, descriptions, URLs

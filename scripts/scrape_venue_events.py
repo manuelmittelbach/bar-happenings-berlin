@@ -425,11 +425,12 @@ For each future event return a JSON object with these exact keys:
     * the event is language-agnostic (instrumental music, DJ sets, dance events, karaoke without specified language),
     * the only signal is the website's language or the event title — those are NOT sufficient.
   When in doubt, return null. Do NOT default to the website's language.
-- entry_info (string): pricing info. MUST be EXACTLY one of these — anything else MUST be null:
+- entry_info (string): pricing info. Use the most specific that fits — prefer the canonical formats, but keep free-text from the page when stated pricing doesn't fit them. NEVER invent — the value must come from the page text.
     * "Free" — events with no entry charge
     * "Pay what you want" — donation-based / sliding-scale events
     * "X €" or "X,50 €" — fixed prices, e.g. "5 €", "8 €", "12,50 €" (integer or integer,50 + space + €)
-    * null — when no pricing info is found OR the pricing doesn't fit the formats above. Do NOT invent free-text values like "Booking required", "Reservation needed", "Donations welcome" etc. — return null instead.
+    * Free-text fallback (string, max 80 chars, single line) — ONLY when pricing IS stated on the page but doesn't fit the canonical formats above. Copy the page's wording verbatim. Examples: "Donation suggested", "Donations 5–10 €", "Tickets via Eventim", "First drink costs double", "Reservation required".
+    * null — ONLY when the page says nothing about pricing at all.
 - description (string): COPY VERBATIM — paste the exact text character-for-character as it appears on the page, including punctuation, asterisks, and line breaks. Do NOT rephrase, summarize, or write a single word in your own words. If you find yourself composing a sentence, STOP and paste the original instead. When the event was extracted from a [DETAIL_<n>: ...] block, treat the ENTIRE detail block as content about this one event — include everything (performer/band/DJ bios, set descriptions, themes, ticket/RSVP notes, dress code, accessibility info, etc.). Be exhaustive; the detail page exists for this single event, so err strongly on the side of including more rather than less. CRITICAL: the following are NEVER description content:
     * Navigation to other events ("Earlier Event:", "Later Event:", "Previous/Next Event") — those belong to OTHER events, not this one. Ignore them.
     * Calendar export buttons ("Add to Calendar", "Google Calendar", "ICS"), share buttons, map links, "Back to All Events" links.
@@ -541,16 +542,24 @@ def normalize_language(value: str | None) -> str:
 _PRICE_RE = re.compile(r"^(\d+)(,50)?\s*€$")
 
 
-def normalize_entry_info(value: str | None) -> str:
-    """Strict-validate against the values the admin UI dropdown understands:
-    'Free', 'Pay what you want', or 'N €' / 'N,50 €'. Anything else — null,
-    free-text from the LLM, placeholder strings — collapses to '' so the
-    admin UI's 'No entry info' option (which uses value='') pre-selects
-    automatically. Admin can switch to Custom… and type free-form if needed.
+_ENTRY_INFO_MAX_LEN = 80
 
-    Prices are rebuilt to the canonical 'N €' / 'N,50 €' format (with the
-    space) so they match ENTRY_AMOUNTS in the dropdown, even if the LLM
-    returns '8€' or '8  €'."""
+
+def normalize_entry_info(value: str | None) -> str:
+    """Normalize against the admin UI's entry_info options, with a free-text
+    fallback for pricing info that doesn't fit the canonical formats.
+
+    Hierarchy:
+      1. 'Free' / 'Pay what you want' — passed through.
+      2. 'N €' / 'N,50 €' — rebuilt to canonical format (with the space) so
+         they match ENTRY_AMOUNTS in the dropdown, even if the source returns
+         '8€' or '8  €'.
+      3. Other non-empty pricing wording (e.g. 'Donation suggested',
+         'Tickets via Eventim') — kept as-is, sanitized to a single line and
+         capped at _ENTRY_INFO_MAX_LEN. The admin UI auto-detects these and
+         shows them via Custom…, so they round-trip cleanly.
+      4. Empty / placeholder strings ('null', 'none', 'n/a', 'no entry info')
+         — collapse to '' so the admin UI's 'No entry info' pre-selects."""
     if not value or not isinstance(value, str):
         return ""
     cleaned = value.strip()
@@ -563,8 +572,10 @@ def normalize_entry_info(value: str | None) -> str:
     m = _PRICE_RE.match(cleaned)
     if m:
         return f"{m.group(1)},50 €" if m.group(2) else f"{m.group(1)} €"
-    # Free-text from LLM is no longer accepted — admin re-enters via Custom… if needed.
-    return ""
+    collapsed = re.sub(r"\s+", " ", cleaned)
+    if len(collapsed) > _ENTRY_INFO_MAX_LEN:
+        collapsed = collapsed[:_ENTRY_INFO_MAX_LEN].rstrip()
+    return collapsed
 
 
 def parse_event_date(value: str | None) -> date | None:
