@@ -430,7 +430,7 @@ For each future event return a JSON object with these exact keys:
     * "Pay what you want" — donation-based / sliding-scale events
     * "X €" or "X,50 €" — fixed prices, e.g. "5 €", "8 €", "12,50 €" (integer or integer,50 + space + €)
     * null — when no pricing info is found OR the pricing doesn't fit the formats above. Do NOT invent free-text values like "Booking required", "Reservation needed", "Donations welcome" etc. — return null instead.
-- description (string): the full event-specific descriptive prose as written on the page (preserve all details — line-up, themes, hosts, special notes). Do not summarize or shorten. When the event was extracted from a [DETAIL_<n>: ...] block, treat the ENTIRE detail block as content about this one event — include everything (performer/band/DJ bios, set descriptions, themes, ticket/RSVP notes, dress code, accessibility info, etc.). Be exhaustive; the detail page exists for this single event, so err strongly on the side of including more rather than less. CRITICAL: the following are NEVER description content:
+- description (string): COPY VERBATIM — paste the exact text character-for-character as it appears on the page, including punctuation, asterisks, and line breaks. Do NOT rephrase, summarize, or write a single word in your own words. If you find yourself composing a sentence, STOP and paste the original instead. When the event was extracted from a [DETAIL_<n>: ...] block, treat the ENTIRE detail block as content about this one event — include everything (performer/band/DJ bios, set descriptions, themes, ticket/RSVP notes, dress code, accessibility info, etc.). Be exhaustive; the detail page exists for this single event, so err strongly on the side of including more rather than less. CRITICAL: the following are NEVER description content:
     * Navigation to other events ("Earlier Event:", "Later Event:", "Previous/Next Event") — those belong to OTHER events, not this one. Ignore them.
     * Calendar export buttons ("Add to Calendar", "Google Calendar", "ICS"), share buttons, map links, "Back to All Events" links.
     * Generic venue footer text like "Serving Berlin's underground scene since 2002", copyright lines, imprint/privacy links — that's site chrome, not event description.
@@ -653,11 +653,15 @@ def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str
     Includes both recurring AND non-recurring rows. The caller distinguishes
     via row['recurrence']: recurring matches trigger silent drop (no analysis),
     non-recurring matches go through compare_event_fields. Field set covers
-    everything compare_event_fields needs to do its job."""
+    everything compare_event_fields needs to do its job.
+
+    Children of recurring series (rows with parent_id set, recurrence='')
+    inherit their parent's recurrence so the silent-drop check fires for
+    every materialized instance of the series, not just the parent's date."""
     result = (
         client.table("events")
         .select(
-            "id, venue_id, date, title, start_time, end_time, doors_time, "
+            "id, parent_id, venue_id, date, title, start_time, end_time, doors_time, "
             "description, entry_info, category, language, url, recurrence"
         )
         .in_("status", ["approved", "canceled"])
@@ -665,6 +669,26 @@ def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str
         .lte("date", MAX_DATE.isoformat())
         .execute()
     )
+    # Look up recurrence for every parent referenced by a child in the window.
+    # The extend_recurring_series cron writes children with recurrence=''; without
+    # this lookup we'd treat them as standalone events and stage scraped diffs
+    # as updates instead of silent-dropping them.
+    parent_ids_needed = {
+        row["parent_id"]
+        for row in result.data
+        if row.get("parent_id") and not (row.get("recurrence") or "")
+    }
+    parent_recurrence: dict[str, str] = {}
+    if parent_ids_needed:
+        parents = (
+            client.table("events")
+            .select("id, recurrence")
+            .in_("id", list(parent_ids_needed))
+            .execute()
+        )
+        parent_recurrence = {
+            p["id"]: (p.get("recurrence") or "") for p in parents.data
+        }
     out: dict[str, dict[tuple[str, str], dict]] = {}
     for row in result.data:
         vid = row.get("venue_id")
@@ -677,6 +701,10 @@ def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str
         # don't need to know about the column-name mismatch.
         normalized_row = dict(row)
         normalized_row["source_url"] = row.get("url")
+        if not (row.get("recurrence") or "") and row.get("parent_id"):
+            inherited = parent_recurrence.get(row["parent_id"], "")
+            if inherited:
+                normalized_row["recurrence"] = inherited
         out.setdefault(vid, {})[(d, title_key)] = normalized_row
     return out
 
