@@ -1397,6 +1397,8 @@ export type EventUpdatePatch = Partial<{
   description: string | null;
   entryInfo: string | null;
   sourceUrl: string | null;
+  category: string;
+  language: string | null;
 }>;
 
 // Patches selected fields onto a live event row, then deletes the staging
@@ -1416,6 +1418,8 @@ export async function applyEventUpdate(
   if (patch.description !== undefined) update.description = patch.description || null;
   if (patch.entryInfo !== undefined) update.entry_info = patch.entryInfo || null;
   if (patch.sourceUrl !== undefined) update.url = cleanUrl(patch.sourceUrl) || null;
+  if (patch.category !== undefined) update.category = patch.category;
+  if (patch.language !== undefined) update.language = patch.language || null;
 
   if (Object.keys(update).length > 0) {
     const { error } = await supabase.from("events").update(update).eq("id", eventId);

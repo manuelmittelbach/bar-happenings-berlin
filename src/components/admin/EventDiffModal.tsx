@@ -4,10 +4,9 @@ import { applyEventUpdate, deleteStagedEvent, type EventUpdatePatch } from "@/li
 import type { StagedEvent, BarlinEvent } from "@/types/event";
 import { toast } from "sonner";
 
-// Field metadata for the diff. The first 8 are "applyable" — they map to
-// columns the patch helper writes. category and language are intentionally
-// listed so the admin can SEE that they differ, but a checkbox isn't shown
-// because the auto-pipeline considers them admin-curated noise.
+// All diff fields are applyable — admin sees a checkbox for each diverging
+// field, including category and language. Patch helper writes all of these
+// columns; admin un-ticks anything they don't want to apply.
 type FieldKey =
   | "title"
   | "date"
@@ -19,17 +18,6 @@ type FieldKey =
   | "sourceUrl"
   | "category"
   | "language";
-
-const APPLYABLE_FIELDS: FieldKey[] = [
-  "title",
-  "date",
-  "startTime",
-  "endTime",
-  "doorsTime",
-  "description",
-  "entryInfo",
-  "sourceUrl",
-];
 
 const FIELD_LABELS: Record<FieldKey, string> = {
   title: "Title",
@@ -114,10 +102,10 @@ export default function EventDiffModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stagedEvent, liveEvent]);
 
-  // Default: all applyable diverging fields ticked. Admin can untick the
+  // Default: all diverging fields ticked. Admin can untick the
   // ones they don't want.
   const [selected, setSelected] = useState<Set<FieldKey>>(() => {
-    return new Set(divergingFields.filter((k) => APPLYABLE_FIELDS.includes(k)));
+    return new Set(divergingFields);
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -142,6 +130,8 @@ export default function EventDiffModal({
       if (selected.has("description")) patch.description = stagedEvent.description;
       if (selected.has("entryInfo")) patch.entryInfo = stagedEvent.entryInfo;
       if (selected.has("sourceUrl")) patch.sourceUrl = stagedEvent.sourceUrl;
+      if (selected.has("category") && stagedEvent.category) patch.category = stagedEvent.category;
+      if (selected.has("language")) patch.language = stagedEvent.language;
       await applyEventUpdate(liveEvent.id, patch, stagedEvent.id);
       toast.success(`${selected.size} field(s) applied`);
       onApplied();
@@ -165,7 +155,7 @@ export default function EventDiffModal({
     }
   };
 
-  const applyableCount = divergingFields.filter((k) => APPLYABLE_FIELDS.includes(k)).length;
+  const applyableCount = divergingFields.length;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -186,38 +176,26 @@ export default function EventDiffModal({
           ) : (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
               {divergingFields.map((key) => {
-                const isApplyable = APPLYABLE_FIELDS.includes(key);
                 const checked = selected.has(key);
                 return (
                   <div
                     key={key}
-                    className={`border border-border rounded-sm p-3 ${
-                      isApplyable ? "" : "opacity-60"
-                    }`}
+                    className="border border-border rounded-sm p-3"
                   >
                     <div className="flex items-start gap-2 mb-2">
-                      {isApplyable ? (
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggle(key)}
-                          disabled={submitting}
-                          className="mt-0.5 cursor-pointer"
-                          id={`diff-${key}`}
-                        />
-                      ) : (
-                        <div className="w-4 h-4 mt-0.5" />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggle(key)}
+                        disabled={submitting}
+                        className="mt-0.5 cursor-pointer"
+                        id={`diff-${key}`}
+                      />
                       <label
-                        htmlFor={isApplyable ? `diff-${key}` : undefined}
+                        htmlFor={`diff-${key}`}
                         className="text-xs font-mono uppercase tracking-wider font-bold cursor-pointer"
                       >
                         {FIELD_LABELS[key]}
-                        {!isApplyable && (
-                          <span className="ml-2 text-muted-foreground normal-case font-normal">
-                            (display only — not auto-applied)
-                          </span>
-                        )}
                       </label>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6">
