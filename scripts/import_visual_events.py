@@ -20,7 +20,7 @@ JSON format — array of objects, each with these fields:
     category      (slug-id string or null)   — see CATEGORY_SLUGS below
     language      (string or null)
     description   (string or null)
-    entry_info    ("Free" | "Pay what you want" | "X €" | "X,50 €" | null)
+    entry_info    ("Free" | "Pay what you want" | "X €" | "X,50 €" | free-text ≤80 chars | null)
     source_url    (string, the actual detail-page URL — never invented)
 
 Inserts with `is_manual=false` so events appear in the "Scraped" tab.
