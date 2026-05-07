@@ -45,9 +45,10 @@ function todayLocalISO(): string {
 
 const RECURRENCE_OPTIONS: { value: "" | RecurrenceFreq; label: string }[] = [
   { value: "", label: "Does not repeat" },
-  { value: "weekly", label: "Weekly" },
-  { value: "biweekly", label: "Every 2 weeks" },
-  { value: "monthly_by_weekday", label: "Monthly (same weekday)" },
+  { value: "weekly", label: "Weekly — every week" },
+  { value: "biweekly", label: "Biweekly — 1st+3rd or 2nd+4th weekday" },
+  { value: "monthly_by_weekday", label: "Monthly — same weekday of month" },
+  { value: "monthly_last_weekday", label: "Monthly — last weekday of month" },
 ];
 
 export interface EventFormImageState {

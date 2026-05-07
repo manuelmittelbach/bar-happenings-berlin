@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
-import { generateOccurrences, formatRecurrenceLabel, type RecurrenceFreq } from "@/lib/recurrence";
+import { generateOccurrences, formatRecurrenceLabel, describeRule, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -1601,6 +1601,42 @@ function StagedEventCard({
   useEffect(() => { setSourceUrlInput(staged.sourceUrl ?? ""); }, [staged.sourceUrl]);
   useEffect(() => { setVenueIdLocal(staged.venueId); }, [staged.venueId]);
 
+  // Draft persistence — survives tab switches
+  const DRAFT_KEY = `admin-draft-${staged.id}`;
+  // Load saved draft on mount. Runs after the sync effects above so it wins.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (d.title !== undefined) setTitle(d.title);
+      if (d.date !== undefined) setDate(d.date);
+      if (d.startTime !== undefined) setStartTime(d.startTime);
+      if (d.endTime !== undefined) setEndTime(d.endTime);
+      if (d.doorsTime !== undefined) { setDoorsTime(d.doorsTime); setShowDoors(!!d.doorsTime); }
+      if (d.category !== undefined) setCategory(d.category);
+      if (d.language !== undefined) setLanguage(d.language);
+      if (d.description !== undefined) setDescription(d.description);
+      if (d.entryInfo !== undefined) {
+        setEntryInfo(d.entryInfo);
+        setEntryCustomMode(d.entryInfo !== "" && !PREDEFINED_ENTRY_OPTIONS.has(d.entryInfo));
+      }
+      if (d.sourceUrlInput !== undefined) setSourceUrlInput(d.sourceUrlInput);
+      if (d.venueIdLocal !== undefined) setVenueIdLocal(d.venueIdLocal);
+    } catch { localStorage.removeItem(DRAFT_KEY); }
+  }, []); // intentionally empty — load once on mount
+  // Save draft whenever a field changes. Skip the very first render so we
+  // don't immediately overwrite a just-loaded draft with staged values.
+  const _draftFirstRender = useRef(true);
+  useEffect(() => {
+    if (_draftFirstRender.current) { _draftFirstRender.current = false; return; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      title, date, startTime, endTime, doorsTime, category, language,
+      description, entryInfo, sourceUrlInput, venueIdLocal,
+    }));
+  }, [title, date, startTime, endTime, doorsTime, category, language, description, entryInfo, sourceUrlInput, venueIdLocal]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Inline editor for venues.website_events (the bar's events page URL).
   // Seeded from the venues prop so a save in one card is reflected when
   // another card of the same bar is opened (parent updates `venues`).
@@ -1691,6 +1727,7 @@ function StagedEventCard({
     setSubmitting(true);
     try {
       await onApprove(collectEdits());
+      localStorage.removeItem(DRAFT_KEY);
     } finally {
       setSubmitting(false);
       setConfirmingClash(false);
@@ -1740,6 +1777,7 @@ function StagedEventCard({
     setSubmitting(true);
     try {
       await onSaveApproved(collectEdits());
+      localStorage.removeItem(DRAFT_KEY);
     } finally {
       setSubmitting(false);
     }
@@ -2127,9 +2165,10 @@ function StagedEventCard({
               disabled={!isPending}
               className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
             >
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Biweekly</option>
-              <option value="monthly_by_weekday">Monthly (by weekday)</option>
+              <option value="weekly">Weekly — every week</option>
+              <option value="biweekly">Biweekly — 1st+3rd or 2nd+4th weekday</option>
+              <option value="monthly_by_weekday">Monthly — same weekday of month</option>
+              <option value="monthly_last_weekday">Monthly — last weekday of month</option>
             </select>
             {staged.recurrenceUntil != null && (
               <input
@@ -2142,6 +2181,11 @@ function StagedEventCard({
               />
             )}
           </div>
+          {staged.recurrence && (date || staged.date) && (
+            <p className="text-xs text-muted-foreground">
+              {describeRule(date || staged.date, staged.recurrence as RecurrenceFreq)}
+            </p>
+          )}
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
@@ -2248,7 +2292,7 @@ function StagedEventCard({
                 </button>
               ) : (
                 <button
-                  onClick={onReject}
+                  onClick={() => { localStorage.removeItem(DRAFT_KEY); onReject(); }}
                   disabled={submitting}
                   className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
                 >
