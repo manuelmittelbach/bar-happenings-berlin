@@ -8,8 +8,8 @@ Why: the placeholder shows up in the Admin "Manual" tab as a soft reminder
 to enter events by hand later, when the page can't be parsed automatically.
 
 Idempotent: skips if a placeholder (title IS NULL) already exists for the
-venue. Reuses `ensure_placeholder` from the auto-scraper so behavior stays
-in sync.
+venue. Reuses `ensure_placeholder` from `scrape_helpers` so behavior stays
+in sync with the auto-scraper.
 
 Usage:
     python3 scripts/stage_visual_placeholder.py VENUE_ID SOURCE_URL
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from supabase import create_client
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from scrape_venue_events import ensure_placeholder  # noqa: E402
+from scrape_helpers import ensure_placeholder  # noqa: E402
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
