@@ -73,6 +73,11 @@ export interface StagedEvent {
   createdByAdmin: boolean;
   recurrence: string;
   recurrenceUntil: string | null;
+  // When set, this staging row is a proposed update to an existing live event
+  // (events.id). The Scraped tab renders an "update card" with a Diff button;
+  // approving applies selected fields to the live event row instead of
+  // creating a new one. Null for normal new-event staging rows.
+  replacesEventId: string | null;
   // Only set on rows wrapped from `events` (filter='approved' in admin) via
   // eventToAdminStaged. Real staging rows don't track interest, so this is 0.
   interestedCount?: number;
