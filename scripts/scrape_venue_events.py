@@ -1,7 +1,7 @@
 """
 Venue Event Scraper
 ===================
-Scrapes event websites listed in `venues.website_events` (where `online='yes'`)
+Scrapes event websites listed in `venues.website_events` (where `scrape_enabled=true`)
 using a local Ollama LLM, and writes extracted events into `venue_events_staging`
 for admin review.
 
@@ -818,7 +818,7 @@ def main():
     print(f"  {purged} past row(s) removed\n")
 
     if args.venue:
-        print(f"Fetching venues matching '{args.venue}' (online flag ignored)...")
+        print(f"Fetching venues matching '{args.venue}' (scrape_enabled flag ignored)...")
         result = (
             client.table("venues")
             .select("id, name, address, neighborhood, website_events")
@@ -829,13 +829,13 @@ def main():
             .execute()
         )
     else:
-        print("Fetching venues with website_events and online='yes'...")
+        print("Fetching venues with website_events and scrape_enabled=true...")
         result = (
             client.table("venues")
             .select("id, name, address, neighborhood, website_events")
             .not_.is_("website_events", "null")
             .neq("website_events", "")
-            .eq("online", "yes")
+            .eq("scrape_enabled", True)
             .order("name", desc=False)
             .execute()
         )

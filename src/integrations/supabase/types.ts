@@ -582,9 +582,9 @@ export type Database = {
           lng: number
           name: string
           neighborhood: string
-          online: string
           opening_hours: string | null
           phone: string | null
+          scrape_enabled: boolean
           telegram: string | null
           updated_at: string | null
           website: string | null
@@ -605,9 +605,9 @@ export type Database = {
           lng: number
           name: string
           neighborhood: string
-          online?: string
           opening_hours?: string | null
           phone?: string | null
+          scrape_enabled?: boolean
           telegram?: string | null
           updated_at?: string | null
           website?: string | null
@@ -628,9 +628,9 @@ export type Database = {
           lng?: number
           name?: string
           neighborhood?: string
-          online?: string
           opening_hours?: string | null
           phone?: string | null
+          scrape_enabled?: boolean
           telegram?: string | null
           updated_at?: string | null
           website?: string | null

@@ -3,7 +3,7 @@
 ## scrape_venue_events.py
 
 Scrapes events from venues' `website_events` URLs into the `venue_events_staging` table.
-Approved venues only (`venues.online = 'yes'`).
+Approved venues only (`venues.scrape_enabled = true`).
 
 ### One-time setup
 

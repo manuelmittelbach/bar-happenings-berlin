@@ -78,19 +78,19 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
     websiteEvents: row.website_events ?? undefined,
-    online: row.online === "yes" ? "yes" : "no",
+    scrapeEnabled: row.scrape_enabled,
     lat: Number(row.lat),
     lng: Number(row.lng),
   };
 }
 
-export async function setVenueOnline(
+export async function setVenueScrapeEnabled(
   venueId: string,
-  online: "yes" | "no",
+  scrapeEnabled: boolean,
 ): Promise<void> {
   const { error } = await supabase
     .from("venues")
-    .update({ online })
+    .update({ scrape_enabled: scrapeEnabled })
     .eq("id", venueId);
   if (error) throw error;
 }

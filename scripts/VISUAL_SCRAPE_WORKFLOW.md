@@ -65,7 +65,7 @@ Use `mcp__supabase__execute_sql` (project_id: `uybvrxqleutguucrifuf`).
 ```sql
 SELECT id, name, website_events
 FROM venues
-WHERE online = 'yes' AND website_events IS NOT NULL
+WHERE scrape_enabled = true AND website_events IS NOT NULL
 ORDER BY name;
 ```
 
