@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   cancelEvent,
   cancelEventSeries,
+  deleteApprovedEvent,
   fetchEventById,
   updateEvent,
   updateEventSeries,
@@ -141,6 +142,24 @@ export default function EditEvent() {
     }
   };
 
+  const handleHardDelete = async () => {
+    if (!id || !seriesInfo) return;
+    const seriesId = seriesInfo.isSeries ? seriesInfo.seriesId : null;
+    const confirmMsg = seriesId
+      ? `Delete this event and ALL occurrences in this series? This permanently removes them from the site.`
+      : `Delete this event? This permanently removes it from the site.`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      await deleteApprovedEvent(id, seriesId);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
+      toast.success(seriesId ? "Series deleted" : "Event deleted");
+      navigate("/");
+    } catch {
+      toast.error("Couldn't delete the event. Please try again.");
+    }
+  };
+
   if (notFound) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -186,7 +205,7 @@ export default function EditEvent() {
         </Link>
       }
       footer={
-        <div className="relative z-10 pt-6 border-t border-border">
+        <div className="relative z-10 pt-6 border-t border-border flex flex-col gap-3">
           <button
             type="button"
             onClick={handleDelete}
@@ -195,6 +214,16 @@ export default function EditEvent() {
           >
             {applyToSeries ? "Cancel Series" : "Cancel Event"}
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleHardDelete}
+              style={{ touchAction: "manipulation" }}
+              className="w-full h-12 bg-background border border-red-600 text-red-600 rounded-sm text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
+            >
+              {seriesInfo.isSeries ? "Delete Series" : "Delete Event"}
+            </button>
+          )}
         </div>
       }
     />
