@@ -41,11 +41,13 @@ import {
   deleteApprovedEvent,
   cancelEvent,
   fetchEventsByCreator,
+  fetchEventById,
   type OrganizerAccount,
   type LiveEventInfo,
   type ApprovedEventListItem,
 } from "@/lib/supabaseQueries";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
+import EventDiffModal from "@/components/admin/EventDiffModal";
 
 // Approved events live in the `events` table. To keep the existing card UI
 // working, adapt them to the StagedEvent shape used by StagedEventCard.
@@ -78,6 +80,7 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     createdByAdmin: false,
     recurrence: event.recurrence,
     recurrenceUntil: null,
+    replacesEventId: null,
     interestedCount: event.interestedCount,
     approvedSiblingDates: siblingDates,
   };
@@ -962,6 +965,10 @@ export default function AdminDashboard() {
               onMoveToRecurring={handleMoveScrapedToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
+              onUpdateApplied={() => {
+                loadScrapedEvents({ silent: true });
+                loadPendingEventCounts();
+              }}
               emptyLabel="scraped"
             />
           )}
@@ -1529,6 +1536,7 @@ function StagedEventCard({
   onSaveApproved,
   onDeleteApproved,
   onCancelOccurrence,
+  onUpdateApplied,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
@@ -1546,6 +1554,7 @@ function StagedEventCard({
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: () => Promise<void>;
   onCancelOccurrence?: () => Promise<void>;
+  onUpdateApplied?: () => void;
 }) {
   const { data: categoriesData = [] } = useCategories();
   // Form holds the slug-id (categories.id) as the value; we display the label.
@@ -1603,6 +1612,30 @@ function StagedEventCard({
   useEffect(() => {
     setEventsUrlInput(currentVenue?.websiteEvents ?? "");
   }, [staged.venueId, currentVenue?.websiteEvents]);
+
+  // Diff-modal state for staging rows that propose updates to a live event
+  // (replaces_event_id is set). Modal opens on demand; we lazily fetch the
+  // live event the first time the admin clicks "Show diff".
+  const [diffOpen, setDiffOpen] = useState(false);
+  const [diffLiveEvent, setDiffLiveEvent] = useState<BarlinEvent | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+  const handleOpenDiff = async () => {
+    if (!staged.replacesEventId) return;
+    setDiffLoading(true);
+    try {
+      const live = await fetchEventById(staged.replacesEventId);
+      if (!live) {
+        toast.error("Live event not found — it may have been deleted");
+        return;
+      }
+      setDiffLiveEvent(live);
+      setDiffOpen(true);
+    } catch (e) {
+      toast.error(`Failed to load live event: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setDiffLoading(false);
+    }
+  };
 
   const liveDates = Array.from(new Set(liveEvents.map(e => e.date))).sort();
   const seriesDates: string[] = (() => {
@@ -1746,7 +1779,27 @@ function StagedEventCard({
   };
 
   return (
-    <div className="border border-border rounded-sm p-4 space-y-3">
+    <div className={`border rounded-sm p-4 space-y-3 ${
+      staged.replacesEventId
+        ? "border-amber-400 dark:border-amber-500/60 bg-amber-50/40 dark:bg-amber-500/5"
+        : "border-border"
+    }`}>
+      {staged.replacesEventId && (
+        <div className="flex items-center gap-2 -mx-4 -mt-4 mb-3 px-4 py-2 bg-amber-100/70 dark:bg-amber-500/10 border-b border-amber-300/60 dark:border-amber-500/40">
+          <Repeat className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
+          <span className="text-xs font-mono uppercase tracking-wider font-bold text-amber-800 dark:text-amber-300">
+            Update for live event
+          </span>
+          <button
+            type="button"
+            onClick={handleOpenDiff}
+            disabled={diffLoading}
+            className="ml-auto h-7 px-2.5 text-xs border border-amber-400/80 dark:border-amber-500/60 rounded-sm bg-background hover:bg-amber-50 dark:hover:bg-amber-500/10 disabled:opacity-50 font-medium"
+          >
+            {diffLoading ? "Loading…" : "Show diff"}
+          </button>
+        </div>
+      )}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
           {canEditManualFields ? (
@@ -2240,6 +2293,25 @@ function StagedEventCard({
           )}
         </div>
       )}
+
+      {diffOpen && diffLiveEvent && (
+        <EventDiffModal
+          stagedEvent={staged}
+          liveEvent={diffLiveEvent}
+          open={diffOpen}
+          onClose={() => setDiffOpen(false)}
+          onApplied={() => {
+            setDiffOpen(false);
+            onUpdateApplied?.();
+          }}
+          onSwitchToManualEdit={() => {
+            // Just close the modal — the admin can edit the staging row
+            // directly underneath. The fields below are already populated
+            // with the scraped values.
+            setDiffOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2353,6 +2425,7 @@ function StagedEventsList({
   onSaveApproved,
   onDeleteApproved,
   onCancelOccurrence,
+  onUpdateApplied,
   emptyLabel,
 }: {
   events: StagedEvent[];
@@ -2378,6 +2451,7 @@ function StagedEventsList({
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: (s: StagedEvent) => Promise<void>;
   onCancelOccurrence?: (s: StagedEvent) => Promise<void>;
+  onUpdateApplied?: () => void;
   emptyLabel: string;
 }) {
   const pills: StagedEventStatusFilter[] = ["pending", "approved"];
@@ -2458,6 +2532,7 @@ function StagedEventsList({
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
               onDeleteApproved={onDeleteApproved ? () => onDeleteApproved(staged) : undefined}
               onCancelOccurrence={onCancelOccurrence ? () => onCancelOccurrence(staged) : undefined}
+              onUpdateApplied={onUpdateApplied}
             />
           );
           if (filter === "approved") {
