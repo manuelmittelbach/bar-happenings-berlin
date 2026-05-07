@@ -1,4 +1,4 @@
-import { ReactNode, Fragment, useState } from "react";
+import React, { ReactNode, Fragment, useState } from "react";
 import { MapPin, ExternalLink, ChevronDown, Plus, Users, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
@@ -8,6 +8,25 @@ import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
 import { useCategories } from "@/hooks/useEvents";
 
+
+function renderWithLinks(text: string) {
+  const urlRegex = /https?:\/\/[^\s]+/g;
+  const parts: (string | React.ReactElement)[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    parts.push(
+      <a key={match.index} href={match[0]} target="_blank" rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:text-foreground break-all">
+        {match[0]}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
 
 export interface UpcomingEvent {
   id: string;
@@ -270,7 +289,7 @@ export default function EventDetailView({
           <h2 className="font-body text-sm font-bold uppercase tracking-[0.12em]">About this event</h2>
           {event.description ? (
             event.description.split("\n\n").map((p, i) => (
-              <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{p}</p>
+              <p key={i} className="text-sm text-muted-foreground/80 leading-[1.75] font-body">{renderWithLinks(p)}</p>
             ))
           ) : (
             <p className="text-xs italic text-muted-foreground/70">(no description)</p>
