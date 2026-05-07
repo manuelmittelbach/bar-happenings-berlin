@@ -647,7 +647,7 @@ def normalize_title(s: str | None) -> str:
     return re.sub(r"\s+", " ", s.strip().lower())
 
 
-_COMPARE_FIELDS = ("start_time", "end_time", "doors_time", "description", "entry_info", "source_url")
+_COMPARE_FIELDS = ("start_time", "end_time", "doors_time", "description", "entry_info", "source_url", "category", "language")
 
 
 def _norm_for_compare(field: str, value) -> str:
@@ -668,7 +668,8 @@ def _norm_for_compare(field: str, value) -> str:
 def compare_event_fields(scraped: dict, live: dict) -> dict[str, tuple[str, str]]:
     """Return {field: (live_value, scraped_value)} for fields whose normalized
     values differ. Empty dict means the events are equivalent for our purposes.
-    category and language are intentionally NOT compared — too LLM-noise prone."""
+    All fields in `_COMPARE_FIELDS` participate, including category and
+    language — admin wants the diff card to surface those too."""
     diff: dict[str, tuple[str, str]] = {}
     for field in _COMPARE_FIELDS:
         live_v = _norm_for_compare(field, live.get(field))
@@ -962,6 +963,8 @@ def main():
                         "description": ev.get("description") or "",
                         "entry_info": normalize_entry_info(ev.get("entry_info")),
                         "source_url": source_url,
+                        "category": normalize_category(ev.get("category")),
+                        "language": normalize_language(ev.get("language")),
                     }
                     diff = compare_event_fields(scraped_for_compare, live_match)
                     if not diff:

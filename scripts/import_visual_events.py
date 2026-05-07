@@ -153,6 +153,8 @@ def main():
                 "description": ev.get("description") or "",
                 "entry_info": normalize_entry_info(ev.get("entry_info")),
                 "source_url": source_url,
+                "category": normalize_category(ev.get("category")),
+                "language": normalize_language(ev.get("language")),
             }
             diff = compare_event_fields(scraped_for_compare, live_match)
             if not diff:
