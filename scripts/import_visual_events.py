@@ -30,17 +30,19 @@ import argparse
 import json
 import os
 import sys
-from datetime import date, timedelta
+from datetime import date
 from typing import Any
 
 from dotenv import load_dotenv
 from supabase import create_client
 
-# Reuse the existing normalizers + dedup logic from the auto-scraper so this
-# helper can't drift out of sync with what the nightly run produces.
+# Reuse the existing normalizers + dedup logic from scrape_helpers so this
+# helper can't drift out of sync with what the nightly auto-scraper produces.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from scrape_venue_events import (  # noqa: E402
+from scrape_helpers import (  # noqa: E402
     CATEGORIES,
+    MAX_DATE,
+    TODAY,
     _trim_time,
     compare_event_fields,
     fetch_existing_events_by_venue_for_match,
@@ -56,8 +58,6 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-TODAY = date.today()
-MAX_DATE = TODAY + timedelta(weeks=2)
 
 
 def parse_args():
@@ -91,14 +91,12 @@ def main():
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    # Refresh the global category map from DB so slug-IDs match what the UI
-    # expects right now (in case categories.enabled toggled since the workflow
-    # doc was written).
-    global CATEGORIES
+    # Refresh the helpers' CATEGORIES dict from DB so slug-IDs match what
+    # the UI expects right now. Mutating the same dict object (clear+update,
+    # not reassignment) is required — `normalize_category` in scrape_helpers
+    # closes over THIS dict.
     CATEGORIES.clear()
     CATEGORIES.update(load_enabled_categories(client))
-    # The CATEGORIES.clear()+update keeps the same dict object the imported
-    # `normalize_category` closes over — important so its lookups see fresh data.
 
     existing_events = fetch_existing_events_by_venue_for_match(client)
     staged_keys = fetch_existing_staged_keys_by_venue(client)
