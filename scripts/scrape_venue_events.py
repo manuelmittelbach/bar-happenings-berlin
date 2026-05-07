@@ -608,7 +608,10 @@ def normalize_title(s: str | None) -> str:
 
 # Fields whose differences between a re-scraped event and an existing live
 # event count as a meaningful update (admin gets a diff card to review).
-_COMPARE_FIELDS = ("start_time", "end_time", "doors_time", "description", "entry_info", "source_url")
+# category/language are LLM-inferred (noisier than the rest) but the admin
+# wants to see and apply those diffs too — modal renders checkboxes for
+# them like any other field.
+_COMPARE_FIELDS = ("start_time", "end_time", "doors_time", "description", "entry_info", "source_url", "category", "language")
 
 
 def _norm_for_compare(field: str, value) -> str:
@@ -634,9 +637,9 @@ def compare_event_fields(scraped: dict, live: dict) -> dict[str, tuple[str, str]
     values differ. Empty dict means the events are equivalent for our purposes.
 
     `scraped` uses the LLM's keys (start_time, etc.). `live` comes from the
-    events table with the same column names. category and language are
-    intentionally NOT compared — they're LLM-noise prone and the admin curates
-    them; only treating them as triggers would create false-positive updates."""
+    events table with the same column names. All fields in `_COMPARE_FIELDS`
+    participate, including category and language — admin wants the diff card
+    to surface those too."""
     diff: dict[str, tuple[str, str]] = {}
     for field in _COMPARE_FIELDS:
         live_v = _norm_for_compare(field, live.get(field))
@@ -950,6 +953,8 @@ def main():
                         "description": ev.get("description") or "",
                         "entry_info": normalize_entry_info(ev.get("entry_info")),
                         "source_url": source_url,
+                        "category": normalize_category(ev.get("category")),
+                        "language": normalize_language(ev.get("language")),
                     }
                     diff = compare_event_fields(scraped_for_compare, live_match)
                     if not diff:
