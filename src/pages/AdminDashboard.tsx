@@ -22,7 +22,7 @@ import {
   updateOrganizerApprovalStatus,
   approveOrganizerWithNewBar,
   approveOrganizerWithVenueClaim,
-  setVenueOnline,
+  setVenueScrapeEnabled,
   updateVenueLinks,
   fetchStagedEvents,
   fetchStagedEventCount,
@@ -493,23 +493,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleOnline = async (venueId: string, next: "yes" | "no") => {
+  const handleToggleScrapeEnabled = async (venueId: string, next: boolean) => {
     setAllBars(prev =>
       prev.map(item =>
-        item.venue.id === venueId ? { ...item, venue: { ...item.venue, online: next } } : item,
+        item.venue.id === venueId ? { ...item, venue: { ...item.venue, scrapeEnabled: next } } : item,
       ),
     );
     try {
-      await setVenueOnline(venueId, next);
+      await setVenueScrapeEnabled(venueId, next);
     } catch {
       setAllBars(prev =>
         prev.map(item =>
           item.venue.id === venueId
-            ? { ...item, venue: { ...item.venue, online: next === "yes" ? "no" : "yes" } }
+            ? { ...item, venue: { ...item.venue, scrapeEnabled: !next } }
             : item,
         ),
       );
-      toast.error("Couldn't update online status. Please try again.");
+      toast.error("Couldn't update scraping status. Please try again.");
     }
   };
 
@@ -1055,7 +1055,7 @@ export default function AdminDashboard() {
                         key={venue.id}
                         venue={venue}
                         hasOwner={hasOwner}
-                        onToggleOnline={handleToggleOnline}
+                        onToggleScrapeEnabled={handleToggleScrapeEnabled}
                         onLinkChange={handleVenueLinkChange}
                       />
                     ));
@@ -1071,12 +1071,12 @@ export default function AdminDashboard() {
 function BarCard({
   venue,
   hasOwner,
-  onToggleOnline,
+  onToggleScrapeEnabled,
   onLinkChange,
 }: {
   venue: Venue;
   hasOwner: boolean;
-  onToggleOnline: (venueId: string, next: "yes" | "no") => void;
+  onToggleScrapeEnabled: (venueId: string, next: boolean) => void;
   onLinkChange: (
     venueId: string,
     patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
@@ -1213,16 +1213,16 @@ function BarCard({
         )}
         <button
           type="button"
-          onClick={() => onToggleOnline(venue.id, venue.online === "yes" ? "no" : "yes")}
+          onClick={() => onToggleScrapeEnabled(venue.id, !venue.scrapeEnabled)}
           className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border transition-colors ${
-            venue.online === "yes"
+            venue.scrapeEnabled
               ? "bg-green-500/10 text-green-600 border-green-500/40 hover:bg-green-500/20"
               : "bg-red-500/10 text-red-600 border-red-500/40 hover:bg-red-500/20"
           }`}
-          title={`Online: ${venue.online}. Click to toggle.`}
+          title={`Scraping: ${venue.scrapeEnabled ? "yes" : "no"}. Click to toggle.`}
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${venue.online === "yes" ? "bg-green-500" : "bg-red-500"}`} />
-          Online: {venue.online}
+          <span className={`h-1.5 w-1.5 rounded-full ${venue.scrapeEnabled ? "bg-green-500" : "bg-red-500"}`} />
+          Scraping: {venue.scrapeEnabled ? "yes" : "no"}
         </button>
       </div>
     </div>
