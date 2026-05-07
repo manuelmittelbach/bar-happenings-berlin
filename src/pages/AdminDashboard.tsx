@@ -5,7 +5,6 @@ import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, formatRecurrenceLabel, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
-import EventDetailView from "@/components/events/EventDetailView";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban } from "lucide-react";
 import { toast } from "sonner";
@@ -1825,6 +1824,16 @@ function StagedEventCard({
           >
             change website_events
           </button>
+          {currentVenue?.websiteEvents && (
+            <button
+              type="button"
+              onClick={() => openSourceWindow(currentVenue.websiteEvents!)}
+              title="Open bar's events page"
+              className="inline-flex items-center justify-center h-5 w-5 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </button>
+          )}
           <span className="text-xs text-muted-foreground">
             {staged.venueAddress
               ? staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")
@@ -2258,34 +2267,37 @@ function StagedEventCard({
         </div>
       )}
 
-      {isApproved && (onDeleteApproved || onCancelOccurrence || (canEdit && isDirty)) && (
+      {isApproved && (
         <div className="flex items-center justify-between gap-2 flex-shrink-0">
-          {(onDeleteApproved || onCancelOccurrence) ? (
-            <div className="flex gap-2">
-              {onCancelOccurrence && (
-                <button
-                  onClick={onCancelOccurrence}
-                  disabled={submitting}
-                  title="Cancel just this date — the rest of the series continues"
-                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-                >
-                  <Ban className="h-3 w-3" /> Cancel date
-                </button>
-              )}
-              {onDeleteApproved && (
-                <button
-                  onClick={onDeleteApproved}
-                  disabled={submitting}
-                  title="Delete this event from the site"
-                  className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  <Trash2 className="h-3 w-3" /> Delete
-                </button>
-              )}
-            </div>
-          ) : (
-            <span />
-          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => window.open(`/event/${staged.id}`, "_blank")}
+              className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+            >
+              <ExternalLink className="h-3 w-3" /> Show event
+            </button>
+            {onCancelOccurrence && (
+              <button
+                onClick={onCancelOccurrence}
+                disabled={submitting}
+                title="Cancel just this date — the rest of the series continues"
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                <Ban className="h-3 w-3" /> Cancel date
+              </button>
+            )}
+            {onDeleteApproved && (
+              <button
+                onClick={onDeleteApproved}
+                disabled={submitting}
+                title="Delete this event from the site"
+                className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-3 w-3" /> Delete
+              </button>
+            )}
+          </div>
           {canEdit && isDirty && (
             <div className="flex gap-2">
               <button
@@ -2329,90 +2341,6 @@ function StagedEventCard({
   );
 }
 
-function StagedEventPreview({ staged }: { staged: StagedEvent }) {
-  // Synthesize a BarlinEvent-shaped object from the staged row so we can reuse
-  // the same EventDetailView the public /event/:id page renders. The only
-  // intentional difference vs. the live page is the disabled Interested
-  // button + hidden Share menu (admin can't act-as-user from preview).
-  const handleMaps = () => {
-    window.open(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(staged.venueAddress || staged.venueName)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  };
-
-  // Future-only occurrences for the live preview. Two sources:
-  //   • Approved rows: real sibling rows from `events`, attached by
-  //     fetchApprovedEvents (recurrence_until isn't stored post-approval).
-  //   • Pending staging rows: derive from recurrence + recurrenceUntil.
-  const todayStr = berlinDateString();
-  const upcomingEvents = (() => {
-    let dates: string[] = [];
-    if (staged.approvedSiblingDates) {
-      dates = staged.approvedSiblingDates.filter(d => d >= todayStr);
-    } else if (staged.date && staged.recurrence && staged.recurrenceUntil) {
-      try {
-        dates = generateOccurrences(staged.date, staged.recurrence as RecurrenceFreq, staged.recurrenceUntil)
-          .filter(d => d >= todayStr);
-      } catch {
-        dates = [];
-      }
-    }
-    // Synthesize event-shaped objects for the accordion. The pill matching
-    // staged.date gets staged.id so it renders as the active pill; siblings
-    // get synthetic ids (not clickable in admin preview anyway).
-    return dates.map(d => ({
-      id: d === staged.date ? staged.id : `${staged.id}-${d}`,
-      date: d,
-      startTime: d === staged.date ? (staged.startTime ?? undefined) : undefined,
-    }));
-  })();
-
-  const event = {
-    id: staged.id,
-    title: staged.title,
-    venue: staged.venueName,
-    address: staged.venueAddress,
-    neighborhood: staged.venueNeighborhood,
-    date: staged.date,
-    startTime: staged.startTime ?? "",
-    endTime: staged.endTime ?? undefined,
-    doorsTime: staged.doorsTime ?? undefined,
-    category: staged.category ?? "",
-    language: staged.language,
-    description: staged.description,
-    entryInfo: staged.entryInfo,
-    url: staged.sourceUrl ?? "",
-    image: undefined,
-    imagePosition: "50% 50%",
-    status: staged.status,
-  };
-
-  return (
-    <div className="border border-border rounded-sm overflow-hidden">
-      <EventDetailView
-        event={event}
-        upcomingEvents={upcomingEvents}
-        recurrenceLabel={formatRecurrenceLabel(staged.recurrence)}
-        interestedCount={staged.interestedCount ?? 0}
-        // Admins always see the count for moderation context, regardless of
-        // SHOW_INTEREST_COUNT (which gates the public-facing display).
-        showInterestCount
-        saved={false}
-        isSaving={false}
-        onOpenMaps={handleMaps}
-        showShare={false}
-        compact
-        headerBanner={
-          <div className="px-3 py-1.5 bg-muted/60 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            Live preview
-          </div>
-        }
-      />
-    </div>
-  );
-}
 
 function StagedEventsList({
   events,
@@ -2548,14 +2476,6 @@ function StagedEventsList({
               onUpdateApplied={onUpdateApplied}
             />
           );
-          if (filter === "approved") {
-            return (
-              <div key={staged.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                {card}
-                <StagedEventPreview staged={staged} />
-              </div>
-            );
-          }
           return <div key={staged.id}>{card}</div>;
         });
       })()}
