@@ -991,6 +991,7 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     createdByAdmin: row.created_by_admin ?? false,
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
+    replacesEventId: row.replaces_event_id ?? null,
   };
 }
 
@@ -1381,6 +1382,50 @@ export async function deleteStagedEvent(stagedId: string): Promise<void> {
     .delete()
     .eq("id", stagedId);
   if (error) throw error;
+}
+
+// Field set the diff modal can apply from a staging update onto a live event.
+// Mirrors compare_event_fields in scripts/scrape_venue_events.py — anything
+// outside this set is admin-curated (category, language) and should NOT be
+// auto-applied.
+export type EventUpdatePatch = Partial<{
+  title: string;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  doorsTime: string | null;
+  description: string | null;
+  entryInfo: string | null;
+  sourceUrl: string | null;
+}>;
+
+// Patches selected fields onto a live event row, then deletes the staging
+// row that proposed the update. Fields the admin DIDN'T tick are untouched —
+// crucial so manual edits on the live event survive an update apply.
+export async function applyEventUpdate(
+  eventId: string,
+  patch: EventUpdatePatch,
+  stagedRowId: string,
+): Promise<void> {
+  const update: TablesUpdate<"events"> = {};
+  if (patch.title !== undefined) update.title = patch.title;
+  if (patch.date !== undefined) update.date = patch.date;
+  if (patch.startTime !== undefined) update.start_time = patch.startTime ? trimTime(patch.startTime) : null;
+  if (patch.endTime !== undefined) update.end_time = patch.endTime ? trimTime(patch.endTime) : null;
+  if (patch.doorsTime !== undefined) update.doors_time = patch.doorsTime ? trimTime(patch.doorsTime) : null;
+  if (patch.description !== undefined) update.description = patch.description || null;
+  if (patch.entryInfo !== undefined) update.entry_info = patch.entryInfo || null;
+  if (patch.sourceUrl !== undefined) update.url = cleanUrl(patch.sourceUrl) || null;
+
+  if (Object.keys(update).length > 0) {
+    const { error } = await supabase.from("events").update(update).eq("id", eventId);
+    if (error) throw error;
+  }
+  const { error: delError } = await supabase
+    .from("venue_events_staging")
+    .delete()
+    .eq("id", stagedRowId);
+  if (delError) throw delError;
 }
 
 // Hard-deletes an approved event from the `events` table, removing it from
