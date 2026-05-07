@@ -419,7 +419,7 @@ For each future event return a JSON object with these exact keys:
 - start_time (string): HH:MM (24h), or null. The time the actual program starts (concert begins, DJ starts, quiz first question). NOT the doors/admission time.
 - end_time (string): HH:MM (24h), or null
 - doors_time (string): HH:MM (24h), or null. Only set when the page EXPLICITLY mentions a separate doors / admission / Einlass time distinct from start_time (common phrasings: "Doors 19:00", "Einlass 20 Uhr", "Doors open at 8pm"). Return null when no separate doors time is given — do NOT copy start_time into doors_time.
-- category (string): MUST be EXACTLY one of these values: {categories_str}. Use "Other" if no specific category fits — do NOT return null.
+- category (string): MUST be EXACTLY one of these values: {categories_str}. Default to "Other". Only use a non-"Other" value if the event title or description EXPLICITLY and unambiguously names that format (e.g. "Live Jazz Band" → "Live Music", "Stand-up Comedy Night" → "Comedy", "DJ Set" → "DJ"). If there is any doubt, use "Other". Do NOT return null.
 - language (string): the spoken/performed language of the event ITSELF — NOT the language of the website. STRONG PREFERENCE: null over a guess. A wrong language is worse than no language. Only fill this when the event page text EXPLICITLY states it (e.g. "in English", "auf Deutsch", "bilingual", "spanish-speaking comedy"). When set, prefer one of: {languages_str}. Use "English / German" only when the page explicitly says the event is bilingual. Return null when:
     * no language is stated for the event,
     * the event is language-agnostic (instrumental music, DJ sets, dance events, karaoke without specified language),

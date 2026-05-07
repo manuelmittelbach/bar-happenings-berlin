@@ -176,7 +176,7 @@ rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
 ### `title`
 The actual event name as displayed. NOT the category, NOT a teaser. If the
 page only shows "Live Music" or "Comedy Night" with no specific name, use
-that as-is — but check the detail page first; usually the real name is there.
+that as-is — but check the detail page first; sometimes the real name is there.
 
 ### `date`
 ISO format `YYYY-MM-DD`. Berlin/German venues default to DD.MM.YYYY format —
@@ -206,9 +206,7 @@ human, slug-IDs are what the database expects):
 | Dating | `singles`      |
 | Other | `other`        |
 
-If unsure, use `other`. Never use the label string ("Live Music") — the
-importer will fall back to `other` if the slug doesn't match, but it's better
-to set it correctly.
+Default to `other`. Only use a non-`other` slug if the event title or description EXPLICITLY and unambiguously names that format (e.g. "Live Jazz Band" → `live-music`, "Stand-up Comedy Night" → `comedy`, "DJ Set" → `dj-music`). If there is any doubt, use `other`. Never use the label string ("Live Music") — the importer will fall back to `other` if the slug doesn't match, but it's better to set it correctly.
 
 ### `language`
 The language of the event itself, NOT the language of the website. Strong
@@ -218,35 +216,61 @@ preference for `null` over a guess. Only set when explicitly stated
 language.
 
 ### `description`
-**Take everything event-related from the detail page verbatim. Minor
-duplication with structured fields is intentional and OK** — the admin
-prefers redundant info over missed info. Don't try to be clever about
-"this is already in start_time so I'll skip it" — just keep it.
+**ABSOLUTELY VERBATIM. Copy the page's exact text, character-for-character —
+including punctuation, asterisks, line breaks, and pronouns. If you find
+yourself writing a sentence in your own words, STOP and copy the original
+instead.** Minor duplication with structured fields is intentional and OK —
+the admin prefers redundant info over missed info.
 
-KEEP everything that's about the event:
+#### Concrete forbidden behaviors
+
+These all happened in real runs. Do not repeat them.
+
+| Source says | LLM wrote (WRONG) | Why it's wrong |
+|---|---|---|
+| "Join us for a daytime evening where **we** improvise about **our** hearts" | "A daytime evening where **they** improvise about **their** hearts" | Pronouns changed = paraphrasing |
+| "A monthly improvised live talk show... A non award winning show." | "A monthly improvised live talk show..." | Final tagline silently dropped |
+| Three-sentence ***disclaimer*** about sensitive topics | (entire block omitted) | Disclaimer is event content, NOT boilerplate |
+| Show subtitle (e.g. "It's That Time of the Month" under generic title "Improv") | (omitted) | Show name is critical context — keep it |
+
+#### KEEP everything event-related — even if it feels redundant or "boilerplate-ish"
+
 - All time labels and lines: `Doors: 19:00`, `Showtime: 20:45`,
   `Aftershow dj set: 22:00`, `Open: 18:00`, etc. — yes, even though some
   of these times also live in `doors_time` / `start_time` / `end_time`.
 - All lineup info: bands, DJs, opening acts, special guests, supporters
 - Performer / band / DJ bios, set descriptions, themes, atmosphere
+- **Disclaimers, content warnings, feedback invitations** — three-sentence
+  block about sensitive topics? Keep it. Note inviting feedback to the
+  host? Keep it.
+- **Show subtitles / inner names** appearing below or beside the main
+  category title (e.g. event title is "Improv", actual show is "It's That
+  Time of the Month") — keep both.
+- **Taglines** like "A non award winning show" or "Since 2018, every Friday."
 - Ticket / RSVP / reservation notes
 - **External links** found in the body (eventim, ticketmaster, RA, fb event,
   bandcamp, etc.) — keep as plain text URLs. These are critical info.
 - Special instructions, dress code, accessibility, age restrictions
 - The event's own title appearing inline in body text
 
-ONLY strip site chrome and navigation that's clearly NOT about the event:
-- Navigation to other events ("Earlier Event:", "Later Event:",
+#### ONLY strip site chrome and navigation that's clearly NOT about THIS event
+
+- Navigation to OTHER events ("Earlier Event:", "Later Event:",
   "Previous/Next Event", "Back to All Events", "Back to Program")
 - Calendar export / share / "Add to calendar" buttons
 - Site footer, impressum, copyright lines, privacy/terms links
 - Generic venue copy ("Serving Berlin's underground since 2002") that
-  appears on every page
+  appears on every page (NOT event-specific taglines)
 - Truncation indicators ("weiterlesen…", "read more", "...") — if the
   truncation suggests a deeper page, follow it instead of including the
   marker
 
-Don't summarize. Don't paraphrase. Use the page's exact wording.
+#### Self-check before finalizing
+
+Read the description back. Does it sound like the bar wrote it (first-person
+"we", their exact phrasing, all their original details)? Or does it read
+like a third-party summary? If the latter, you paraphrased — go back and
+copy verbatim.
 
 Return `null` only when, after stripping the chrome above, no
 event-specific content remains (e.g. page just says "tba" or has only
