@@ -35,7 +35,7 @@ export interface Venue {
   instagram?: string;
   website?: string;
   websiteEvents?: string;
-  online: "yes" | "no";
+  scrapeEnabled: boolean;
   lat: number;
   lng: number;
 }
