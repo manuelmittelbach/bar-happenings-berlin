@@ -1,19 +1,18 @@
 """
-Venue Event Scraper
-===================
-Scrapes event websites listed in `venues.website_events` (where `online='yes'`)
-using a local Ollama LLM, and writes extracted events into `venue_events_staging`
-for admin review.
+Venue Event Scraper (Gemini variant)
+====================================
+Same scraper as scrape_venue_events.py, but uses Google Gemini 2.5 Flash via
+the AI Studio API (Free Tier) instead of a local Ollama model. Extracted events
+are written to `venue_events_staging` for admin review.
 
 SETUP:
-    brew install ollama && ollama pull qwen3:14b
-    brew services start ollama
     pip3 install -r requirements.txt
-    cp .env.example .env   # then fill in SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+    # Get a free API key at https://aistudio.google.com/apikey
+    # Add to .env:  GEMINI_API_KEY=your-key-here
 
 RUN:
-    python3 scrape_venue_events.py            # normal scrape
-    python3 scrape_venue_events.py --clear    # wipe scraped + manual rows from venue_events_staging (keeps recurring) and exit
+    python3 scrape_venue_events_gemini.py            # normal scrape
+    python3 scrape_venue_events_gemini.py --clear    # wipe scraped + manual rows from venue_events_staging (keeps recurring) and exit
 """
 
 import argparse
@@ -27,14 +26,16 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from google import genai
+from google.genai import types as genai_types
 from supabase import create_client
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-OLLAMA_URL   = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "gemma3:12b"
+SUPABASE_URL   = os.getenv("SUPABASE_URL")
+SUPABASE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL   = "gemini-2.5-flash-lite"
 TODAY        = date.today()
 TODAY_ISO    = TODAY.isoformat()
 # Hard upper bound for accepted events. 2 weeks matches the typical user
@@ -316,7 +317,8 @@ def _strip_html(html: str, max_chars: int) -> str:
 
 def fetch_combined_text(
     url: str,
-    max_chars: int = 16000,
+    max_chars: int = 100000,
+    overview_max_chars: int = 10000,
     max_sublinks: int = 30,
     per_sublink_chars: int = 4000,
     per_bar_budget_s: float = 60.0,
@@ -334,6 +336,12 @@ def fetch_combined_text(
     can return a numeric `source_index` we map back to the real URL — never
     asking the model to echo a URL string (it hallucinates them).
 
+    Two separate caps to use the prompt budget well:
+      - overview_max_chars caps the OVERVIEW block itself, so a chatty
+        listing page can't eat the whole budget before any DETAIL fits;
+      - max_chars caps the final combined string. Sized to fit Gemini
+        Flash-Lite Free Tier TPM at the throttle interval used in main().
+
     Returns (combined_text, error_message, kept_sublinks). kept_sublinks[n-1]
     is the URL behind the [DETAIL_<n>: ...] block in combined_text."""
     started = time.monotonic()
@@ -349,7 +357,7 @@ def fetch_combined_text(
     except Exception as e:
         return None, str(e)[:100], []
 
-    overview_text = _strip_html(resp.text, max_chars)
+    overview_text = _strip_html(resp.text, overview_max_chars)
     soup = BeautifulSoup(resp.text, "html.parser")
     sublinks = extract_event_sublinks(soup, url, max_links=max_sublinks)
 
@@ -380,8 +388,8 @@ def fetch_combined_text(
     return combined[:max_chars], None, kept
 
 
-def extract_events_with_ollama(venue_name: str, website: str, text: str) -> tuple[list[dict], str | None]:
-    """Ask Ollama to extract events. Returns (events, error_message)."""
+def extract_events_with_gemini(venue_name: str, website: str, text: str) -> tuple[list[dict], str | None]:
+    """Ask Gemini 2.5 Flash to extract events. Returns (events, error_message)."""
     categories_str = ", ".join(f'"{c}"' for c in CATEGORIES)
     languages_str = ", ".join(f'"{l}"' for l in COMMON_LANGUAGES)
     max_iso = MAX_DATE.isoformat()
@@ -441,27 +449,61 @@ For each future event return a JSON object with these exact keys:
 Return ONLY a valid JSON array. If no upcoming events found, return [].
 Do not include any explanation, just the JSON array."""
 
-    try:
-        resp = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "format": "json",
-            },
-            timeout=240,
-        )
-        resp.raise_for_status()
-        raw = resp.json().get("response", "[]")
-        match = re.search(r"\[.*\]", raw, re.DOTALL)
-        if not match:
-            return [], None
-        return json.loads(match.group()), None
-    except requests.exceptions.Timeout:
-        return [], "Ollama timeout (240s)"
-    except Exception as e:
-        return [], str(e)[:100]
+    config = genai_types.GenerateContentConfig(
+        # Force the model to return a JSON array — no prose, no markdown
+        # fences. Schema below mirrors the prompt's contract; Gemini
+        # constrains its output to match it, which makes parsing
+        # deterministic and eliminates "json wrapped in ```" issues.
+        response_mime_type="application/json",
+        response_schema=genai_types.Schema(
+            type=genai_types.Type.ARRAY,
+            items=genai_types.Schema(
+                type=genai_types.Type.OBJECT,
+                properties={
+                    "title":        genai_types.Schema(type=genai_types.Type.STRING),
+                    "date":         genai_types.Schema(type=genai_types.Type.STRING),
+                    "start_time":   genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "end_time":     genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "doors_time":   genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "category":     genai_types.Schema(type=genai_types.Type.STRING),
+                    "language":     genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "entry_info":   genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "description":  genai_types.Schema(type=genai_types.Type.STRING, nullable=True),
+                    "source_index": genai_types.Schema(type=genai_types.Type.INTEGER, nullable=True),
+                },
+                required=["title", "date", "category"],
+            ),
+        ),
+    )
+
+    # Retry only on truly transient errors: 503 UNAVAILABLE (model overloaded)
+    # and 500 INTERNAL. We deliberately do NOT retry 429 RESOURCE_EXHAUSTED:
+    # on Free Tier 429 usually means the daily-quota cap was hit, and 8 seconds
+    # of waiting won't make new headroom appear — every retry just burns more
+    # quota for nothing. Surfacing 429 immediately lets the rest of the run
+    # proceed (other bars may still succeed if it was a brief RPM spike).
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    last_err = ""
+    for attempt in range(4):
+        try:
+            resp = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config=config,
+            )
+            raw = resp.text or "[]"
+            return json.loads(raw), None
+        except Exception as e:
+            msg = str(e)
+            last_err = msg[:200]
+            transient = any(code in msg for code in ("503", "UNAVAILABLE", "INTERNAL"))
+            if attempt == 3 or not transient:
+                break
+            # 1s, 2s, 4s — keeps total worst-case wait < 8s per bar
+            wait_s = 2 ** attempt
+            print(f"  ⏳ Gemini transient error (attempt {attempt + 1}/4), retrying in {wait_s}s...")
+            time.sleep(wait_s)
+    return [], last_err
 
 
 def log_scrape(client, venue_id: str, status: str, error_message: str | None = None):
@@ -599,22 +641,16 @@ def _trim_time(t: str | None) -> str | None:
 
 def normalize_title(s: str | None) -> str:
     """Normalize an event title for matching: lowercase, trim, collapse runs
-    of internal whitespace to single spaces. Used to key live-event lookups
-    so re-scrapes match the existing event despite minor whitespace quirks."""
+    of internal whitespace to single spaces."""
     if not s:
         return ""
     return re.sub(r"\s+", " ", s.strip().lower())
 
 
-# Fields whose differences between a re-scraped event and an existing live
-# event count as a meaningful update (admin gets a diff card to review).
 _COMPARE_FIELDS = ("start_time", "end_time", "doors_time", "description", "entry_info", "source_url")
 
 
 def _norm_for_compare(field: str, value) -> str:
-    """Normalize a field value into a comparable string. Treats None / '' /
-    'null'-ish strings as the same so an LLM swing between null and empty
-    string doesn't trigger a phantom update."""
     if value is None:
         return ""
     s = str(value).strip()
@@ -632,11 +668,7 @@ def _norm_for_compare(field: str, value) -> str:
 def compare_event_fields(scraped: dict, live: dict) -> dict[str, tuple[str, str]]:
     """Return {field: (live_value, scraped_value)} for fields whose normalized
     values differ. Empty dict means the events are equivalent for our purposes.
-
-    `scraped` uses the LLM's keys (start_time, etc.). `live` comes from the
-    events table with the same column names. category and language are
-    intentionally NOT compared — they're LLM-noise prone and the admin curates
-    them; only treating them as triggers would create false-positive updates."""
+    category and language are intentionally NOT compared — too LLM-noise prone."""
     diff: dict[str, tuple[str, str]] = {}
     for field in _COMPARE_FIELDS:
         live_v = _norm_for_compare(field, live.get(field))
@@ -647,13 +679,9 @@ def compare_event_fields(scraped: dict, live: dict) -> dict[str, tuple[str, str]
 
 
 def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str, str], dict]]:
-    """Map venue_id -> { (date, title_normalized): event_row } for live
-    (approved/canceled) events in the 14-day scrape window.
-
-    Includes both recurring AND non-recurring rows. The caller distinguishes
-    via row['recurrence']: recurring matches trigger silent drop (no analysis),
-    non-recurring matches go through compare_event_fields. Field set covers
-    everything compare_event_fields needs to do its job."""
+    """Map venue_id -> { (date, title_normalized): event_row } for live events
+    in the 14-day scrape window. Includes recurring rows so the caller can
+    distinguish (recurring matches → silent drop, non-recurring → compare)."""
     result = (
         client.table("events")
         .select(
@@ -672,9 +700,6 @@ def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str
         title_key = normalize_title(row.get("title"))
         if not (vid and d and title_key):
             continue
-        # The events table calls the field `url`; rest of our scraper code
-        # talks about `source_url`. Normalize on the way out so consumers
-        # don't need to know about the column-name mismatch.
         normalized_row = dict(row)
         normalized_row["source_url"] = row.get("url")
         out.setdefault(vid, {})[(d, title_key)] = normalized_row
@@ -683,7 +708,7 @@ def fetch_existing_events_by_venue_for_match(client) -> dict[str, dict[tuple[str
 
 def fetch_existing_staged_keys_by_venue(client) -> dict[str, set[tuple[str, str]]]:
     """Map venue_id -> {(date, title_normalized), ...} for non-manual rows
-    already in venue_events_staging. Title is normalized via normalize_title()
+    already in venue_events_staging. Title normalized via normalize_title()
     so case/whitespace variations don't slip a duplicate past the dedup."""
     result = (
         client.table("venue_events_staging")
@@ -770,6 +795,8 @@ def main():
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise SystemExit("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required in .env")
+    if not GEMINI_API_KEY:
+        raise SystemExit("GEMINI_API_KEY required in .env (get one at https://aistudio.google.com/apikey)")
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -824,6 +851,15 @@ def main():
     total_scanned = 0
     total_events = 0
     total_errors = 0
+    # (venue_name, kind, message). Printed at the end so the operator knows
+    # which bars need a manual second look without scrolling through the log.
+    failed_bars: list[tuple[str, str, str]] = []
+
+    # Gemini Flash-Lite Free Tier: 15 RPM, 250k TPM. With max_chars up to
+    # ~100k we send ~25k tokens per call — sleeping ≥6s (= 10 calls/min)
+    # keeps us under both the RPM ceiling and the TPM budget. Smaller
+    # bars send much less, but pacing the worst case is what matters.
+    last_gemini_call_at: float | None = None
 
     for venue in venues:
         venue_id = venue["id"]
@@ -833,6 +869,11 @@ def main():
         total_scanned += 1
         print(f"[{total_scanned}/{len(venues)}] {venue_name} — {url}")
 
+        if last_gemini_call_at is not None:
+            elapsed = time.monotonic() - last_gemini_call_at
+            if elapsed < 6.0:
+                time.sleep(6.0 - elapsed)
+
         text, fetch_error, kept_sublinks = fetch_combined_text(url)
         if not text:
             print(f"  ✗ Could not fetch page: {fetch_error}")
@@ -840,18 +881,21 @@ def main():
             if ensure_placeholder(client, venue_id, url):
                 print("  + placeholder created (fetch error)")
             total_errors += 1
+            failed_bars.append((venue_name, "fetch", fetch_error or "unknown"))
             continue
         if kept_sublinks:
             print(f"  ↳ followed {len(kept_sublinks)} sub-link(s)")
 
-        events, ollama_error = extract_events_with_ollama(venue_name, url, text)
+        events, gemini_error = extract_events_with_gemini(venue_name, url, text)
+        last_gemini_call_at = time.monotonic()
 
-        if ollama_error:
-            print(f"  ✗ Ollama error: {ollama_error}")
-            log_scrape(client, venue_id, "timeout", ollama_error)
+        if gemini_error:
+            print(f"  ✗ Gemini error: {gemini_error}")
+            log_scrape(client, venue_id, "timeout", gemini_error)
             if ensure_placeholder(client, venue_id, url):
                 print("  + placeholder created (LLM error)")
             total_errors += 1
+            failed_bars.append((venue_name, "gemini", gemini_error))
             continue
 
         if not events:
@@ -867,8 +911,8 @@ def main():
         inserted_update = 0
         skipped_past = 0
         skipped_invalid = 0
-        skipped_unchanged = 0       # match against non-recurring live event, all compare-fields equal
-        skipped_recurring = 0       # match against a recurring template (silent drop)
+        skipped_unchanged = 0
+        skipped_recurring = 0
         skipped_already_staged = 0
         for ev in events:
             try:
@@ -903,12 +947,8 @@ def main():
                 else:
                     source_url = url
 
-                # Match-and-compare against existing live events. Three paths:
-                #   1) no match               → insert as new (replaces_event_id=null)
-                #   2) match + recurring      → silent drop (recurring template covers it)
-                #   3) match + non-recurring  → compare fields:
-                #        - all equal → silent drop (truly unchanged, no admin attention)
-                #        - any diff  → insert update (replaces_event_id=<live.id>)
+                # Match-and-compare against existing live events (see
+                # scrape_venue_events.py for full rationale of the 3-way path).
                 live_match = existing_events.get((date_iso, title_key))
                 replaces_id = None
                 if live_match is not None:
@@ -982,11 +1022,11 @@ def main():
         if inserted > 0:
             log_scrape(client, venue_id, "success")
         elif skipped_unchanged > 0 and skipped_invalid == 0 and skipped_past == 0:
-            log_scrape(client, venue_id, "all_unchanged")     # Fall 5: re-scrape, nothing changed
+            log_scrape(client, venue_id, "all_unchanged")
         elif skipped_invalid > 0:
-            log_scrape(client, venue_id, "invalid_output")    # Fall 7
+            log_scrape(client, venue_id, "invalid_output")
         else:
-            log_scrape(client, venue_id, "no_future_events")  # Fall 4
+            log_scrape(client, venue_id, "no_future_events")
 
         # Placeholder only if LLM produced unparseable rows (Fall 7).
         # All other "no inserted" cases are deliberate skips, no admin attention needed.
@@ -996,6 +1036,18 @@ def main():
 
     print(f"\n{'=' * 50}")
     print(f"Done! {total_scanned} venues scanned, {total_events} events staged, {total_errors} errors.")
+
+    if failed_bars:
+        print(f"\n⚠ {len(failed_bars)} bar(s) failed — re-run individually or check manually:")
+        # Group by error kind so transient Gemini outages and real fetch
+        # problems don't get visually mixed up.
+        for kind, label in (("fetch", "Fetch errors"), ("gemini", "Gemini / LLM errors")):
+            group = [(name, msg) for name, k, msg in failed_bars if k == kind]
+            if not group:
+                continue
+            print(f"\n  {label} ({len(group)}):")
+            for name, msg in group:
+                print(f"    • {name} — {msg}")
 
 
 if __name__ == "__main__":

@@ -473,6 +473,7 @@ export type Database = {
           language: string | null
           recurrence: string
           recurrence_until: string | null
+          replaces_event_id: string | null
           scraped_at: string
           source_url: string | null
           start_time: string | null
@@ -492,6 +493,7 @@ export type Database = {
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
+          replaces_event_id?: string | null
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
@@ -511,6 +513,7 @@ export type Database = {
           language?: string | null
           recurrence?: string
           recurrence_until?: string | null
+          replaces_event_id?: string | null
           scraped_at?: string
           source_url?: string | null
           start_time?: string | null
@@ -518,6 +521,13 @@ export type Database = {
           venue_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "venue_events_staging_replaces_event_id_fkey"
+            columns: ["replaces_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "venue_events_staging_venue_id_fkey"
             columns: ["venue_id"]
