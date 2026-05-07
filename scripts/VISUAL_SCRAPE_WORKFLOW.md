@@ -46,8 +46,10 @@ ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__brow
 
 **Overall shape:** Step 1 once at the start. Then **loop per venue**:
 Step 2 (scrape) → Step 3a (write batch JSON) → Step 3b (import) → next venue.
-Step 4 (cleanup) once at the end. Do NOT batch all venues into a single
-write — that broke a previous run by exceeding the output token limit.
+If you extracted **zero events** for a venue (for ANY reason), run Step 2b
+(placeholder) instead of Step 3 and move on. Step 4 (cleanup) once at the
+end. Do NOT batch all venues into a single write — that broke a previous
+run by exceeding the output token limit.
 
 ### Step 1 — Read venues and existing staging
 
@@ -128,6 +130,37 @@ Tips that worked well:
      `Read` tool to extract events visually (e.g. Jatz Bar publishes a monthly
      PNG). Use the venue's `website_events` URL as `source_url` in this case.
 
+### Step 2b — Placeholder when zero events extracted
+
+If you extracted **zero events** for this venue — for **any reason** —
+stage a placeholder. The placeholder surfaces in the Admin "Manual" tab as
+a soft reminder to enter events by hand if you happen to know about
+something at this venue.
+
+**Trigger for any of:**
+- Page says "Keine bevorstehenden Veranstaltungen" / "no upcoming events"
+- Page only shows events outside the 14-day window
+- Page only shows past events
+- 404, timeout, or other load failure
+- Anti-bot / paywall hid the content
+- iframe / image-OCR extraction failed
+- Layout unparseable (no clear event blocks)
+
+**No placeholder when you extracted at least one event** — even if the
+importer later skips them all as already-live, covered-by-recurring,
+already-staged, or unchanged. The page had events; the admin already sees
+them via the live UI.
+
+Run:
+
+```
+python3 scripts/stage_visual_placeholder.py VENUE_ID SOURCE_URL
+```
+
+Use the venue's `website_events` URL as `SOURCE_URL`. The script is
+idempotent — if a placeholder already exists for the venue it skips. After
+this, skip Step 3 and continue with the next venue.
+
 ### Step 3 — Write + import for THIS venue (incremental)
 
 **Do NOT accumulate all venues and write at the end.** Write and import
@@ -169,8 +202,8 @@ with open('/tmp/visual_scrape_events_batch.json', 'w', encoding='utf-8') as f:
 EOF
 ```
 
-If the venue had no events in the window, skip Step 3 entirely and move to
-the next venue — no need to run the importer with an empty array.
+If you extracted zero events for this venue, skip Step 3 entirely and run
+Step 2b (placeholder) instead — don't run the importer with an empty array.
 
 **3b.** Run the importer immediately:
 
