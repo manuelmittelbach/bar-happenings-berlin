@@ -1,5 +1,9 @@
 # Visual Scrape Workflow
 
+<!-- last-updated: 2026-05-07 — change: live-date pre-filter removed; importer
+     now handles match-and-compare itself. Do NOT query live events from Claude.
+     Stage every in-window event regardless of whether the date is already live. -->
+
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
 self-contained — read this file in a fresh session and you have everything
@@ -19,8 +23,10 @@ Then paste:
 
 > Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
 > active venues. Stage every upcoming event you find into `venue_events_staging`
-> via `scripts/import_visual_events.py`. Skip already-live dates and anything
-> outside the 14-day window.
+> via `scripts/import_visual_events.py`. **Stage events even if the date already
+> has a live event** — the importer compares fields and handles dedup. Only skip
+> events already pending in staging (same venue + date + normalized title) and
+> anything outside the 14-day window.
 
 That's all the operator needs to type. The rest is in this document.
 

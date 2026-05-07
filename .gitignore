@@ -31,6 +31,10 @@ test*.png
 # Standalone sub-project (separate scraping tooling)
 Tipsy Tiger/
 
+# Python cache
+__pycache__/
+*.pyc
+
 # Scraper secrets
 scripts/.env
 
