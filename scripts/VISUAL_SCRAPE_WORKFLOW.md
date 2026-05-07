@@ -1,8 +1,11 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-07 — change: live-date pre-filter removed; importer
-     now handles match-and-compare itself. Do NOT query live events from Claude.
-     Stage every in-window event regardless of whether the date is already live. -->
+<!-- last-updated: 2026-05-07 — change: tightened invoke prompt, made per-venue
+     loop explicit, added crash-recovery + precise importer-summary handling
+     (incl. covered-by-recurring as expected skip + .env requirement), moved
+     pre-import checklist to per-venue, merged step 4/5. Earlier change:
+     incremental write+import per venue (was: single write at end). Earlier:
+     live-date pre-filter removed; importer handles match-and-compare. -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -11,8 +14,9 @@ needed to execute the workflow.
 
 ## How to invoke (from a fresh Claude Code session)
 
-Before starting, switch to Sonnet — same quality for this task at much lower
-token cost than Opus:
+For full runs (30+ venues), switch to Sonnet — same quality for this task,
+much lower token cost than Opus, and 30+ importer calls + browser sessions
+burn context fast:
 
 ```
 /model
@@ -22,49 +26,33 @@ token cost than Opus:
 Then paste:
 
 > Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
-> active venues. Stage every upcoming event you find into `venue_events_staging`
-> via `scripts/import_visual_events.py`. **Stage events even if the date already
-> has a live event** — the importer compares fields and handles dedup. Only skip
-> events already pending in staging (same venue + date + normalized title) and
-> anything outside the 14-day window.
+> active venues.
 
-That's all the operator needs to type. The rest is in this document.
+That's it. Everything else (dedup rules, staging behavior, field rules) is
+in this document.
+
+**Crash recovery:** if a previous run crashed mid-way, just re-run the same
+prompt. Already-imported venues are automatically skipped via the staged-keys
+dedup in Step 1b — no manual cleanup needed.
 
 ### Tools you'll need (deferred — load before using)
 
 The Playwright + Supabase MCP tools are deferred in fresh sessions. Load them
-upfront with a single `ToolSearch` call so subsequent calls don't fail:
+upfront with a single `ToolSearch` call so subsequent calls don't fail.
+
+The `query` value must be a **single line** — the example below is split
+across lines for readability only:
 
 ```
-ToolSearch query=
-  "select:mcp__playwright__browser_navigate,
-          mcp__playwright__browser_evaluate,
-          mcp__playwright__browser_close,
-          mcp__supabase__execute_sql"
+ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__supabase__execute_sql"
 ```
-
-(Single line — split here for readability.)
-
-## What this workflow does
-
-1. Loads two datasets from Supabase: active venues, and existing pending
-   staging entries (for staging-dedup). Note: live events are NOT skipped at
-   scrape time anymore — the importer matches scraped events against live
-   events and only stages real changes.
-2. For each venue:
-   - Navigates with Playwright, extracts visible upcoming events
-   - Filters to today + 14 days
-   - Skips events already pending in staging (same venue + date + title)
-   - Builds an event object with normalized fields — including events whose
-     date is already covered by a live event (the importer handles that)
-3. Writes all events as one JSON batch through `import_visual_events.py`
-   which:
-   - Stages new events (no match against live) as `replaces_event_id=NULL`
-   - Detects updates (match + at least one diverging compare-field) as
-     `replaces_event_id=<live_event.id>` — admin reviews diff in the dashboard
-   - Silently drops unchanged events and recurring-template matches
 
 ## Step-by-step instructions
+
+**Overall shape:** Step 1 once at the start. Then **loop per venue**:
+Step 2 (scrape) → Step 3a (write batch JSON) → Step 3b (import) → next venue.
+Step 4 (cleanup) once at the end. Do NOT batch all venues into a single
+write — that broke a previous run by exceeding the output token limit.
 
 ### Step 1 — Read venues and existing staging
 
@@ -104,9 +92,13 @@ While scraping each venue in Step 2, skip events where the
 by a live event. The importer compares fields and either silently drops
 unchanged events or stages them as updates (`replaces_event_id` set).
 
-### Step 2 — For each venue, extract events
+### Step 2 — Extract events for ONE venue
 
-For each venue, use Playwright tools:
+This is the start of the per-venue loop. Do Step 2 + Step 3 for the current
+venue, then come back here for the next one. Don't run Step 2 for all
+venues before moving to Step 3.
+
+Use Playwright tools:
 
 ```
 mcp__playwright__browser_navigate → website_events URL
@@ -115,7 +107,8 @@ mcp__playwright__browser_evaluate → grab event-detail links with their date/ti
 ```
 
 Then for each event of interest (in window, not already live), navigate to its
-detail page and grab the full description.
+detail page and **copy the description verbatim** — exact characters, same
+language. Do NOT paraphrase or summarize even a single sentence.
 
 Tips that worked well:
 - `document.body.innerText` is much cleaner than HTML — use it as your
@@ -130,13 +123,17 @@ Tips that worked well:
 - If a page fails (timeout, 404, anti-bot block): move on, don't retry more
   than once. The next nightly auto-scrape will pick it up if temporary.
 
-### Step 3 — Build the JSON file
+### Step 3 — Write + import for THIS venue (incremental)
 
-After all venues are processed, write the full collected event list to
-`/tmp/visual_scrape_events.json` using the `Write` tool (one call, single
-JSON array). Don't try to append per venue — write once at the end.
+**Do NOT accumulate all venues and write at the end.** Write and import
+after each venue so a crash only loses the current venue. Run the
+pre-import checklist (bottom of this doc) over the venue's events before
+writing.
 
-Schema:
+**3a.** Write the current venue's events (and only this venue's) to
+`/tmp/visual_scrape_events_batch.json` using the `Write` tool. The file is
+overwritten each iteration — that's intentional; the importer is what
+persists state, the batch file is just a handoff.
 
 ```json
 [
@@ -149,33 +146,64 @@ Schema:
     "doors_time": "HH:MM" or null,
     "category": "live-music" | "dj-music" | ... | null,
     "language": "English" | "German" | "English / German" | ... | null,
-    "description": "Verbatim event-related content from the detail page" or null,
+    "description": "verbatim page text, or null — see Field rules → description",
     "entry_info": "Free" | "Pay what you want" | "5 €" | "12,50 €" | null,
     "source_url": "https://venue.example/path/to/this-event"
   }
 ]
 ```
 
-### Step 4 — Run the importer
+If the venue had no events in the window, skip Step 3 entirely and move to
+the next venue — no need to run the importer with an empty array.
+
+**3b.** Run the importer immediately:
 
 ```
-python3 scripts/import_visual_events.py /tmp/visual_scrape_events.json
+python3 scripts/import_visual_events.py /tmp/visual_scrape_events_batch.json
 ```
 
-It re-applies normalization, runs a final dedup against BOTH live events
-AND existing pending staging, and inserts into `venue_events_staging` with
-`is_manual=false`. Read its summary line at the end to verify the counts
-match what you intended.
+It re-applies normalization, runs dedup against both live events and
+existing pending staging, and inserts into `venue_events_staging` with
+`is_manual=false`. Requires `scripts/.env` to provide `SUPABASE_URL` +
+`SUPABASE_SERVICE_ROLE_KEY` — the script hard-exits if either is missing.
 
-### Step 5 — Cleanup
-
-The Playwright MCP server caches snapshot/console files under
-`.playwright-mcp/`. After a full run there can be 80+ leftover `.yml` files.
-Optional cleanup:
-
+**Read the summary line.** Format:
 ```
-rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
+Done. {new} new + {update} update inserted, {unchanged} unchanged,
+{recurring} covered-by-recurring, {staged} already-staged,
+{window} out-of-window, {invalid} invalid.
 ```
+
+Per-event lines are also printed:
+- `– skipping (covered by recurring)` — silent drop because a recurring
+  live event already covers this date. **Expected**, not a problem.
+- `– skipping unchanged` / `already-staged` / `out-of-window` — also
+  expected dedup/safety-net skips.
+- `↻ update` / `+ new` — successful inserts.
+- `✗ insert error` — real problem.
+
+Decision rules:
+- Hard error (script crashes / SystemExit) → STOP, report to user.
+- `✗ insert error` for any event → STOP, report to user.
+- `0 new + 0 update inserted` and you scraped events you expected to be
+  new (not just updates / dupes) → STOP, check for `venue_id` typo.
+- Otherwise (any successful inserts, or all skips were dedup) → continue.
+
+Then go back to Step 2 with the next venue.
+
+### Step 4 — Cleanup (once, at the end)
+
+After all venues are done:
+
+1. Close the browser:
+   ```
+   mcp__playwright__browser_close
+   ```
+2. Optional: remove Playwright MCP cache files (after a full run there can
+   be 80+ leftover `.yml` files):
+   ```
+   rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
+   ```
 
 ## Field rules — strict, follow exactly
 
@@ -222,11 +250,20 @@ preference for `null` over a guess. Only set when explicitly stated
 language.
 
 ### `description`
+
+> **STOP BEFORE YOU WRITE.**
+> Is what you're about to type copied character-for-character from the page?
+> If not — delete it and paste the original instead.
+> A summary is always wrong here, no matter how accurate it feels.
+
 **ABSOLUTELY VERBATIM. Copy the page's exact text, character-for-character —
 including punctuation, asterisks, line breaks, and pronouns. If you find
 yourself writing a sentence in your own words, STOP and copy the original
 instead.** Minor duplication with structured fields is intentional and OK —
 the admin prefers redundant info over missed info.
+
+**Never translate.** If the page is in German, the description stays in German.
+Verbatim means same language, same words — not a translated equivalent.
 
 #### Concrete forbidden behaviors
 
@@ -299,7 +336,7 @@ a URL — only use one Playwright actually loaded. If the event was only on the
 overview page (no detail page exists), use the venue's `website_events` URL
 as fallback.
 
-## Constraints summary
+## Rules & constraints
 
 - 14-day window: `[today, today + 14 days]` inclusive
 - Title-based dedup against `staged_keys_by_venue` (existing pending staging)
@@ -309,9 +346,6 @@ as fallback.
 - All staging rows: `is_manual=false`
 - All categories: slug-ID format (lowercase, kebab-case)
 - Never invent: titles, dates, times, descriptions, URLs
-
-## What NOT to do
-
 - Don't write directly to the database with raw SQL — use the importer script
   so normalization stays consistent with the auto-scraper
 - Don't `is_manual=true` for these — that would put them in the Manual tab,
@@ -321,9 +355,11 @@ as fallback.
   third-parties like Eventbrite) — they don't contain event data we need
 - Don't include past events even if listed prominently on the page
 
-## Counting on yourself
+## Pre-import checklist
 
-Final sanity check before running the importer:
+Run this **per venue, before each Step 3a write** — not once at the end.
+The batch only contains one venue's events, so this is a quick check.
+
 - Every event has a real `source_url` (paste a few into the address bar
   mentally and check they look like detail-page URLs)
 - Every `category` is a slug-ID (`live-music`, not `Live Music`)
