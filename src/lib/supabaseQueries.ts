@@ -1015,13 +1015,14 @@ export interface LiveEventInfo {
   date: string;
   startTime: string;
   title: string;
+  status: string;
 }
 
 export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEventInfo[]>> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("events")
-    .select("id, venue_id, date, start_time, title")
+    .select("id, venue_id, date, start_time, title, status")
     .in("status", ["approved", "canceled"])
     .gte("date", today);
   if (error) throw error;
@@ -1033,6 +1034,7 @@ export async function fetchLiveEventsByVenue(): Promise<Record<string, LiveEvent
         date: row.date,
         startTime: trimTime(row.start_time),
         title: row.title,
+        status: row.status,
       });
     }
   }
