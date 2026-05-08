@@ -1035,80 +1035,84 @@ export default function AdminDashboard() {
           {activeBarTab === "all-bars" && (
             <div className="space-y-3">
               {allBarsLoading && <div className="flex justify-center py-4"><Spinner /></div>}
-              {!allBarsLoading && (
-                <>
-                  <input
-                    type="search"
-                    value={allBarsQuery}
-                    onChange={(e) => setAllBarsQuery(e.target.value)}
-                    placeholder="Search by name, address or neighborhood…"
-                    className="w-full h-10 px-3 mb-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
-                  />
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground">Scraping:</span>
-                      {(["all", "yes", "no"] as const).map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setAllBarsScrapeFilter(v)}
-                          className={`px-2 h-7 rounded-sm border ${
-                            allBarsScrapeFilter === v
-                              ? "border-foreground bg-foreground text-background"
-                              : "border-border hover:bg-muted"
-                          }`}
-                        >
-                          {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
-                        </button>
-                      ))}
+              {!allBarsLoading && (() => {
+                const q = allBarsQuery.trim().toLowerCase();
+                const filtered = allBars.filter(({ venue, hasOwner }) => {
+                  if (q && !(
+                    venue.name.toLowerCase().includes(q) ||
+                    venue.address.toLowerCase().includes(q) ||
+                    venue.neighborhood.toLowerCase().includes(q)
+                  )) return false;
+                  if (allBarsScrapeFilter === "yes" && !venue.scrapeEnabled) return false;
+                  if (allBarsScrapeFilter === "no" && venue.scrapeEnabled) return false;
+                  if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
+                  if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
+                  return true;
+                });
+                return (
+                  <>
+                    <input
+                      type="search"
+                      value={allBarsQuery}
+                      onChange={(e) => setAllBarsQuery(e.target.value)}
+                      placeholder="Search by name, address or neighborhood…"
+                      className="w-full h-10 px-3 mb-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+                    />
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs mb-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Scraping:</span>
+                        {(["all", "yes", "no"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setAllBarsScrapeFilter(v)}
+                            className={`px-2 h-7 rounded-sm border ${
+                              allBarsScrapeFilter === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Claim:</span>
+                        {(["all", "claimed", "unclaimed"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setAllBarsClaimFilter(v)}
+                            className={`px-2 h-7 rounded-sm border ${
+                              allBarsClaimFilter === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {v === "all" ? "All" : v === "claimed" ? "Claimed" : "Unclaimed"}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-muted-foreground ml-auto">
+                        {filtered.length} of {allBars.length} bars
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground">Claim:</span>
-                      {(["all", "claimed", "unclaimed"] as const).map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setAllBarsClaimFilter(v)}
-                          className={`px-2 h-7 rounded-sm border ${
-                            allBarsClaimFilter === v
-                              ? "border-foreground bg-foreground text-background"
-                              : "border-border hover:bg-muted"
-                          }`}
-                        >
-                          {v === "all" ? "All" : v === "claimed" ? "Claimed" : "Unclaimed"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {(() => {
-                    const q = allBarsQuery.trim().toLowerCase();
-                    const filtered = allBars.filter(({ venue, hasOwner }) => {
-                      if (q && !(
-                        venue.name.toLowerCase().includes(q) ||
-                        venue.address.toLowerCase().includes(q) ||
-                        venue.neighborhood.toLowerCase().includes(q)
-                      )) return false;
-                      if (allBarsScrapeFilter === "yes" && !venue.scrapeEnabled) return false;
-                      if (allBarsScrapeFilter === "no" && venue.scrapeEnabled) return false;
-                      if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
-                      if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
-                      return true;
-                    });
-                    if (filtered.length === 0) {
-                      return <p className="text-sm text-muted-foreground">No bars match your filters.</p>;
-                    }
-                    return filtered.map(({ venue, hasOwner }) => (
-                      <BarCard
-                        key={venue.id}
-                        venue={venue}
-                        hasOwner={hasOwner}
-                        onToggleScrapeEnabled={handleToggleScrapeEnabled}
-                        onLinkChange={handleVenueLinkChange}
-                      />
-                    ));
-                  })()}
-                </>
-              )}
+                    {filtered.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No bars match your filters.</p>
+                    ) : (
+                      filtered.map(({ venue, hasOwner }) => (
+                        <BarCard
+                          key={venue.id}
+                          venue={venue}
+                          hasOwner={hasOwner}
+                          onToggleScrapeEnabled={handleToggleScrapeEnabled}
+                          onLinkChange={handleVenueLinkChange}
+                        />
+                      ))
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
     </div>
