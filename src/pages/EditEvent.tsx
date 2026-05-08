@@ -21,6 +21,7 @@ export default function EditEvent() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const scopeParam = searchParams.get("scope");
+  const fromParam = searchParams.get("from");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, role, loading: authLoading, roleResolved } = useAuth();
@@ -198,7 +199,13 @@ export default function EditEvent() {
       optionalDescription={isAdmin}
       secondaryActions={
         <Link
-          to={isAdmin ? `/event/${id}` : "/dashboard"}
+          to={
+            fromParam === "admin"
+              ? "/admin?tab=recurring&filter=approved"
+              : isAdmin
+              ? `/event/${id}`
+              : "/dashboard"
+          }
           className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel
