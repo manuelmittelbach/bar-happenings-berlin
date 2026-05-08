@@ -2007,7 +2007,7 @@ function StagedEventCard({
                 to={`/event/${event.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                className={`hover:underline ${event.date === date ? "text-red-600" : "text-blue-600"}`}
                 title={event.title}
               >
                 {formatDateShort(event.date)}
