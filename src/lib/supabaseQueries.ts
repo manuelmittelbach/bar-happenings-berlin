@@ -14,6 +14,19 @@ function trimTime(t: string | null | undefined): string {
   return m ? `${m[1].padStart(2, "0")}:${m[2]}` : t;
 }
 
+// Doors-without-start is not a meaningful combination — when only a doors
+// time is provided, treat it as the start time and clear doors. Mirrors the
+// 2026-05-08 backfill so every read/render site can rely on start_time alone.
+function normalizeStartDoors(
+  startTime: string | null | undefined,
+  doorsTime: string | null | undefined,
+): { start: string | null; doors: string | null } {
+  const s = startTime ? trimTime(startTime) : null;
+  const d = doorsTime ? trimTime(doorsTime) : null;
+  if (!s && d) return { start: d, doors: null };
+  return { start: s, doors: d };
+}
+
 // Strip third-party click/tracking params before persisting URLs — otherwise
 // every visitor that clicks an event link forwards Facebook/Google/etc. tracking
 // without consent. Non-URL strings pass through unchanged so we don't destroy
@@ -168,6 +181,7 @@ function buildEventRow(
   imageUrl: string | undefined,
   overrides: { id: string; date: string; parent_id: string; recurrence: string },
 ): TablesInsert<"events"> {
+  const times = normalizeStartDoors(formData.startTime, formData.doorsTime);
   return {
     id: overrides.id,
     parent_id: overrides.parent_id,
@@ -178,9 +192,9 @@ function buildEventRow(
     address: formData.address,
     neighborhood: formData.neighborhood,
     date: overrides.date,
-    start_time: trimTime(formData.startTime),
+    start_time: times.start,
     end_time: formData.endTime ? trimTime(formData.endTime) : null,
-    doors_time: formData.doorsTime ? trimTime(formData.doorsTime) : null,
+    doors_time: times.doors,
     category: formData.category,
     description: formData.description || null,
     entry_info: formData.entryInfo || null,
@@ -244,10 +258,11 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
     image_position: formData.imagePosition,
   };
   if (includeDateTime) {
+    const times = normalizeStartDoors(formData.startTime, formData.doorsTime);
     update.date = formData.date;
-    update.start_time = formData.startTime ? trimTime(formData.startTime) : null;
+    update.start_time = times.start;
     update.end_time = formData.endTime ? trimTime(formData.endTime) : null;
-    update.doors_time = formData.doorsTime ? trimTime(formData.doorsTime) : null;
+    update.doors_time = times.doors;
   }
   if (imageUrl !== undefined) update.image = imageUrl;
   return update;
@@ -1213,6 +1228,7 @@ export async function duplicateStagedEvent(
   const isManual = scope !== "scraped";
   const recurrence = scope === "recurring" ? (merged.recurrence || "weekly") : "";
   const recurrenceUntil = scope === "recurring" ? merged.recurrenceUntil : null;
+  const stagedTimes = normalizeStartDoors(merged.startTime, merged.doorsTime);
   const { error } = await supabase
     .from("venue_events_staging")
     .insert({
@@ -1220,9 +1236,9 @@ export async function duplicateStagedEvent(
       venue_id: source.venueId,
       title: merged.title || null,
       date: merged.date || null,
-      start_time: merged.startTime ? trimTime(merged.startTime) : null,
+      start_time: stagedTimes.start,
       end_time: merged.endTime ? trimTime(merged.endTime) : null,
-      doors_time: merged.doorsTime ? trimTime(merged.doorsTime) : null,
+      doors_time: stagedTimes.doors,
       category: merged.category,
       language: merged.language || null,
       description: merged.description || null,
@@ -1302,6 +1318,7 @@ export async function approveStagedEvent(
   if (!merged.date) throw new Error("Date is required");
   if (!merged.category) throw new Error("Category is required");
 
+  const approveTimes = normalizeStartDoors(merged.startTime, merged.doorsTime);
   const baseRow = (overrides: { id: string; date: string; parent_id: string; recurrence: string }): TablesInsert<"events"> => ({
     id: overrides.id,
     parent_id: overrides.parent_id,
@@ -1312,9 +1329,9 @@ export async function approveStagedEvent(
     address: staged.venueAddress,
     neighborhood: staged.venueNeighborhood,
     date: overrides.date,
-    start_time: merged.startTime ? trimTime(merged.startTime) : null,
+    start_time: approveTimes.start,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
-    doors_time: merged.doorsTime ? trimTime(merged.doorsTime) : null,
+    doors_time: approveTimes.doors,
     category: merged.category!,
     language: merged.language || null,
     description: merged.description || null,
@@ -1419,9 +1436,29 @@ export async function applyEventUpdate(
   const update: TablesUpdate<"events"> = {};
   if (patch.title !== undefined) update.title = patch.title;
   if (patch.date !== undefined) update.date = patch.date;
-  if (patch.startTime !== undefined) update.start_time = patch.startTime ? trimTime(patch.startTime) : null;
+  // Normalize start/doors together. If both are in the patch, just normalize.
+  // If only doors is patched, fetch the row's current start to decide whether
+  // doors should be promoted (matches the rule: doors-without-start → start).
+  if (patch.startTime !== undefined && patch.doorsTime !== undefined) {
+    const times = normalizeStartDoors(patch.startTime, patch.doorsTime);
+    update.start_time = times.start;
+    update.doors_time = times.doors;
+  } else if (patch.startTime !== undefined) {
+    update.start_time = patch.startTime ? trimTime(patch.startTime) : null;
+  } else if (patch.doorsTime !== undefined) {
+    const { data: row, error: fetchErr } = await supabase
+      .from("events")
+      .select("start_time")
+      .eq("id", eventId)
+      .maybeSingle();
+    if (fetchErr) throw fetchErr;
+    const times = normalizeStartDoors(row?.start_time ?? null, patch.doorsTime);
+    if (!row?.start_time && times.start !== null) {
+      update.start_time = times.start;
+    }
+    update.doors_time = times.doors;
+  }
   if (patch.endTime !== undefined) update.end_time = patch.endTime ? trimTime(patch.endTime) : null;
-  if (patch.doorsTime !== undefined) update.doors_time = patch.doorsTime ? trimTime(patch.doorsTime) : null;
   if (patch.description !== undefined) update.description = patch.description || null;
   if (patch.entryInfo !== undefined) update.entry_info = patch.entryInfo || null;
   if (patch.sourceUrl !== undefined) update.url = cleanUrl(patch.sourceUrl) || null;
@@ -1530,11 +1567,12 @@ export async function updateApprovedEvent(
       .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
     if (seriesErr) throw seriesErr;
 
+    const occTimes = normalizeStartDoors(edits.startTime, edits.doorsTime);
     const occurrenceOnly: TablesUpdate<"events"> = {
       date: edits.date,
-      start_time: edits.startTime ? trimTime(edits.startTime) : null,
+      start_time: occTimes.start,
       end_time: edits.endTime ? trimTime(edits.endTime) : null,
-      doors_time: edits.doorsTime ? trimTime(edits.doorsTime) : null,
+      doors_time: occTimes.doors,
     };
     const { error: occErr } = await supabase
       .from("events")
@@ -1544,12 +1582,13 @@ export async function updateApprovedEvent(
     return;
   }
 
+  const singleTimes = normalizeStartDoors(edits.startTime, edits.doorsTime);
   const update: TablesUpdate<"events"> = {
     ...seriesWide,
     date: edits.date,
-    start_time: edits.startTime ? trimTime(edits.startTime) : null,
+    start_time: singleTimes.start,
     end_time: edits.endTime ? trimTime(edits.endTime) : null,
-    doors_time: edits.doorsTime ? trimTime(edits.doorsTime) : null,
+    doors_time: singleTimes.doors,
   };
   const { error } = await supabase.from("events").update(update).eq("id", displayedId);
   if (error) throw error;

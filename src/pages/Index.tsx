@@ -768,7 +768,7 @@ export default function Index() {
           sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
           navigate({ pathname: "/map", search: location.search });
         }}
-        className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
+        className="fixed top-1/2 right-0 -translate-y-1/2 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
       >
         <Map className="h-4 w-4" />
         Map
