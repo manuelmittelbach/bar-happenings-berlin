@@ -2337,10 +2337,15 @@ function StagedEventCard({
                 <button
                   onClick={onDeleteApproved}
                   disabled={submitting}
-                  title="Delete this event from the site"
+                  title={
+                    staged.parentId || staged.recurrence
+                      ? "Delete the entire series (all dates) from the site"
+                      : "Delete this event from the site"
+                  }
                   className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
                 >
-                  <Trash2 className="h-3 w-3" /> Delete
+                  <Trash2 className="h-3 w-3" />{" "}
+                  {staged.parentId || staged.recurrence ? "Delete series" : "Delete"}
                 </button>
               )}
               {staged.approvedSiblings && staged.approvedSiblings.length > 1 && (
