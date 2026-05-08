@@ -171,6 +171,8 @@ export default function AdminDashboard() {
   const [allBars, setAllBars] = useState<{ venue: Venue; hasOwner: boolean }[]>([]);
   const [allBarsLoading, setAllBarsLoading] = useState(true);
   const [allBarsQuery, setAllBarsQuery] = useState("");
+  const [allBarsScrapeFilter, setAllBarsScrapeFilter] = useState<"all" | "yes" | "no">("all");
+  const [allBarsClaimFilter, setAllBarsClaimFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
   const [scrapedLoading, setScrapedLoading] = useState(true);
   const [scrapedFilter, setScrapedFilter] = useState<StagedEventStatusFilter>("pending");
@@ -1042,17 +1044,58 @@ export default function AdminDashboard() {
                     placeholder="Search by name, address or neighborhood…"
                     className="w-full h-10 px-3 mb-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
                   />
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Scraping:</span>
+                      {(["all", "yes", "no"] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setAllBarsScrapeFilter(v)}
+                          className={`px-2 h-7 rounded-sm border ${
+                            allBarsScrapeFilter === v
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">Claim:</span>
+                      {(["all", "claimed", "unclaimed"] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setAllBarsClaimFilter(v)}
+                          className={`px-2 h-7 rounded-sm border ${
+                            allBarsClaimFilter === v
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {v === "all" ? "All" : v === "claimed" ? "Claimed" : "Unclaimed"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   {(() => {
                     const q = allBarsQuery.trim().toLowerCase();
-                    const filtered = q
-                      ? allBars.filter(({ venue }) =>
-                          venue.name.toLowerCase().includes(q) ||
-                          venue.address.toLowerCase().includes(q) ||
-                          venue.neighborhood.toLowerCase().includes(q),
-                        )
-                      : allBars;
+                    const filtered = allBars.filter(({ venue, hasOwner }) => {
+                      if (q && !(
+                        venue.name.toLowerCase().includes(q) ||
+                        venue.address.toLowerCase().includes(q) ||
+                        venue.neighborhood.toLowerCase().includes(q)
+                      )) return false;
+                      if (allBarsScrapeFilter === "yes" && !venue.scrapeEnabled) return false;
+                      if (allBarsScrapeFilter === "no" && venue.scrapeEnabled) return false;
+                      if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
+                      if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
+                      return true;
+                    });
                     if (filtered.length === 0) {
-                      return <p className="text-sm text-muted-foreground">No bars match your search.</p>;
+                      return <p className="text-sm text-muted-foreground">No bars match your filters.</p>;
                     }
                     return filtered.map(({ venue, hasOwner }) => (
                       <BarCard
