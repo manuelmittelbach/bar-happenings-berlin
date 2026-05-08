@@ -181,7 +181,11 @@ export default function AdminDashboard() {
   const [manualQuery, setManualQuery] = useState("");
   const [recurringEvents, setRecurringEvents] = useState<StagedEvent[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(true);
-  const [recurringFilter, setRecurringFilter] = useState<StagedEventStatusFilter>("pending");
+  const [recurringFilter, setRecurringFilter] = useState<StagedEventStatusFilter>(
+    // Read once at mount so back-navigation from EditEvent (?filter=approved)
+    // lands on the right view. Subsequent changes stay component-local.
+    () => (searchParams.get("filter") === "approved" ? "approved" : "pending"),
+  );
   const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -2399,7 +2403,7 @@ function StagedEventCard({
                       <Eye className="h-3 w-3" /> Show
                     </Link>
                     <Link
-                      to={`/edit-event/${m.id}?scope=single`}
+                      to={`/edit-event/${m.id}?scope=single&from=admin`}
                       className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Edit className="h-3 w-3" /> Edit
