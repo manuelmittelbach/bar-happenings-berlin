@@ -200,17 +200,18 @@ export default function Index() {
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    if (activeEntry === "Free") result = result.filter((e) => e.entryInfo === "Free");
+    const isFree = (info: string) => info === "Free" || info === "Frei / Spende";
+    if (activeEntry === "Free") result = result.filter((e) => isFree(e.entryInfo));
     if (activeEntry === "Pay what you want") result = result.filter((e) =>
-      e.entryInfo === "Pay what you want" || e.entryInfo === "Free"
+      e.entryInfo === "Pay what you want" || isFree(e.entryInfo)
     );
     if (activeEntry === "0-5 €") result = result.filter((e) => {
-      if (e.entryInfo === "Free" || e.entryInfo === "Pay what you want") return true;
+      if (isFree(e.entryInfo) || e.entryInfo === "Pay what you want") return true;
       const n = parseEntryEuro(e.entryInfo);
       return n !== null && n <= 5;
     });
     if (activeEntry === "0-10 €") result = result.filter((e) => {
-      if (e.entryInfo === "Free" || e.entryInfo === "Pay what you want") return true;
+      if (isFree(e.entryInfo) || e.entryInfo === "Pay what you want") return true;
       const n = parseEntryEuro(e.entryInfo);
       return n !== null && n <= 10;
     });
