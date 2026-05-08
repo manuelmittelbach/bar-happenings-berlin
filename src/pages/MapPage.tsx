@@ -65,17 +65,21 @@ export default function MapPage() {
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     const isFree = (info: string) => info === "Free" || info === "Frei / Spende";
+    // Free-text variants like "Die Band sammelt am Ende" count as
+    // pay-what-you-want — collected donation, no fixed price.
+    const isPayWhatYouWant = (info: string) =>
+      info === "Pay what you want" || info.toLowerCase().includes("die band sammelt");
     if (activeEntry === "Free") result = result.filter((e) => isFree(e.entryInfo));
     if (activeEntry === "Pay what you want") result = result.filter((e) =>
-      e.entryInfo === "Pay what you want" || isFree(e.entryInfo)
+      isPayWhatYouWant(e.entryInfo) || isFree(e.entryInfo)
     );
     if (activeEntry === "0-5 €") result = result.filter((e) => {
-      if (isFree(e.entryInfo) || e.entryInfo === "Pay what you want") return true;
+      if (isFree(e.entryInfo) || isPayWhatYouWant(e.entryInfo)) return true;
       const n = parseEntryEuro(e.entryInfo);
       return n !== null && n <= 5;
     });
     if (activeEntry === "0-10 €") result = result.filter((e) => {
-      if (isFree(e.entryInfo) || e.entryInfo === "Pay what you want") return true;
+      if (isFree(e.entryInfo) || isPayWhatYouWant(e.entryInfo)) return true;
       const n = parseEntryEuro(e.entryInfo);
       return n !== null && n <= 10;
     });
