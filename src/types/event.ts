@@ -82,11 +82,12 @@ export interface StagedEvent {
   // eventToAdminStaged. Real staging rows don't track interest, so this is 0.
   interestedCount?: number;
   // Approved-only: future-only siblings of the same series, sorted ascending,
-  // so the admin live preview can render the "Upcoming events in this bar"
-  // accordion. The events table doesn't store recurrence_until, so we can't
-  // derive these on the fly via generateOccurrences — they come straight
-  // from sibling rows in fetchApprovedEvents.
-  approvedSiblingDates?: string[];
+  // so the admin can expand the recurring card and act on each occurrence
+  // individually (show / edit / cancel). The events table doesn't store
+  // recurrence_until, so we can't derive these on the fly via
+  // generateOccurrences — they come straight from sibling rows in
+  // fetchApprovedEvents. Includes the current row itself.
+  approvedSiblings?: { id: string; date: string }[];
 }
 
 export interface StagedEventEdits {

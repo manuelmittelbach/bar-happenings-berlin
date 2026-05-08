@@ -1059,7 +1059,7 @@ export async function fetchStagedEventCount(
 // post-hoc via generateOccurrences.
 export interface ApprovedEventListItem {
   event: BarlinEvent;
-  siblingDates: string[];
+  siblings: { id: string; date: string }[];
 }
 
 export async function fetchApprovedEvents(
@@ -1083,11 +1083,16 @@ export async function fetchApprovedEvents(
   // parent's uuid (children reference it via parent_id; the parent — if still
   // alive — has parent_id='' and uses its own id as the key).
   const byKey = new Map<string, Tables<"events">>();
-  // All future dates per series (deduped, sorted) — used by the admin preview.
-  const datesByKey = new Map<string, Set<string>>();
+  // All future occurrences per series, with id+date so the admin can act on
+  // each one individually (open / edit / cancel).
+  const siblingsByKey = new Map<string, { id: string; date: string }[]>();
   for (const row of data) {
     const seriesKey = row.parent_id || row.id;
-    if (row.date) (datesByKey.get(seriesKey) ?? datesByKey.set(seriesKey, new Set()).get(seriesKey)!).add(row.date);
+    if (row.date) {
+      const list = siblingsByKey.get(seriesKey) ?? [];
+      list.push({ id: row.id, date: row.date });
+      siblingsByKey.set(seriesKey, list);
+    }
     const existing = byKey.get(seriesKey);
     if (!existing) {
       byKey.set(seriesKey, row);
@@ -1111,8 +1116,10 @@ export async function fetchApprovedEvents(
     .filter(matchesScope)
     .map((row): ApprovedEventListItem => {
       const seriesKey = row.parent_id || row.id;
-      const dates = Array.from(datesByKey.get(seriesKey) ?? []).sort();
-      return { event: mapEventRow(row), siblingDates: dates };
+      const siblings = (siblingsByKey.get(seriesKey) ?? []).slice().sort(
+        (a, b) => a.date.localeCompare(b.date),
+      );
+      return { event: mapEventRow(row), siblings };
     })
     .sort((a, b) =>
       a.event.venue.localeCompare(b.event.venue, "de", { sensitivity: "base" })
