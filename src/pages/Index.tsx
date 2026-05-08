@@ -200,11 +200,14 @@ export default function Index() {
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    const isFree = (info: string) => info === "Free" || info === "Frei / Spende";
-    // Free-text variants like "Die Band sammelt am Ende" count as
-    // pay-what-you-want — collected donation, no fixed price.
+    const isFree = (info: string) => info === "Free";
+    // "Frei / Spende" implies a collected donation — semantically the same
+    // intent as "Pay what you want", so we group it here, not under Free.
+    // Free-text variants like "Die Band sammelt am Ende" land here too.
     const isPayWhatYouWant = (info: string) =>
-      info === "Pay what you want" || info.toLowerCase().includes("die band sammelt");
+      info === "Pay what you want"
+      || info === "Frei / Spende"
+      || info.toLowerCase().includes("die band sammelt");
     if (activeEntry === "Free") result = result.filter((e) => isFree(e.entryInfo));
     if (activeEntry === "Pay what you want") result = result.filter((e) =>
       isPayWhatYouWant(e.entryInfo) || isFree(e.entryInfo)
