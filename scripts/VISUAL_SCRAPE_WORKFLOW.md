@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-07 -->
+<!-- last-updated: 2026-05-08 -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -190,7 +190,7 @@ events = [
     "start_time": "HH:MM",   # or None
     "end_time": "HH:MM",     # or None
     "doors_time": "HH:MM",   # or None
-    "category": "live-music",  # slug-id or None
+    "category": "Live Music",  # label from category table, or None
     "language": "English",   # or None
     "description": "verbatim page text",  # or None
     "entry_info": "5 €",     # or None
@@ -272,23 +272,22 @@ parse accordingly. Today's date and the 14-day window come from the system.
   doors / admission / Einlass time. Do NOT copy `start_time` into it.
 
 ### `category`
-Must be one of these slug-IDs (NOT the labels — the labels are for the LLM /
-human, slug-IDs are what the database expects):
+Use one of these labels (the importer maps them to internal IDs):
 
-| Label  | Slug-ID         |
-|--------|-----------------|
-| Live Music | `live-music`     |
-| Open Mic | `open-mic`      |
-| Comedy | `comedy`        |
-| DJ | `dj-music`     |
-| Quiz | `pub-quiz`      |
-| Karaoke | `karaoke`      |
-| Drag | `drag-cabaret`  |
-| Screening | `screening`    |
-| Dating | `singles`      |
-| Other | `other`        |
+| Label       |
+|-------------|
+| Live Music  |
+| Open Mic    |
+| Comedy      |
+| DJ          |
+| Quiz        |
+| Karaoke     |
+| Drag        |
+| Screening   |
+| Dating      |
+| Other       |
 
-Default to `other`. Only use a non-`other` slug if the event title or description EXPLICITLY and unambiguously names that format (e.g. "Live Jazz Band" → `live-music`, "Stand-up Comedy Night" → `comedy`, "DJ Set" → `dj-music`). If there is any doubt, use `other`. Never use the label string ("Live Music") — the importer will fall back to `other` if the slug doesn't match, but it's better to set it correctly.
+Default to `Other`. Only use a non-`Other` label if the event title or description EXPLICITLY and unambiguously names that format (e.g. "Live Jazz Band" → `Live Music`, "Stand-up Comedy Night" → `Comedy`, "DJ Set" → `DJ`). If there is any doubt, use `Other`.
 
 ### `language`
 The language of the event itself, NOT the language of the website. Strong
@@ -395,7 +394,7 @@ as fallback.
 - 14-day window: `[today, today + 14 days]` inclusive
 - Title-based dedup against `staged_keys_by_venue` (existing pending staging)
 - All staging rows: `is_manual=false`
-- All categories: slug-ID format (lowercase, kebab-case)
+- All categories: label from the table above (`Live Music`, `DJ`, ...)
 - Never invent: titles, dates, times, descriptions, URLs
 - Don't write directly to the database with raw SQL — use the importer script
   so normalization stays consistent with the auto-scraper
@@ -413,7 +412,7 @@ The batch only contains one venue's events, so this is a quick check.
 
 - Every event has a real `source_url` (paste a few into the address bar
   mentally and check they look like detail-page URLs)
-- Every `category` is a slug-ID (`live-music`, not `Live Music`)
+- Every `category` is one of the labels in the table (`Live Music`, `DJ`, etc.)
 - Every `date` is in `[today, today + 14 days]`
 - No truncation marker (`…`, `weiterlesen`, `read more`) in any description
 
