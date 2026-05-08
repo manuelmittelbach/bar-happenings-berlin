@@ -202,6 +202,8 @@ export default function EditEvent() {
           to={
             fromParam === "admin"
               ? "/admin?tab=recurring&filter=approved"
+              : fromParam === "admin-all-bars"
+              ? "/admin?tab=all-bars"
               : isAdmin
               ? `/event/${id}`
               : "/dashboard"
