@@ -778,6 +778,24 @@ export default function AdminDashboard() {
     }
   };
 
+  // Single-row delete used by the All Bars per-bar events list. Always passes
+  // seriesId=null so deleting a series child only drops that occurrence — the
+  // rest of the series keeps running. The richer handleDeleteApproved (above)
+  // is for the staged-card flow where wiping the whole series is the intent.
+  const handleDeleteApprovedSingle = async (eventId: string) => {
+    if (!window.confirm("Delete this event? Only this occurrence is removed.")) return;
+    try {
+      await deleteApprovedEvent(eventId, null);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success("Event deleted");
+      loadLiveEvents();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete event.";
+      toast.error(message);
+    }
+  };
+
   const handleCancelOccurrence = async (staged: StagedEvent) => {
     // Cancels just this one date of a series. Index.tsx already filters
     // canceled events to only show on today/tomorrow — so distant cancellations
@@ -1105,8 +1123,10 @@ export default function AdminDashboard() {
                           key={venue.id}
                           venue={venue}
                           hasOwner={hasOwner}
+                          events={(liveEventsByVenue[venue.id] ?? []).filter(e => e.status === "approved")}
                           onToggleScrapeEnabled={handleToggleScrapeEnabled}
                           onLinkChange={handleVenueLinkChange}
+                          onDeleteEvent={handleDeleteApprovedSingle}
                         />
                       ))
                     )}
@@ -1122,21 +1142,26 @@ export default function AdminDashboard() {
 function BarCard({
   venue,
   hasOwner,
+  events,
   onToggleScrapeEnabled,
   onLinkChange,
+  onDeleteEvent,
 }: {
   venue: Venue;
   hasOwner: boolean;
+  events: LiveEventInfo[];
   onToggleScrapeEnabled: (venueId: string, next: boolean) => void;
   onLinkChange: (
     venueId: string,
     patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
   ) => Promise<void>;
+  onDeleteEvent: (eventId: string) => Promise<void>;
 }) {
   const [website, setWebsite] = useState(venue.website ?? "");
   const [instagram, setInstagram] = useState(venue.instagram ?? "");
   const [websiteEvents, setWebsiteEvents] = useState(venue.websiteEvents ?? "");
   const [saving, setSaving] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
 
   useEffect(() => { setWebsite(venue.website ?? ""); }, [venue.website]);
   useEffect(() => { setInstagram(venue.instagram ?? ""); }, [venue.instagram]);
@@ -1169,7 +1194,8 @@ function BarCard({
     : null;
 
   return (
-    <div className="border border-border rounded-sm p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+    <div className="border border-border rounded-sm">
+    <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-heading text-sm font-semibold">{venue.name}</p>
@@ -1251,7 +1277,7 @@ function BarCard({
           </div>
         </div>
       </div>
-      <div className="flex gap-2 flex-shrink-0">
+      <div className="flex gap-2 flex-shrink-0 flex-wrap">
         {dirty && (
           <button
             type="button"
@@ -1262,6 +1288,15 @@ function BarCard({
             {saving ? "Saving…" : "Save"}
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setShowEvents(v => !v)}
+          aria-expanded={showEvents}
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border border-border hover:bg-muted transition-colors"
+        >
+          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${showEvents ? "rotate-180" : ""}`} />
+          {showEvents ? "Hide events" : `Events (${events.length})`}
+        </button>
         <button
           type="button"
           onClick={() => onToggleScrapeEnabled(venue.id, !venue.scrapeEnabled)}
@@ -1276,6 +1311,50 @@ function BarCard({
           Scraping: {venue.scrapeEnabled ? "yes" : "no"}
         </button>
       </div>
+    </div>
+    {showEvents && (
+      <div className="border-t border-border p-4">
+        {events.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No upcoming events.</p>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {events.map((e) => (
+              <div
+                key={e.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-1.5"
+              >
+                <span className="text-muted-foreground flex-1 min-w-0 truncate">
+                  {formatDateWithDay(e.date)}{e.startTime ? ` · ${e.startTime}` : ""} — {e.title}
+                </span>
+                <div className="flex gap-3 sm:justify-end flex-shrink-0">
+                  <Link
+                    to={`/event/${e.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Eye className="h-3 w-3" /> Show
+                  </Link>
+                  <Link
+                    to={`/edit-event/${e.id}?scope=single&from=admin-all-bars`}
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Edit className="h-3 w-3" /> Edit
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteEvent(e.id)}
+                    className="inline-flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
     </div>
   );
 }
