@@ -51,11 +51,11 @@ import EventDiffModal from "@/components/admin/EventDiffModal";
 // Approved events live in the `events` table. To keep the existing card UI
 // working, adapt them to the StagedEvent shape used by StagedEventCard.
 // `status: "approved"` is the virtual marker — staging never stores that.
-// siblingDates come from fetchApprovedEvents (sibling rows in `events`); they
+// siblings come from fetchApprovedEvents (sibling rows in `events`); they
 // can't be derived from the row alone because recurrence_until isn't stored
 // post-approval.
 function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
-  const { event, siblingDates } = item;
+  const { event, siblings } = item;
   return {
     id: event.id,
     parentId: event.parentId,
@@ -81,7 +81,7 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     recurrenceUntil: null,
     replacesEventId: null,
     interestedCount: event.interestedCount,
-    approvedSiblingDates: siblingDates,
+    approvedSiblings: siblings,
   };
 }
 
@@ -1552,7 +1552,7 @@ function StagedEventCard({
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: () => Promise<void>;
-  onCancelOccurrence?: () => Promise<void>;
+  onCancelOccurrence?: (sibling?: { id: string; date: string }) => Promise<void>;
   onUpdateApplied?: () => void;
 }) {
   const { data: categoriesData = [] } = useCategories();
@@ -1579,6 +1579,7 @@ function StagedEventCard({
   const [submitting, setSubmitting] = useState(false);
   const [confirmingClash, setConfirmingClash] = useState(false);
   const [confirmingNoStartTime, setConfirmingNoStartTime] = useState(false);
+  const [datesExpanded, setDatesExpanded] = useState(false);
 
   // Re-sync local state when the underlying staged row changes from outside
   // (e.g., after a save the parent updates the list — without this the
@@ -2312,55 +2313,108 @@ function StagedEventCard({
       )}
 
       {isApproved && (
-        <div className="flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => window.open(`/event/${staged.id}`, "_blank")}
-              className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
-            >
-              <ExternalLink className="h-3 w-3" /> Show event
-            </button>
-            {onCancelOccurrence && (
+        <>
+          <div className="flex items-center justify-between gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-wrap">
               <button
-                onClick={onCancelOccurrence}
-                disabled={submitting}
-                title="Cancel just this date — the rest of the series continues"
-                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                type="button"
+                onClick={() => window.open(`/event/${staged.id}`, "_blank")}
+                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
               >
-                <Ban className="h-3 w-3" /> Cancel date
+                <ExternalLink className="h-3 w-3" /> Show event
               </button>
-            )}
-            {onDeleteApproved && (
-              <button
-                onClick={onDeleteApproved}
-                disabled={submitting}
-                title="Delete this event from the site"
-                className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
-              >
-                <Trash2 className="h-3 w-3" /> Delete
-              </button>
+              {onCancelOccurrence && (
+                <button
+                  onClick={() => onCancelOccurrence()}
+                  disabled={submitting}
+                  title="Cancel just this date — the rest of the series continues"
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <Ban className="h-3 w-3" /> Cancel date
+                </button>
+              )}
+              {onDeleteApproved && (
+                <button
+                  onClick={onDeleteApproved}
+                  disabled={submitting}
+                  title="Delete this event from the site"
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </button>
+              )}
+              {staged.approvedSiblings && staged.approvedSiblings.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setDatesExpanded((v) => !v)}
+                  aria-expanded={datesExpanded}
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+                >
+                  <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${datesExpanded ? "rotate-180" : ""}`} />
+                  {datesExpanded ? "Hide dates" : `All ${staged.approvedSiblings.length} dates`}
+                </button>
+              )}
+            </div>
+            {canEdit && isDirty && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelApprovedClick}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  <X className="h-3 w-3" /> Cancel
+                </button>
+                <button
+                  onClick={handleSaveApprovedClick}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check className="h-3 w-3" /> {submitting ? "Saving…" : "Save changes"}
+                </button>
+              </div>
             )}
           </div>
-          {canEdit && isDirty && (
-            <div className="flex gap-2">
-              <button
-                onClick={handleCancelApprovedClick}
-                disabled={submitting}
-                className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
-              >
-                <X className="h-3 w-3" /> Cancel
-              </button>
-              <button
-                onClick={handleSaveApprovedClick}
-                disabled={submitting}
-                className="inline-flex items-center gap-1 h-8 px-3 bg-foreground text-background rounded-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-3 w-3" /> {submitting ? "Saving…" : "Save changes"}
-              </button>
+          {datesExpanded && staged.approvedSiblings && staged.approvedSiblings.length > 1 && (
+            <div className="mt-2 pt-2 border-t border-border divide-y divide-border/50">
+              {staged.approvedSiblings.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-2 px-2 -mx-2 rounded-sm hover:bg-muted/50"
+                >
+                  <span className="text-muted-foreground flex-1 min-w-0">
+                    {formatDateWithDay(m.date)}
+                  </span>
+                  <div className="flex gap-3 sm:justify-end flex-shrink-0">
+                    <Link
+                      to={`/event/${m.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Eye className="h-3 w-3" /> Show
+                    </Link>
+                    <Link
+                      to={`/edit-event/${m.id}?scope=single`}
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Edit className="h-3 w-3" /> Edit
+                    </Link>
+                    {onCancelOccurrence && (
+                      <button
+                        type="button"
+                        onClick={() => onCancelOccurrence({ id: m.id, date: m.date })}
+                        disabled={submitting}
+                        className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                      >
+                        <Ban className="h-3 w-3" /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {diffOpen && diffLiveEvent && (
@@ -2516,7 +2570,16 @@ function StagedEventsList({
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
               onDeleteApproved={onDeleteApproved ? () => onDeleteApproved(staged) : undefined}
-              onCancelOccurrence={onCancelOccurrence ? () => onCancelOccurrence(staged) : undefined}
+              onCancelOccurrence={
+                onCancelOccurrence
+                  ? (sibling?: { id: string; date: string }) =>
+                      onCancelOccurrence(
+                        sibling
+                          ? { ...staged, id: sibling.id, date: sibling.date }
+                          : staged,
+                      )
+                  : undefined
+              }
               onUpdateApplied={onUpdateApplied}
             />
           );
