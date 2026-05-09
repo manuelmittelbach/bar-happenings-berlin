@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyEvents } from "@/hooks/useEvents";
 import EventCard from "@/components/events/EventCard";
-import { Spinner } from "@/components/ui/spinner";
+import MyEventsSkeleton, { MyEventsListSkeleton } from "@/components/skeletons/MyEventsSkeleton";
 import type { BarlinEvent } from "@/types/event";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
@@ -81,11 +81,7 @@ export default function MyEvents() {
 		.slice(0, 10);
 
 	if (loading) {
-		return (
-			<div className="flex-1 flex items-center justify-center bg-background">
-				<Spinner />
-			</div>
-		);
+		return <MyEventsSkeleton />;
 	}
 
 	if (!user) {
@@ -116,7 +112,7 @@ export default function MyEvents() {
 				</div>
 
 				{eventsLoading ? (
-					<p className="text-sm text-muted-foreground">Loading your events…</p>
+					<MyEventsListSkeleton />
 				) : !hasAnyEvents && pastEvents.length === 0 ? (
 					<div className="flex flex-col items-center py-16 gap-4 text-center">
 						<p className="font-body font-bold">Nothing saved yet</p>
