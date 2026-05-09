@@ -105,3 +105,17 @@ registerRoute(
     ],
   }),
 );
+
+// OpenFreeMap raster/vector tiles + style JSON. CacheFirst because tiles are
+// effectively immutable for our 30-day window and we'd rather show slightly
+// stale street labels than a slow Map page.
+registerRoute(
+  ({ url }) => url.host === "tiles.openfreemap.org",
+  new CacheFirst({
+    cacheName: "openfreemap-tiles",
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxAgeSeconds: 30 * 24 * 60 * 60, maxEntries: 300 }),
+    ],
+  }),
+);
