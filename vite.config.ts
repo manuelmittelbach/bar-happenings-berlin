@@ -16,6 +16,12 @@ export default defineConfig(() => ({
     react(),
     VitePWA({
       registerType: "prompt",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+      },
       includeAssets: ["favicon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "Inside·Bars",
@@ -30,83 +36,6 @@ export default defineConfig(() => ({
           { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
           { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
           { src: "maskable-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        ],
-      },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        // Take control of existing pages immediately so runtime caching
-        // engages on the first visit, not just after a reload.
-        clientsClaim: true,
-        skipWaiting: true,
-        // Order matters: more specific patterns first.
-        // Anything not listed here is NetworkOnly by default — auth, realtime,
-        // pending_*, scrape_logs, venue_owners all stay uncached.
-        runtimeCaching: [
-          {
-            urlPattern: /\/rest\/v1\/events_archive/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-events-archive",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 24 * 60 * 60, maxEntries: 50 },
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/events(\?|$)/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-events",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 5 * 60, maxEntries: 50 },
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/venues/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-venues",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 30 * 60, maxEntries: 20 },
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/categories/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-categories",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 24 * 60 * 60, maxEntries: 5 },
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/profiles/,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-profiles",
-              networkTimeoutSeconds: 5,
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 5 * 60, maxEntries: 20 },
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/user_interests/,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-user-interests",
-              networkTimeoutSeconds: 5,
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 5 * 60, maxEntries: 50 },
-            },
-          },
-          {
-            urlPattern: /\/storage\/v1\/object\/public\//,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "supabase-storage",
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxAgeSeconds: 7 * 24 * 60 * 60, maxEntries: 100 },
-            },
-          },
         ],
       },
     }),
