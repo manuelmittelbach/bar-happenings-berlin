@@ -19,6 +19,19 @@ function isIdempotent(method: string): boolean {
   return m === "GET" || m === "HEAD";
 }
 
+// Per-request timing/error breadcrumbs. Useful in dev/preview, noise in prod —
+// gate behind import.meta.env.DEV so Vite tree-shakes the calls out of the
+// production bundle. Set localStorage["supa-debug"] = "1" to opt back in.
+const DEBUG_TIMING =
+  import.meta.env.DEV ||
+  (typeof localStorage !== "undefined" && localStorage.getItem("supa-debug") === "1");
+const debugLog = (msg: string) => {
+  if (DEBUG_TIMING) {
+    // eslint-disable-next-line no-console
+    console.log(msg);
+  }
+};
+
 const timedFetch: typeof fetch = async (input, init) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
@@ -47,20 +60,17 @@ const timedFetch: typeof fetch = async (input, init) => {
       const ttfb = Math.round(performance.now() - t0);
       const tag = ttfb >= 2000 ? "🐢" : ttfb >= 500 ? "⚠️" : "✓";
       const note = attempt > 1 ? ` (retry ${attempt})` : "";
-      // eslint-disable-next-line no-console
-      console.log(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}${note}`);
+      debugLog(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}${note}`);
       return response;
     } catch (err) {
       lastError = err;
       const ttfb = Math.round(performance.now() - t0);
-      if (timedOut && canRetry && attempt < maxAttempts) {
-        // eslint-disable-next-line no-console
-        console.log(`[supabase] ⏱ ${method} TIMEOUT ${ttfb}ms ${short} — retrying`);
+      if (timedOut && canRetry && attempt < maxAttempts && !userSignal?.aborted) {
+        debugLog(`[supabase] ⏱ ${method} TIMEOUT ${ttfb}ms ${short} — retrying`);
         continue;
       }
       const reason = timedOut ? "TIMEOUT" : userSignal?.aborted ? "ABORT" : "FAIL";
-      // eslint-disable-next-line no-console
-      console.log(`[supabase] ✗ ${method} ${reason} ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
+      debugLog(`[supabase] ✗ ${method} ${reason} ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
       throw err;
     } finally {
       clearTimeout(timeoutId);
