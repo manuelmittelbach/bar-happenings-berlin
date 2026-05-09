@@ -28,6 +28,9 @@ dist-ssr
 .playwright-mcp/
 test*.png
 
+# Local design mockups / screenshots that shouldn't end up in the repo
+/hero-*.png
+
 # Standalone sub-project (separate scraping tooling)
 Tipsy Tiger/
 
