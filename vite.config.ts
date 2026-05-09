@@ -24,8 +24,8 @@ export default defineConfig(() => ({
       },
       includeAssets: ["favicon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
-        name: "Inside·Bars",
-        short_name: "Inside·Bars",
+        name: "Inside Bars",
+        short_name: "Inside Bars",
         description: "Discover bar events in Berlin",
         theme_color: "#0F0F0F",
         background_color: "#FFFFFF",
