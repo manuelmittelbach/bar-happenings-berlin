@@ -36,9 +36,30 @@ const timedFetch: typeof fetch = async (input, init) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
   const short = url.replace(SUPABASE_URL, "").slice(0, 120);
-  const userSignal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
   const canRetry = isIdempotent(method);
-  const maxAttempts = canRetry ? 2 : 1;
+
+  // Non-idempotent requests (signup, profile update, event publish, …) cannot
+  // safely be retried — aborting after 6s would leave the server having
+  // already processed the request while the client thinks it failed. So we
+  // skip the timeout entirely and let the browser's own (~60-120s) timeout
+  // be the upper bound.
+  if (!canRetry) {
+    const t0 = performance.now();
+    try {
+      const response = await fetch(input, init);
+      const ttfb = Math.round(performance.now() - t0);
+      const tag = ttfb >= 2000 ? "🐢" : ttfb >= 500 ? "⚠️" : "✓";
+      debugLog(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}`);
+      return response;
+    } catch (err) {
+      const ttfb = Math.round(performance.now() - t0);
+      debugLog(`[supabase] ✗ ${method} FAIL ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
+      throw err;
+    }
+  }
+
+  const userSignal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+  const maxAttempts = 2;
 
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -65,7 +86,7 @@ const timedFetch: typeof fetch = async (input, init) => {
     } catch (err) {
       lastError = err;
       const ttfb = Math.round(performance.now() - t0);
-      if (timedOut && canRetry && attempt < maxAttempts && !userSignal?.aborted) {
+      if (timedOut && attempt < maxAttempts && !userSignal?.aborted) {
         debugLog(`[supabase] ⏱ ${method} TIMEOUT ${ttfb}ms ${short} — retrying`);
         continue;
       }
