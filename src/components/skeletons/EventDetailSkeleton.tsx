@@ -1,7 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowConnectionHint } from "@/components/ui/slow-connection-hint";
+import { useDelayedShow } from "@/hooks/useDelayedShow";
 
 export default function EventDetailSkeleton() {
+  const show = useDelayedShow(100);
+  if (!show) return null;
   return (
     <div className="bg-background pb-24" aria-busy="true" aria-live="polite">
       <div className="max-w-screen-md mx-auto">

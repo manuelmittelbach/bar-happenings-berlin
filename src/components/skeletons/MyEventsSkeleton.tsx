@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowConnectionHint } from "@/components/ui/slow-connection-hint";
+import { useDelayedShow } from "@/hooks/useDelayedShow";
 
 function EventCardRowSkeleton() {
   return (
@@ -28,6 +29,8 @@ function DateSectionSkeleton() {
 }
 
 export function MyEventsListSkeleton() {
+  const show = useDelayedShow(100);
+  if (!show) return null;
   return (
     <div className="space-y-8" aria-busy="true" aria-live="polite">
       <DateSectionSkeleton />
@@ -40,6 +43,8 @@ export function MyEventsListSkeleton() {
 }
 
 export default function MyEventsSkeleton() {
+  const show = useDelayedShow(100);
+  if (!show) return null;
   return (
     <div className="bg-background pb-24" aria-busy="true" aria-live="polite">
       <div className="max-w-screen-sm mx-auto px-4 pt-6">

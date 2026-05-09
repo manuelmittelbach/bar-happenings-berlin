@@ -1,7 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowConnectionHint } from "@/components/ui/slow-connection-hint";
+import { useDelayedShow } from "@/hooks/useDelayedShow";
 
 export default function ProfileSkeleton() {
+  const show = useDelayedShow(100);
+  if (!show) return null;
   return (
     <div
       className="container max-w-2xl py-10 md:py-14"
