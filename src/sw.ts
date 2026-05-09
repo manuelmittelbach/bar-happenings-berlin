@@ -17,31 +17,36 @@ self.addEventListener("activate", () => {
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
+// Bridge SW console logs to all controlled pages so we can see them in the
+// page DevTools console, not just the SW's own (separate) console.
+async function broadcast(msg: string) {
+  const clients = await self.clients.matchAll({ includeUncontrolled: true });
+  for (const client of clients) client.postMessage({ type: "sw-log", msg });
+  // eslint-disable-next-line no-console
+  console.log(msg);
+}
+
 // Visibility into what the SW actually sees so we can finally diagnose why
-// runtime caching wasn't populating with generateSW. Logs are scoped to
-// supabase.co URLs so we don't drown in noise from the app shell.
+// runtime caching wasn't populating. Logs are scoped to supabase.co URLs so
+// we don't drown in noise from the app shell.
 self.addEventListener("fetch", (event) => {
   const u = event.request.url;
   if (u.includes("supabase.co")) {
-    // eslint-disable-next-line no-console
-    console.log(`[sw-fetch] ${event.request.method} ${u.slice(0, 110)}`);
+    void broadcast(`[sw-fetch] ${event.request.method} ${u.slice(0, 110)}`);
   }
 });
 
 const debugPlugin = {
   cacheWillUpdate: async ({ request, response }: { request: Request; response: Response }) => {
     const u = request.url.slice(0, 90);
-    // eslint-disable-next-line no-console
-    console.log(`[sw-cacheWillUpdate] ${response.status} ${response.type} vary=${response.headers.get("vary") ?? "—"} ${u}`);
+    void broadcast(`[sw-cacheWillUpdate] ${response.status} ${response.type} vary=${response.headers.get("vary") ?? "—"} ${u}`);
     return response;
   },
   cacheDidUpdate: async ({ cacheName, request }: { cacheName: string; request: Request }) => {
-    // eslint-disable-next-line no-console
-    console.log(`[sw-cacheDidUpdate] ${cacheName} ← ${request.url.slice(0, 90)}`);
+    void broadcast(`[sw-cacheDidUpdate] ${cacheName} ← ${request.url.slice(0, 90)}`);
   },
   fetchDidFail: async ({ request, error }: { request: Request; error: Error }) => {
-    // eslint-disable-next-line no-console
-    console.log(`[sw-fetchDidFail] ${request.url.slice(0, 90)} — ${error.message}`);
+    void broadcast(`[sw-fetchDidFail] ${request.url.slice(0, 90)} — ${error.message}`);
   },
 };
 
