@@ -8,25 +8,67 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Time after which we abort a request and try again on a fresh connection.
+// 6s bisects the typical 12s TCP-retransmission spike caused by HTTP/2
+// head-of-line blocking on Safari — the retry usually picks up a healthy
+// connection and finishes faster than waiting out the original.
+const REQUEST_TIMEOUT_MS = 6000;
+
+function isIdempotent(method: string): boolean {
+  const m = method.toUpperCase();
+  return m === "GET" || m === "HEAD";
+}
+
 const timedFetch: typeof fetch = async (input, init) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-  const method = init?.method ?? (input instanceof Request ? input.method : "GET");
-  const t0 = performance.now();
-  try {
-    const response = await fetch(input, init);
-    const ttfb = Math.round(performance.now() - t0);
-    const short = url.replace(SUPABASE_URL, "").slice(0, 120);
-    const tag = ttfb >= 2000 ? "🐢" : ttfb >= 500 ? "⚠️" : "✓";
-    // eslint-disable-next-line no-console
-    console.log(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}`);
-    return response;
-  } catch (err) {
-    const ttfb = Math.round(performance.now() - t0);
-    const short = url.replace(SUPABASE_URL, "").slice(0, 120);
-    // eslint-disable-next-line no-console
-    console.log(`[supabase] ✗ ${method} FAIL ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
-    throw err;
+  const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+  const short = url.replace(SUPABASE_URL, "").slice(0, 120);
+  const userSignal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+  const canRetry = isIdempotent(method);
+  const maxAttempts = canRetry ? 2 : 1;
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const t0 = performance.now();
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+    const onUserAbort = () => controller.abort();
+    if (userSignal) {
+      if (userSignal.aborted) controller.abort();
+      else userSignal.addEventListener("abort", onUserAbort);
+    }
+
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      const ttfb = Math.round(performance.now() - t0);
+      const tag = ttfb >= 2000 ? "🐢" : ttfb >= 500 ? "⚠️" : "✓";
+      const note = attempt > 1 ? ` (retry ${attempt})` : "";
+      // eslint-disable-next-line no-console
+      console.log(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}${note}`);
+      return response;
+    } catch (err) {
+      lastError = err;
+      const ttfb = Math.round(performance.now() - t0);
+      if (timedOut && canRetry && attempt < maxAttempts) {
+        // eslint-disable-next-line no-console
+        console.log(`[supabase] ⏱ ${method} TIMEOUT ${ttfb}ms ${short} — retrying`);
+        continue;
+      }
+      const reason = timedOut ? "TIMEOUT" : userSignal?.aborted ? "ABORT" : "FAIL";
+      // eslint-disable-next-line no-console
+      console.log(`[supabase] ✗ ${method} ${reason} ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+      if (userSignal) userSignal.removeEventListener("abort", onUserAbort);
+    }
   }
+
+  throw lastError;
 };
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
