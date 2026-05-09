@@ -28,5 +28,19 @@ export function UpdatePrompt() {
     });
   }, [needRefresh, updateServiceWorker]);
 
+  // Bridge SW debug logs into the page console while we diagnose runtime
+  // cache behavior. Remove once caching is verified working.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "sw-log") {
+        // eslint-disable-next-line no-console
+        console.log(event.data.msg);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, []);
+
   return null;
 }
