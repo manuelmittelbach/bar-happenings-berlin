@@ -157,7 +157,24 @@ export default function Login() {
 	const remaining = lockedUntil ? lockedUntil - now : 0;
 	const isLocked = isLogin && !isForgotPassword && remaining > 0;
 
-	function friendlyError(msg: string): string {
+	function isNetworkError(msg: string): boolean {
+		const m = msg.toLowerCase();
+		return (
+			m.includes("load failed") ||
+			m.includes("failed to fetch") ||
+			m.includes("networkerror") ||
+			m.includes("network request failed") ||
+			m.includes("network error")
+		);
+	}
+
+	function friendlyError(msg: string, mode: "signin" | "signup" | "reset"): string {
+		if (isNetworkError(msg)) {
+			if (mode === "signup") {
+				return "Couldn't reach our servers. Your account may still have been created — check your email for a confirmation link. If nothing arrives in a minute, please try again.";
+			}
+			return "Couldn't reach our servers. Please check your internet connection and try again.";
+		}
 		if (msg.includes("User already registered") || msg.includes("already been registered"))
 			return "This email address is already in use.";
 		if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials"))
@@ -235,7 +252,8 @@ export default function Login() {
 					writeLockout(email, { failures, lockedUntil: null });
 				}
 			}
-			setError(friendlyError(message));
+			const mode: "signin" | "signup" | "reset" = isForgotPassword ? "reset" : isLogin ? "signin" : "signup";
+			setError(friendlyError(message, mode));
 		} finally {
 			setLoading(false);
 		}
