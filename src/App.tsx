@@ -139,6 +139,7 @@ import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/layout/Layout";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,6 +154,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <UpdatePrompt />
       <BrowserRouter>
         <ScrollManager />
         <AuthCallbackGate>

@@ -160,6 +160,14 @@ export function useAuth() {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    // Clear user-specific service-worker caches so the next signed-in user
+    // doesn't see stale rows from the previous session.
+    if (typeof caches !== "undefined") {
+      await Promise.all([
+        caches.delete("supabase-profiles"),
+        caches.delete("supabase-user-interests"),
+      ]);
+    }
   };
 
   const resetPassword = async (email: string) => {
