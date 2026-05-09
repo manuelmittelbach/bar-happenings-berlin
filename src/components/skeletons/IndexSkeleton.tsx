@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowConnectionHint } from "@/components/ui/slow-connection-hint";
+import { useDelayedShow } from "@/hooks/useDelayedShow";
 
 function EventCardSkeleton() {
   return (
@@ -33,6 +34,8 @@ function DateSectionSkeleton({ count = 4 }: { count?: number }) {
 }
 
 export default function IndexSkeleton() {
+  const show = useDelayedShow(100);
+  if (!show) return null;
   return (
     <section className="bg-background" aria-busy="true" aria-live="polite">
       <div className="container py-8 space-y-12">
