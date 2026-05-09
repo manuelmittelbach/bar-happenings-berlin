@@ -6,10 +6,10 @@ import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueri
 import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 import { berlinDateString } from "@/lib/dateFormat";
 import EventDetailView from "@/components/events/EventDetailView";
+import EventDetailSkeleton from "@/components/skeletons/EventDetailSkeleton";
 
 export default function EventDetail() {
 	const { id } = useParams();
@@ -87,11 +87,7 @@ export default function EventDetail() {
 	};
 
 	if (isLoading) {
-		return (
-			<div className="flex-1 flex flex-col items-center justify-center bg-background">
-				<Spinner />
-			</div>
-		);
+		return <EventDetailSkeleton />;
 	}
 
 	if (!event) {
