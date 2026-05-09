@@ -34,6 +34,10 @@ export default defineConfig(() => ({
       },
       workbox: {
         cleanupOutdatedCaches: true,
+        // Take control of existing pages immediately so runtime caching
+        // engages on the first visit, not just after a reload.
+        clientsClaim: true,
+        skipWaiting: true,
         // Order matters: more specific patterns first.
         // Anything not listed here is NetworkOnly by default — auth, realtime,
         // pending_*, scrape_logs, venue_owners all stay uncached.
@@ -43,6 +47,7 @@ export default defineConfig(() => ({
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-events-archive",
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 24 * 60 * 60, maxEntries: 50 },
             },
           },
@@ -51,6 +56,7 @@ export default defineConfig(() => ({
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-events",
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 5 * 60, maxEntries: 50 },
             },
           },
@@ -59,6 +65,7 @@ export default defineConfig(() => ({
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-venues",
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 30 * 60, maxEntries: 20 },
             },
           },
@@ -67,6 +74,7 @@ export default defineConfig(() => ({
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-categories",
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 24 * 60 * 60, maxEntries: 5 },
             },
           },
@@ -76,6 +84,7 @@ export default defineConfig(() => ({
             options: {
               cacheName: "supabase-profiles",
               networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 5 * 60, maxEntries: 20 },
             },
           },
@@ -85,6 +94,7 @@ export default defineConfig(() => ({
             options: {
               cacheName: "supabase-user-interests",
               networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 5 * 60, maxEntries: 50 },
             },
           },
@@ -93,6 +103,7 @@ export default defineConfig(() => ({
             handler: "CacheFirst",
             options: {
               cacheName: "supabase-storage",
+              cacheableResponse: { statuses: [0, 200] },
               expiration: { maxAgeSeconds: 7 * 24 * 60 * 60, maxEntries: 100 },
             },
           },
