@@ -17,44 +17,13 @@ self.addEventListener("activate", () => {
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Bridge SW console logs to all controlled pages so we can see them in the
-// page DevTools console, not just the SW's own (separate) console.
-async function broadcast(msg: string) {
-  const clients = await self.clients.matchAll({ includeUncontrolled: true });
-  for (const client of clients) client.postMessage({ type: "sw-log", msg });
-  // eslint-disable-next-line no-console
-  console.log(msg);
-}
-
-// Visibility into what the SW actually sees so we can finally diagnose why
-// runtime caching wasn't populating. Logs are scoped to supabase.co URLs so
-// we don't drown in noise from the app shell.
-self.addEventListener("fetch", (event) => {
-  const u = event.request.url;
-  if (u.includes("supabase.co")) {
-    void broadcast(`[sw-fetch] ${event.request.method} ${u.slice(0, 110)}`);
-  }
-});
-
-const debugPlugin = {
-  cacheWillUpdate: async ({ request, response }: { request: Request; response: Response }) => {
-    const u = request.url.slice(0, 90);
-    void broadcast(`[sw-cacheWillUpdate] ${response.status} ${response.type} vary=${response.headers.get("vary") ?? "—"} ${u}`);
-    return response;
-  },
-  cacheDidUpdate: async ({ cacheName, request }: { cacheName: string; request: Request }) => {
-    void broadcast(`[sw-cacheDidUpdate] ${cacheName} ← ${request.url.slice(0, 90)}`);
-  },
-  fetchDidFail: async ({ request, error }: { request: Request; error: Error }) => {
-    void broadcast(`[sw-fetchDidFail] ${request.url.slice(0, 90)} — ${error.message}`);
-  },
-};
-
 type SupabaseRouteCallback = (params: { url: URL }) => boolean;
 const matchSupabase = (pathPattern: RegExp): SupabaseRouteCallback =>
   ({ url }) => url.host.endsWith(".supabase.co") && pathPattern.test(url.pathname);
 
 // Order matters: more specific patterns first.
+// Anything not listed here is NetworkOnly by default — auth, realtime,
+// pending_*, scrape_logs, venue_owners all stay uncached.
 registerRoute(
   matchSupabase(/^\/rest\/v1\/events_archive/),
   new StaleWhileRevalidate({
@@ -62,7 +31,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 24 * 60 * 60, maxEntries: 50 }),
-      debugPlugin,
     ],
   }),
 );
@@ -74,7 +42,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 5 * 60, maxEntries: 50 }),
-      debugPlugin,
     ],
   }),
 );
@@ -86,7 +53,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 30 * 60, maxEntries: 20 }),
-      debugPlugin,
     ],
   }),
 );
@@ -98,7 +64,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 24 * 60 * 60, maxEntries: 5 }),
-      debugPlugin,
     ],
   }),
 );
@@ -111,7 +76,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 5 * 60, maxEntries: 20 }),
-      debugPlugin,
     ],
   }),
 );
@@ -124,7 +88,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 5 * 60, maxEntries: 50 }),
-      debugPlugin,
     ],
   }),
 );
@@ -136,7 +99,6 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxAgeSeconds: 7 * 24 * 60 * 60, maxEntries: 100 }),
-      debugPlugin,
     ],
   }),
 );
