@@ -8,10 +8,32 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+const timedFetch: typeof fetch = async (input, init) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  const method = init?.method ?? (input instanceof Request ? input.method : "GET");
+  const t0 = performance.now();
+  try {
+    const response = await fetch(input, init);
+    const ttfb = Math.round(performance.now() - t0);
+    const short = url.replace(SUPABASE_URL, "").slice(0, 120);
+    const tag = ttfb >= 2000 ? "🐢" : ttfb >= 500 ? "⚠️" : "✓";
+    // eslint-disable-next-line no-console
+    console.log(`[supabase] ${tag} ${method} ${response.status} ${ttfb}ms ${short}`);
+    return response;
+  } catch (err) {
+    const ttfb = Math.round(performance.now() - t0);
+    const short = url.replace(SUPABASE_URL, "").slice(0, 120);
+    // eslint-disable-next-line no-console
+    console.log(`[supabase] ✗ ${method} FAIL ${ttfb}ms ${short} — ${err instanceof Error ? err.message : String(err)}`);
+    throw err;
+  }
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
+  global: { fetch: timedFetch },
 });
