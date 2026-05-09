@@ -289,7 +289,7 @@ export default function Login() {
 					) : (
 						<><div className="text-center mb-8">
 							<h1 className="heading-display text-2xl">
-								{isForgotPassword ? "Reset password" : isLogin ? "Welcome back!" : "Sign up"}
+								{isForgotPassword ? "Reset password" : isLogin ? "Welcome back!" : "Create account"}
 							</h1>
 							<p className="text-sm text-muted-foreground mt-1">
 								{isForgotPassword
