@@ -7,9 +7,37 @@ interface UserLocation {
 
 export type LocationPermissionStatus = "idle" | "granted" | "denied" | "loading";
 
-// Module-level cache so geolocation is only requested once across all components
-let cached: UserLocation | null = null;
-let permissionStatus: LocationPermissionStatus = "idle";
+const STORAGE_KEY = "bhb-user-location";
+const STORAGE_TTL_MS = 30 * 60 * 1000;
+
+function readStoredLocation(): UserLocation | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { lat: number; lng: number; ts: number };
+    if (Date.now() - parsed.ts > STORAGE_TTL_MS) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    return { lat: parsed.lat, lng: parsed.lng };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLocation(loc: UserLocation) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loc, ts: Date.now() }));
+  } catch {
+    // ignore quota / private-mode errors
+  }
+}
+
+// Module-level cache so geolocation is only requested once across all components.
+// Seed from sessionStorage so a page reload doesn't lose distances until the
+// browser permission check + getCurrentPosition round-trip completes.
+let cached: UserLocation | null = typeof window !== "undefined" ? readStoredLocation() : null;
+let permissionStatus: LocationPermissionStatus = cached ? "granted" : "idle";
 const subscribers = new Set<(loc: UserLocation | null) => void>();
 const statusSubscribers = new Set<(status: LocationPermissionStatus) => void>();
 
@@ -30,6 +58,7 @@ export function triggerLocationRequest() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       cached = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      writeStoredLocation(cached);
       notifyStatus("granted");
       subscribers.forEach((fn) => fn(cached));
     },
@@ -69,20 +98,21 @@ export function useUserLocation(): {
     subscribers.add(setLocation);
     statusSubscribers.add(setStatus);
 
-    // No auto-trigger of getCurrentPosition on mount. The location prompt
-    // must be initiated by an explicit user action (banner click), otherwise
-    // iOS Safari surfaces its "Would you like to allow access" popup as soon
-    // as the page loads — confusing UX for first-time visitors.
+    // For first-time visitors we never auto-trigger getCurrentPosition on
+    // mount: iOS Safari would surface its "Would you like to allow access"
+    // popup as soon as the page loads, which is confusing UX.
     //
-    // Still sync with the browser's permission state to detect denial: if the
-    // user revoked geolocation via browser settings, the banner should hide
-    // (clicking it wouldn't do anything anyway). We do NOT auto-trigger on
-    // "granted" — the user still has to confirm via the banner.
+    // But once the user has granted permission, the popup is gone forever, so
+    // refreshing the location silently on mount is safe — and necessary, since
+    // a hard reload otherwise loses the in-memory cache and distances vanish
+    // until the user clicks the banner or the map's locate button again.
     if (navigator.permissions) {
       navigator.permissions.query({ name: "geolocation" })
         .then((result) => {
           if (result.state === "denied") {
             notifyStatus("denied");
+          } else if (result.state === "granted") {
+            triggerLocationRequest();
           }
         })
         .catch((err) => {
