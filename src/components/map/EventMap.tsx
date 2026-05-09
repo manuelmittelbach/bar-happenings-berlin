@@ -100,6 +100,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	const sourceReadyRef = useRef(false);
 	const [locating, setLocating] = useState(false);
 
+	const [loadFailed, setLoadFailed] = useState(false);
+	const [retryNonce, setRetryNonce] = useState(0);
+
 	const { data: categoryInfos = [] } = useCategories();
 	const categoryById = useMemo(
 		() => Object.fromEntries(categoryInfos.map((c) => [c.id, c])),
@@ -169,6 +172,8 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		const container = containerRef.current;
 		if (!container) return;
 
+		setLoadFailed(false);
+
 		const map = new maplibregl.Map({
 			container,
 			style: "https://tiles.openfreemap.org/styles/positron",
@@ -179,6 +184,18 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			attributionControl: false,
 		});
 
+		// Watchdog: if MapLibre never fires "load" within 8s, the style or tiles
+		// likely failed (carrier blocking openfreemap, dropped CDN, etc.).
+		// Tear the silent half-rendered map down and surface a retry UI.
+		const watchdogId = window.setTimeout(() => {
+			if (mapRef.current === map) {
+				map.remove();
+				mapRef.current = null;
+				sourceReadyRef.current = false;
+			}
+			setLoadFailed(true);
+		}, 8000);
+
 		// Cache the view in module state on every settled pan/zoom so navigating
 		// away (e.g. to an event detail) and back restores the user's exact
 		// position. Module state dies on refresh — that's intentional.
@@ -188,6 +205,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		});
 
 		map.on("load", () => {
+			window.clearTimeout(watchdogId);
 			(async () => {
 				// Register base category images (uses refs so we see latest data
 				// even though this callback was captured at mount time)
@@ -327,8 +345,15 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		});
 
 		mapRef.current = map;
-		return () => { map.remove(); mapRef.current = null; sourceReadyRef.current = false; };
-	}, []);
+		return () => {
+			window.clearTimeout(watchdogId);
+			if (mapRef.current === map) {
+				map.remove();
+				mapRef.current = null;
+				sourceReadyRef.current = false;
+			}
+		};
+	}, [retryNonce]);
 
 	// Update data when events change — register any missing badge images first
 	useEffect(() => {
@@ -411,6 +436,20 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	return (
 		<div style={{ position: "absolute", inset: 0 }}>
 			<div ref={containerRef} style={{ height: "100%", width: "100%" }} />
+			{loadFailed && (
+				<div className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+					<p className="font-body font-bold text-base">Map konnte nicht geladen werden.</p>
+					<p className="text-sm text-muted-foreground max-w-xs">
+						Verbindung schwach oder Tile-Server nicht erreichbar.
+					</p>
+					<button
+						onClick={() => setRetryNonce((n) => n + 1)}
+						className="inline-flex h-11 px-6 items-center bg-foreground text-background font-heading font-bold uppercase tracking-widest text-xs hover:bg-foreground/90 transition-colors"
+					>
+						Erneut versuchen
+					</button>
+				</div>
+			)}
 			<button
 				onClick={flyToUser}
 				title="Zu meinem Standort"
