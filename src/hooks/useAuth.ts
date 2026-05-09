@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { markEmailJustChanged } from "@/lib/justConfirmed";
 
@@ -32,6 +33,7 @@ async function fetchRoleAndStatus(user: User): Promise<{ role: "user" | "organiz
 }
 
 export function useAuth() {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
@@ -48,6 +50,11 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user ?? null;
       if (!user) {
+        // Drop any user-scoped query data so a subsequent login on the same tab
+        // starts from a clean cache. Today all user-scoped keys include userId
+        // so cross-user leaks aren't possible, but this is structural defense
+        // against future queries that forget to scope by userId.
+        if (lastFetchedUserId !== null) queryClient.clear();
         lastFetchedUserId = null;
         lastSeenEmail = null;
         setState({ user: null, session: null, loading: false, role: null, roleResolved: true, approvalStatus: null });
@@ -86,7 +93,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const signUp = async (
     email: string,

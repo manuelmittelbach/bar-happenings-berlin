@@ -21,6 +21,9 @@ export default defineConfig(() => ({
       filename: "sw.ts",
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        // Main JS chunk currently exceeds Workbox's 2 MiB default. Bumped so
+        // the precache manifest still includes it; real fix is bundle-splitting.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       includeAssets: ["favicon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
