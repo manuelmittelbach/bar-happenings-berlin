@@ -1,4 +1,4 @@
-import { Clock, TrendingUp, type LucideIcon } from "lucide-react";
+import { Clock, type LucideIcon } from "lucide-react";
 import type { BarlinEvent } from "@/types/event";
 import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
 
@@ -13,25 +13,34 @@ function parseEventDateTime(dateStr: string, timeStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   
   let hours: number;
-  let minutes: number;
-  
+
   const upper = timeStr.toUpperCase().trim();
   const isPM = upper.includes("PM");
   const isAM = upper.includes("AM");
   const cleaned = upper.replace(/\s*(AM|PM)\s*/i, "");
   const [h, m] = cleaned.split(":").map(Number);
-  
+
   if (isPM && h !== 12) hours = h + 12;
   else if (isAM && h === 12) hours = 0;
   else hours = h;
-  minutes = m || 0;
+  const minutes = m || 0;
 
   return new Date(year, month - 1, day, hours, minutes);
 }
 
+/**
+ * Returns the badge to render on an event card, or null when none applies.
+ *
+ * Only temporal badges are emitted: Over / Might be over / Happening Now /
+ * Starts in <1h or <2h.
+ *
+ * The optional `interestedCount` parameter is kept for API stability with
+ * existing callers but is currently unused — interest-based badges were
+ * removed (counts are too low at bar scale to be meaningful).
+ */
 export function getEventBadge(
   event: BarlinEvent,
-  interestedCount: number
+  _interestedCount?: number,
 ): EventBadge | null {
   const now = new Date();
   const todayStr = berlinDateString(now);
