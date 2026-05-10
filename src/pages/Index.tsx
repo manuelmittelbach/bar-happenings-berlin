@@ -4,36 +4,28 @@ import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, Users, Map, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, Map, SlidersHorizontal, ChevronDown, X } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 import { Slider } from "@/components/ui/slider";
+import TonightsHighlights from "@/components/events/TonightsHighlights";
+import WalkingDistanceSection from "@/components/events/WalkingDistanceSection";
+import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 
 
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
-import { useUserLocation } from "@/hooks/useUserLocation";
-import { MapPin, X } from "lucide-react";
-import { haversineMeters } from "@/lib/distance";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
-
-const dateFilters = ["All", "Today", "Tomorrow"];
-
-const parseEntryEuro = (s: string): number | null => {
-  const m = s.match(/^(\d+)(?:,(\d{1,2}))?\s*€$/);
-  if (!m) return null;
-  const whole = parseInt(m[1], 10);
-  const frac = m[2] ? parseInt(m[2], 10) / Math.pow(10, m[2].length) : 0;
-  return whole + frac;
-};
+import { isFreeEntry, isPayWhatYouWantEntry, parseEntryEuro } from "@/lib/entryInfo";
 
 const formatEntryLabel = (v: number) =>
   v === 0 ? "Free" : v >= 20 ? "Any price" : `Up to ${v} €`;
+
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 // Module-level flag: hero animation runs only on the first mount per page-load.
@@ -48,7 +40,7 @@ export default function Index() {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
     activeNeighborhood, setActiveNeighborhood,
-    activeDate, setActiveDate,
+    activeDate,
     activeEntry, setActiveEntry,
   } = useFilterParams();
   const [showFilters, setShowFilters] = useState(false);
@@ -159,28 +151,23 @@ export default function Index() {
     [categoriesData],
   );
 
-  const venueMap = useMemo(
-    () => Object.fromEntries(venuesData.map((v) => [v.id, v])),
-    [venuesData]
+  // Data slices for the editorial homepage sections. Each is a thin filter
+  // over the raw events list — they intentionally ignore the user's
+  // category/neighborhood/entry filters so the "Tonight's Highlights"
+  // banner stays curated rather than personalized.
+  const todayEvents = useMemo(
+    () => eventsData.filter((e) => e.date === today && isEventStillOnline(e) && e.status !== "canceled"),
+    [eventsData, today],
+  );
+  const highlightedTonightEvents = useMemo(
+    () => todayEvents.filter((e) => e.isHighlight),
+    [todayEvents],
   );
 
-  const { location: userLocation, status: locationStatus, request: requestLocation } = useUserLocation();
-  const [locationBannerDismissed, setLocationBannerDismissed] = useState(() => {
-    try {
-      return localStorage.getItem("bhb-nearby-banner-dismissed") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const dismissLocationBanner = useCallback(() => {
-    setLocationBannerDismissed(true);
-    try {
-      localStorage.setItem("bhb-nearby-banner-dismissed", "1");
-    } catch {
-      // quota / disabled — silent
-    }
-  }, []);
-  const showLocationBanner = locationStatus === "idle" && !locationBannerDismissed;
+  // Editorial sections only render in the default landing state (activeDate = "All").
+  // Once the user picks Today or Tomorrow, the page becomes a focused list —
+  // the magazine furniture would compete with their narrowed intent.
+  const showEditorialSections = activeDate === "All";
 
   const filtered = useMemo(() => {
     let result = [...eventsData];
@@ -204,39 +191,23 @@ export default function Index() {
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
     if (activeEntry < 20) {
-      // "Frei / Spende" implies a collected donation — semantically the same
-      // intent as "Pay what you want", so we group it with free entry.
-      // Free-text variants like "Die Band sammelt am Ende" land here too.
-      const isFreeOrPwyw = (info: string) =>
-        info === "Free"
-        || info === "Pay what you want"
-        || info === "Frei / Spende"
-        || info.toLowerCase().includes("die band sammelt");
       result = result.filter((e) => {
-        if (isFreeOrPwyw(e.entryInfo)) return true;
+        if (isFreeEntry(e.entryInfo) || isPayWhatYouWantEntry(e.entryInfo)) return true;
         if (activeEntry === 0) return false;
         const n = parseEntryEuro(e.entryInfo);
         return n !== null && n <= activeEntry;
       });
     }
 
-    const WALK_30MIN_M = 2400;
-
-    const getEventDist = (e: typeof result[0]) => {
-      if (!userLocation) return Infinity;
-      const v = venueMap[e.venueId];
-      return v?.lat && v?.lng ? haversineMeters(userLocation.lat, userLocation.lng, v.lat, v.lng) : Infinity;
-    };
-
-    // 0 = walking distance (top), 1 = normal, 2 = might be over, 3 = over (very bottom)
-    // Walking-boost only applies to today/tomorrow — for "Later" events distance
-    // matters less since users are planning, not deciding spontaneously.
-    const getSortGroup = (e: typeof result[0], dist: number): number => {
-      const label = getEventBadge(e, 0)?.label;
+    // Sort group keeps "Over" events at the bottom and "Might be over" just
+    // above. Within an active group, sort by date then start_time. The
+    // dedicated WalkingDistance section handles "near you" — we no longer
+    // re-rank the main list by distance, so the order here is fully
+    // chronological + status-aware (predictable for the user).
+    const getSortGroup = (e: typeof result[0]): number => {
+      const label = getEventBadge(e)?.label;
       if (label === "Over") return 3;
       if (label === "Might be over") return 2;
-      const isNearTerm = e.date === today || e.date === tomorrow;
-      if (isNearTerm && dist <= WALK_30MIN_M) return 0;
       return 1;
     };
 
@@ -244,13 +215,10 @@ export default function Index() {
       const dateCmp = a.date.localeCompare(b.date);
       if (dateCmp !== 0) return dateCmp;
 
-      const dA = getEventDist(a);
-      const dB = getEventDist(b);
-      const groupA = getSortGroup(a, dA);
-      const groupB = getSortGroup(b, dB);
-
+      const groupA = getSortGroup(a);
+      const groupB = getSortGroup(b);
       if (groupA !== groupB) return groupA - groupB;
-      if (groupA === 0) return dA - dB; // walking distance: nearest first
+
       // Events ohne Startzeit ans Ende sortieren — sonst landen sie vor allen
       // Zeit-Events, weil "" lexikographisch < "20:00" ist.
       const tA = a.startTime || "99:99";
@@ -259,7 +227,7 @@ export default function Index() {
     });
 
     return result;
-  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, yesterday, isLateNight, userLocation, eventsData, venueMap]);
+  }, [searchQuery, activeCategory, activeNeighborhood, activeDate, activeEntry, today, tomorrow, eventsData]);
 
   // True when there are filtered events past the 30-day cutoff. Recomputed on
   // every filter change so the "Show more events" button only appears when the
@@ -441,51 +409,36 @@ export default function Index() {
           </motion.div>
         </section>
 
-        {/* Location permission primer — under the hero, above date filter */}
-        {showLocationBanner && (
-          <div className="border-b border-border bg-background">
-            <div className="container py-4">
-              <div className="inline-flex items-center gap-3 px-4 py-3 border border-border bg-background/80 backdrop-blur-sm">
-                <MapPin className="h-4 w-4 text-accent shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <button
-                    onClick={() => {
-                      dismissLocationBanner();
-                      requestLocation();
-                    }}
-                    className="text-foreground font-semibold underline underline-offset-2 hover:text-accent transition-colors"
-                  >
-                    Click here to show nearby events first
-                  </button>
-                </p>
-                <button
-                  onClick={dismissLocationBanner}
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Editorial homepage sections — only rendered in the default landing
+            state (activeDate = "All"). These sit between hero and filter bar
+            and act as the magazine "above the fold" for tonight. */}
+        {showEditorialSections && (
+          <>
+            <TonightsHighlights
+              events={highlightedTonightEvents}
+              categories={categoriesData}
+              onEventClick={handleEventClick}
+            />
+            <WalkingDistanceSection
+              events={todayEvents}
+              categories={categoriesData}
+              onEventClick={handleEventClick}
+            />
+            <FreeTonightStrip
+              events={todayEvents}
+              categories={categoriesData}
+              onEventClick={handleEventClick}
+            />
+          </>
         )}
 
-        {/* Date filter bar — Map-style with thick black border */}
+        {/* Filter bar — only the Filters drawer toggle remains here. The
+            All/Today/Tomorrow date buttons live on the Map page only; on
+            Index the editorial sections frame "tonight" naturally so the
+            extra control would be redundant. setActiveDate is still kept
+            in useFilterParams because the URL state is shared with /map. */}
         <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 58 }} className="bg-background border-b border-border">
           <div className="container flex items-center gap-2 py-2.5">
-            {dateFilters.map((d) => (
-              <button
-                key={d}
-                onClick={() => setActiveDate(d)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
-                  activeDate === d
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
             {(() => {
               const activeFilterCount =
                 (searchQuery.trim() ? 1 : 0) +
@@ -628,7 +581,7 @@ export default function Index() {
               const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
         
               if (activeDate === "Today") {
-                sections.push({ label: "Today", events: filtered, layout: "grid-2" });
+                sections.push({ label: "All Tonight", events: filtered, layout: "grid-2" });
               } else if (activeDate === "Tomorrow") {
                 sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
               } else {
@@ -638,9 +591,9 @@ export default function Index() {
                 const laterEvents = filtered.filter(
                   (e) => e.date > tomorrow && (showAllUpcoming || e.date <= cutoffDate),
                 );
-        
+
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
-                sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
+                sections.push({ label: "All Tonight", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
                 sections.push({ label: "Later", events: laterEvents, layout: "list" });
               }
@@ -664,12 +617,19 @@ export default function Index() {
               };
         
               const CompactRow = ({ event }: { event: BarlinEvent }) => {
-                const hash = event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                const interested = (hash % 42) + 1;
-                const rowBadge = getEventBadge(event, interested);
+                const rowBadge = getEventBadge(event);
                 const catInfo = categoriesData.find((c) => c.id === event.category);
                 const catColor = catInfo?.color;
                 const catLabel = catInfo?.label ?? event.category;
+
+                // Badge chip styles per variant — kept inline here because
+                // CompactRow renders only inside Index.tsx. EventCard has its
+                // own copy of this map (same shape).
+                const rowBadgeChipClass = rowBadge && (
+                  rowBadge.variant === "popular"
+                    ? "border border-accent/40 text-accent bg-accent/10"
+                    : "bg-muted text-foreground border border-border"
+                );
 
                 return (
                   <button
@@ -681,11 +641,7 @@ export default function Index() {
                         {cleanEventTitle(event.title, event.venue)}
                       </span>
                       {rowBadge && (
-                        <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide ${
-                          rowBadge.variant === "popular"
-                            ? "border border-accent/40 text-accent bg-accent/10"
-                            : "bg-muted text-foreground border border-border"
-                        }`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-bold uppercase tracking-wide ${rowBadgeChipClass}`}>
                           <rowBadge.icon className="h-2.5 w-2.5" />
                           {rowBadge.label}
                         </span>

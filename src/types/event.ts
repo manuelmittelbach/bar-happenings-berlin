@@ -23,6 +23,16 @@ export interface BarlinEvent {
   createdBy?: string;
   isManual: boolean;
   canceledBy?: "organizer" | "admin" | null;
+  // Editorial flags — populated only on rows from `events` (the live table).
+  // events_archive doesn't carry these, so wrappers default isHighlight=false
+  // and highlightPriority=0 for archived rows.
+  isHighlight: boolean;
+  editorNote?: string;
+  highlightPriority: number;
+  // ISO timestamp from the row's created_at column. Used to surface the
+  // "Just added" badge on cards added in the last ~48h. Optional because
+  // events_archive doesn't always carry it through cleanly.
+  createdAt?: string;
 }
 
 export interface Venue {

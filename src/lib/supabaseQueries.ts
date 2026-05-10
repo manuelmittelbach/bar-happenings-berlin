@@ -52,6 +52,10 @@ function cleanUrl(raw: string | null | undefined): string {
 }
 
 function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEvent {
+  // events_archive never has editorial fields — they only live on the
+  // active events table. Same pattern we already use for is_manual.
+  const liveRow = row as Tables<"events">;
+  const isLive = "is_highlight" in row;
   return {
     id: row.id,
     parentId: row.parent_id ?? "",
@@ -75,8 +79,12 @@ function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEv
     interestedCount: row.interested_count ?? 0,
     status: row.status,
     createdBy: row.created_by ?? undefined,
-    isManual: "is_manual" in row ? (row as Tables<"events">).is_manual : false,
+    isManual: "is_manual" in row ? liveRow.is_manual : false,
     canceledBy: (row.canceled_by ?? null) as "organizer" | "admin" | null,
+    isHighlight: isLive ? liveRow.is_highlight : false,
+    editorNote: isLive ? liveRow.editor_note ?? undefined : undefined,
+    highlightPriority: isLive ? liveRow.highlight_priority : 0,
+    createdAt: row.created_at ?? undefined,
   };
 }
 
