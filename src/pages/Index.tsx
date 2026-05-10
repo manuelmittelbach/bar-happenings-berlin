@@ -22,7 +22,6 @@ import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/date
 import { useFilterParams } from "@/lib/useFilterParams";
 import { isFreeEntry, isPayWhatYouWantEntry, parseEntryEuro } from "@/lib/entryInfo";
 
-const dateFilters = ["All", "Today", "Tomorrow"];
 const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
@@ -38,7 +37,7 @@ export default function Index() {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
     activeNeighborhood, setActiveNeighborhood,
-    activeDate, setActiveDate,
+    activeDate,
     activeEntry, setActiveEntry,
   } = useFilterParams();
   const [showFilters, setShowFilters] = useState(false);
@@ -156,12 +155,6 @@ export default function Index() {
   const todayEvents = useMemo(
     () => eventsData.filter((e) => e.date === today && isEventStillOnline(e) && e.status !== "canceled"),
     [eventsData, today],
-  );
-  const todayPlusTomorrowEvents = useMemo(
-    () => eventsData.filter(
-      (e) => (e.date === today || e.date === tomorrow) && isEventStillOnline(e) && e.status !== "canceled",
-    ),
-    [eventsData, today, tomorrow],
   );
   const highlightedTonightEvents = useMemo(
     () => todayEvents.filter((e) => e.isHighlight),
@@ -430,7 +423,7 @@ export default function Index() {
               onEventClick={handleEventClick}
             />
             <WalkingDistanceSection
-              events={todayPlusTomorrowEvents}
+              events={todayEvents}
               categories={categoriesData}
               onEventClick={handleEventClick}
             />
@@ -442,22 +435,13 @@ export default function Index() {
           </>
         )}
 
-        {/* Date filter bar — Map-style with thick black border */}
+        {/* Filter bar — only the Filters drawer toggle remains here. The
+            All/Today/Tomorrow date buttons live on the Map page only; on
+            Index the editorial sections frame "tonight" naturally so the
+            extra control would be redundant. setActiveDate is still kept
+            in useFilterParams because the URL state is shared with /map. */}
         <div id="date-filter-bar" ref={(el) => { sectionRefs.current["__datefilter"] = el; }} style={{ scrollMarginTop: 58 }} className="bg-background border-b border-border">
           <div className="container flex items-center gap-2 py-2.5">
-            {dateFilters.map((d) => (
-              <button
-                key={d}
-                onClick={() => setActiveDate(d)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
-                  activeDate === d
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
             {(() => {
               const activeFilterCount =
                 (searchQuery.trim() ? 1 : 0) +
@@ -588,7 +572,7 @@ export default function Index() {
               const sections: { label: string; events: typeof filtered; layout: SectionLayout }[] = [];
         
               if (activeDate === "Today") {
-                sections.push({ label: "Today", events: filtered, layout: "grid-2" });
+                sections.push({ label: "All Tonight", events: filtered, layout: "grid-2" });
               } else if (activeDate === "Tomorrow") {
                 sections.push({ label: "Tomorrow", events: filtered, layout: "grid-2" });
               } else {
@@ -598,9 +582,9 @@ export default function Index() {
                 const laterEvents = filtered.filter(
                   (e) => e.date > tomorrow && (showAllUpcoming || e.date <= cutoffDate),
                 );
-        
+
                 if (isLateNight) sections.push({ label: "Yesterday", events: yesterdayEvents, layout: "grid-2" });
-                sections.push({ label: "Today", events: todayEvents, layout: "grid-2" });
+                sections.push({ label: "All Tonight", events: todayEvents, layout: "grid-2" });
                 sections.push({ label: "Tomorrow", events: tomorrowEvents, layout: "grid-2" });
                 sections.push({ label: "Later", events: laterEvents, layout: "list" });
               }

@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { MapPin, ArrowRight, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+// Lucide's `Map` icon is aliased to MapIcon — importing it as `Map` would
+// shadow the global Map constructor and break `new Map(...)` further down.
+import { ArrowRight, Loader2, Map as MapIcon } from "lucide-react";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -81,9 +84,8 @@ export default function WalkingDistanceSection({
     <section className="border-t border-border bg-background">
       <div className="container py-10 md:py-12">
         <div className="flex items-center gap-3 mb-5">
-          <MapPin className="h-5 w-5 text-accent shrink-0" strokeWidth={2.5} />
           <h2 className="font-heading text-2xl md:text-3xl font-extrabold uppercase tracking-tight">
-            Walking Distance
+            Close Tonight
           </h2>
         </div>
 
@@ -130,11 +132,21 @@ function PermissionEmptyState({ onRequest }: { onRequest: () => void }) {
 }
 
 function LoadingState() {
+  // Same dashed-box shell as PermissionEmptyState/NoNearbyState so the
+  // section keeps a stable height while the geolocation popup is open.
+  // Otherwise the box collapses to a thin line and yanks everything below
+  // upward — that's the "auseinanderfliegen" the user noticed.
   return (
-    <div className="flex items-center gap-3 text-muted-foreground py-6">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      <span className="font-mono text-xs uppercase tracking-wider">
-        Finding events near you…
+    <div className="border-2 border-dashed border-border bg-muted/30 p-6 md:p-8 text-center">
+      <p className="font-body text-base md:text-lg text-foreground mb-1">
+        Finding events near you
+      </p>
+      <p className="text-sm text-muted-foreground mb-5">
+        Waiting for your location…
+      </p>
+      <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground/40 text-background font-mono font-bold text-xs uppercase tracking-wider cursor-progress">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Locating
       </span>
     </div>
   );
@@ -142,9 +154,22 @@ function LoadingState() {
 
 function NoNearbyState() {
   return (
-    <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground py-2">
-      Nothing within a 20-minute walk tonight. Try the map for a wider view.
-    </p>
+    <div className="border-2 border-dashed border-border bg-muted/30 p-6 md:p-8 text-center">
+      <p className="font-body text-base md:text-lg text-foreground mb-1">
+        Nothing within a 20-minute walk tonight
+      </p>
+      <p className="text-sm text-muted-foreground mb-5">
+        The map gives you a wider view of what's on tonight.
+      </p>
+      <Link
+        to="/map"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider hover:bg-accent hover:text-accent-foreground transition-colors"
+      >
+        <MapIcon className="h-3.5 w-3.5" />
+        Open map
+        <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
   );
 }
 
@@ -171,7 +196,7 @@ function NearbyRow({ event, walkingMins, categories, onClick }: NearbyRowProps) 
         isCanceled || isPastEvent ? "opacity-60" : ""
       }`}
     >
-      {/* Walking-time block — visual anchor of the row */}
+      {/* Walking-time block — visual anchor of the row. */}
       <div className="shrink-0 flex flex-col items-center justify-center px-3 md:px-4 py-2 bg-muted border-r-2 border-border">
         <span className="font-heading text-2xl md:text-3xl font-extrabold leading-none">
           {walkingMins}
