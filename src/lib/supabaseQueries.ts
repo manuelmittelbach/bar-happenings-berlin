@@ -148,10 +148,16 @@ export async function fetchEventsByCreator(userId: string): Promise<BarlinEvent[
 }
 
 export async function fetchEventById(id: string): Promise<BarlinEvent | null> {
-  const live = await supabase.from("events").select("*").eq("id", id).maybeSingle();
+  const [live, arch] = await Promise.all([
+    supabase.from("events").select("*").eq("id", id).maybeSingle(),
+    supabase.from("events_archive").select("*").eq("id", id).maybeSingle(),
+  ]);
   if (live.data) return mapEventRow(live.data);
-  const arch = await supabase.from("events_archive").select("*").eq("id", id).maybeSingle();
   if (arch.data) return mapEventRow(arch.data);
+  // Surface network/abort errors so the page can show a retry UI instead
+  // of a "not found" page when the lookup actually failed.
+  if (live.error) throw live.error;
+  if (arch.error) throw arch.error;
   return null;
 }
 
