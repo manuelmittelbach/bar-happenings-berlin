@@ -16,7 +16,7 @@ export default function EventDetail() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { user, role, roleResolved } = useAuth();
-	const { data: event, isLoading } = useEventById(id || "");
+	const { data: event, isLoading, error, refetch, isFetching } = useEventById(id || "");
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
 	const todayStr = berlinDateString();
@@ -88,6 +88,25 @@ export default function EventDetail() {
 
 	if (isLoading) {
 		return <EventDetailSkeleton />;
+	}
+
+	if (error) {
+		return (
+			<div className="flex-1 flex flex-col items-center justify-center bg-background px-6 text-center">
+				<h1 className="font-body text-2xl font-bold">Couldn't load event</h1>
+				<p className="text-sm text-muted-foreground mt-2 max-w-xs">
+					Check your connection and try again.
+				</p>
+				<button
+					onClick={() => refetch()}
+					disabled={isFetching}
+					className="mt-4 px-4 py-2 border-2 border-foreground bg-background text-foreground font-mono font-bold text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
+				>
+					{isFetching ? "Retrying…" : "Retry"}
+				</button>
+				<Link to="/" className="text-sm text-accent mt-4 inline-block">Back to home</Link>
+			</div>
+		);
 	}
 
 	if (!event) {
