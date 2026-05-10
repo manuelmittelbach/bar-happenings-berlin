@@ -10,6 +10,7 @@ import { getEventBadge } from "@/lib/eventBadges";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
+import { Slider } from "@/components/ui/slider";
 
 
 import type { BarlinEvent } from "@/types/event";
@@ -22,7 +23,6 @@ import { berlinDateString, berlinDateStringOffset, berlinHour } from "@/lib/date
 import { useFilterParams } from "@/lib/useFilterParams";
 
 const dateFilters = ["All", "Today", "Tomorrow"];
-const entryFilters = ["All", "Free", "Pay what you want", "0-5 €", "0-10 €"];
 
 const parseEntryEuro = (s: string): number | null => {
   const m = s.match(/^(\d+)(?:,(\d{1,2}))?\s*€$/);
@@ -31,6 +31,9 @@ const parseEntryEuro = (s: string): number | null => {
   const frac = m[2] ? parseInt(m[2], 10) / Math.pow(10, m[2].length) : 0;
   return whole + frac;
 };
+
+const formatEntryLabel = (v: number) =>
+  v === 0 ? "Free" : v >= 20 ? "Any price" : `Up to ${v} €`;
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
 // Module-level flag: hero animation runs only on the first mount per page-load.
@@ -200,28 +203,22 @@ export default function Index() {
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
     if (activeDate === "Today") result = result.filter((e) => e.date === today);
     if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
-    const isFree = (info: string) => info === "Free";
-    // "Frei / Spende" implies a collected donation — semantically the same
-    // intent as "Pay what you want", so we group it here, not under Free.
-    // Free-text variants like "Die Band sammelt am Ende" land here too.
-    const isPayWhatYouWant = (info: string) =>
-      info === "Pay what you want"
-      || info === "Frei / Spende"
-      || info.toLowerCase().includes("die band sammelt");
-    if (activeEntry === "Free") result = result.filter((e) => isFree(e.entryInfo));
-    if (activeEntry === "Pay what you want") result = result.filter((e) =>
-      isPayWhatYouWant(e.entryInfo) || isFree(e.entryInfo)
-    );
-    if (activeEntry === "0-5 €") result = result.filter((e) => {
-      if (isFree(e.entryInfo) || isPayWhatYouWant(e.entryInfo)) return true;
-      const n = parseEntryEuro(e.entryInfo);
-      return n !== null && n <= 5;
-    });
-    if (activeEntry === "0-10 €") result = result.filter((e) => {
-      if (isFree(e.entryInfo) || isPayWhatYouWant(e.entryInfo)) return true;
-      const n = parseEntryEuro(e.entryInfo);
-      return n !== null && n <= 10;
-    });
+    if (activeEntry < 20) {
+      // "Frei / Spende" implies a collected donation — semantically the same
+      // intent as "Pay what you want", so we group it with free entry.
+      // Free-text variants like "Die Band sammelt am Ende" land here too.
+      const isFreeOrPwyw = (info: string) =>
+        info === "Free"
+        || info === "Pay what you want"
+        || info === "Frei / Spende"
+        || info.toLowerCase().includes("die band sammelt");
+      result = result.filter((e) => {
+        if (isFreeOrPwyw(e.entryInfo)) return true;
+        if (activeEntry === 0) return false;
+        const n = parseEntryEuro(e.entryInfo);
+        return n !== null && n <= activeEntry;
+      });
+    }
 
     const WALK_30MIN_M = 2400;
 
@@ -493,7 +490,7 @@ export default function Index() {
               const activeFilterCount =
                 (searchQuery.trim() ? 1 : 0) +
                 (activeNeighborhood ? 1 : 0) +
-                (activeEntry !== "All" ? 1 : 0);
+                (activeEntry < 20 ? 1 : 0);
               return (
                 <button
                   onClick={() => setShowFilters((v) => !v)}
@@ -577,11 +574,23 @@ export default function Index() {
                 </div>
               </div>
               <div>
-                <label className="mono-label text-muted-foreground mb-2 block">Entry</label>
-                <div className="flex flex-wrap gap-2">
-                  {entryFilters.map((e) => (
-                    <CategoryPill key={e} label={e} active={activeEntry === e} onClick={() => setActiveEntry(e)} />
-                  ))}
+                <label className="mono-label text-muted-foreground mb-3 block">Entry</label>
+                <div className="px-1 max-w-md">
+                  <Slider
+                    value={[activeEntry]}
+                    onValueChange={([v]) => setActiveEntry(v)}
+                    min={0}
+                    max={20}
+                    step={1}
+                    aria-label="Maximum entry price"
+                  />
+                  <div className="grid grid-cols-3 items-baseline mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span className="text-left">Free</span>
+                    <span className="text-center text-xs font-bold text-foreground">
+                      {formatEntryLabel(activeEntry)}
+                    </span>
+                    <span className="text-right">Max</span>
+                  </div>
                 </div>
               </div>
             </div>

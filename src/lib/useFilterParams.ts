@@ -41,6 +41,16 @@ export function useFilterParams() {
       ? ""
       : rawCategory;
 
+  // Entry budget: 0..19 = price cap in euros (0 = Free / PWYW only); 20 = Max
+  // (no cap, default). Anything outside that range — including legacy values
+  // like "All" / "Free" / "0-5 €" from older URLs — falls back to 20.
+  const rawEntry = params.get("e");
+  const parsedEntry = rawEntry === null ? 20 : parseInt(rawEntry, 10);
+  const activeEntry =
+    Number.isFinite(parsedEntry) && parsedEntry >= 0 && parsedEntry <= 19
+      ? parsedEntry
+      : 20;
+
   return useMemo(
     () => ({
       searchQuery: params.get("q") ?? "",
@@ -51,9 +61,9 @@ export function useFilterParams() {
       setActiveNeighborhood: (v: string) => setParam("hood", v, ""),
       activeDate: params.get("d") ?? "All",
       setActiveDate: (v: string) => setParam("d", v, "All"),
-      activeEntry: params.get("e") ?? "All",
-      setActiveEntry: (v: string) => setParam("e", v, "All"),
+      activeEntry,
+      setActiveEntry: (v: number) => setParam("e", String(v), "20"),
     }),
-    [params, setParam, activeCategory],
+    [params, setParam, activeCategory, activeEntry],
   );
 }
