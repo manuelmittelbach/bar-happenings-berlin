@@ -9,10 +9,10 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // import { supabase } from "@/integrations/supabase/client";
 
 // Time after which we abort a request and try again on a fresh connection.
-// 6s bisects the typical 12s TCP-retransmission spike caused by HTTP/2
-// head-of-line blocking on Safari — the retry usually picks up a healthy
-// connection and finishes faster than waiting out the original.
-const REQUEST_TIMEOUT_MS = 6000;
+// 3s catches the typical Safari HTTP/2 HoL spike well before users get
+// impatient — a healthy retry usually returns in milliseconds, so failing
+// fast and reconnecting beats sitting on a stuck stream.
+const REQUEST_TIMEOUT_MS = 3000;
 
 function isIdempotent(method: string): boolean {
   const m = method.toUpperCase();
