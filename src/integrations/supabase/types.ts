@@ -113,12 +113,15 @@ export type Database = {
           date: string
           description: string | null
           doors_time: string | null
+          editor_note: string | null
           end_time: string | null
           entry_info: string | null
+          highlight_priority: number
           id: string
           image: string | null
           image_position: string
           interested_count: number | null
+          is_highlight: boolean
           is_manual: boolean
           language: string | null
           neighborhood: string
@@ -142,12 +145,15 @@ export type Database = {
           date: string
           description?: string | null
           doors_time?: string | null
+          editor_note?: string | null
           end_time?: string | null
           entry_info?: string | null
+          highlight_priority?: number
           id: string
           image?: string | null
           image_position?: string
           interested_count?: number | null
+          is_highlight?: boolean
           is_manual?: boolean
           language?: string | null
           neighborhood: string
@@ -171,12 +177,15 @@ export type Database = {
           date?: string
           description?: string | null
           doors_time?: string | null
+          editor_note?: string | null
           end_time?: string | null
           entry_info?: string | null
+          highlight_priority?: number
           id?: string
           image?: string | null
           image_position?: string
           interested_count?: number | null
+          is_highlight?: boolean
           is_manual?: boolean
           language?: string | null
           neighborhood?: string
