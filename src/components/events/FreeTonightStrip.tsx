@@ -1,9 +1,16 @@
 import { useMemo } from "react";
-import { Sparkles } from "lucide-react";
 import { cleanEventTitle } from "@/lib/cleanTitle";
+import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
 import { isFreeEntry, isPayWhatYouWantEntry } from "@/lib/entryInfo";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
+
+// Same chip styles as the rest of the editorial sections — keeps badge
+// rendering visually identical between Close Tonight and Free Tonight.
+const badgeChipClasses: Record<EventBadge["variant"], string> = {
+  soon: "bg-muted text-foreground border border-border",
+  popular: "border border-accent/40 text-accent bg-accent/10",
+};
 
 interface FreeTonightStripProps {
   // Already filtered to the target date (typically today). The strip
@@ -58,7 +65,6 @@ export default function FreeTonightStrip({
     <section className="border-t border-border bg-muted/20">
       <div className="container py-10 md:py-12">
         <div className="flex items-center gap-3 mb-5">
-          <Sparkles className="h-5 w-5 text-accent shrink-0" strokeWidth={2.5} />
           <h2 className="font-heading text-2xl md:text-3xl font-extrabold uppercase tracking-tight">
             Free Tonight
           </h2>
@@ -67,26 +73,17 @@ export default function FreeTonightStrip({
           </span>
         </div>
 
-        {/* Horizontal scroller. snap-x keeps each card aligning to the left
-            edge after a flick. -mx + px on the scroll container gives the
-            cards full-bleed runway on small screens without breaking the
-            container alignment. */}
-        <div className="relative -mx-4 md:mx-0">
-          <div
-            className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 md:px-0 pb-2"
-            // Hide native scrollbar visually — the horizontal-scroll
-            // affordance comes from the peek of the next card.
-            style={{ scrollbarWidth: "none" }}
-          >
-            {freeEvents.map((event) => (
-              <FreeCard
-                key={event.id}
-                event={event}
-                categories={categories}
-                onClick={onEventClick}
-              />
-            ))}
-          </div>
+        {/* 2-Spalten-Grid wie in Close Tonight — gleiche Kartendimensionen,
+            visuell konsistent zwischen den beiden editorialen Sektionen. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {freeEvents.map((event) => (
+            <FreeCard
+              key={event.id}
+              event={event}
+              categories={categories}
+              onClick={onEventClick}
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -105,25 +102,24 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
   const categoryColor = categoryInfo?.color;
   const categoryLabel = categoryInfo?.label ?? event.category;
   const isFree = isFreeEntry(event.entryInfo);
+  const isCanceled = event.status === "canceled";
+  const badge = getEventBadge(event);
+  const isPastEvent = badge?.label === "Might be over" || badge?.label === "Over";
+
   const tagLabel = isFree ? "Free" : "Pay what you want";
 
   return (
     <button
       onClick={() => onClick(event.id)}
-      className="group shrink-0 snap-start w-[260px] md:w-[280px] flex flex-col text-left bg-background border-2 border-foreground hover:border-accent transition-colors overflow-hidden"
+      className={`group flex flex-col text-left bg-background border-2 border-border hover:border-foreground transition-colors overflow-hidden ${
+        isCanceled || isPastEvent ? "opacity-60" : ""
+      }`}
     >
-      {/* Top strap: FREE/PWYW badge */}
-      <div className={`px-3 py-1.5 ${isFree ? "bg-accent text-accent-foreground" : "bg-foreground text-background"}`}>
-        <span className="font-mono font-extrabold text-[10px] uppercase tracking-wider">
-          {tagLabel}
-        </span>
-      </div>
-
-      <div className="p-4 flex-1 flex flex-col gap-1.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="py-2.5 px-3 md:px-4 flex-1 flex flex-col">
+        <div className="flex items-center gap-2 flex-wrap mb-0.5">
           {event.startTime && (
             <>
-              <span className="font-mono font-bold text-[10px] uppercase tracking-wider">
+              <span className="font-mono font-bold text-[10px] md:text-xs uppercase tracking-wider">
                 {event.startTime}
               </span>
               <span className="text-muted-foreground text-[10px]">·</span>
@@ -135,13 +131,26 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
           >
             {categoryLabel}
           </span>
+          {badge && (
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-body font-extrabold uppercase tracking-wide ${badgeChipClasses[badge.variant]}`}
+            >
+              <badge.icon className="h-2.5 w-2.5" />
+              {badge.label}
+            </span>
+          )}
+          {/* FREE / PAY WHAT YOU WANT — kleines schwarzes Kästchen rechts
+              (ml-auto schiebt es ans Ende der Flex-Row). */}
+          <span className="ml-auto inline-flex items-center px-1.5 py-0.5 bg-foreground text-background text-[9px] font-mono font-extrabold uppercase tracking-wider">
+            {tagLabel}
+          </span>
         </div>
 
-        <h3 className="font-body text-base font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2">
+        <h3 className="font-body text-base md:text-lg font-bold leading-snug group-hover:text-accent transition-colors line-clamp-1">
           {displayTitle}
         </h3>
 
-        <p className="text-xs text-muted-foreground truncate mt-auto">
+        <p className="text-xs text-muted-foreground truncate">
           {event.venue}
           {event.neighborhood ? ` · ${event.neighborhood}` : ""}
         </p>
