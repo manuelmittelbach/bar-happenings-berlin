@@ -46,7 +46,7 @@ registerRoute(
     cacheName: "supabase-events",
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxAgeSeconds: 5 * 60, maxEntries: 50 }),
+      new ExpirationPlugin({ maxAgeSeconds: 6 * 60 * 60, maxEntries: 50 }),
     ],
   }),
 );
@@ -57,7 +57,7 @@ registerRoute(
     cacheName: "supabase-venues",
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxAgeSeconds: 30 * 60, maxEntries: 20 }),
+      new ExpirationPlugin({ maxAgeSeconds: 24 * 60 * 60, maxEntries: 20 }),
     ],
   }),
 );
