@@ -9,12 +9,14 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
 
-// registerType: "prompt" in vite.config.ts — the app shows an UpdatePrompt toast
-// and only calls updateServiceWorker(true) when the user clicks Reload, which
-// posts SKIP_WAITING. An unconditional skipWaiting() here would silently swap
-// the SW before the toast ever fires, defeating the prompt UX.
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+// registerType: "autoUpdate" — activate the new SW as soon as it installs and
+// take control of open tabs so users get fixes on their next navigation
+// without a "new version" prompt.
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
 cleanupOutdatedCaches();
