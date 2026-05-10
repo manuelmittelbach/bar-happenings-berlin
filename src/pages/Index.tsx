@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Search, Map, SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import { Search, Map, SlidersHorizontal, X } from "lucide-react";
 import { getEventBadge } from "@/lib/eventBadges";
 
 import EventCard from "@/components/events/EventCard";
@@ -325,88 +325,68 @@ export default function Index() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  // Compact magazine-masthead hero.
+  // Heading is shortened to "What's on tonight?" — the deck below tells
+  // the user what kinds of events the site covers, so we don't need to
+  // repeat "in Berlin bars" in the H1.
+
   return (
     <>
-        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 min-h-[calc(100dvh-56px)] flex flex-col justify-center pb-32 md:pb-0">
-          <div className="container relative z-[45] py-16">
+        <section className="relative overflow-x-clip border-b-2 border-foreground bg-muted/40 flex flex-col justify-center py-14 md:py-20 min-h-[480px] md:min-h-[560px]">
+          <div className="container relative z-[45]">
             <motion.p
               className="mono-label text-accent mb-4"
               initial={animateHero ? { opacity: 0 } : false}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 1.7 }}
+              transition={{ duration: 0.5, delay: 0 }}
             >
               Berlin's independent bar guide
             </motion.p>
-            <h1 className="heading-display text-[2.25rem] sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] flex flex-col gap-y-[5vh] md:gap-y-[7vh] lg:gap-y-[9vh]">
-              <span className="block whitespace-nowrap">
-                {["What's", "on"].map((w, i) => (
-                  <motion.span
-                    key={`l1-${i}`}
-                    className="inline-block mr-[0.25em] last:mr-0"
-                    initial={animateHero ? { opacity: 0, y: 20 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: i * 0.18 }}
-                  >
-                    {w}
-                  </motion.span>
-                ))}
-              </span>
-              <span className="block whitespace-nowrap">
-                <motion.span
-                  className="heading-editorial lowercase italic inline-block pr-[0.15em]"
-                  initial={animateHero ? { opacity: 0, y: 20 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 2 * 0.18 }}
-                >
-                  tonight
-                </motion.span>
-              </span>
-              <span className="block whitespace-nowrap">
-                {["in", "Berlin"].map((w, i) => (
-                  <motion.span
-                    key={`l3-${i}`}
-                    className="inline-block mr-[0.25em] last:mr-0"
-                    initial={animateHero ? { opacity: 0, y: 20 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: (3 + i) * 0.18 }}
-                  >
-                    {w}
-                  </motion.span>
-                ))}
-              </span>
-              <span className="block whitespace-nowrap">
+
+            <h1 className="heading-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.95] mb-5 md:mb-6">
+              {/* Erste Zeile: "What's on" — block forciert Umbruch vor
+                  "tonight", egal wie breit der Container ist. */}
+              <span className="block">
                 <motion.span
                   className="inline-block"
                   initial={animateHero ? { opacity: 0, y: 20 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 5 * 0.18 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
                 >
-                  bars
+                  What's on
+                </motion.span>
+              </span>
+              {/* Zweite Zeile: italic "tonight" + accent "?" */}
+              <span className="block">
+                <motion.span
+                  className="heading-editorial lowercase italic inline-block"
+                  initial={animateHero ? { opacity: 0, y: 20 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.25 }}
+                >
+                  tonight
                 </motion.span>
                 <motion.span
                   className="inline-block text-accent"
                   initial={animateHero ? { opacity: 0, y: 20 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 6 * 0.18 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
                 >
                   ?
                 </motion.span>
               </span>
             </h1>
-          </div>
 
-          <motion.div
-            className="absolute bottom-6 inset-x-0 flex flex-col items-center gap-1 text-muted-foreground pointer-events-none"
-            initial={animateHero ? { opacity: 0 } : false}
-            animate={{ opacity: 1, y: [0, 6, 0] }}
-            transition={{
-              opacity: { delay: animateHero ? 2.1 : 0, duration: 0.6 },
-              y: { delay: animateHero ? 2.1 : 0, repeat: Infinity, duration: 1.8, ease: "easeInOut" },
-            }}
-          >
-            <span className="mono-label">Scroll</span>
-            <ChevronDown className="h-4 w-4" />
-          </motion.div>
+            <motion.p
+              className="font-body text-base md:text-lg text-foreground/80 max-w-xl leading-relaxed"
+              initial={animateHero ? { opacity: 0, y: 10 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.55 }}
+            >
+              Find live music, quiz nights, open mics, and community events
+              in small independent bars across Berlin.
+            </motion.p>
+          </div>
         </section>
 
         {/* Editorial homepage sections — only rendered in the default landing
