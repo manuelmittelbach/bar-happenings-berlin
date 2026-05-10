@@ -144,7 +144,9 @@ import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
+      staleTime: 60 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      retry: 0,
     },
   },
 });
