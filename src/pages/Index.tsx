@@ -8,7 +8,7 @@ import { Search, Users, Map, SlidersHorizontal, ChevronDown } from "lucide-react
 import { getEventBadge } from "@/lib/eventBadges";
 
 import EventCard from "@/components/events/EventCard";
-import IndexSkeleton from "@/components/skeletons/IndexSkeleton";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import CategoryPill, { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
 
 
@@ -611,7 +611,7 @@ export default function Index() {
         </div>
 
         {eventsLoading ? (
-          <IndexSkeleton />
+          <PageSpinner />
         ) : (
           <>
             {(() => {

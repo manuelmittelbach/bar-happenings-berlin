@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 import { berlinDateString } from "@/lib/dateFormat";
 import EventDetailView from "@/components/events/EventDetailView";
-import EventDetailSkeleton from "@/components/skeletons/EventDetailSkeleton";
+import { PageSpinner } from "@/components/ui/page-spinner";
 
 export default function EventDetail() {
 	const { id } = useParams();
@@ -87,7 +87,7 @@ export default function EventDetail() {
 	};
 
 	if (isLoading) {
-		return <EventDetailSkeleton />;
+		return <PageSpinner />;
 	}
 
 	if (error) {
