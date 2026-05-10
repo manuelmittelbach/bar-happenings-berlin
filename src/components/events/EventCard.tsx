@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { getEventBadge, type EventBadge } from "@/lib/eventBadges";
-import { MapPin, Star, Users } from "lucide-react";
+import { Star, Users } from "lucide-react";
 
 
 import type { BarlinEvent } from "@/types/event";
@@ -66,23 +66,15 @@ export default function EventCard({ event, layout = "grid", featured = false, on
     );
   };
 
-  const LocationChip = ({ size = "sm" }: { size?: "xs" | "sm" }) => {
+  const WalkingChip = ({ size = "sm" }: { size?: "xs" | "sm" }) => {
+    if (walkingMins === null || walkingMins > 20) return null;
     const textClass = size === "xs" ? "text-[10px] md:text-xs" : "text-xs";
     const iconClass = size === "xs" ? "h-3 w-3 md:h-3.5 md:w-3.5" : "h-3.5 w-3.5";
     const padClass = size === "xs" ? "px-1.5 md:px-2" : "px-2";
-
-    if (walkingMins !== null && walkingMins <= 20) {
-      return (
-        <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-foreground font-mono`}>
-          <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>
-          {walkingMins} min
-        </span>
-      );
-    }
     return (
-      <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-muted-foreground font-mono`}>
-        <MapPin className={iconClass} />
-        {event.neighborhood}
+      <span className={`inline-flex items-center gap-1 ${padClass} py-0.5 bg-muted border border-border ${textClass} text-foreground font-mono shrink-0`}>
+        <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>
+        {walkingMins} min
       </span>
     );
   };
@@ -113,7 +105,7 @@ export default function EventCard({ event, layout = "grid", featured = false, on
               {displayTitle}
             </h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <LocationChip size="sm" />
+              <WalkingChip size="sm" />
               {SHOW_INTEREST_COUNT && (
                 <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                   <Users className="h-3.5 w-3.5" />
@@ -152,10 +144,22 @@ export default function EventCard({ event, layout = "grid", featured = false, on
             <h3 className="font-body text-2xl md:text-3xl font-bold leading-snug group-hover:text-accent transition-colors line-clamp-2 mb-2">
               {displayTitle}
             </h3>
-            <p className="text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
+            <div className="flex items-center gap-1.5 mb-1 min-w-0 text-sm text-muted-foreground font-medium">
+              <span className="truncate">{event.venue}</span>
+              {walkingMins !== null && walkingMins <= 20 ? (
+                <>
+                  <span className="opacity-60 shrink-0">·</span>
+                  <WalkingChip size="sm" />
+                </>
+              ) : event.neighborhood ? (
+                <>
+                  <span className="opacity-60 shrink-0">·</span>
+                  <span className="truncate">{event.neighborhood}</span>
+                </>
+              ) : null}
+            </div>
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <LocationChip size="sm" />
               {SHOW_INTEREST_COUNT && (
                 <span className="inline-flex items-center gap-1 text-xs text-accent font-mono">
                   <Users className="h-3.5 w-3.5" />
@@ -202,18 +206,28 @@ export default function EventCard({ event, layout = "grid", featured = false, on
             <h3 className="font-body text-lg md:text-2xl font-bold leading-tight group-hover:text-accent transition-colors line-clamp-2 mb-1">
               {displayTitle}
             </h3>
-            <p className="text-xs md:text-sm text-muted-foreground font-medium mb-1">{event.venue}</p>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <LocationChip size="xs" />
-              </div>
-              {SHOW_INTEREST_COUNT && (
+            <div className="flex items-center gap-1.5 mb-1 min-w-0 text-xs md:text-sm text-muted-foreground font-medium">
+              <span className="truncate">{event.venue}</span>
+              {walkingMins !== null && walkingMins <= 20 ? (
+                <>
+                  <span className="opacity-60 shrink-0">·</span>
+                  <WalkingChip size="xs" />
+                </>
+              ) : event.neighborhood ? (
+                <>
+                  <span className="opacity-60 shrink-0">·</span>
+                  <span className="truncate">{event.neighborhood}</span>
+                </>
+              ) : null}
+            </div>
+            {SHOW_INTEREST_COUNT && (
+              <div className="flex items-center justify-end gap-2">
                 <span className="inline-flex items-center gap-1 text-[10px] md:text-xs text-accent font-mono shrink-0">
                   <Users className="h-3 w-3" />
                   {interestedCount}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </Link>
