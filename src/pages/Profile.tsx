@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchOrganizerById, fetchProfile, updateProfile } from "@/lib/supabaseQueries";
 import { supabase } from "@/integrations/supabase/client";
-import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import {
   consumeEmailJustChanged,
   clearEmailJustChangedSoon,
@@ -221,7 +221,7 @@ export default function Profile() {
   };
 
   if (loading || !user || !initialized) {
-    return <ProfileSkeleton />;
+    return <PageSpinner />;
   }
 
   const roleLabel =
