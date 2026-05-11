@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { List, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -13,7 +13,6 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 
 export default function MapPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
@@ -175,7 +174,7 @@ export default function MapPage() {
           responsive padding, and safe-area-aware bottom so iOS Safari's
           URL bar doesn't eat the button. */}
       <button
-        onClick={() => navigate({ pathname: "/", search: location.search })}
+        onClick={() => navigate("/")}
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
         className="fixed right-0 z-[9999] flex items-center gap-2 h-12 px-4 md:pl-5 md:pr-4 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-foreground/90 transition-all rounded-l-full border-2 border-r-0 border-background"
         aria-label="Open list view"

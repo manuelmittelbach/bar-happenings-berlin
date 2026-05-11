@@ -1,69 +1,104 @@
-import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { useCategories } from "@/hooks/useEvents";
 
 /**
- * Single source of truth for shared filter state across Index and MapPage.
- * State lives in the URL (?q=&c=&hood=&d=&e=). Defaults are NOT written to
- * the URL — clicking "All" on Date or Entry removes the param so empty state
- * stays clean (just `/`). Updates use `replace: true` so each filter toggle
- * replaces the current history entry instead of stacking — back-button skips
- * over filter changes and goes to the previous real page.
+ * Filter state for Index (list) and MapPage. Lives in sessionStorage so
+ * navigating List ↔ Map (or List ↔ event detail ↔ List) preserves the
+ * selection within a session. Full page reloads start fresh — this
+ * module is only re-evaluated on a real reload, and the top-level
+ * `removeItem` block below runs each time, clearing previous values.
  *
- * Invalid `?c=` slugs (typos, renamed categories, stale bookmarks) are treated
- * as "no filter" once category data has loaded — otherwise the chip strip
- * shows nothing active while quietly returning zero results.
+ * Why not URL params: filter chips reset on reload now (the user's
+ * mental model), and the URL stays clean (`/`, `/map`) without
+ * `?d=&c=&q=` baggage.
  */
+
+const KEYS = {
+  searchQuery: "filter_q",
+  activeCategory: "filter_c",
+  activeNeighborhood: "filter_hood",
+  activeDate: "filter_d",
+} as const;
+
+const DEFAULTS = {
+  searchQuery: "",
+  activeCategory: "",
+  activeNeighborhood: "",
+  activeDate: "All",
+} as const;
+
+type FilterKey = keyof typeof KEYS;
+
+// Reload-clear: this module is evaluated once per JS context. SPA
+// navigation re-uses the existing context (keep state), but a real
+// page reload boots a fresh context and re-runs this — wiping the
+// stored filters back to defaults.
+if (typeof sessionStorage !== "undefined") {
+  for (const k of Object.values(KEYS)) sessionStorage.removeItem(k);
+}
+
+function readKey(k: FilterKey): string {
+  if (typeof sessionStorage === "undefined") return DEFAULTS[k];
+  return sessionStorage.getItem(KEYS[k]) ?? DEFAULTS[k];
+}
+
+function writeKey(k: FilterKey, value: string) {
+  if (typeof sessionStorage === "undefined") return;
+  if (value === DEFAULTS[k] || value === "") sessionStorage.removeItem(KEYS[k]);
+  else sessionStorage.setItem(KEYS[k], value);
+}
+
+// Tiny pub/sub. sessionStorage doesn't emit events for same-tab
+// writes, so any consumer that wants to react to a setFilter call
+// from outside its own hook (e.g. Footer setting a category before
+// navigating) needs an in-memory notifier.
+const listeners = new Set<() => void>();
+function notify() { listeners.forEach((l) => l()); }
+
+/** Direct setter for non-React contexts (Footer category links). */
+export function setFilter(k: FilterKey, value: string) {
+  writeKey(k, value);
+  notify();
+}
+
 export function useFilterParams() {
-  const [params, setParams] = useSearchParams();
   const { data: categories } = useCategories();
+  const [, force] = useReducer((x: number) => x + 1, 0);
 
-  const setParam = useCallback(
-    (key: string, value: string, defaultValue: string) => {
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (value === defaultValue || value === "") next.delete(key);
-          else next.set(key, value);
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setParams],
-  );
+  useEffect(() => {
+    listeners.add(force);
+    return () => { listeners.delete(force); };
+  }, []);
 
-  const rawCategory = params.get("c") ?? "";
-  // Until categories are loaded, surface the raw value (best-effort, avoids
-  // a flash of "no filter" on page load with a valid slug).
+  const searchQuery = readKey("searchQuery");
+  const activeCategoryRaw = readKey("activeCategory");
+  const activeNeighborhood = readKey("activeNeighborhood");
+  const activeDate = readKey("activeDate");
+
+  const setSearchQuery = useCallback((v: string) => { writeKey("searchQuery", v); notify(); }, []);
+  const setActiveCategory = useCallback((v: string) => { writeKey("activeCategory", v); notify(); }, []);
+  const setActiveNeighborhood = useCallback((v: string) => { writeKey("activeNeighborhood", v); notify(); }, []);
+  const setActiveDate = useCallback((v: string) => { writeKey("activeDate", v); notify(); }, []);
+
+  // Invalid stored slugs (renamed/deleted categories from a previous
+  // session) silently fall back to "no filter" once category data has
+  // loaded — otherwise the chip strip shows nothing active while
+  // quietly returning zero results.
   const activeCategory =
-    rawCategory && categories && !categories.some((c) => c.id === rawCategory)
+    activeCategoryRaw && categories && !categories.some((c) => c.id === activeCategoryRaw)
       ? ""
-      : rawCategory;
-
-  // Entry budget: 0..19 = price cap in euros (0 = Free / PWYW only); 20 = Max
-  // (no cap, default). Anything outside that range — including legacy values
-  // like "All" / "Free" / "0-5 €" from older URLs — falls back to 20.
-  const rawEntry = params.get("e");
-  const parsedEntry = rawEntry === null ? 20 : parseInt(rawEntry, 10);
-  const activeEntry =
-    Number.isFinite(parsedEntry) && parsedEntry >= 0 && parsedEntry <= 19
-      ? parsedEntry
-      : 20;
+      : activeCategoryRaw;
 
   return useMemo(
     () => ({
-      searchQuery: params.get("q") ?? "",
-      setSearchQuery: (v: string) => setParam("q", v, ""),
-      activeCategory,
-      setActiveCategory: (v: string) => setParam("c", v, ""),
-      activeNeighborhood: params.get("hood") ?? "",
-      setActiveNeighborhood: (v: string) => setParam("hood", v, ""),
-      activeDate: params.get("d") ?? "All",
-      setActiveDate: (v: string) => setParam("d", v, "All"),
-      activeEntry,
-      setActiveEntry: (v: number) => setParam("e", String(v), "20"),
+      searchQuery, setSearchQuery,
+      activeCategory, setActiveCategory,
+      activeNeighborhood, setActiveNeighborhood,
+      activeDate, setActiveDate,
     }),
-    [params, setParam, activeCategory, activeEntry],
+    [
+      searchQuery, activeCategory, activeNeighborhood, activeDate,
+      setSearchQuery, setActiveCategory, setActiveNeighborhood, setActiveDate,
+    ],
   );
 }
