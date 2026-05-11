@@ -88,14 +88,14 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
             }`}
           >
             <div
-              className={`font-heading font-bold leading-[1.05] text-[18px] md:text-[22px] ${
+              className={`font-heading font-medium leading-[1.05] text-[18px] md:text-[22px] ${
                 isActive ? "opacity-100" : "opacity-55"
               }`}
             >
               {t.label}
             </div>
             <div
-              className="font-mono font-bold uppercase text-muted-foreground mt-1 truncate"
+              className="font-mono font-normal uppercase text-muted-foreground mt-1 truncate"
               style={{ fontSize: 10, letterSpacing: "0.12em" }}
             >
               <span className="md:hidden">{t.subMobile}</span>
