@@ -1,18 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 import { setDiscoverActive } from "@/hooks/useDiscoverActive";
-import { setFilter } from "@/lib/useFilterParams";
 
 export default function Footer() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const goToCategory = (category: string) => {
-    sessionStorage.setItem("inside-bars-scroll-to-filter", "1");
-    sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-    setFilter("activeCategory", category);
-    navigate("/");
-  };
 
   const goHome = () => {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
@@ -57,28 +49,6 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-12 text-center md:text-left">
-            <div className="text-center md:text-left">
-              <h4 className="mono-label text-primary-foreground/40 mb-4">Discover</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <button
-                    onClick={() => goToCategory("Live Music")}
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    Live Music
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => goToCategory("Pub Quiz")}
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    Quiz Nights
-                  </button>
-                </li>
-              </ul>
-            </div>
-
             <div className="text-center md:text-left">
               <h4 className="mono-label text-primary-foreground/40 mb-4">Info</h4>
               <ul className="space-y-2 text-sm">
