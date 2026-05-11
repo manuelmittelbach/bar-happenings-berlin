@@ -4,7 +4,7 @@ import { List, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
-import { type DayTab } from "@/components/events/DaySwitcher";
+import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import EventMap from "@/components/map/EventMap";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
@@ -79,12 +79,14 @@ export default function MapPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Day filter (Tonight · Tomorrow · Later) + Category strip. Filters
-          drawer was deliberately removed from the Map — search + day +
-          category is enough chrome on a viewport that's mostly map. */}
+      {/* Day filter: rectangle buttons on mobile (compact, dense), the
+          full DaySwitcher tab-style on desktop so the day chrome reads
+          consistently with Index. Filters drawer was deliberately
+          removed from the Map. */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
         <div className="border-b border-border">
-          <div className="container flex items-center gap-2 py-2.5">
+          {/* Mobile — rectangle buttons */}
+          <div className="md:hidden container flex items-center gap-2 py-2.5">
             {([
               { id: "tonight",  label: "Tonight"  },
               { id: "tomorrow", label: "Tomorrow" },
@@ -93,7 +95,7 @@ export default function MapPage() {
               <button
                 key={d.id}
                 onClick={() => handleDayTabChange(d.id)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
+                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
                   dayTab === d.id
                     ? "border-foreground bg-foreground text-background"
                     : "border-foreground hover:bg-foreground hover:text-background"
@@ -102,6 +104,10 @@ export default function MapPage() {
                 {d.label}
               </button>
             ))}
+          </div>
+          {/* Desktop — DaySwitcher (matches Index) */}
+          <div className="hidden md:block container">
+            <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
           </div>
         </div>
 
