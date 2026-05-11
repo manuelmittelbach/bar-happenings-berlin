@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
-/* Navigation items — order and labels lifted verbatim from the design's
- * Header.jsx: Tonight (the home / discover surface), For bars (organizer
- * sign-in / pitch page), About. */
+/* Navigation items — For bars (organizer sign-in / pitch page) and
+ * About. The Wordmark on the left already routes to home (the Tonight
+ * surface), so a separate "Tonight" link in the nav was redundant. */
 const navItems: { label: string; path: string }[] = [
-  { label: "Tonight",  path: "/" },
   { label: "For bars", path: "/for-bars" },
   { label: "About",    path: "/about" },
 ];
@@ -52,42 +51,16 @@ export default function Header() {
     }
   };
 
-  // Tonight click — scrolls down to the category/day-filter bar so the
-  // user lands inside the events list, not at the top of the hero. When
-  // we're on a different route, set a sessionStorage flag and navigate;
-  // Index.tsx reads the flag on mount and performs the scroll.
-  const scrollToDateFilter = () => {
-    document.getElementById("date-filter-bar")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
-
-  const handleTonightClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMobileOpen(false);
-    if (location.pathname === "/") {
-      scrollToDateFilter();
-    } else {
-      sessionStorage.setItem("inside-bars-scroll-to-filter", "1");
-      sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-      navigate("/");
-    }
-  };
-
-  const isActive = (path: string) =>
-    path === "/" ? location.pathname === "/" : location.pathname === path;
+  const isActive = (path: string) => location.pathname === path;
 
   /* Nav link — mono caps 11px, 0.12em tracking, 2px bottom border on
    * active (foreground) / transparent on inactive. Identical to the
    * `link()` helper in the design's Header.jsx. */
   const NavLink = ({ label, path }: { label: string; path: string }) => {
     const active = isActive(path);
-    const isTonight = path === "/";
     return (
       <Link
         to={path}
-        onClick={isTonight ? handleTonightClick : undefined}
         className="transition-colors py-2"
         style={{
           fontFamily: "var(--font-mono)",
@@ -232,27 +205,24 @@ export default function Header() {
             className="md:hidden border-t-2 border-foreground overflow-hidden"
           >
             <nav className="container flex flex-col gap-4 py-6">
-              {navItems.map((item) => {
-                const isTonight = item.path === "/";
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={isTonight ? handleTonightClick : () => setMobileOpen(false)}
-                    className="text-left transition-colors"
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      color: isActive(item.path) ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  className="text-left transition-colors"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: isActive(item.path) ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
 
               {!loading && !user && (
                 <Link
