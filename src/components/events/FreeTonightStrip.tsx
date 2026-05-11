@@ -51,10 +51,13 @@ export default function FreeTonightStrip({
     <section>
       <div className="container py-6 md:py-8">
         <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
-          <h2 className="heading-display text-3xl md:text-[38px] leading-none m-0">
+          <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
             {title}
           </h2>
-          <div className="mono-label text-muted-foreground">
+          {/* Counter Desktop-only — auf Mobile bringt die Zahl wenig
+              Mehrwert und würde unter den Title brechen. Auf Desktop
+              balanciert sie das Visual (Title links, Count rechts). */}
+          <div className="hidden md:block mono-label text-muted-foreground">
             {freeEvents.length} Free {freeEvents.length === 1 ? "event" : "events"}
           </div>
         </div>
