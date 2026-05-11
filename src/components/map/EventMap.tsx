@@ -5,6 +5,7 @@ import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { requestLocationOnce } from "@/hooks/useUserLocation";
+import { haversineMeters, walkingMinutes } from "@/lib/distance";
 
 interface EventMapProps {
 	events: BarlinEvent[];
@@ -16,6 +17,13 @@ interface EventMapProps {
 const BERLIN_CENTER: [number, number] = [13.405, 52.52];
 const SOURCE_ID = "venues";
 const LAYER_ICONS = "venue-icons";
+
+// Walking-person SVG — Tabler "walk" icon: stick figure mid-stride
+// (legs apart, arm forward). Used to live on event cards before the
+// design refactor; reusing the same glyph keeps the language consistent
+// if the chip ever returns to cards. Defined as a string because the
+// MapLibre popup is built with vanilla DOM, not React.
+const PERSON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>`;
 
 // Module-level cache: survives in-tab navigation (Liste↔Map) but dies on
 // refresh, so a hard reload returns to Berlin-Default. Intentionally not
@@ -122,6 +130,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	}, [categoryInfos, categoryById]);
 
 	useEffect(() => { onEventClickRef.current = onEventClick; }, [onEventClick]);
+
+	// Same pattern as onEventClick: the click handler on LAYER_ICONS is
+	// registered once inside the "load" callback, so without a ref it
+	// would forever see the userLocation that existed at mount time.
+	const userLocationRef = useRef(userLocation);
+	useEffect(() => { userLocationRef.current = userLocation; }, [userLocation]);
 
 	const venueEvents = useMemo(() => {
 		const map = new Map<string, BarlinEvent[]>();
@@ -289,11 +303,38 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					const popupEl = document.createElement("div");
 					popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
 
-					const titleEl = document.createElement("p");
-					titleEl.style.cssText =
-						"font-weight:700;font-size:15px;margin:0;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
-					titleEl.textContent = props.venueName;
-					popupEl.appendChild(titleEl);
+					// Header strip — venue name on the left, walking-time chip
+					// on the right when the user's location is known. Right
+					// padding stays at 40px so MapLibre's close button (also
+					// absolutely positioned in the top-right) has room.
+					const headerEl = document.createElement("div");
+					headerEl.style.cssText =
+						"display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
+
+					const nameEl = document.createElement("p");
+					nameEl.style.cssText = "font-weight:700;font-size:15px;margin:0;flex:1 1 auto;min-width:0;";
+					nameEl.textContent = props.venueName;
+					headerEl.appendChild(nameEl);
+
+					const ul = userLocationRef.current;
+					if (ul) {
+						const meters = haversineMeters(ul.lat, ul.lng, coords[1], coords[0]);
+						const min = walkingMinutes(meters);
+						// Only surface the chip when the venue is genuinely within
+						// walking range. Past ~20 min users would U-Bahn/bike, so
+						// the indicator stops being useful and just clutters the
+						// header.
+						if (min <= 20) {
+						const walkEl = document.createElement("span");
+						walkEl.style.cssText =
+							"display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;";
+						walkEl.setAttribute("title", `~${min} min walking from your location`);
+						walkEl.innerHTML = `${PERSON_SVG}<span>${min} min</span>`;
+						headerEl.appendChild(walkEl);
+						}
+					}
+
+					popupEl.appendChild(headerEl);
 
 					const scrollEl = document.createElement("div");
 					scrollEl.className = "map-popup-scroll";
