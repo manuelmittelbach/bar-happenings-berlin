@@ -58,7 +58,11 @@ const desktopCategoryOrder: string[] = [
   "social", "language-exchange", "games", "sports",
 ];
 
-/* ── Desktop icon-based category row ── */
+/* ── Desktop icon-based category row ──
+   Larger and more breathable than the mobile bar — desktop has the
+   real estate for an editorial-feeling category strip, so we lean into
+   it: bigger circles, bigger icons, readable labels. Same shape system
+   as mobile so brand consistency stays intact. */
 export function CategoryIconRow({
   categories,
   activeCategory,
@@ -78,24 +82,24 @@ export function CategoryIconRow({
   });
 
   return (
-    <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
       {/* All — reset button, visually separated */}
       <button
         onClick={() => onSelect("")}
-        className={`shrink-0 flex items-center gap-2 px-4 py-2 mr-1 border-r-2 border-border transition-all ${
+        className={`shrink-0 flex items-center gap-3 px-4 py-2 mr-2 border-r-2 border-border transition-all ${
           !activeCategory
             ? "text-accent"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
+        <div className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${
           !activeCategory
             ? "bg-accent text-background"
             : "bg-muted border-2 border-border"
         }`}>
-          <LayoutGrid className="h-[18px] w-[18px]" />
+          <LayoutGrid className="h-6 w-6" />
         </div>
-        <span className="text-[11px] font-mono font-bold uppercase tracking-wider">All</span>
+        <span className="text-xs font-mono font-bold uppercase tracking-wider">All</span>
       </button>
 
       {sorted.map((cat) => {
@@ -109,21 +113,21 @@ export function CategoryIconRow({
             key={cat}
             onClick={() => onSelect(cat)}
             style={isActive && activeColor ? { color: activeColor } : undefined}
-            className={`group shrink-0 flex flex-col items-center gap-1 px-2.5 py-2 transition-all ${
+            className={`group shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 transition-all ${
               isActive ? "" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <div
               style={isActive && activeColor ? { backgroundColor: activeColor } : undefined}
-              className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
+              className={`w-14 h-14 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isActive
-                  ? "text-background scale-105"
+                  ? "text-background scale-105 shadow-md"
                   : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
               }`}
             >
-              {Icon ? <Icon className="h-[22px] w-[22px]" /> : <span className="text-[22px] leading-none">{info?.emoji ?? "✦"}</span>}
+              {Icon ? <Icon className="h-7 w-7" /> : <span className="text-[26px] leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors">
               {shortLabel}
             </span>
           </button>
