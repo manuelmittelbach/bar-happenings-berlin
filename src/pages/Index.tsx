@@ -119,24 +119,6 @@ export default function Index() {
   );
 
   useLayoutEffect(() => {
-    if (sessionStorage.getItem("inside-bars-scroll-to-filter") === "1") {
-      sessionStorage.removeItem("inside-bars-scroll-to-filter");
-      const scrollToFilter = () => {
-        document.getElementById("date-filter-bar")?.scrollIntoView({ block: "start", behavior: "auto" });
-      };
-      const rafs: number[] = [];
-      const timeouts: number[] = [];
-      rafs.push(requestAnimationFrame(() => {
-        scrollToFilter();
-        rafs.push(requestAnimationFrame(scrollToFilter));
-      }));
-      timeouts.push(window.setTimeout(scrollToFilter, 100));
-      timeouts.push(window.setTimeout(scrollToFilter, 300));
-      return () => {
-        rafs.forEach(cancelAnimationFrame);
-        timeouts.forEach(clearTimeout);
-      };
-    }
     const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
     if (!savedScrollY) return;
     const scrollY = Number(savedScrollY);
