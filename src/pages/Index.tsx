@@ -6,7 +6,7 @@ import { Search, Map, X } from "lucide-react";
 
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
+import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
@@ -330,7 +330,7 @@ export default function Index() {
             />
           </div>
           <div className="hidden md:block">
-            <CategoryIconRow
+            <CategoryRowPills
               categories={categories}
               activeCategory={activeCategory}
               onSelect={setActiveCategory}
