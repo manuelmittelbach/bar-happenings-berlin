@@ -394,61 +394,74 @@ export default function Index() {
       ) : (
         <>
           {/* TONIGHT — editorial sections + All Tonight list */}
-          {showEditorial && (
-            <>
-              {/* Carry-over from the previous calendar day — sits above
-                  Tonight's Highlights so users see what's still happening
-                  right now before scrolling into the curated picks. */}
-              <StillRunningStrip
-                events={stillRunningYesterday}
-                categories={categoriesData}
-                onEventClick={handleEventClick}
-              />
-              <TonightsHighlights
-                events={highlightedTonightEvents}
-                categories={categoriesData}
-                onEventClick={handleEventClick}
-              />
-              <FreeTonightStrip
-                events={todayEvents}
-                categories={categoriesData}
-                onEventClick={handleEventClick}
-              />
-              <DayList
-                title="More tonight"
-                /* Dedup: drop events already shown above in Tonight's
-                   Highlights (e.isHighlight) and Free Tonight (free or
-                   pay-what-you-want). The master list reads as "what
-                   else is on tonight" instead of repeating cards. */
-                events={filtered.filter(
-                  (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
-                )}
-                onEventClick={handleEventClick}
-                emptyMessage="Nothing more for tonight."
-                onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
-              />
-            </>
-          )}
+          {showEditorial && (() => {
+            // When a filter collapses every editorial strip above, the word
+            // "More" in "More tonight" loses its referent — there's nothing
+            // above to be "more than". Drop "More" → "Tonight" in that
+            // case (and re-word the empty message accordingly).
+            const hasEditorialAbove =
+              stillRunningYesterday.length > 0 ||
+              highlightedTonightEvents.length > 0 ||
+              todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            return (
+              <>
+                {/* Carry-over from the previous calendar day — sits above
+                    Tonight's Highlights so users see what's still happening
+                    right now before scrolling into the curated picks. */}
+                <StillRunningStrip
+                  events={stillRunningYesterday}
+                  categories={categoriesData}
+                  onEventClick={handleEventClick}
+                />
+                <TonightsHighlights
+                  events={highlightedTonightEvents}
+                  categories={categoriesData}
+                  onEventClick={handleEventClick}
+                />
+                <FreeTonightStrip
+                  events={todayEvents}
+                  categories={categoriesData}
+                  onEventClick={handleEventClick}
+                />
+                <DayList
+                  title={hasEditorialAbove ? "More tonight" : undefined}
+                  /* Dedup: drop events already shown above in Tonight's
+                     Highlights (e.isHighlight) and Free Tonight (free or
+                     pay-what-you-want). The master list reads as "what
+                     else is on tonight" instead of repeating cards. */
+                  events={filtered.filter(
+                    (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
+                  )}
+                  onEventClick={handleEventClick}
+                  emptyMessage={hasEditorialAbove ? "Nothing more for tonight." : "Nothing on tonight."}
+                  onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
+                />
+              </>
+            );
+          })()}
 
-          {dayTab === "tomorrow" && (
-            <>
-              <FreeTonightStrip
-                events={tomorrowEvents}
-                categories={categoriesData}
-                onEventClick={handleEventClick}
-                title="Free tomorrow"
-              />
-              <DayList
-                title="More tomorrow"
-                /* Same dedup as More tonight — drop the free/donation
-                   events that already render in Free Tomorrow above. */
-                events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
-                onEventClick={handleEventClick}
-                emptyMessage="Nothing more for tomorrow."
-                onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
-              />
-            </>
-          )}
+          {dayTab === "tomorrow" && (() => {
+            const hasEditorialAbove = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            return (
+              <>
+                <FreeTonightStrip
+                  events={tomorrowEvents}
+                  categories={categoriesData}
+                  onEventClick={handleEventClick}
+                  title="Free tomorrow"
+                />
+                <DayList
+                  title={hasEditorialAbove ? "More tomorrow" : undefined}
+                  /* Same dedup as More tonight — drop the free/donation
+                     events that already render in Free Tomorrow above. */
+                  events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
+                  onEventClick={handleEventClick}
+                  emptyMessage={hasEditorialAbove ? "Nothing more for tomorrow." : "Nothing on tomorrow."}
+                  onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
+                />
+              </>
+            );
+          })()}
 
           {dayTab === "later" && (
             <LaterAgenda
@@ -490,7 +503,12 @@ export default function Index() {
  * editorial rhythm. */
 
 interface DayListProps {
-  title: string;
+  // Section title — when omitted the list renders header-less. We drop the
+  // header in filtered views where no editorial strip rendered above:
+  // pairing "More tonight" with an empty space above reads as if the
+  // word "More" lost its referent, and the DaySwitcher already supplies
+  // the day context.
+  title?: string;
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
   emptyMessage: string;
@@ -500,48 +518,58 @@ interface DayListProps {
 }
 
 function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayListProps) {
+  // Empty state — drop the "More tonight" / "More tomorrow" header + counter
+  // entirely. With a filter applied the list often collapses to zero, and
+  // pairing the bold header "More tonight" with the body line "Nothing more
+  // for tonight" reads as a contradiction. Showing only the italic empty
+  // message + CTA keeps the section honest and lets the eye fall straight
+  // to the redirect.
+  if (events.length === 0) {
+    return (
+      <section className="container py-12 md:py-16 text-center">
+        <p className="font-body italic text-[18px] m-0">{emptyMessage}</p>
+        {onEmptyCta && (
+          <button
+            type="button"
+            onClick={onEmptyCta.onClick}
+            className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
+          >
+            {onEmptyCta.label}
+          </button>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="container py-6 md:py-8">
-      <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
-        {/* Same size as the weekday separators in the Later section so all
-            list headings ("More tonight", "Tomorrow", "WED 13 MAY", …) read
-            at the same typographic weight. On narrow Mobile viewports the
-            longer titles ("Free tomorrow", "More tomorrow") may wrap to
-            two lines — that's acceptable, since keeping the day-anchor
-            ("tomorrow") in each title gives users a context cue while
-            scrolling past the DaySwitcher. */}
-        <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
-        {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
-        <div className="hidden md:block mono-label text-muted-foreground">
-          {events.length} more {events.length === 1 ? "event" : "events"}
-        </div>
-      </div>
-
-      {events.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="font-body italic text-[18px] m-0">{emptyMessage}</p>
-          {onEmptyCta && (
-            <button
-              type="button"
-              onClick={onEmptyCta.onClick}
-              className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
-            >
-              {onEmptyCta.label}
-            </button>
-          )}
-        </div>
-      ) : (
-        <div>
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              layout="list"
-              onClick={onEventClick}
-            />
-          ))}
+      {title && (
+        <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
+          {/* Same size as the weekday separators in the Later section so all
+              list headings ("More tonight", "Tomorrow", "WED 13 MAY", …) read
+              at the same typographic weight. On narrow Mobile viewports the
+              longer titles ("Free tomorrow", "More tomorrow") may wrap to
+              two lines — that's acceptable, since keeping the day-anchor
+              ("tomorrow") in each title gives users a context cue while
+              scrolling past the DaySwitcher. */}
+          <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
+          {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
+          <div className="hidden md:block mono-label text-muted-foreground">
+            {events.length} more {events.length === 1 ? "event" : "events"}
+          </div>
         </div>
       )}
+
+      <div>
+        {events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            layout="list"
+            onClick={onEventClick}
+          />
+        ))}
+      </div>
     </section>
   );
 }
