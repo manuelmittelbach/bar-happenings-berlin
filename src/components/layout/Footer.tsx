@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 import { setDiscoverActive } from "@/hooks/useDiscoverActive";
+import { setFilter } from "@/lib/useFilterParams";
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -9,7 +10,8 @@ export default function Footer() {
   const goToCategory = (category: string) => {
     sessionStorage.setItem("inside-bars-scroll-to-filter", "1");
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-    navigate(`/?category=${encodeURIComponent(category)}`);
+    setFilter("activeCategory", category);
+    navigate("/");
   };
 
   const goHome = () => {

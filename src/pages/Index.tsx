@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { Search, Map, X } from "lucide-react";
@@ -26,7 +26,6 @@ let heroAnimationPlayed = false;
 
 export default function Index() {
   const navigate = useNavigate();
-  const location = useLocation();
   const {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
@@ -446,7 +445,7 @@ export default function Index() {
       <button
         onClick={() => {
           sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
-          navigate({ pathname: "/map", search: location.search });
+          navigate("/map");
         }}
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
         className="fixed right-0 z-[9999] flex items-center gap-2 h-12 px-4 md:pl-5 md:pr-4 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-foreground/90 transition-all rounded-l-full border-2 border-r-0 border-background"
