@@ -425,16 +425,23 @@ export default function Index() {
       {/* Floating Map — black on cream, half-pill, anchored to the right
           edge. Border is in the background (cream) color so the button
           stays visible when it overlaps the inverted footer: invisible
-          against cream paper, becomes a cream halo against the black footer. */}
+          against cream paper, becomes a cream halo against the black footer.
+          On mobile the "MAP" label is hidden so the button shrinks to a
+          compact icon-only circle, avoiding collisions with content like
+          the rightmost DaySwitcher tab ("Later"). Bottom position uses
+          env(safe-area-inset-bottom) so iOS Safari's URL bar doesn't
+          eat the button. */}
       <button
         onClick={() => {
           sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
           navigate({ pathname: "/map", search: location.search });
         }}
-        className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-foreground/90 transition-all rounded-l-full border-2 border-r-0 border-background"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
+        className="fixed right-0 z-[9999] flex items-center gap-2 h-12 px-4 md:pl-5 md:pr-4 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-foreground/90 transition-all rounded-l-full border-2 border-r-0 border-background"
+        aria-label="Open map"
       >
         <Map className="h-4 w-4" />
-        Map
+        <span className="hidden md:inline">Map</span>
       </button>
     </>
   );
