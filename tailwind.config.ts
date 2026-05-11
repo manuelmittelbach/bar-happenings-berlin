@@ -88,12 +88,17 @@ export default {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
+        "ib-pulse": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%":      { opacity: "0.45", transform: "scale(0.7)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "marquee": "marquee 30s linear infinite",
+        "ib-pulse": "ib-pulse 1.6s ease-in-out infinite",
       },
     },
   },

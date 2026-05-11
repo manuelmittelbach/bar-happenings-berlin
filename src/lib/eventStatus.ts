@@ -22,6 +22,33 @@ export function isEventStillOnline(
   return now.getTime() < floor.getTime();
 }
 
+// Currently live: now is between startTime and endTime (or startTime+90min
+// when no endTime). Returns false for non-today events. Used to swap the
+// time label for a pulsing "Now" indicator on event cards.
+export function isLiveNow(
+  event: Pick<BarlinEvent, "date" | "startTime" | "endTime">,
+  now: Date = new Date(),
+): boolean {
+  const [y, mo, d] = event.date.split("-").map(Number);
+  if (!y || !mo || !d || !event.startTime) return false;
+  const [sh, sm] = event.startTime.split(":").map(Number);
+  if (Number.isNaN(sh) || Number.isNaN(sm)) return false;
+  const start = new Date(y, mo - 1, d, sh, sm, 0, 0);
+  let end: Date;
+  if (event.endTime) {
+    const [eh, em] = event.endTime.split(":").map(Number);
+    if (Number.isNaN(eh) || Number.isNaN(em)) {
+      end = new Date(start.getTime() + 90 * 60 * 1000);
+    } else {
+      const dayOffset = endsNextDay(event.startTime, event.endTime) ? 1 : 0;
+      end = new Date(y, mo - 1, d + dayOffset, eh, em, 0, 0);
+    }
+  } else {
+    end = new Date(start.getTime() + 90 * 60 * 1000);
+  }
+  return now >= start && now < end;
+}
+
 // Event started: startTime on event.date has been reached.
 export function hasEventStarted(
   event: Pick<BarlinEvent, "date" | "startTime">,

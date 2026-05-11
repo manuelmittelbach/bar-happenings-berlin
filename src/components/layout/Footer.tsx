@@ -37,9 +37,17 @@ export default function Footer() {
           <div className="max-w-xs mx-auto md:mx-0">
             <button
               onClick={goHome}
-              className="font-heading text-2xl font-extrabold uppercase tracking-tight text-center md:text-left"
+              className="font-heading text-2xl font-extrabold uppercase tracking-tight inline-flex items-center"
+              style={{ gap: 8 }}
+              aria-label="Inside Bars — home"
             >
-              Inside Bars
+              Inside
+              <span
+                aria-hidden="true"
+                className="rounded-full bg-accent"
+                style={{ width: 7, height: 7 }}
+              />
+              Bars
             </button>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               A curated guide to good bars doing good things.
