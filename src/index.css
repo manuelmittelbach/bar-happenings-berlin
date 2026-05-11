@@ -138,6 +138,17 @@
   .text-balance {
     text-wrap: balance;
   }
+  /* Hide native scrollbars on horizontal scrollers (category strips,
+     day-switcher, etc.). Without this, browsers that don't auto-hide
+     their scrollbar (Windows, macOS "Always show scrollbars") render
+     a thick gutter that overlaps the bottom of the category icons. */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
   .noise-bg {
     position: relative;
   }
