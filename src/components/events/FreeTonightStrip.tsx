@@ -122,8 +122,6 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
 /* Free-card meta omits the inline Free/Donation pill because the wide card
  * already shows it on the right side. Time + category only. */
 function FreeMeta({ event, categories }: { event: BarlinEvent; categories: CategoryRow[] }) {
-  // EventMeta keeps the meta consistent; we wrap it but pass a clone of the
-  // event with entryInfo blanked so the inline Free pill doesn't render.
   const clone = { ...event, entryInfo: "" } as BarlinEvent;
   return <EventMeta event={clone} categories={categories} size="md" />;
 }

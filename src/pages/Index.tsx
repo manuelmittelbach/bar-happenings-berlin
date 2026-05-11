@@ -397,12 +397,26 @@ export default function Index() {
           {showEditorial && (() => {
             // When a filter collapses every editorial strip above, the word
             // "More" in "More tonight" loses its referent — there's nothing
-            // above to be "more than". Drop "More" → "Tonight" in that
+            // above to be "more than". Drop "More" → no header in that
             // case (and re-word the empty message accordingly).
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
               highlightedTonightEvents.length > 0 ||
               todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            // With a category filter active, swap the generic "Nothing on
+            // tonight" for the more useful "No <label> tonight" + a
+            // "Change category" CTA that clears the filter. Without a
+            // filter the original "See what's on tomorrow" CTA still
+            // makes sense.
+            const activeCategoryLabel = activeCategory
+              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
+              : null;
+            const tonightEmptyMessage = activeCategoryLabel
+              ? `No ${activeCategoryLabel} tonight.`
+              : "That's it for tonight.";
+            const tonightEmptyCta = activeCategoryLabel
+              ? { label: "Change category →", onClick: () => setActiveCategory("") }
+              : { label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") };
             return (
               <>
                 {/* Carry-over from the previous calendar day — sits above
@@ -433,8 +447,8 @@ export default function Index() {
                     (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
                   )}
                   onEventClick={handleEventClick}
-                  emptyMessage={hasEditorialAbove ? "Nothing more for tonight." : "Nothing on tonight."}
-                  onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
+                  emptyMessage={tonightEmptyMessage}
+                  onEmptyCta={tonightEmptyCta}
                 />
               </>
             );
@@ -442,6 +456,15 @@ export default function Index() {
 
           {dayTab === "tomorrow" && (() => {
             const hasEditorialAbove = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            const activeCategoryLabel = activeCategory
+              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
+              : null;
+            const tomorrowEmptyMessage = activeCategoryLabel
+              ? `No ${activeCategoryLabel} tomorrow.`
+              : "That's it for tomorrow.";
+            const tomorrowEmptyCta = activeCategoryLabel
+              ? { label: "Change category →", onClick: () => setActiveCategory("") }
+              : { label: "See what's on later →", onClick: () => setActiveDate("Later") };
             return (
               <>
                 <FreeTonightStrip
@@ -456,8 +479,8 @@ export default function Index() {
                      events that already render in Free Tomorrow above. */
                   events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
                   onEventClick={handleEventClick}
-                  emptyMessage={hasEditorialAbove ? "Nothing more for tomorrow." : "Nothing on tomorrow."}
-                  onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
+                  emptyMessage={tomorrowEmptyMessage}
+                  onEmptyCta={tomorrowEmptyCta}
                 />
               </>
             );
