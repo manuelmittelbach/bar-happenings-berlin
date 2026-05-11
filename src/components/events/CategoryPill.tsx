@@ -137,6 +137,94 @@ export function CategoryIconRow({
   );
 }
 
+/* ── Desktop rectangle-pill category row ──
+   Lifted verbatim from the Claude Design `CategoryBar.jsx` prototype:
+   2px outlined rectangle pills with icon + label, mono caps 11px /
+   0.08em tracking. Active pill inverts to filled foreground. Inactive
+   icons take the category color so the strip reads as a colored index.
+   Desktop only — mobile keeps the round disks (CategoryIconBar) since
+   the rectangles wouldn't scroll as compactly on narrow screens. */
+export function CategoryRowPills({
+  categories,
+  activeCategory,
+  onSelect,
+}: {
+  categories: string[];
+  activeCategory: string;
+  onSelect: (cat: string) => void;
+}) {
+  const { data: catData = [] } = useCategories();
+
+  const sorted = [...categories].sort((a, b) => {
+    const ai = desktopCategoryOrder.indexOf(a);
+    const bi = desktopCategoryOrder.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <Pill
+        label="All"
+        Icon={LayoutGrid}
+        active={!activeCategory}
+        onClick={() => onSelect("")}
+      />
+      {sorted.map((cat) => {
+        const info = catData.find((c) => c.id === cat);
+        const Icon = categoryIcons[cat];
+        const isActive = activeCategory === cat;
+        return (
+          <Pill
+            key={cat}
+            label={info?.label ?? cat}
+            Icon={Icon}
+            color={info?.color}
+            active={isActive}
+            onClick={() => onSelect(cat)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function Pill({
+  label,
+  Icon,
+  color,
+  active,
+  onClick,
+}: {
+  label: string;
+  Icon?: LucideIcon;
+  color?: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 whitespace-nowrap border-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] transition-colors ${
+        active
+          ? "border-foreground bg-foreground text-background"
+          : "border-border bg-background text-foreground hover:border-foreground"
+      }`}
+    >
+      {Icon && (
+        <Icon
+          className="h-3.5 w-3.5"
+          /* Category icons keep their hue in both states — on inactive
+             pills as a colored peg, on active pills as a colored signal
+             against the black fill. Only the All pill (no `color`) falls
+             back to inheriting the pill's text color. */
+          style={color ? { color } : undefined}
+        />
+      )}
+      {label}
+    </button>
+  );
+}
+
 /* ── Mobile icon-based category scroller ── */
 export function CategoryIconBar({
   categories,
