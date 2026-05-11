@@ -99,7 +99,7 @@ export function CategoryIconRow({
         }`}>
           <LayoutGrid className="h-6 w-6" />
         </div>
-        <span className="text-xs font-mono font-bold uppercase tracking-wider">All</span>
+        <span className="text-xs font-mono font-normal uppercase tracking-wider">All</span>
       </button>
 
       {sorted.map((cat) => {
@@ -127,7 +127,7 @@ export function CategoryIconRow({
             >
               {Icon ? <Icon className="h-7 w-7" /> : <span className="text-[26px] leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors">
+            <span className="text-xs font-mono font-normal uppercase tracking-wider leading-tight text-center whitespace-nowrap transition-colors">
               {shortLabel}
             </span>
           </button>
@@ -213,7 +213,7 @@ function Pill({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 whitespace-nowrap border-2 font-mono text-[11px] font-bold uppercase tracking-[0.08em] transition-colors ${
+      className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 whitespace-nowrap border-2 font-mono text-[11px] font-normal uppercase tracking-[0.08em] transition-colors ${
         active
           ? "border-foreground bg-foreground text-background"
           : "border-border bg-background text-foreground hover:border-foreground"
@@ -274,7 +274,7 @@ export function CategoryIconBar({
         }`}>
           <LayoutGrid className="h-5 w-5" />
         </div>
-        <span className="text-[10px] font-mono font-bold uppercase tracking-wider">All</span>
+        <span className="text-[10px] font-mono font-normal uppercase tracking-wider">All</span>
       </button>
 
       {sorted.map((cat) => {
@@ -302,7 +302,7 @@ export function CategoryIconBar({
             >
               {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
             </div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-colors">
+            <span className="text-[10px] font-mono font-normal uppercase tracking-wider whitespace-nowrap transition-colors">
               {shortLabel}
             </span>
           </button>
