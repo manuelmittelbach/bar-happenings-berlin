@@ -9,6 +9,7 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
+import StillRunningStrip from "@/components/events/StillRunningStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 
 import type { BarlinEvent } from "@/types/event";
@@ -52,6 +53,9 @@ export default function Index() {
 
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
+  // Yesterday is only relevant for the "Since yesterday" strip — events
+  // that started before midnight and are still running into early today.
+  const yesterday = berlinDateStringOffset(-1);
   // Fixed 2-week horizon: today + tomorrow + 12 more days. Anything past
   // this date is hidden — no "show more" affordance, no infinite scroll.
   const cutoffDate = berlinDateStringOffset(13);
@@ -75,6 +79,20 @@ export default function Index() {
   const highlightedTonightEvents = useMemo(
     () => todayEvents.filter((e) => e.isHighlight),
     [todayEvents],
+  );
+  // Yesterday's events that haven't reached their endTime / startTime+2h yet.
+  // Only populated in the post-midnight window where cross-day events leak in.
+  const stillRunningYesterday = useMemo(
+    () =>
+      eventsData
+        .filter(
+          (e) =>
+            e.date === yesterday &&
+            isEventStillOnline(e) &&
+            e.status !== "canceled",
+        )
+        .sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99")),
+    [eventsData, yesterday],
   );
 
   const filtered = useMemo(() => {
@@ -353,6 +371,14 @@ export default function Index() {
           {/* TONIGHT — editorial sections + All Tonight list */}
           {showEditorial && (
             <>
+              {/* Carry-over from the previous calendar day — sits above
+                  Tonight's Highlights so users see what's still happening
+                  right now before scrolling into the curated picks. */}
+              <StillRunningStrip
+                events={stillRunningYesterday}
+                categories={categoriesData}
+                onEventClick={handleEventClick}
+              />
               <TonightsHighlights
                 events={highlightedTonightEvents}
                 categories={categoriesData}
@@ -373,7 +399,7 @@ export default function Index() {
                   (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
                 )}
                 onEventClick={handleEventClick}
-                emptyMessage="Nothing posted for tonight."
+                emptyMessage="Nothing more for tonight."
                 onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
               />
             </>
@@ -393,7 +419,8 @@ export default function Index() {
                    events that already render in Free Tomorrow above. */
                 events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
                 onEventClick={handleEventClick}
-                emptyMessage="Tomorrow's lineup lands at 09:00 every morning."
+                emptyMessage="Nothing more for tomorrow."
+                onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
               />
             </>
           )}
@@ -519,7 +546,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
     return (
       <section className="container py-6 md:py-8">
         <p className="font-body italic text-[16px] text-muted-foreground pt-8 m-0">
-          Nothing posted for the next seven days. Check back tomorrow morning.
+          Nothing posted. Check back tomorrow morning.
         </p>
       </section>
     );

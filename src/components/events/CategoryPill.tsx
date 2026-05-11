@@ -162,28 +162,37 @@ export function CategoryRowPills({
   });
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-      <Pill
-        label="All"
-        Icon={LayoutGrid}
-        active={!activeCategory}
-        onClick={() => onSelect("")}
+    /* Same right-edge fade pattern as CategoryIconBar — wrapper is
+       `relative` so the gradient overlay can sit on top of the
+       scroll row, hinting at off-screen pills on narrower desktops. */
+    <div className="relative">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <Pill
+          label="All"
+          Icon={LayoutGrid}
+          active={!activeCategory}
+          onClick={() => onSelect("")}
+        />
+        {sorted.map((cat) => {
+          const info = catData.find((c) => c.id === cat);
+          const Icon = categoryIcons[cat];
+          const isActive = activeCategory === cat;
+          return (
+            <Pill
+              key={cat}
+              label={info?.label ?? cat}
+              Icon={Icon}
+              color={info?.color}
+              active={isActive}
+              onClick={() => onSelect(cat)}
+            />
+          );
+        })}
+      </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
       />
-      {sorted.map((cat) => {
-        const info = catData.find((c) => c.id === cat);
-        const Icon = categoryIcons[cat];
-        const isActive = activeCategory === cat;
-        return (
-          <Pill
-            key={cat}
-            label={info?.label ?? cat}
-            Icon={Icon}
-            color={info?.color}
-            active={isActive}
-            onClick={() => onSelect(cat)}
-          />
-        );
-      })}
     </div>
   );
 }
