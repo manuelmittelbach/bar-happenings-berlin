@@ -237,32 +237,41 @@ export default function Index() {
             <span className="text-accent" style={{ fontStyle: "normal" }}>?</span>
           </motion.h1>
 
+          {/* Deck/tagline — Desktop-only (hidden md:block). On Mobile we
+              skip it to save vertical space (the pre-heading + headline
+              already establish the brand + tonight frame). On Desktop
+              the wider container can carry the extra layer for SEO and
+              richer first-impression copy. */}
           <motion.p
-            className="font-body max-w-[580px]"
+            className="hidden md:block font-body max-w-[580px]"
             style={{
               fontSize: 18,
               lineHeight: 1.55,
               marginTop: 22,
-              marginBottom: 28,
+              marginBottom: 0,
               textWrap: "balance",
             }}
             initial={animateHero ? { opacity: 0, y: 12 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
             All the small, independent, slightly chaotic things happening in Berlin tonight.
           </motion.p>
 
+          {/* Hero Search — Desktop-only (hidden md:block).
+              On Mobile this is hidden entirely; browsing via categories
+              + day switcher is the intended Mobile flow. On Desktop the
+              big input sits below the tagline as a prominent secondary
+              affordance for users who already know what they're looking
+              for. */}
           <motion.div
-            className="relative max-w-[480px]"
+            className="hidden md:block relative max-w-[480px]"
+            style={{ marginTop: 28 }}
             initial={animateHero ? { opacity: 0, y: 12 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
             ref={searchWrapperRef}
           >
-            {/* Input box — the dropdown sits as a SIBLING below so its
-                left/right edges align with the input box's outer edges
-                (left:0 right:0 on the relative motion.div). */}
             <div className="flex items-center h-[52px] px-[14px] bg-background border-2 border-foreground">
               <Search className="h-[18px] w-[18px] text-foreground shrink-0 pointer-events-none" />
               <input
@@ -303,8 +312,6 @@ export default function Index() {
                       setShowSuggestions(false);
                     }}
                     className="w-full flex items-center justify-between gap-2 py-2.5 hover:bg-muted transition-colors text-left border-b border-border last:border-b-0"
-                    /* Indent matches input text start: outer padding 14 +
-                       search icon 18 + ml-2.5 (10) = 42. */
                     style={{ paddingLeft: 42, paddingRight: 14 }}
                   >
                     <span className="font-body text-[15px] text-foreground truncate min-w-0">

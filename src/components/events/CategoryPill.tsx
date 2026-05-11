@@ -245,14 +245,19 @@ export function CategoryIconBar({
   });
 
   return (
-    <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
-      {/* All */}
-      <button
-        onClick={() => onSelect("")}
-        className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
-          !activeCategory ? "text-accent" : "text-muted-foreground"
-        }`}
-      >
+    /* Wrapper is `relative` so the right-edge gradient overlay (a sibling
+       div positioned absolutely) can sit on top of the scrollable row.
+       The overlay fades the rightmost item out — a scroll-discoverability
+       hint so users on mobile realize "more categories are off-screen". */
+    <div className="relative -mx-4">
+      <div className="flex gap-2 overflow-x-auto px-4 scrollbar-hide">
+        {/* All */}
+        <button
+          onClick={() => onSelect("")}
+          className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
+            !activeCategory ? "text-accent" : "text-muted-foreground"
+          }`}
+        >
         <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
           !activeCategory
             ? "bg-accent text-background "
@@ -294,6 +299,16 @@ export function CategoryIconBar({
           </button>
         );
       })}
+      </div>
+
+      {/* Right-edge fade — visual hint that the row scrolls horizontally.
+          pointer-events-none so it never blocks taps on the underlying
+          icon buttons. `from-background` matches the page bg so the fade
+          reads as the page reaching in, not a separate UI element. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
+      />
     </div>
   );
 }
