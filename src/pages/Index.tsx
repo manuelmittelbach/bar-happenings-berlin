@@ -183,7 +183,13 @@ export default function Index() {
           The headline is plain inline text so the natural word-wrap
           mirrors the prototype's behavior at every viewport width. */}
       <section className="relative overflow-x-clip pt-11 pb-8">
-        <div className="container relative z-[45]" style={{ maxWidth: 1100 }}>
+        {/* Inherits the same container max-width as the header above and
+            the category / day filter rows below — keeps the left edge of
+            every section aligned. Previously the hero had an extra
+            maxWidth: 1100 cap that made it visually narrower than its
+            siblings, producing an awkward step against the full-width
+            header. */}
+        <div className="container relative z-[45]">
           <motion.p
             className="font-mono font-bold uppercase text-accent"
             style={{ fontSize: 11, letterSpacing: "0.14em", marginBottom: 18 }}
@@ -455,9 +461,17 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
-        <h2 className="heading-display text-3xl md:text-[38px] leading-none m-0">{title}</h2>
-        <div className="mono-label text-muted-foreground">
-          {events.length} {events.length === 1 ? "event" : "events"}
+        {/* Same size as the weekday separators in the Later section so all
+            list headings ("More tonight", "Tomorrow", "WED 13 MAY", …) read
+            at the same typographic weight. On narrow Mobile viewports the
+            longer titles ("Free tomorrow", "More tomorrow") may wrap to
+            two lines — that's acceptable, since keeping the day-anchor
+            ("tomorrow") in each title gives users a context cue while
+            scrolling past the DaySwitcher. */}
+        <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
+        {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
+        <div className="hidden md:block mono-label text-muted-foreground">
+          {events.length} more {events.length === 1 ? "event" : "events"}
         </div>
       </div>
 
@@ -527,16 +541,25 @@ function LaterAgenda({ events, onEventClick, showMore, onShowMore }: LaterAgenda
     <div className="container py-6 md:py-8">
       {groups.map((g) => {
         const d = new Date(g.date + "T00:00:00");
-        const wd = d.toLocaleDateString("en-GB", { weekday: "short" });
+        // Two weekday formats — long for mobile (where we drop the counter
+        // and need the title to carry more visual weight), short for
+        // desktop (where the row also has the events counter).
+        const wdShort = d.toLocaleDateString("en-GB", { weekday: "short" });
+        const wdLong = d.toLocaleDateString("en-GB", { weekday: "long" });
         const dom = d.getDate();
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7">
             <div className="border-b-2 border-foreground pb-2.5 mb-3.5 flex items-baseline gap-3.5 flex-wrap">
-              <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">{wd}</h3>
+              <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
+                <span className="md:hidden">{wdLong}</span>
+                <span className="hidden md:inline">{wdShort}</span>
+              </h3>
               <span className="mono-label text-muted-foreground">{dom} {mon}</span>
               <span className="flex-1" />
-              <span className="mono-label text-muted-foreground">
+              {/* Counter Desktop-only — Mobile hat den Title ausgeschrieben,
+                  also brauchen wir die Zahl nicht zusätzlich. */}
+              <span className="hidden md:inline mono-label text-muted-foreground">
                 {g.events.length} {g.events.length === 1 ? "event" : "events"}
               </span>
             </div>

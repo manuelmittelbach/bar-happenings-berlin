@@ -42,11 +42,12 @@ export default function TonightsHighlights({
         <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-6 mb-5">
           <div>
             <div className="mono-label text-accent mb-1.5">Editor's picks</div>
-            <h2 className="heading-display text-3xl md:text-[38px] leading-none m-0">
+            <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               Tonight's Highlights
             </h2>
           </div>
-          <div className="mono-label text-muted-foreground">
+          {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
+          <div className="hidden md:block mono-label text-muted-foreground">
             {sorted.length} curated
           </div>
         </div>
