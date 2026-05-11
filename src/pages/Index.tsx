@@ -200,7 +200,7 @@ export default function Index() {
             header. */}
         <div className="container relative z-[45]">
           <motion.p
-            className="font-mono font-bold uppercase text-accent"
+            className="font-mono font-normal uppercase text-accent"
             style={{ fontSize: 11, letterSpacing: "0.14em", marginBottom: 18 }}
             initial={animateHero ? { opacity: 0, y: 12 } : false}
             animate={{ opacity: 1, y: 0 }}
