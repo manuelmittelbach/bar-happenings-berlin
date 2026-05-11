@@ -27,7 +27,12 @@ export default function Footer() {
   return (
     <footer className="border-t-2 border-foreground bg-foreground text-primary-foreground">
       <div className="container py-12">
-        <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-10 text-center md:text-left">
+        {/* Footer head — wordmark + tagline on the left, a single flat row
+            of links on the right. With only four items left after dropping
+            the Discover column, two stub columns ("INFO" / "LEGAL", two
+            items each) read as filler; one inline row separated by mono
+            dots fits the editorial tone of the rest of the page. */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 text-center md:text-left">
           <div className="max-w-xs mx-auto md:mx-0">
             <button
               onClick={goHome}
@@ -48,46 +53,38 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-12 text-center md:text-left">
-            <div className="text-center md:text-left">
-              <h4 className="mono-label text-primary-foreground/40 mb-4">Info</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <span className="text-primary-foreground/70 cursor-default">Instagram</span>
-                </li>
-                <li>
-                  <Link
-                    to="/contact"
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="text-center md:text-left">
-              <h4 className="mono-label text-primary-foreground/40 mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link
-                    to="/impressum"
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    Impressum
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/datenschutz"
-                    className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    Datenschutz
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <nav
+            aria-label="Footer"
+            className="flex flex-wrap justify-center md:justify-end items-center gap-x-3 gap-y-2 text-sm"
+          >
+            <Link
+              to="/contact"
+              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+            >
+              Contact
+            </Link>
+            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
+            <Link
+              to="/instagram"
+              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+            >
+              Instagram
+            </Link>
+            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
+            <Link
+              to="/impressum"
+              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+            >
+              Impressum
+            </Link>
+            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
+            <Link
+              to="/datenschutz"
+              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+            >
+              Datenschutz
+            </Link>
+          </nav>
         </div>
 
         <div className="mt-10 pt-6 border-t border-primary-foreground/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
