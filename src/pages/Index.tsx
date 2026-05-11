@@ -214,7 +214,14 @@ export default function Index() {
 
           <motion.h1
             className="heading-display leading-[0.95] m-0"
-            style={{ fontSize: "clamp(48px, 7.5vw, 96px)" }}
+            // Smaller and tighter than the original clamp(48px, 7.5vw, 96px).
+            // The previous values forced "What's on tonight" past the
+            // available container width on every viewport, producing 4–5
+            // auto-wrapped lines instead of the intended two. With the
+            // tighter scale, both halves of the headline ("What's on
+            // tonight" / "in Berlin bars?") fit on one line each from
+            // ~360px upward.
+            style={{ fontSize: "clamp(36px, 5.5vw, 72px)" }}
             initial={animateHero ? { opacity: 0, y: 12 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
