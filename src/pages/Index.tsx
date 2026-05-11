@@ -52,9 +52,10 @@ export default function Index() {
 
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
-  const cutoffDate = berlinDateStringOffset(14);
+  // Fixed 2-week horizon: today + tomorrow + 12 more days. Anything past
+  // this date is hidden — no "show more" affordance, no infinite scroll.
+  const cutoffDate = berlinDateStringOffset(13);
 
-  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
   const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
@@ -96,9 +97,7 @@ export default function Index() {
     } else if (activeDate === "Tomorrow") {
       result = result.filter((e) => e.date === tomorrow);
     } else if (activeDate === "Later") {
-      result = result.filter(
-        (e) => e.date > tomorrow && (showAllUpcoming || e.date <= cutoffDate),
-      );
+      result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
     }
     // Chronological — over events are already filtered out by isEventStillOnline.
     result.sort((a, b) => {
@@ -109,14 +108,7 @@ export default function Index() {
       return tA.localeCompare(tB);
     });
     return result;
-  }, [searchQuery, activeCategory, activeDate, today, tomorrow, eventsData, showAllUpcoming, cutoffDate]);
-
-  const hasMoreUpcoming = useMemo(
-    () => activeDate === "Later" && eventsData.some(
-      (e) => e.date > tomorrow && e.date > cutoffDate && isEventStillOnline(e),
-    ),
-    [eventsData, activeDate, tomorrow, cutoffDate],
-  );
+  }, [searchQuery, activeCategory, activeDate, today, tomorrow, eventsData, cutoffDate]);
 
   useLayoutEffect(() => {
     const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
@@ -410,8 +402,6 @@ export default function Index() {
             <LaterAgenda
               events={filtered}
               onEventClick={handleEventClick}
-              showMore={hasMoreUpcoming && !showAllUpcoming}
-              onShowMore={() => setShowAllUpcoming(true)}
             />
           )}
         </>
@@ -512,11 +502,9 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
 interface LaterAgendaProps {
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
-  showMore: boolean;
-  onShowMore: () => void;
 }
 
-function LaterAgenda({ events, onEventClick, showMore, onShowMore }: LaterAgendaProps) {
+function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
   const groups = useMemo(() => {
     const out: { date: string; events: BarlinEvent[] }[] = [];
     for (const e of events) {
@@ -574,14 +562,6 @@ function LaterAgenda({ events, onEventClick, showMore, onShowMore }: LaterAgenda
           </section>
         );
       })}
-
-      {showMore && (
-        <div className="flex justify-center mt-7">
-          <button onClick={onShowMore} className="btn-outline" style={{ height: 44 }}>
-            Show more events
-          </button>
-        </div>
-      )}
     </div>
   );
 }
