@@ -67,13 +67,38 @@ export default function Index() {
     [categoriesData],
   );
 
+  // Editorial sections (Highlights, Free, Since yesterday) must respect the
+  // active category and search query — when the user filters to e.g.
+  // "Music" or searches for a venue, a Free section full of unrelated events
+  // would contradict the chosen filter. With both applied here, empty
+  // sections collapse automatically since FreeTonightStrip /
+  // TonightsHighlights / StillRunningStrip all return null on empty input.
+  const matchesFilters = useCallback(
+    (e: BarlinEvent) =>
+      (!activeCategory || e.category === activeCategory) &&
+      (!searchQuery || fuzzyMatchAny([e.venue, e.neighborhood], searchQuery)),
+    [activeCategory, searchQuery],
+  );
   const todayEvents = useMemo(
-    () => eventsData.filter((e) => e.date === today && isEventStillOnline(e) && e.status !== "canceled"),
-    [eventsData, today],
+    () =>
+      eventsData.filter(
+        (e) =>
+          e.date === today &&
+          isEventStillOnline(e) &&
+          e.status !== "canceled" &&
+          matchesFilters(e),
+      ),
+    [eventsData, today, matchesFilters],
   );
   const tomorrowEvents = useMemo(
-    () => eventsData.filter((e) => e.date === tomorrow && e.status !== "canceled"),
-    [eventsData, tomorrow],
+    () =>
+      eventsData.filter(
+        (e) =>
+          e.date === tomorrow &&
+          e.status !== "canceled" &&
+          matchesFilters(e),
+      ),
+    [eventsData, tomorrow, matchesFilters],
   );
   const highlightedTonightEvents = useMemo(
     () => todayEvents.filter((e) => e.isHighlight),
@@ -88,10 +113,11 @@ export default function Index() {
           (e) =>
             e.date === yesterday &&
             isEventStillOnline(e) &&
-            e.status !== "canceled",
+            e.status !== "canceled" &&
+            matchesFilters(e),
         )
         .sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99")),
-    [eventsData, yesterday],
+    [eventsData, yesterday, matchesFilters],
   );
 
   const filtered = useMemo(() => {
