@@ -14,11 +14,27 @@ const formatWithWeekday = (offset: number): string => {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 };
 
-// "13 May" — day + month only, used for the Later range subline.
+// "13 May" — day + month only, used for the Later range subline (desktop).
 const formatDayMonth = (offset: number): string => {
   const iso = berlinDateStringOffset(offset);
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
+// "13–25 May" / "29 May–4 Jun" — compact range used on mobile so the
+// Later subline fits inside the third tab without horizontal overflow.
+const formatRangeCompact = (startOffset: number, endOffset: number): string => {
+  const startIso = berlinDateStringOffset(startOffset);
+  const endIso = berlinDateStringOffset(endOffset);
+  const startD = new Date(startIso + "T00:00:00");
+  const endD = new Date(endIso + "T00:00:00");
+  const startMonth = startD.toLocaleDateString("en-GB", { month: "short" });
+  const endMonth = endD.toLocaleDateString("en-GB", { month: "short" });
+  const startDay = startD.getDate();
+  const endDay = endD.getDate();
+  return startMonth === endMonth
+    ? `${startDay}–${endDay} ${endMonth}`
+    : `${startDay} ${startMonth}–${endDay} ${endMonth}`;
 };
 
 /* DaySwitcher — Tonight · Tomorrow · Later tabs sitting just above the
@@ -32,10 +48,25 @@ const formatDayMonth = (offset: number): string => {
  * stays open across midnight.
  */
 export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
-  const tabs: { id: DayTab; label: string; sub: string }[] = [
-    { id: "tonight",  label: "Tonight",  sub: formatWithWeekday(0) },
-    { id: "tomorrow", label: "Tomorrow", sub: formatWithWeekday(1) },
-    { id: "later",    label: "Later",    sub: `${formatDayMonth(2)} – ${formatDayMonth(14)}` },
+  const tabs: { id: DayTab; label: string; sub: string; subMobile: string }[] = [
+    {
+      id: "tonight",
+      label: "Tonight",
+      sub: formatWithWeekday(0),
+      subMobile: formatWithWeekday(0),
+    },
+    {
+      id: "tomorrow",
+      label: "Tomorrow",
+      sub: formatWithWeekday(1),
+      subMobile: formatWithWeekday(1),
+    },
+    {
+      id: "later",
+      label: "Later",
+      sub: `${formatDayMonth(2)} – ${formatDayMonth(14)}`,
+      subMobile: formatRangeCompact(2, 14),
+    },
   ];
 
   return (
@@ -52,23 +83,23 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.id)}
-            className={`flex-none text-left px-5 md:px-6 pt-3.5 pb-4 -mb-[2px] bg-transparent font-heading transition-colors ${
+            className={`flex-1 md:flex-none min-w-0 text-center md:text-left px-3 md:px-6 pt-3.5 pb-4 -mb-[2px] bg-transparent font-heading transition-colors ${
               isActive ? "border-b-[3px] border-accent" : "border-b-[3px] border-transparent"
             }`}
           >
             <div
-              className={`font-heading font-bold leading-[1.05] ${
+              className={`font-heading font-bold leading-[1.05] text-[18px] md:text-[22px] ${
                 isActive ? "opacity-100" : "opacity-55"
               }`}
-              style={{ fontSize: 22 }}
             >
               {t.label}
             </div>
             <div
-              className="font-mono font-bold uppercase text-muted-foreground mt-1"
+              className="font-mono font-bold uppercase text-muted-foreground mt-1 truncate"
               style={{ fontSize: 10, letterSpacing: "0.12em" }}
             >
-              {t.sub}
+              <span className="md:hidden">{t.subMobile}</span>
+              <span className="hidden md:inline">{t.sub}</span>
             </div>
           </button>
         );
