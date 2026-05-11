@@ -1,17 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { List, SlidersHorizontal, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryIconRow } from "@/components/events/CategoryPill";
+import { type DayTab } from "@/components/events/DaySwitcher";
 import { Slider } from "@/components/ui/slider";
 import EventMap from "@/components/map/EventMap";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
-
-const dateFilters = ["All", "Today", "Tomorrow"];
 
 const parseEntryEuro = (s: string): number | null => {
   const m = s.match(/^(\d+)(?:,(\d{1,2}))?\s*€$/);
@@ -53,6 +52,21 @@ export default function MapPage() {
 
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
+  // Mirror Index.tsx — Later spans from day-after-tomorrow to today+14
+  const cutoffDate = berlinDateStringOffset(14);
+
+  // Map activeDate (shared URL state with Index) to DaySwitcher tab so
+  // navigating Index → Map keeps the user on the same day view.
+  const dayTab: DayTab =
+    activeDate === "Tomorrow" ? "tomorrow"
+    : activeDate === "Later" ? "later"
+    : "tonight";
+
+  const handleDayTabChange = useCallback((t: DayTab) => {
+    if (t === "tonight") setActiveDate("All");
+    else if (t === "tomorrow") setActiveDate("Tomorrow");
+    else setActiveDate("Later");
+  }, [setActiveDate]);
 
   const filtered = useMemo(() => {
     let result = [...eventsData];
@@ -65,8 +79,15 @@ export default function MapPage() {
     if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
-    if (activeDate === "Today") result = result.filter((e) => e.date === today);
-    if (activeDate === "Tomorrow") result = result.filter((e) => e.date === tomorrow);
+    // Day scoping — same mapping as Index so Tonight/Tomorrow/Later
+    // means the same set across both pages.
+    if (activeDate === "All" || activeDate === "Today") {
+      result = result.filter((e) => e.date === today);
+    } else if (activeDate === "Tomorrow") {
+      result = result.filter((e) => e.date === tomorrow);
+    } else if (activeDate === "Later") {
+      result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
+    }
     if (activeEntry < 20) {
       // "Frei / Spende" implies a collected donation — semantically the same
       // intent as "Pay what you want", so we group it with free entry.
@@ -84,28 +105,39 @@ export default function MapPage() {
       });
     }
     return result;
-  }, [eventsData, activeCategory, activeNeighborhood, activeDate, activeEntry, searchQuery, today, tomorrow]);
+  }, [eventsData, activeCategory, activeNeighborhood, activeDate, activeEntry, searchQuery, today, tomorrow, cutoffDate]);
 
   const activeFilterCount = activeEntry < 20 ? 1 : 0;
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Filters bar */}
+      {/* Filters bar — Map-specific order: DaySwitcher first (closest to
+          the pins, since Tonight ↔ Tomorrow is the most frequent toggle
+          when scanning a map), then categories below. Deliberately diverges
+          from Index, where categories sit on top of a linear list. */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
-        {/* Date filters + Filters button */}
+        {/* Day filter — compact rectangle buttons (Tonight · Tomorrow ·
+            Later) keep the Map chrome dense; the dated tab-style
+            DaySwitcher is reserved for Index where the page has more
+            vertical breathing room. activeDate is still shared via the
+            URL so Index ⇄ Map navigation keeps the same day. */}
         <div className="border-b border-border">
           <div className="container flex items-center gap-2 py-2.5">
-            {dateFilters.map((d) => (
+            {([
+              { id: "tonight",  label: "Tonight"  },
+              { id: "tomorrow", label: "Tomorrow" },
+              { id: "later",    label: "Later"    },
+            ] as { id: DayTab; label: string }[]).map((d) => (
               <button
-                key={d}
-                onClick={() => setActiveDate(d)}
+                key={d.id}
+                onClick={() => handleDayTabChange(d.id)}
                 className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] md:text-xs uppercase tracking-wider border-2 transition-all ${
-                  activeDate === d
+                  dayTab === d.id
                     ? "border-foreground bg-foreground text-background"
                     : "border-foreground hover:bg-foreground hover:text-background"
                 }`}
               >
-                {d}
+                {d.label}
               </button>
             ))}
             <button
@@ -133,7 +165,7 @@ export default function MapPage() {
         </div>
 
         {showFilters && (
-          <div className="border-b-2 border-foreground bg-background">
+          <div className="border-b border-border bg-background">
             <div className="container py-5">
               <div>
                 <label className="mono-label text-muted-foreground mb-3 block">Entry</label>
@@ -159,7 +191,7 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Category filters */}
+        {/* Category filters — sits closer to the map as the secondary filter. */}
         <div className="container py-3">
           <div className="md:hidden">
             <CategoryIconBar
@@ -215,10 +247,12 @@ export default function MapPage() {
         />
       </div>
 
-      {/* List button — same style as Map button on main page */}
+      {/* List button — same black floater as the Map button on Index.
+          Border is in the background (cream) color so the button stays
+          visible when overlapping the inverted footer. */}
       <button
         onClick={() => navigate({ pathname: "/", search: location.search })}
-        className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-accent text-accent-foreground font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-accent/90 transition-all rounded-l-full border-2 border-r-0 border-accent"
+        className="fixed bottom-6 right-0 z-[9999] flex items-center gap-2 h-12 pl-5 pr-4 bg-foreground text-background font-mono font-bold text-xs uppercase tracking-wider shadow-lg hover:bg-foreground/90 transition-all rounded-l-full border-2 border-r-0 border-background"
       >
         <List className="h-4 w-4" />
         List

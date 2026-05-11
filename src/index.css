@@ -8,34 +8,39 @@
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    --foreground: 0 0% 6%;
-    --card: 40 15% 95%;
+    /* Realigned to the Inside Bars design system's exact hex values:
+       #f8f5ef cream paper, #f3eee5 card, #e8e3da muted, #d2cdc2 border,
+       #0f0f0f near-black ink, #ED5B1C accent orange. The previous HSL
+       values were rounded down on saturation, which read as cool white
+       rather than warm cream on screen. */
+    --background: 40 39% 95%;          /* #f8f5ef */
+    --foreground: 0 0% 6%;             /* #0f0f0f */
+    --card: 39 37% 93%;                /* #f3eee5 */
     --card-foreground: 0 0% 6%;
-    --popover: 40 20% 97%;
+    --popover: 40 39% 95%;
     --popover-foreground: 0 0% 6%;
     --primary: 0 0% 6%;
-    --primary-foreground: 40 20% 97%;
-    --secondary: 40 10% 90%;
+    --primary-foreground: 40 39% 95%;
+    --secondary: 39 21% 88%;
     --secondary-foreground: 0 0% 12%;
-    --muted: 40 10% 91%;
+    --muted: 39 23% 88%;               /* #e8e3da */
     --muted-foreground: 0 0% 42%;
-    --accent: 18 85% 52%;
+    --accent: 18 85% 52%;              /* #ED5B1C */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 82%;
-    --input: 40 10% 82%;
+    --border: 41 15% 79%;              /* #d2cdc2 */
+    --input: 41 15% 79%;
     --ring: 0 0% 6%;
     --radius: 0px;
 
-    --sidebar-background: 40 15% 95%;
+    --sidebar-background: 39 37% 93%;
     --sidebar-foreground: 0 0% 20%;
     --sidebar-primary: 0 0% 10%;
-    --sidebar-primary-foreground: 40 20% 97%;
-    --sidebar-accent: 40 10% 90%;
+    --sidebar-primary-foreground: 40 39% 95%;
+    --sidebar-accent: 39 21% 88%;
     --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 40 10% 85%;
+    --sidebar-border: 41 15% 79%;
     --sidebar-ring: 18 85% 52%;
 
     --font-heading: 'Syne', sans-serif;
