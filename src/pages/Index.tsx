@@ -315,11 +315,12 @@ export default function Index() {
       </section>
 
       {/* Sticky category filter — icon-disk row (mobile scroller / desktop
-          row) matching /map. Reverted from the pill variant to the icon
-          style requested in the design review. */}
+          row) matching /map. Bottom border is 2px foreground to match the
+          header rule above, so the sticky chrome reads as one stacked
+          block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background/95 backdrop-blur-sm border-b border-border"
+        className="sticky top-[64px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-foreground"
       >
         <div className="container py-3">
           <div className="md:hidden">
