@@ -207,10 +207,13 @@ export default function Header() {
           )}
         </nav>
 
-        {/* Mobile menu trigger */}
+        {/* Mobile menu trigger — p-3 + h-5 w-5 icon = 44×44 hit area, the
+            minimum Apple HIG / WCAG 2.5.5 AA recommend for touch targets.
+            Previously p-2 (36×36) was below the threshold and prone to
+            mis-taps on thumb-typing distances. */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2"
+          className="md:hidden inline-flex items-center justify-center p-3 -mr-3"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
