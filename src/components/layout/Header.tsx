@@ -54,8 +54,10 @@ export default function Header() {
   const isActive = (path: string) => location.pathname === path;
 
   /* Nav link — mono caps 11px, 0.12em tracking, 2px bottom border on
-   * active (foreground) / transparent on inactive. Identical to the
-   * `link()` helper in the design's Header.jsx. */
+   * active. Regular weight (400) instead of bold so it reads as
+   * byline/eyebrow next to the Playfair display headlines on the
+   * page — the previous 700 weight competed too hard with the serif
+   * editorial type. */
   const NavLink = ({ label, path }: { label: string; path: string }) => {
     const active = isActive(path);
     return (
@@ -65,7 +67,7 @@ export default function Header() {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 11,
-          fontWeight: 700,
+          fontWeight: 400,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
           color: active ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",

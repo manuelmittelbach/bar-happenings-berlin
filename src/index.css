@@ -43,16 +43,19 @@
     --sidebar-border: 41 15% 79%;
     --sidebar-ring: 18 85% 52%;
 
-    /* Two heading fonts. Syne (--font-heading) is the geometric sans
-       used for UI chrome — header brand, day-switcher tabs, buttons,
-       chips — anything that has to read as "interface". Playfair
-       Display (--font-serif) is the high-contrast editorial Didone
-       used for display headlines (.heading-display) and the italic
-       editorial accent (.heading-editorial). Splitting them lets the
-       page read like a magazine spread without serif spilling into
-       buttons. */
+    /* Four-font system. Syne (geometric sans) handles UI chrome —
+       header brand, day-switcher tabs, buttons, chips. The serif
+       (Georgia / Playfair) is the editorial face for .heading-display
+       and .heading-editorial. DM Sans is the body face. Space Mono
+       handles eyebrows / counts.
+
+       Comment-swap --font-serif to flip the editorial face:
+       - Georgia: humanist transitional, NYT/BBC newspaper feel,
+         system-installed, zero load latency.
+       - Playfair Display: high-contrast Didone, Vogue-glamour. */
     --font-heading: 'Syne', sans-serif;
-    --font-serif: 'Playfair Display', 'Georgia', serif;
+    --font-serif: 'Georgia', 'Charter', 'Iowan Old Style', serif;
+    /* --font-serif: 'Playfair Display', 'Georgia', serif; */
     --font-body: 'DM Sans', sans-serif;
     --font-mono: 'Space Mono', monospace;
   }
