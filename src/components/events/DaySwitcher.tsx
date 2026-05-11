@@ -64,8 +64,8 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
     {
       id: "later",
       label: "Later",
-      sub: `${formatDayMonth(2)} – ${formatDayMonth(14)}`,
-      subMobile: formatRangeCompact(2, 14),
+      sub: `${formatDayMonth(2)} – ${formatDayMonth(13)}`,
+      subMobile: formatRangeCompact(2, 13),
     },
   ];
 
