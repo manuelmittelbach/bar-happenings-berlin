@@ -29,20 +29,14 @@ export default function Layout() {
       />
 
       {/* Spine — hidden on Mobile, 32px (md) / 48px (lg) on Desktop.
-          A small rotated label sits inside the spine giving it a
-          purpose (Berlin's independent bar guide) — turns the white
-          area from "margin" into "editorial element". */}
+          Intentionally empty: the cream edge stripe + the white spine
+          width are themselves the design gesture. Vertical brand text
+          here turned out redundant (the hero pre-heading already says
+          "Berlin's independent bar guide") and a bit precious. */}
       <aside
         aria-hidden="true"
-        className="hidden md:flex md:w-8 lg:w-12 shrink-0 items-center justify-center"
-      >
-        <span
-          className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground whitespace-nowrap"
-          style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-        >
-          Berlin's independent bar guide · {new Date().getFullYear()}
-        </span>
-      </aside>
+        className="hidden md:block md:w-8 lg:w-12 shrink-0"
+      />
 
       <div
         className={`flex-1 flex flex-col bg-background min-w-0 ${
