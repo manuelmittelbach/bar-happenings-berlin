@@ -1,5 +1,5 @@
 import React, { ReactNode, Fragment, useState } from "react";
-import { MapPin, ExternalLink, ChevronDown, Plus, Users, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
+import { MapPin, ExternalLink, ChevronDown, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
@@ -67,16 +67,6 @@ export interface EventDetailViewProps {
   // Pre-computed recurrence label (e.g. "Every Tuesday"). null = hide.
   recurrenceLabel: string | null;
 
-  // Interested-count shown next to the button when showInterestCount is true.
-  interestedCount: number;
-  showInterestCount: boolean;
-
-  // Interest button state. onToggleInterest = undefined → button disabled
-  // (used by admin preview where interest can't be toggled).
-  saved: boolean;
-  isSaving: boolean;
-  onToggleInterest?: () => void;
-
   // Pill click for sibling navigation. Receives the target event id. When
   // undefined, pills render inert (used by admin preview).
   onSelectSibling?: (eventId: string) => void;
@@ -111,11 +101,6 @@ export default function EventDetailView({
   event,
   upcomingEvents,
   recurrenceLabel,
-  interestedCount,
-  showInterestCount,
-  saved,
-  isSaving,
-  onToggleInterest,
   onSelectSibling,
   onOpenMaps,
   showShare,
@@ -127,7 +112,6 @@ export default function EventDetailView({
 }: EventDetailViewProps) {
   const displayTitle = cleanEventTitle(event.title || "(untitled)", event.venue);
   const hasRealImage = !!event.image;
-  const interestDisabled = !onToggleInterest || isSaving;
   const { data: categories = [] } = useCategories();
   const categoryInfo = categories.find((c) => c.id === event.category);
   const categoryColor = categoryInfo?.color;
@@ -135,7 +119,6 @@ export default function EventDetailView({
 
   const heroHeight = compact ? "h-[120px]" : "h-[180px] md:h-[260px]";
   const titleSize = compact ? "text-lg" : "text-[22px] md:text-3xl";
-  const interestButtonSize = compact ? "h-10 px-5 text-xs" : "h-12 px-6 text-sm";
   const whereOffset = compact ? "" : "md:pl-48";
   // Strip € from price text since the Euro icon already conveys it. Spaces
   // are preserved as written.
@@ -200,30 +183,11 @@ export default function EventDetailView({
           </motion.h1>
         </div>
 
-        {/* Interested + Share */}
-        <div className="px-4 pb-4 pt-3 flex items-center gap-3">
-          <button
-            onClick={onToggleInterest}
-            disabled={interestDisabled}
-            className={`${interestButtonSize} flex items-center gap-2 font-bold uppercase tracking-wider font-body rounded-full border-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 ${
-              saved
-                ? "bg-accent text-accent-foreground border-accent"
-                : "bg-transparent text-foreground border-accent hover:bg-accent/10"
-            } ${!onToggleInterest ? "cursor-default" : ""}`}
-          >
-            {!saved && <Plus className="h-4 w-4" />}
-            Interested
-          </button>
-          {showShare && (
+        {showShare && (
+          <div className="px-4 pb-4 pt-3 flex items-center gap-3">
             <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="icon-circle" />
-          )}
-          {showInterestCount && (
-            <span className="inline-flex items-center gap-1 text-sm text-accent font-mono">
-              <Users className="h-4 w-4" />
-              {interestedCount}
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="border-t border-border mx-4" />
 

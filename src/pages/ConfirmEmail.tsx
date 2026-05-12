@@ -21,8 +21,9 @@ const VALID_TYPES: ReadonlySet<EmailOtpType> = new Set([
 
 function defaultTargetForRole(role: "user" | "organizer" | "admin"): string {
   if (role === "admin") return "/admin";
-  if (role === "organizer") return "/dashboard";
-  return "/my-events";
+  // Bar-owner-only: every confirmed account lands on /dashboard. Stray
+  // "user" accounts get guarded back to / by the dashboard itself.
+  return "/dashboard";
 }
 
 export default function ConfirmEmail() {
@@ -31,8 +32,6 @@ export default function ConfirmEmail() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const tokenHash = params.get("token_hash");
   const typeParam = params.get("type");
-  const next = params.get("next") ?? "";
-  const isBar = next.includes("bar=1");
 
   const type: EmailOtpType | null =
     typeParam && VALID_TYPES.has(typeParam as EmailOtpType) ? (typeParam as EmailOtpType) : null;
@@ -81,10 +80,10 @@ export default function ConfirmEmail() {
             <h1 className="heading-display text-2xl">Confirmation failed</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">{errorMessage}</p>
             <button
-              onClick={() => navigate(isBar ? "/for-bars" : "/login?mode=signup", { replace: true })}
+              onClick={() => navigate("/for-bars", { replace: true })}
               className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-body font-semibold text-sm hover:bg-foreground/90 transition-colors"
             >
-              {isBar ? "Back to bar signup" : "Sign up again"}
+              Back to bar signup
             </button>
           </>
         ) : status === "success" ? (

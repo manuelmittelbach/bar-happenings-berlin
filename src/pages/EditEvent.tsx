@@ -38,7 +38,7 @@ export default function EditEvent() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate("/login", { replace: true });
+      navigate("/for-bars", { replace: true });
       return;
     }
     if (!roleResolved) return;

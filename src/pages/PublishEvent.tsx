@@ -19,7 +19,7 @@ export default function PublishEvent() {
 	useEffect(() => {
 		if (loading) return;
 		if (!user) {
-			navigate("/login", { replace: true, state: { from: "/publish" } });
+			navigate("/for-bars", { replace: true });
 			return;
 		}
 		if (!roleResolved) return;

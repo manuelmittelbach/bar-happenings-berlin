@@ -6,8 +6,6 @@ import {
   fetchEventsByVenue,
   fetchVenues,
   fetchCategories,
-  fetchInterestedEvents,
-  checkInterest,
   fetchProfile,
 } from "@/lib/supabaseQueries";
 import type { BarlinEvent } from "@/types/event";
@@ -72,22 +70,6 @@ export function useVenues() {
 
 export function useCategories() {
   return useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
-}
-
-export function useMyEvents(userId: string | null) {
-  return useQuery({
-    queryKey: ["my-events", userId],
-    queryFn: () => fetchInterestedEvents(userId!),
-    enabled: !!userId,
-  });
-}
-
-export function useCheckInterest(userId: string | null, eventId: string) {
-  return useQuery({
-    queryKey: ["interest", userId, eventId],
-    queryFn: () => checkInterest(userId!, eventId),
-    enabled: !!userId && !!eventId,
-  });
 }
 
 export function useProfile(userId: string | null) {

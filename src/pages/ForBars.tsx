@@ -75,8 +75,9 @@ export default function ForBars() {
 			} else {
 				const { user: signedInUser } = await signIn(email, password);
 				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
-				const target =
-					userRole === "admin" ? "/admin" : userRole === "organizer" ? "/dashboard" : "/my-events";
+				// Bar-owner-only: admins → /admin, everyone else → /dashboard
+				// (the dashboard itself guards non-organizers back home).
+				const target = userRole === "admin" ? "/admin" : "/dashboard";
 				navigate(target);
 			}
 		} catch (err: unknown) {
