@@ -2248,7 +2248,7 @@ function StagedEventCard({
           >
             <option value="">No entry info</option>
             <option value="Free">Free</option>
-            <option value="Pay what you want">Pay what you want</option>
+            <option value="Donation">Donation</option>
             <option value={CUSTOM_ENTRY_SENTINEL}>Custom…</option>
             {ENTRY_AMOUNTS.map(label => (
               <option key={label} value={label}>{label}</option>
