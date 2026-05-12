@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
-import { isFreeEntry, isPayWhatYouWantEntry } from "@/lib/entryInfo";
+import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
 
@@ -32,7 +32,7 @@ export default function FreeTonightStrip({
     return events
       .filter((e) => {
         if (e.status === "canceled") return false;
-        return isFreeEntry(e.entryInfo) || isPayWhatYouWantEntry(e.entryInfo);
+        return isFreeEntry(e.entryInfo) || isDonationEntry(e.entryInfo);
       })
       .sort((a, b) => {
         const aFree = isFreeEntry(a.entryInfo) ? 0 : 1;

@@ -1,5 +1,5 @@
 import { isLiveNow } from "@/lib/eventStatus";
-import { isFreeEntry, isPayWhatYouWantEntry } from "@/lib/entryInfo";
+import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
 
@@ -23,7 +23,7 @@ export default function EventMeta({ event, categories, size = "sm" }: EventMetaP
   const isCanceled = event.status === "canceled";
   const live = !isCanceled && isLiveNow(event);
   const free = isFreeEntry(event.entryInfo);
-  const donation = !free && isPayWhatYouWantEntry(event.entryInfo);
+  const donation = !free && isDonationEntry(event.entryInfo);
 
   const text = size === "md" ? "text-[11px]" : "text-[10px]";
 
