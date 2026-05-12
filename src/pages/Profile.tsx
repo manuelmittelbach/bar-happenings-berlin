@@ -24,7 +24,7 @@ const inputClass =
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, role, approvalStatus, loading, signOut } = useAuth();
+  const { user, role, roleResolved, approvalStatus, loading, signOut } = useAuth();
   const [emailJustChanged, setEmailJustChanged] = useState<boolean>(consumeEmailJustChanged);
   const [passwordJustReset, setPasswordJustReset] = useState<boolean>(consumePasswordJustReset);
 
@@ -82,9 +82,16 @@ export default function Profile() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      navigate("/login", { replace: true, state: { from: "/profile" } });
+      navigate("/for-bars", { replace: true });
+      return;
     }
-  }, [user, loading, navigate]);
+    // Profile is bar-owner / admin only. Wait for roleResolved (not just
+    // !loading) before redirecting stray "user" accounts — otherwise admins
+    // who land here while their role is still being fetched bounce home.
+    if (roleResolved && role !== "organizer" && role !== "admin") {
+      navigate("/", { replace: true });
+    }
+  }, [user, loading, role, roleResolved, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -217,7 +224,7 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
+    navigate("/");
   };
 
   if (loading || !user || !initialized) {
