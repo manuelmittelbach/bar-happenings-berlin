@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
-/* Navigation items — For bars (organizer sign-in / pitch page) and
- * About. The Wordmark on the left already routes to home (the Tonight
- * surface), so a separate "Tonight" link in the nav was redundant. */
+/* Navigation items — For bars (bar-owner pitch + signin page) and About.
+ * The Wordmark on the left already routes to home (the Tonight surface),
+ * so a separate "Tonight" link in the nav was redundant. */
 const navItems: { label: string; path: string }[] = [
   { label: "For bars", path: "/for-bars" },
   { label: "About",    path: "/about" },
@@ -62,18 +62,15 @@ export default function Header() {
     label,
     path,
     icon,
-    state,
   }: {
     label?: string;
     path: string;
     icon?: React.ReactNode;
-    state?: unknown;
   }) => {
     const active = isActive(path);
     return (
       <Link
         to={path}
-        state={state}
         title={!label ? path.replace("/", "") : undefined}
         aria-label={!label ? path.replace("/", "") : undefined}
         className="transition-colors py-2 inline-flex items-center gap-1.5"
@@ -109,31 +106,15 @@ export default function Header() {
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
 
-          {!loading && (
+          {!loading && user && (
             <>
-              {!user ? (
-                /* Unauthenticated → Sign in goes to /login with a `from`
-                   redirect to /my-events, matching the main branch's
-                   wiring. Same flat text-link styling as the other nav
-                   items so the header reads as one consistent strip
-                   instead of "nav links + a button cluster". */
-                <NavLink label="Sign in" path="/login" state={{ from: "/my-events" }} />
-              ) : (
-                <>
-                  {role === "organizer" ? (
-                    <>
-                      <NavLink label="Your Events" path="/my-events" />
-                      <NavLink label="Your Bar" path="/dashboard" />
-                    </>
-                  ) : (
-                    <NavLink label="Your Events" path="/my-events" />
-                  )}
-                  {role === "admin" && (
-                    <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
-                  )}
-                  <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
-                </>
+              {role === "organizer" && (
+                <NavLink label="Your Bar" path="/dashboard" />
               )}
+              {role === "admin" && (
+                <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
+              )}
+              <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
             </>
           )}
         </nav>
@@ -182,43 +163,15 @@ export default function Header() {
                 </Link>
               ))}
 
-              {!loading && !user && (
-                <Link
-                  to="/login"
-                  state={{ from: "/my-events" }}
-                  onClick={() => setMobileOpen(false)}
-                  className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                >
-                  Sign in
-                </Link>
-              )}
-
               {!loading && user && (
                 <>
-                  {role === "organizer" ? (
-                    <>
-                      <Link
-                        to="/my-events"
-                        onClick={() => setMobileOpen(false)}
-                        className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                      >
-                        Your Events
-                      </Link>
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setMobileOpen(false)}
-                        className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                      >
-                        Your Bar
-                      </Link>
-                    </>
-                  ) : (
+                  {role === "organizer" && (
                     <Link
-                      to="/my-events"
+                      to="/dashboard"
                       onClick={() => setMobileOpen(false)}
                       className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
                     >
-                      Your Events
+                      Your Bar
                     </Link>
                   )}
                   {role === "admin" && (

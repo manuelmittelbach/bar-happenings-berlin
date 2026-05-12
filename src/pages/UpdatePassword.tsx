@@ -71,7 +71,7 @@ export default function UpdatePassword() {
                 <p className="text-sm text-accent font-medium">{error}</p>
                 <button
                   type="button"
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/for-bars")}
                   className="text-sm underline text-muted-foreground hover:text-foreground"
                 >
                   Back to sign in

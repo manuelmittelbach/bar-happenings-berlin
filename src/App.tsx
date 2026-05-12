@@ -81,13 +81,13 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
+      // Bar-owner-only: every confirm/reset error funnels to /for-bars (the
+      // single auth surface). The `params` look-up for `?bar=1` is gone
+      // because there's no longer a non-bar signup branch to disambiguate.
       const isReset = window.location.pathname.includes("reset-password");
-      const isBar = params.get("bar") === "1";
       const target = isReset
-        ? "/login?link_error=reset"
-        : isBar
-          ? "/for-bars?link_error=confirm"
-          : "/login?link_error=confirm";
+        ? "/for-bars?link_error=reset"
+        : "/for-bars?link_error=confirm";
       navigate(target, { replace: true });
       setPending(false);
       return;
@@ -100,7 +100,10 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
       navigate("/profile", { replace: true });
     } else {
       markEmailJustConfirmed();
-      const destination = role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/my-events";
+      // Bar-owner-only: confirmed accounts land on the role's home. Stray
+      // `"user"` accounts fall through to /dashboard which guards them out
+      // to /.
+      const destination = role === "admin" ? "/admin" : "/dashboard";
       navigate(destination, { replace: true });
     }
     setPending(false);
@@ -128,7 +131,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ForBars from "./pages/ForBars";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import MyEvents from "./pages/MyEvents";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import MapPage from "./pages/MapPage";
 import UpdatePassword from "./pages/UpdatePassword";
@@ -172,7 +174,6 @@ const App = () => (
             <Route path="/for-bars" element={<ForBars />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/my-events" element={<MyEvents />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/edit-event/:id" element={<EditEvent />} />
             <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
