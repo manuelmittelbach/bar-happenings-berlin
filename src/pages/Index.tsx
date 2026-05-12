@@ -50,6 +50,29 @@ export default function Index() {
 
   const categoryBarRef = useRef<HTMLDivElement>(null);
 
+  // Publish the actual category bar height as a CSS variable so the Later
+  // section's sticky weekday header can stick exactly at the chrome's bottom
+  // edge. A hardcoded top-[130px] guessed wrong on both breakpoints: desktop
+  // pills render ~63px tall (chrome ends ~127px) and mobile icon discs render
+  // ~103px tall (chrome ends ~167px). The mismatch left a hairline of cards
+  // shimmering between the chrome's bottom rule and "Thu 14 May" on desktop,
+  // and clipped the heading on mobile. ResizeObserver covers font swaps,
+  // category counts changing, and orientation changes without remeasure code.
+  useEffect(() => {
+    const el = categoryBarRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty(
+        "--chrome-bottom",
+        `${64 + el.offsetHeight}px`,
+      );
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
   // Yesterday is only relevant for the "Since yesterday" strip — events
@@ -256,7 +279,7 @@ export default function Index() {
             >
               tonight
             </span>
-            <br />in Berlin's bars
+            <br />in Berlin bars
             <span className="text-accent" style={{ fontStyle: "normal" }}>?</span>
           </motion.h1>
 
@@ -357,7 +380,7 @@ export default function Index() {
           block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background/95 backdrop-blur-sm border-b-2 border-foreground"
+        className="sticky top-[64px] z-40 bg-background border-b-2 border-foreground"
       >
         <div className="container py-3">
           <div className="md:hidden">
@@ -641,18 +664,34 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7">
-            <div className="border-b-2 border-foreground pb-2.5 mb-3.5 flex items-baseline gap-3.5 flex-wrap">
-              <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-                <span className="md:hidden">{wdLong}</span>
-                <span className="hidden md:inline">{wdShort}</span>
-              </h3>
-              <span className="mono-label text-muted-foreground">{dom} {mon}</span>
-              <span className="flex-1" />
-              {/* Counter Desktop-only — Mobile hat den Title ausgeschrieben,
-                  also brauchen wir die Zahl nicht zusätzlich. */}
-              <span className="hidden md:inline mono-label text-muted-foreground">
-                {g.events.length} {g.events.length === 1 ? "event" : "events"}
-              </span>
+            {/* Sticky weekday header — `top` is driven by the --chrome-bottom
+                CSS var (set in the effect above) so the header pins exactly
+                to the bottom edge of the live category bar instead of a
+                hardcoded estimate; falls back to 130px before measurement.
+                The 14px spacing below the rule lives on the wrapper as
+                `mb-3.5`, NOT `pb-3.5`: padding inside the wrapper would
+                extend its opaque bg-background block past the black rule
+                and visually clip EventCards that should be visible right
+                up to the line. Margin keeps the visual spacing in the
+                natural (non-stuck) layout while letting cards scroll
+                cleanly into the underside of the rule when stuck. */}
+            <div
+              className="sticky z-30 bg-background mb-3.5"
+              style={{ top: "var(--chrome-bottom, 130px)" }}
+            >
+              <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+                <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
+                  <span className="md:hidden">{wdLong}</span>
+                  <span className="hidden md:inline">{wdShort}</span>
+                </h3>
+                <span className="mono-label text-muted-foreground">{dom} {mon}</span>
+                <span className="flex-1" />
+                {/* Counter Desktop-only — Mobile hat den Title ausgeschrieben,
+                    also brauchen wir die Zahl nicht zusätzlich. */}
+                <span className="hidden md:inline mono-label text-muted-foreground">
+                  {g.events.length} {g.events.length === 1 ? "event" : "events"}
+                </span>
+              </div>
             </div>
             {g.events.map((event) => (
               <EventCard
