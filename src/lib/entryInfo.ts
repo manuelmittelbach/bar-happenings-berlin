@@ -20,6 +20,7 @@ export function isFreeEntry(info: string): boolean {
 export function isPayWhatYouWantEntry(info: string): boolean {
   return (
     info === "Pay what you want"
+    || info === "Donation"
     || info === "Frei / Spende"
     || info.toLowerCase().includes("die band sammelt")
   );
