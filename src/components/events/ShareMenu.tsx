@@ -6,7 +6,7 @@ import { toast } from "sonner";
 interface ShareMenuProps {
   eventTitle: string;
   eventId: string;
-  variant?: "icon" | "full" | "header" | "pill" | "icon-circle";
+  variant?: "icon" | "full" | "header" | "pill" | "icon-circle" | "primary-cta";
 }
 
 export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: ShareMenuProps) {
@@ -97,6 +97,11 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
     ) : variant === "icon-circle" ? (
       <button onClick={onClick} aria-label="Share" className="h-12 w-12 shrink-0 flex items-center justify-center rounded-full border-2 bg-transparent text-foreground border-accent hover:bg-accent/10 transition-all duration-200 active:scale-[0.98]">
         <Share2 className="h-4 w-4" />
+      </button>
+    ) : variant === "primary-cta" ? (
+      <button onClick={onClick} className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground font-mono text-xs font-bold uppercase tracking-[0.08em] hover:bg-accent/90 active:scale-[0.98] transition-all duration-200">
+        <Share2 className="h-3.5 w-3.5" />
+        Share
       </button>
     ) : (
       <button onClick={onClick} className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
