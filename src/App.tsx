@@ -1,4 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,14 +150,41 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 60 * 1000,
+      // Default gcTime stays at 30min, but the categories query overrides
+      // to Infinity so the persister keeps it across sessions. Other
+      // queries get garbage-collected normally and won't bloat the
+      // localStorage payload.
       gcTime: 30 * 60 * 1000,
       retry: 0,
     },
   },
 });
 
+const localStoragePersister = createSyncStoragePersister({
+  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+  key: "barlin-query-cache",
+});
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister: localStoragePersister,
+      // Persist queries whose data is stable enough to serve from cache
+      // on first paint (eliminates the brief async "flash" between
+      // initial render and query resolution). Everything else (event
+      // lists, venues, auth, profile) refetches fresh per session.
+      dehydrateOptions: {
+        shouldDehydrateQuery: (query) => {
+          const key = query.queryKey;
+          if (key[0] === "categories") return true;
+          // useEventSeries → ["events", "series", seriesId]
+          if (key[0] === "events" && key[1] === "series") return true;
+          return false;
+        },
+      },
+    }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -189,7 +218,7 @@ const App = () => (
         </AuthCallbackGate>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;

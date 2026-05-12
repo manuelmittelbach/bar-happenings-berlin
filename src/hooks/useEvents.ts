@@ -48,6 +48,14 @@ export function useEventSeries(seriesId: string) {
       return events;
     },
     enabled: !!seriesId,
+    // Persist + serve from cache so the recurrence label ("Every Tuesday")
+    // appears synchronously on revisit instead of popping in after the
+    // series fetch resolves. Same trade-off as categories: if an organizer
+    // adds/cancels an occurrence between visits, the cached series can be
+    // briefly stale until the user manually refreshes — acceptable for
+    // display-only label/isLastInSeries logic.
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 }
 
@@ -69,7 +77,18 @@ export function useVenues() {
 }
 
 export function useCategories() {
-  return useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  // Categories are effectively a stable enum. staleTime: Infinity + the
+  // persisted query cache (see App.tsx) means: fetched once, then served
+  // from localStorage on every subsequent visit / deep-link, so the
+  // category color/label is available synchronously on first paint. React
+  // Query will still refetch on demand (e.g. cache invalidation after an
+  // admin edit).
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 }
 
 export function useProfile(userId: string | null) {
