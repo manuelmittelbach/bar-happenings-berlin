@@ -142,7 +142,10 @@ def normalize_entry_info(value: str | None) -> str:
     fallback for pricing info that doesn't fit the canonical formats.
 
     Hierarchy:
-      1. 'Free' / 'Pay what you want' — passed through.
+      1. 'Free' / 'Donation' — passed through. Legacy LLM outputs
+         'Pay what you want' and 'Frei / Spende' are rewritten to 'Donation'
+         so new scrapes ingest under the current canonical (existing DB rows
+         with the legacy wording are NOT migrated — they stay verbatim).
       2. 'N €' / 'N,50 €' — rebuilt to canonical format (with the space) so
          they match ENTRY_AMOUNTS in the dropdown, even if the source returns
          '8€' or '8  €'.
@@ -159,7 +162,9 @@ def normalize_entry_info(value: str | None) -> str:
         return ""
     if cleaned.lower() in {"null", "none", "n/a", "no entry info"}:
         return ""
-    if cleaned in {"Free", "Pay what you want"}:
+    if cleaned in {"Pay what you want", "Frei / Spende"}:
+        return "Donation"
+    if cleaned in {"Free", "Donation"}:
         return cleaned
     m = _PRICE_RE.match(cleaned)
     if m:

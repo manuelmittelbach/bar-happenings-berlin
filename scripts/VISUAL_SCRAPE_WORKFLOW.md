@@ -369,13 +369,13 @@ title+date already captured in other fields). NEVER invent content.
 ### `entry_info`
 Hierarchy — use the most specific that fits the page:
 1. `"Free"` — no entry charge
-2. `"Pay what you want"` — donation / sliding scale
+2. `"Donation"` — donation / sliding scale / "pay what you want" wording
 3. `"5 €"`, `"12 €"`, `"15,50 €"` — fixed price (integer or integer,50 + space + €)
 4. **Free-text fallback** — pricing IS stated on the page but doesn't fit
    1–3. Copy the page's wording verbatim, single line, ≤80 chars. Examples
-   that should be kept (not nulled): `"Donation suggested"`,
-   `"Donations 5–10 €"`, `"Tickets via Eventim"`,
-   `"First drink costs double"`, `"Reservation required"`.
+   that should be kept (not nulled): `"Donations 5–10 €"`,
+   `"Tickets via Eventim"`, `"First drink costs double"`,
+   `"Reservation required"`.
 5. `null` — only when the page says nothing about pricing at all.
 
 Never invent — the value must come from the page text. The Admin UI
