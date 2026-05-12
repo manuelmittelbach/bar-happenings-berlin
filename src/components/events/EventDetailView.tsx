@@ -228,12 +228,18 @@ export default function EventDetailView({
           )}
         </div>
 
-        {/* C. Display title — Syne 800, fluid magazine-masthead size. */}
+        {/* C. Display title — Syne 800, fluid magazine-masthead size.
+            lang="de" + hyphens:auto lets the browser hyphenate long
+            German compound nouns ("Helmholtz-platz") instead of letting
+            them overflow the viewport. break-words is the no-hyphen
+            fallback for foreign words / URLs the dictionary doesn't
+            know. */}
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6"
+          lang="de"
+          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 hyphens-auto break-words"
           style={titleStyle}
         >
           {displayTitle}
@@ -287,7 +293,10 @@ export default function EventDetailView({
           <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
             The venue
           </div>
-          <h3 className={`font-heading font-extrabold uppercase tracking-[-0.01em] ${compact ? "text-[20px]" : "text-[22px] md:text-[26px]"}`}>
+          <h3
+            lang="de"
+            className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[22px] md:text-[26px]"}`}
+          >
             {event.venue}
           </h3>
           {event.address && (
