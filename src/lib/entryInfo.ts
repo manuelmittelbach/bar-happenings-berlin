@@ -12,17 +12,20 @@ export function isFreeEntry(info: string): boolean {
 }
 
 /**
- * "Pay what you want" includes the explicit string AND the German
- * "Frei / Spende" (donation-implied) and free-text variants like
- * "Die Band sammelt am Ende". Semantically these all mean: optional
- * payment, no fixed price, won't be turned away for refusing.
+ * "Donation"-class entries — optional payment, no fixed price, won't be
+ * turned away for refusing. Matches the canonical "Donation" and the
+ * legacy canonical "Pay what you want", plus any free-text that contains
+ * a donation keyword ("spende" → covers "Spende", "Spendenbasis",
+ * "Auf Spendenbasis", "Frei / Spende"; "die band sammelt" → covers
+ * "Die Band sammelt am Ende" and variants).
  */
 export function isPayWhatYouWantEntry(info: string): boolean {
+  const lower = info.toLowerCase();
   return (
     info === "Pay what you want"
     || info === "Donation"
-    || info === "Frei / Spende"
-    || info.toLowerCase().includes("die band sammelt")
+    || lower.includes("spende")
+    || lower.includes("die band sammelt")
   );
 }
 
