@@ -142,11 +142,11 @@ def normalize_entry_info(value: str | None) -> str:
     fallback for pricing info that doesn't fit the canonical formats.
 
     Hierarchy:
-      1. 'Free' / 'Donation' — passed through. Anything containing 'spende'
-         or 'die band sammelt' (case-insensitive), plus the legacy exact
-         strings 'Pay what you want' and 'Frei / Spende', is rewritten to
-         the canonical 'Donation'. Mirrors `normalizeEntryInfoForDb` on the
-         app side (`src/lib/entryInfo.ts`).
+      1. 'Free' / 'Donation' — passed through. The scraper LLM prompt is
+         responsible for mapping donation language ('Spende', 'Spendenbasis',
+         'Die Band sammelt …', etc.) to canonical 'Donation' upstream. If
+         the LLM doesn't, the freitext lands as-is and the event simply
+         won't be classified as Donation downstream.
       2. 'N €' / 'N,50 €' — rebuilt to canonical format (with the space) so
          they match ENTRY_AMOUNTS in the dropdown, even if the source returns
          '8€' or '8  €'.
@@ -163,11 +163,6 @@ def normalize_entry_info(value: str | None) -> str:
         return ""
     if cleaned.lower() in {"null", "none", "n/a", "no entry info"}:
         return ""
-    lower = cleaned.lower()
-    if (cleaned in {"Pay what you want", "Frei / Spende"}
-            or "spende" in lower
-            or "die band sammelt" in lower):
-        return "Donation"
     if cleaned in {"Free", "Donation"}:
         return cleaned
     m = _PRICE_RE.match(cleaned)
