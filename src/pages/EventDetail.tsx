@@ -1,12 +1,8 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useEventById, useEventSeries, useEventsByVenue } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
-import { saveInterest, deleteInterest, checkInterest } from "@/lib/supabaseQueries";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 import { berlinDateString } from "@/lib/dateFormat";
 import EventDetailView from "@/components/events/EventDetailView";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -14,77 +10,13 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 export default function EventDetail() {
 	const { id } = useParams();
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const { user, role, roleResolved } = useAuth();
+	const { role, roleResolved } = useAuth();
 	const { data: event, isLoading, error, refetch, isFetching } = useEventById(id || "");
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
 	const todayStr = berlinDateString();
 	const { data: venueEvents = [] } = useEventsByVenue(event?.venueId ?? "", todayStr);
-	const [saved, setSaved] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
-	const [interestedCount, setInterestedCount] = useState(0);
 	const [upcomingOpen, setUpcomingOpen] = useState(false);
-
-	// Sync interestedCount with real DB value once event loads
-	useEffect(() => {
-		if (event?.interestedCount != null) {
-			setInterestedCount(event.interestedCount);
-		}
-	}, [event?.interestedCount]);
-
-	// Restore saved state on mount / when user changes
-	useEffect(() => {
-		if (!user || !id) return;
-		checkInterest(user.id, id).then(setSaved);
-	}, [user, id]);
-
-	const persistInterest = async (userId: string, eventId: string) => {
-		setSaved(true);
-		setInterestedCount(prev => prev + 1);
-		setIsSaving(true);
-		try {
-			await saveInterest(userId, eventId);
-			queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-			queryClient.invalidateQueries({ queryKey: ["my-events", userId] });
-		} catch {
-			setSaved(false);
-			setInterestedCount(prev => prev - 1);
-			toast.error("Couldn't save — please try again");
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const removeInterest = async (userId: string, eventId: string) => {
-		setSaved(false);
-		setInterestedCount(prev => prev - 1);
-		setIsSaving(true);
-		try {
-			await deleteInterest(userId, eventId);
-			queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-			queryClient.invalidateQueries({ queryKey: ["my-events", userId] });
-		} catch {
-			setSaved(true);
-			setInterestedCount(prev => prev + 1);
-			toast.error("Couldn't unsave — please try again");
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const handleSave = async () => {
-		if (!event) return;
-		if (saved) {
-			if (user) await removeInterest(user.id, event.id);
-			return;
-		}
-		if (!user) {
-			navigate("/login", { state: { from: `/event/${event.id}` } });
-			return;
-		}
-		await persistInterest(user.id, event.id);
-	};
 
 	if (isLoading) {
 		return <PageSpinner />;
@@ -146,11 +78,6 @@ export default function EventDetail() {
 				event={event}
 				upcomingEvents={upcomingEvents}
 				recurrenceLabel={recurrenceLabel}
-				interestedCount={interestedCount}
-				showInterestCount={SHOW_INTEREST_COUNT}
-				saved={saved}
-				isSaving={isSaving}
-				onToggleInterest={handleSave}
 				onSelectSibling={handleSelectSibling}
 				onOpenMaps={handleMaps}
 				showShare={true}

@@ -407,53 +407,6 @@ export async function fetchVenuesWithOwnership(): Promise<{ venue: Venue; hasOwn
   }));
 }
 
-export async function saveInterest(userId: string, eventId: string): Promise<void> {
-  const { error } = await supabase
-    .from("user_interests")
-    .upsert({ user_id: userId, event_id: eventId }, { onConflict: "user_id,event_id" });
-  if (error) throw error;
-}
-
-export async function deleteInterest(userId: string, eventId: string): Promise<void> {
-  const { error } = await supabase
-    .from("user_interests")
-    .delete()
-    .eq("user_id", userId)
-    .eq("event_id", eventId);
-  if (error) throw error;
-}
-
-export async function checkInterest(userId: string, eventId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from("user_interests")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("event_id", eventId)
-    .maybeSingle();
-  return !!data;
-}
-
-export async function fetchInterestedEvents(userId: string): Promise<BarlinEvent[]> {
-  const { data: interests, error } = await supabase
-    .from("user_interests")
-    .select("event_id, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  const ids = (interests ?? []).map((r) => r.event_id);
-  if (ids.length === 0) return [];
-
-  const [liveRes, archRes] = await Promise.all([
-    supabase.from("events").select("*").in("id", ids),
-    supabase.from("events_archive").select("*").in("id", ids),
-  ]);
-  if (liveRes.error) throw liveRes.error;
-  if (archRes.error) throw archRes.error;
-
-  const rows = [...(liveRes.data ?? []), ...(archRes.data ?? [])];
-  return rows.map(mapEventRow);
-}
-
 export async function fetchUserRole(userId: string): Promise<"user" | "organizer" | "admin"> {
   const { data } = await supabase
     .from("profiles")

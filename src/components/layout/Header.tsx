@@ -12,7 +12,7 @@ const navItems = [
   { label: "For Bars", path: "/for-bars" },
 ];
 
-type ActiveSection = "saved" | "manage" | "admin" | "profile" | "none";
+type ActiveSection = "manage" | "admin" | "profile" | "none";
 
 const SECTION_KEY = "headerActiveSection";
 const RESET_ROUTES = new Set([
@@ -25,7 +25,6 @@ const RESET_ROUTES = new Set([
   "/reset-password",
 ]);
 const SECTION_ROUTES: Record<string, ActiveSection> = {
-  "/my-events": "saved",
   "/dashboard": "manage",
   "/admin": "admin",
   "/profile": "profile",
@@ -133,40 +132,16 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {!loading && (
             <>
-              {role === "organizer" ? (
-                <>
-                  <Link
-                    to="/my-events"
-                    className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
-                      activeSection === "saved"
-                        ? "bg-foreground text-background"
-                        : "text-foreground hover:bg-foreground hover:text-background"
-                    }`}
-                  >
-                    Your Events
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
-                      activeSection === "manage"
-                        ? "bg-foreground text-background"
-                        : "text-foreground hover:bg-foreground hover:text-background"
-                    }`}
-                  >
-                    Your Bar
-                  </Link>
-                </>
-              ) : (
+              {role === "organizer" && (
                 <Link
-                  to={user ? "/my-events" : "/login"}
-                  state={user ? undefined : { from: "/my-events" }}
+                  to="/dashboard"
                   className={`hidden sm:inline-flex h-9 px-5 items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider transition-all ${
-                    activeSection === "saved"
+                    activeSection === "manage"
                       ? "bg-foreground text-background"
                       : "text-foreground hover:bg-foreground hover:text-background"
                   }`}
                 >
-                  Your Events
+                  Your Bar
                 </Link>
               )}
               {role === "admin" && (
@@ -255,43 +230,17 @@ export default function Header() {
                   </Link>
                 );
               })}
-              {role === "organizer" ? (
-                <>
-                  <Link
-                    to="/my-events"
-                    onClick={() => setMobileOpen(false)}
-                    className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
-                      activeSection === "saved"
-                        ? "bg-foreground text-background"
-                        : "text-foreground"
-                    }`}
-                  >
-                    Your Events
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setMobileOpen(false)}
-                    className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
-                      activeSection === "manage"
-                        ? "bg-foreground text-background"
-                        : "text-foreground"
-                    }`}
-                  >
-                    Your Bar
-                  </Link>
-                </>
-              ) : (
+              {role === "organizer" && (
                 <Link
-                  to={user ? "/my-events" : "/login"}
-                  state={user ? undefined : { from: "/my-events" }}
+                  to="/dashboard"
                   onClick={() => setMobileOpen(false)}
                   className={`inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider ${
-                    activeSection === "saved"
+                    activeSection === "manage"
                       ? "bg-foreground text-background"
                       : "text-foreground"
                   }`}
                 >
-                  Your Events
+                  Your Bar
                 </Link>
               )}
               {role === "admin" && (
