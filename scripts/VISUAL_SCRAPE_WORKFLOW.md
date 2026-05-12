@@ -371,7 +371,7 @@ Hierarchy — use the most specific that fits the page:
 1. `"Free"` — no entry charge
 2. `"Donation"` — fully optional payment / "pay what you want" wording. Map
    common German donation indicators here too: `"Spende"`, `"Spendenbasis"`,
-   `"Auf Spendenbasis"`, `"Frei / Spende"`, `"Die Band sammelt am Ende"`.
+   `"Auf Spendenbasis"`, `"Spende"`, `"Die Band sammelt am Ende"`.
    Do NOT map sliding-scale ranges (e.g. `"5–15 €"`) — those go to free-text.
 3. `"5 €"`, `"12 €"`, `"15,50 €"` — fixed price (integer or integer,50 + space + €)
 4. **Free-text fallback** — pricing IS stated on the page but doesn't fit

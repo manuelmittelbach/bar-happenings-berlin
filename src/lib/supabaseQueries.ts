@@ -4,6 +4,13 @@ import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, Venu
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { berlinDateStringOffset } from "@/lib/dateFormat";
 import { geocodeAddress } from "@/lib/geocoding";
+import { normalizeEntryInfoForDb } from "@/lib/entryInfo";
+
+function entryInfoForDb(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const normalized = normalizeEntryInfoForDb(value);
+  return normalized || null;
+}
 
 // Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
 // also contain seconds. Normalize everything to HH:MM at every read/write
@@ -211,7 +218,7 @@ function buildEventRow(
     doors_time: times.doors,
     category: formData.category,
     description: formData.description || null,
-    entry_info: formData.entryInfo || null,
+    entry_info: entryInfoForDb(formData.entryInfo),
     language: formData.language || null,
     url: cleanUrl(formData.website) || null,
     image: imageUrl || null,
@@ -266,7 +273,7 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
     neighborhood: formData.neighborhood,
     category: formData.category,
     description: formData.description || null,
-    entry_info: formData.entryInfo || null,
+    entry_info: entryInfoForDb(formData.entryInfo),
     language: formData.language || null,
     url: cleanUrl(formData.website) || null,
     image_position: formData.imagePosition,
@@ -1211,7 +1218,7 @@ export async function duplicateStagedEvent(
       category: merged.category,
       language: merged.language || null,
       description: merged.description || null,
-      entry_info: merged.entryInfo || null,
+      entry_info: entryInfoForDb(merged.entryInfo),
       source_url: cleanUrl(edits?.sourceUrl !== undefined ? edits.sourceUrl : source.sourceUrl) || null,
       is_manual: isManual,
       created_by_admin: true,
@@ -1305,7 +1312,7 @@ export async function approveStagedEvent(
     language: merged.language || null,
     description: merged.description || null,
     url: cleanUrl(staged.sourceUrl) || null,
-    entry_info: merged.entryInfo || null,
+    entry_info: entryInfoForDb(merged.entryInfo),
     image: null,
     image_position: "50% 50%",
     created_by: adminUserId,
@@ -1429,7 +1436,7 @@ export async function applyEventUpdate(
   }
   if (patch.endTime !== undefined) update.end_time = patch.endTime ? trimTime(patch.endTime) : null;
   if (patch.description !== undefined) update.description = patch.description || null;
-  if (patch.entryInfo !== undefined) update.entry_info = patch.entryInfo || null;
+  if (patch.entryInfo !== undefined) update.entry_info = entryInfoForDb(patch.entryInfo);
   if (patch.sourceUrl !== undefined) update.url = cleanUrl(patch.sourceUrl) || null;
   if (patch.category !== undefined) update.category = patch.category;
   if (patch.language !== undefined) update.language = patch.language || null;
@@ -1521,7 +1528,7 @@ export async function updateApprovedEvent(
     category: edits.category,
     language: edits.language || null,
     description: edits.description || null,
-    entry_info: edits.entryInfo || null,
+    entry_info: entryInfoForDb(edits.entryInfo),
     url: cleanUrl(edits.sourceUrl) || null,
     venue: venue.name,
     venue_id: venue.id,

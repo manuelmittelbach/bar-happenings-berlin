@@ -142,17 +142,18 @@ def normalize_entry_info(value: str | None) -> str:
     fallback for pricing info that doesn't fit the canonical formats.
 
     Hierarchy:
-      1. 'Free' / 'Donation' — passed through. Legacy LLM outputs
-         'Pay what you want' and 'Frei / Spende' are rewritten to 'Donation'
-         so new scrapes ingest under the current canonical (existing DB rows
-         with the legacy wording are NOT migrated — they stay verbatim).
+      1. 'Free' / 'Donation' — passed through. Anything containing 'spende'
+         or 'die band sammelt' (case-insensitive), plus the legacy exact
+         strings 'Pay what you want' and 'Frei / Spende', is rewritten to
+         the canonical 'Donation'. Mirrors `normalizeEntryInfoForDb` on the
+         app side (`src/lib/entryInfo.ts`).
       2. 'N €' / 'N,50 €' — rebuilt to canonical format (with the space) so
          they match ENTRY_AMOUNTS in the dropdown, even if the source returns
          '8€' or '8  €'.
-      3. Other non-empty pricing wording (e.g. 'Donation suggested',
-         'Tickets via Eventim') — kept as-is, sanitized to a single line and
-         capped at _ENTRY_INFO_MAX_LEN. The admin UI auto-detects these and
-         shows them via Custom…, so they round-trip cleanly.
+      3. Other non-empty pricing wording (e.g. 'Tickets via Eventim') —
+         kept as-is, sanitized to a single line and capped at
+         _ENTRY_INFO_MAX_LEN. The admin UI auto-detects these and shows
+         them via Custom…, so they round-trip cleanly.
       4. Empty / placeholder strings ('null', 'none', 'n/a', 'no entry info')
          — collapse to '' so the admin UI's 'No entry info' pre-selects."""
     if not value or not isinstance(value, str):
@@ -162,7 +163,10 @@ def normalize_entry_info(value: str | None) -> str:
         return ""
     if cleaned.lower() in {"null", "none", "n/a", "no entry info"}:
         return ""
-    if cleaned in {"Pay what you want", "Frei / Spende"}:
+    lower = cleaned.lower()
+    if (cleaned in {"Pay what you want", "Frei / Spende"}
+            or "spende" in lower
+            or "die band sammelt" in lower):
         return "Donation"
     if cleaned in {"Free", "Donation"}:
         return cleaned
