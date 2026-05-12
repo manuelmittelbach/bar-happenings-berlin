@@ -1,4 +1,4 @@
-import React, { ReactNode, Fragment, useState } from "react";
+import React, { ReactNode, Fragment, useRef, useState } from "react";
 import { MapPin, ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
@@ -272,16 +272,14 @@ export default function EventDetailView({
           </p>
         )}
 
-        {/* E. Description — DM Sans 17/18px, generous leading. */}
-        <div className={`mt-7 font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6] space-y-5`}>
-          {event.description ? (
-            event.description.split("\n\n").map((p, i) => (
-              <p key={i}>{renderWithLinks(p)}</p>
-            ))
-          ) : (
-            <p className="italic text-muted-foreground/70 text-sm">(no description)</p>
-          )}
-        </div>
+        {/* E. Description — DM Sans 17/18px, generous leading.
+            Long descriptions get collapsed behind a "Show more" toggle so
+            the venue card + maps CTA stay reachable without a long scroll.
+            Threshold is character-count based: anything under ~240 chars
+            fits in the collapsed window anyway, so we skip the toggle
+            entirely for short copy. */}
+        <DescriptionBlock description={event.description ?? ""} compact={compact} />
+
 
         {/* F. Venue block — bordered editorial card with "Open in Maps" +
             "All events at this bar" controls. */}
@@ -353,6 +351,93 @@ export default function EventDetailView({
 
         <div className="h-6" />
       </article>
+    </div>
+  );
+}
+
+/* Description block with optional "Show more" toggle. Short descriptions
+   render in full. Long ones (over the character threshold) are clipped
+   with a soft fade at the bottom and a mono caps toggle button — same
+   "Read more on Medium / Instagram caption truncate" pattern users
+   already know, no learning curve. */
+function DescriptionBlock({
+  description,
+  compact,
+}: {
+  description: string;
+  compact: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  // 240 chars ≈ 5–6 lines at text-[17px] on mobile. Below this the
+  // collapsed window would already show the whole thing, so the toggle
+  // would be pointless.
+  const TRUNCATE_AT = 240;
+  const isLong = description.length > TRUNCATE_AT;
+  const showCollapsed = isLong && !expanded;
+  // Remember the viewport-relative position of the toggle button when
+  // expanding, so collapsing can scroll the page back to that same spot.
+  // Without this, "Show less" leaves the user stranded far below where
+  // they originally clicked "Show more".
+  const expandAnchorRef = useRef<number | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleToggle = () => {
+    if (!expanded) {
+      expandAnchorRef.current = buttonRef.current?.getBoundingClientRect().top ?? null;
+      setExpanded(true);
+    } else {
+      const anchor = expandAnchorRef.current;
+      setExpanded(false);
+      if (anchor != null) {
+        requestAnimationFrame(() => {
+          const currentTop = buttonRef.current?.getBoundingClientRect().top ?? 0;
+          window.scrollBy({ top: currentTop - anchor, behavior: "auto" });
+        });
+      }
+      expandAnchorRef.current = null;
+    }
+  };
+
+  if (!description) {
+    return (
+      <div className={`mt-7 font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6]`}>
+        <p className="italic text-muted-foreground/70 text-sm">(no description)</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`mt-7 font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6]`}>
+      <div
+        className={`relative ${
+          showCollapsed ? "max-h-[160px] md:max-h-[200px] overflow-hidden" : ""
+        }`}
+      >
+        <div className="space-y-5">
+          {description.split("\n\n").map((p, i) => (
+            <p key={i}>{renderWithLinks(p)}</p>
+          ))}
+        </div>
+        {/* Soft fade hides the hard cutoff edge — looks like the text
+            fades out into the page background. Pointer-events-none so it
+            doesn't block link taps in the last visible line. */}
+        {showCollapsed && (
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none"
+          />
+        )}
+      </div>
+      {isLong && (
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={handleToggle}
+          className="mt-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {expanded ? "Show less ↑" : "Show more ↓"}
+        </button>
+      )}
     </div>
   );
 }
