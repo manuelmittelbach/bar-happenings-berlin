@@ -9,7 +9,7 @@ import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
  * The Wordmark on the left already routes to home (the Tonight surface),
  * so a separate "Tonight" link in the nav was redundant. */
 const navItems: { label: string; path: string }[] = [
-  { label: "For bars", path: "/for-bars" },
+  { label: "For organizer", path: "/for-bars" },
   { label: "About",    path: "/about" },
 ];
 
