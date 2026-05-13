@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { MapPin, ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
-import { formatDateWithDay } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
@@ -109,8 +108,14 @@ export default function EventDetailView({
   const eyebrowTime = event.startTime
     ? `${event.startTime}${event.endTime ? `–${event.endTime}` : ""}`
     : null;
-  const eyebrowDate = event.date ? formatDateWithDay(event.date) : null;
-  const eyebrowParts = [categoryLabel, eyebrowDate, eyebrowTime].filter(Boolean) as string[];
+  const eyebrowDate = event.date
+    ? new Date(event.date + "T00:00:00Z").toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })
+    : null;
+  const eyebrowParts = [categoryLabel, eyebrowTime, eyebrowDate].filter(Boolean) as string[];
   const eyebrowColor = categoryColor || "hsl(var(--accent))";
 
   // Venue thumbnail. Loaded via the shared venues cache (no extra
