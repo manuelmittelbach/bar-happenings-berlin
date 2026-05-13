@@ -269,14 +269,22 @@ export default function EventDetailView({
           </div>
         )}
 
-        {/* Doors / next-day microcopy lives just under the action row. */}
-        {(event.doorsTime || (event.startTime && endsNextDay(event.startTime, event.endTime))) && (
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            {event.doorsTime && <>Doors {event.doorsTime}</>}
-            {event.doorsTime && event.startTime && endsNextDay(event.startTime, event.endTime) && " · "}
-            {event.startTime && endsNextDay(event.startTime, event.endTime) && <>Ends next day</>}
-          </p>
-        )}
+        {/* Doors / next-day microcopy lives just under the action row.
+            Hide doors when it equals the start time — the eyebrow already
+            shows that time, so a duplicate "Doors 20:00" line would just
+            add visual noise. */}
+        {(() => {
+          const showDoors = !!event.doorsTime && event.doorsTime !== event.startTime;
+          const showEndsNextDay = !!event.startTime && endsNextDay(event.startTime, event.endTime);
+          if (!showDoors && !showEndsNextDay) return null;
+          return (
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              {showDoors && <>Doors {event.doorsTime}</>}
+              {showDoors && showEndsNextDay && " · "}
+              {showEndsNextDay && <>Ends next day</>}
+            </p>
+          );
+        })()}
 
         {/* E. Description — DM Sans 17/18px, generous leading.
             Long descriptions get collapsed behind a "Show more" toggle so
