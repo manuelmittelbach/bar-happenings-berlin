@@ -192,8 +192,16 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 							title: cleanEventTitle(e.title, e.venue),
 							date: e.date,
 							startTime: e.startTime ?? "",
+							// endTime carried into the popup so isLiveNow() can run
+							// at click time and swap the time string for a pulsing
+							// "Now" indicator on currently-live events.
+							endTime: e.endTime ?? "",
 							status: e.status,
 							canceledBy: e.canceledBy ?? null,
+							// Per-event category color so the popup button can hover/
+							// click in the category hue (Live Music → green, DJ → purple,
+							// etc.) instead of a unified orange.
+							categoryColor: categoryById[e.category]?.color ?? "#ED5B1C",
 						}))
 					),
 				},
@@ -361,8 +369,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						title: string;
 						date: string;
 						startTime: string;
+						endTime: string;
 						status?: string;
 						canceledBy?: "organizer" | "admin" | null;
+						categoryColor: string;
 					}[] = JSON.parse(props.eventsJson);
 
 					const popupEl = document.createElement("div");
@@ -410,6 +420,11 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						const isCanceled = evt.status === "canceled";
 						btn.className = "map-popup-btn";
 						btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
+						// `--hover-color` CSS custom property drives the `:hover`
+						// background defined in index.css for `.map-popup-btn`.
+						// Setting it per-button lets each event row hover in its
+						// own category hue (Live Music → green, DJ → purple, etc.).
+						btn.style.setProperty("--hover-color", evt.categoryColor);
 						const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
 							weekday: "short", day: "numeric", month: "short",
 						});
@@ -424,11 +439,41 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 							badge.style.cssText = "display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.5px;color:#dc2626;background:#fee2e2;padding:1px 6px;margin-right:6px;border-radius:2px;";
 							metaP.appendChild(badge);
 						}
-						metaP.appendChild(document.createTextNode(dateStr + (evt.startTime ? ` · ${evt.startTime}` : "")));
+						metaP.appendChild(document.createTextNode(dateStr));
+						if (evt.startTime) {
+							const sep = document.createElement("span");
+							sep.style.cssText = "opacity:0.5;margin:0 4px;";
+							sep.textContent = "·";
+							metaP.appendChild(sep);
+							// Live = currently between startTime and endTime → swap the
+							// time text for an "● Now" indicator with a pulsing orange
+							// dot. Mirrors the EventMeta caps row on the home page so the
+							// affordance language stays consistent across surfaces.
+							const liveNow =
+								!isCanceled &&
+								isLiveNow({
+									date: evt.date,
+									startTime: evt.startTime,
+									endTime: evt.endTime || undefined,
+								});
+							if (liveNow) {
+								const nowEl = document.createElement("span");
+								nowEl.style.cssText =
+									"display:inline-flex;align-items:center;gap:5px;color:#ED5B1C;font-weight:700;";
+								const dot = document.createElement("span");
+								dot.style.cssText =
+									"display:inline-block;width:7px;height:7px;border-radius:50%;background:#ED5B1C;animation:ib-pulse 1.6s ease-in-out infinite;";
+								nowEl.appendChild(dot);
+								nowEl.appendChild(document.createTextNode("Now"));
+								metaP.appendChild(nowEl);
+							} else {
+								metaP.appendChild(document.createTextNode(evt.startTime));
+							}
+						}
 						btn.appendChild(titleP);
 						btn.appendChild(metaP);
 						btn.addEventListener("click", () => {
-							btn.style.background = "#f97316";
+							btn.style.background = evt.categoryColor;
 							btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
 							btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
 							setTimeout(() => onEventClickRef.current(evt.id), 80);

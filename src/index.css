@@ -140,7 +140,10 @@
 @media (hover: hover) {
   .map-popup-btn:hover p:first-child { color: white !important; }
   .map-popup-btn:hover p:last-child  { color: rgba(255,255,255,0.75) !important; }
-  .map-popup-btn:hover               { background: #f97316 !important; }
+  /* `--hover-color` is set per-button in EventMap.tsx to the event's
+     category color (Live Music → green, DJ → purple, etc.). Falls back
+     to the accent orange if no inline property was set. */
+  .map-popup-btn:hover               { background: var(--hover-color, #f97316) !important; }
 }
 
 @layer utilities {

@@ -168,10 +168,12 @@ export default function EventDetailView({
         )}
 
         {/* B. Eyebrow row — category color · date · time, with overlays
-            relocated here when the lede figure is absent. */}
+            relocated here when the lede figure is absent. Bumped to
+            13/14px (was 11px) so the byline reads as a proper meta row
+            on the detail surface instead of a tight micro-caption. */}
         <div className="flex items-center gap-3 mb-3">
           <div
-            className="flex-1 min-w-0 font-mono text-[11px] font-bold uppercase tracking-[0.14em] flex items-center gap-2 flex-wrap"
+            className="flex-1 min-w-0 font-mono text-[13px] md:text-[14px] font-bold uppercase tracking-[0.14em] flex items-center gap-2 flex-wrap"
             style={{ color: eyebrowColor }}
           >
             {eyebrowParts.map((part, i) => (
