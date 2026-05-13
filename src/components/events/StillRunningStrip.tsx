@@ -28,7 +28,7 @@ export default function StillRunningStrip({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-6 mb-5">
+        <div className="flex items-baseline justify-between gap-4 flex-wrap pb-3.5 mt-6 mb-5">
           <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
             Since yesterday
           </h2>
@@ -72,7 +72,7 @@ function StillRunningCard({ event, categories, onClick }: StillRunningCardProps)
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`group grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-colors no-underline text-foreground ${
+      className={`group grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-colors no-underline text-foreground ${
         isCanceled ? "opacity-50" : ""
       }`}
     >
