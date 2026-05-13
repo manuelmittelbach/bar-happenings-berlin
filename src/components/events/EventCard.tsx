@@ -82,7 +82,7 @@ export default function EventCard({ event, layout = "list", onClick }: EventCard
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`relative grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-colors no-underline text-foreground ${
+        className={`relative grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-colors no-underline text-foreground ${
           isCanceled ? "opacity-50" : ""
         }`}
       >
@@ -106,7 +106,7 @@ export default function EventCard({ event, layout = "list", onClick }: EventCard
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`relative block bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden card-hl no-underline text-foreground ${
+      className={`relative block bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all overflow-hidden card-hl no-underline text-foreground ${
         isCanceled ? "opacity-55" : ""
       }`}
       style={{ padding: "20px 18px 18px" }}

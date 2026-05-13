@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } fr
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
-import { Search, Map, X } from "lucide-react";
+import { Map } from "lucide-react";
 
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -11,6 +11,7 @@ import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
+import AppHero from "@/components/landing/AppHero";
 
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
@@ -195,184 +196,45 @@ export default function Index() {
     navigate(`/event/${eventId}`);
   }, [navigate]);
 
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchWrapperRef = useRef<HTMLDivElement>(null);
-  /* Suggestions — venues match first, then unique neighborhoods that
-   * contain the query. Returns up to 4 results (2 bars + 2 neighborhoods
-   * max) so the dropdown stays compact. */
-  const suggestions = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return [];
-    const bars: { label: string; type: "bar" | "neighborhood" }[] = [];
-    const hoods: { label: string; type: "bar" | "neighborhood" }[] = [];
-    const seenBar = new Set<string>();
-    const seenHood = new Set<string>();
-    for (const v of venuesData) {
-      if (v.name.toLowerCase().includes(q) && !seenBar.has(v.name)) {
-        seenBar.add(v.name);
-        bars.push({ label: v.name, type: "bar" });
-      }
-      const hood = (v as { neighborhood?: string }).neighborhood;
-      if (hood && hood.toLowerCase().includes(q) && !seenHood.has(hood)) {
-        seenHood.add(hood);
-        hoods.push({ label: hood, type: "neighborhood" });
-      }
-    }
-    return [...bars.slice(0, 2), ...hoods.slice(0, 2)];
-  }, [searchQuery, venuesData]);
-
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
   const showEditorial = dayTab === "tonight";
 
   return (
-    <>
-      {/* Hero — display headline + subdeck + search input.
-          Layout matches `Hero.jsx`: eyebrow, h1, subdeck, search, each
-          fading in as a whole element (stagger per block, not per word).
-          The headline is plain inline text so the natural word-wrap
-          mirrors the prototype's behavior at every viewport width. */}
-      <section className="relative overflow-x-clip pt-11 pb-8">
-        {/* Inherits the same container max-width as the header above and
-            the category / day filter rows below — keeps the left edge of
-            every section aligned. Previously the hero had an extra
-            maxWidth: 1100 cap that made it visually narrower than its
-            siblings, producing an awkward step against the full-width
-            header. */}
-        <div className="container relative z-[45]">
-          <motion.p
-            className="font-mono font-normal uppercase text-accent"
-            style={{ fontSize: 11, letterSpacing: "0.14em", marginBottom: 18 }}
-            initial={animateHero ? { opacity: 0, y: 12 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-          >
-            Berlin's independent bar guide
-          </motion.p>
-
-          <motion.h1
-            className="heading-display leading-[0.95] m-0"
-            // Smaller and tighter than the original clamp(48px, 7.5vw, 96px).
-            // The previous values forced "What's on tonight" past the
-            // available container width on every viewport, producing 4–5
-            // auto-wrapped lines instead of the intended two. With the
-            // tighter scale, both halves of the headline ("What's on
-            // tonight" / "in Berlin's bars?") fit on one line each from
-            // ~360px upward.
-            style={{ fontSize: "clamp(36px, 5.5vw, 72px)" }}
-            initial={animateHero ? { opacity: 0, y: 12 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            What's on{" "}
-            <span
-              className="heading-editorial lowercase italic"
-              style={{ letterSpacing: "-0.01em" }}
-            >
-              tonight
-            </span>
-            <br />in Berlin bars
-            <span className="text-accent" style={{ fontStyle: "normal" }}>?</span>
-          </motion.h1>
-
-          {/* Deck/tagline — Desktop-only (hidden md:block). On Mobile we
-              skip it to save vertical space (the pre-heading + headline
-              already establish the brand + tonight frame). On Desktop
-              the wider container can carry the extra layer for SEO and
-              richer first-impression copy. */}
-          <motion.p
-            className="hidden md:block font-body max-w-[580px]"
-            style={{
-              fontSize: 18,
-              lineHeight: 1.55,
-              marginTop: 22,
-              marginBottom: 0,
-              textWrap: "balance",
-            }}
-            initial={animateHero ? { opacity: 0, y: 12 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            All the small, independent, slightly chaotic things happening in Berlin tonight.
-          </motion.p>
-
-          {/* Hero Search — Desktop-only (hidden md:block).
-              On Mobile this is hidden entirely; browsing via categories
-              + day switcher is the intended Mobile flow. On Desktop the
-              big input sits below the tagline as a prominent secondary
-              affordance for users who already know what they're looking
-              for. */}
-          <motion.div
-            className="hidden md:block relative max-w-[480px]"
-            style={{ marginTop: 28 }}
-            initial={animateHero ? { opacity: 0, y: 12 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            ref={searchWrapperRef}
-          >
-            <div className="flex items-center h-[52px] px-[14px] bg-background border-2 border-foreground">
-              <Search className="h-[18px] w-[18px] text-foreground shrink-0 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                onFocus={() => setShowSuggestions(true)}
-                onKeyDown={(e) => { if (e.key === "Escape") setShowSuggestions(false); }}
-                placeholder="search by bar or neighborhood"
-                autoComplete="off"
-                className="flex-1 ml-2.5 min-w-0 bg-transparent border-0 font-body text-[15px] text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
-                style={{ outline: "none", boxShadow: "none" }}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
-                  className="h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {showSuggestions && suggestions.length > 0 && (
-              <div
-                className="absolute left-0 right-0 z-[60] border-2 border-foreground border-t-0 bg-background"
-                style={{ top: "100%", marginTop: -2 }}
-              >
-                {suggestions.map((s) => (
-                  <button
-                    key={`${s.type}-${s.label}`}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setSearchQuery(s.label);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full flex items-center justify-between gap-2 py-2.5 hover:bg-muted transition-colors text-left border-b border-border last:border-b-0"
-                    style={{ paddingLeft: 42, paddingRight: 14 }}
-                  >
-                    <span className="font-body text-[15px] text-foreground truncate min-w-0">
-                      {s.label}
-                    </span>
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground shrink-0">
-                      {s.type === "bar" ? "Bar" : "Neighborhood"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </section>
+    <div className="relative isolate">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -right-32 top-[720px] h-[520px] w-[520px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.14), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute -left-40 top-[1500px] h-[600px] w-[600px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.10), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(50px)",
+          }}
+        />
+        <div
+          className="absolute -right-48 top-[2500px] h-[680px] w-[680px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.12), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(50px)",
+          }}
+        />
+        <div
+          className="absolute -left-32 top-[3600px] h-[560px] w-[560px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.08), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(45px)",
+          }}
+        />
+      </div>
+      <AppHero animate={animateHero} />
 
       {/* Sticky category filter — icon-disk row (mobile scroller / desktop
           row) matching /map. Bottom border is 2px foreground to match the
@@ -380,7 +242,7 @@ export default function Index() {
           block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background border-b-2 border-foreground"
+        className="sticky top-[64px] z-40 bg-background/80 backdrop-blur-md border-b border-foreground/10"
       >
         <div className="container py-3">
           <div className="md:hidden">
@@ -540,7 +402,7 @@ export default function Index() {
         <Map className="h-4 w-4" />
         <span className="hidden md:inline">Map</span>
       </button>
-    </>
+    </div>
   );
 }
 
@@ -600,7 +462,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
           className="sticky z-30 bg-background mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
-          <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             {/* Same size as the weekday separators in the Later section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
                 same typographic weight. On narrow Mobile viewports the
@@ -692,7 +554,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
               className="sticky z-30 bg-background mb-3.5"
               style={{ top: "var(--chrome-bottom, 130px)" }}
             >
-              <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+              <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>

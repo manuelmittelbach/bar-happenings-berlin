@@ -61,7 +61,7 @@ export default function FreeTonightStrip({
           className="sticky z-30 bg-background mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
-          <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
             </h2>
@@ -118,7 +118,7 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-colors no-underline text-foreground ${
+      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-colors no-underline text-foreground ${
         isCanceled ? "opacity-50" : ""
       }`}
     >

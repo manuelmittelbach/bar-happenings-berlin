@@ -39,7 +39,7 @@ export default function TonightsHighlights({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-6 mb-5">
+        <div className="flex items-baseline justify-between gap-4 flex-wrap pb-3.5 mt-6 mb-5">
           <div>
             <div className="mono-label text-accent mb-1.5">Editor's picks</div>
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
@@ -80,7 +80,7 @@ function HighlightCard({ event, categories, onClick }: HighlightCardProps) {
   return (
     <button
       onClick={() => onClick(event.id)}
-      className={`group relative flex flex-col text-left bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden card-hl ${
+      className={`group relative flex flex-col text-left bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all overflow-hidden card-hl ${
         isCanceled ? "opacity-55" : ""
       }`}
       style={{ padding: "20px 18px 18px" }}
