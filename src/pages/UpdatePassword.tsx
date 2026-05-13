@@ -93,7 +93,7 @@ export default function UpdatePassword() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+                    className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
                   />
                   <button
                     type="button"
@@ -113,7 +113,7 @@ export default function UpdatePassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
+                className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
               >
                 {loading ? "..." : "Update password"}
               </button>

@@ -208,7 +208,7 @@ export default function EditEvent() {
               ? `/event/${id}`
               : "/dashboard"
           }
-          className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
+          className="h-12 px-6 flex items-center border border-border text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel
         </Link>
@@ -219,7 +219,7 @@ export default function EditEvent() {
             type="button"
             onClick={handleDelete}
             style={{ touchAction: "manipulation" }}
-            className="w-full h-12 bg-background border border-accent text-accent rounded-sm text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-full h-12 bg-background border border-accent text-accent text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
           >
             {applyToSeries ? "Cancel Series" : "Cancel Event"}
           </button>
@@ -228,7 +228,7 @@ export default function EditEvent() {
               type="button"
               onClick={handleHardDelete}
               style={{ touchAction: "manipulation" }}
-              className="w-full h-12 bg-background border border-red-600 text-red-600 rounded-sm text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
+              className="w-full h-12 bg-background border border-red-600 text-red-600 text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
             >
               {seriesInfo.isSeries ? "Delete Series" : "Delete Event"}
             </button>

@@ -285,7 +285,7 @@ export default function EditBarAccount() {
 									required
 									value={form.firstName}
 									onChange={(e) => update("firstName", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="flex-1 space-y-1.5">
@@ -295,7 +295,7 @@ export default function EditBarAccount() {
 									required
 									value={form.lastName}
 									onChange={(e) => update("lastName", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 						</div>
@@ -308,7 +308,7 @@ export default function EditBarAccount() {
 									required
 									value={form.barName}
 									onChange={(e) => update("barName", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -318,7 +318,7 @@ export default function EditBarAccount() {
 									required
 									value={form.barAddress}
 									onChange={(e) => update("barAddress", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 								<p className="text-xs text-muted-foreground">
 									Neighborhood: {derivedNeighborhood || existingNeighborhood || "—"}
@@ -332,7 +332,7 @@ export default function EditBarAccount() {
 									value={form.barWebsite}
 									onChange={(e) => update("barWebsite", e.target.value)}
 									placeholder="https://yourbar.de"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -342,7 +342,7 @@ export default function EditBarAccount() {
 									value={form.barInstagram}
 									onChange={(e) => update("barInstagram", e.target.value)}
 									placeholder="@yourbar"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -352,7 +352,7 @@ export default function EditBarAccount() {
 									value={form.barPhone}
 									onChange={(e) => update("barPhone", e.target.value)}
 									placeholder="+49 30 123456"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 
@@ -371,7 +371,7 @@ export default function EditBarAccount() {
 											type="button"
 											onClick={handleGeocode}
 											disabled={geocoding || !form.barAddress.trim()}
-											className="h-9 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50 whitespace-nowrap"
+											className="h-9 px-3 border border-border text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50 whitespace-nowrap"
 										>
 											{geocoding ? "Suche…" : "Aus Adresse holen"}
 										</button>
@@ -385,7 +385,7 @@ export default function EditBarAccount() {
 												value={form.barLat}
 												onChange={(e) => update("barLat", e.target.value)}
 												placeholder="52.5200"
-												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 											/>
 										</div>
 										<div className="flex-1 space-y-1.5">
@@ -396,7 +396,7 @@ export default function EditBarAccount() {
 												value={form.barLng}
 												onChange={(e) => update("barLng", e.target.value)}
 												placeholder="13.4050"
-												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+												className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 											/>
 										</div>
 									</div>
@@ -408,13 +408,13 @@ export default function EditBarAccount() {
 							<button
 								type="submit"
 								disabled={submitting}
-								className="flex-1 h-12 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-50"
+								className="flex-1 h-12 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-50"
 							>
 								{submitting ? "Saving…" : "Save Changes"}
 							</button>
 							<Link
 								to={returnPath}
-								className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
+								className="h-12 px-6 flex items-center border border-border text-sm font-medium hover:bg-muted transition-colors"
 							>
 								Cancel
 							</Link>

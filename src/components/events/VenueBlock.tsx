@@ -9,9 +9,9 @@ interface VenueBlockProps {
 
 export default function VenueBlock({ venue, otherEvents }: VenueBlockProps) {
   return (
-    <div className="border border-border rounded-sm p-6 space-y-4">
+    <div className="border border-border p-6 space-y-4">
       <div className="flex gap-4">
-        <div className="w-20 h-20 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
+        <div className="w-20 h-20 overflow-hidden flex-shrink-0 bg-muted">
           <img src={venue.image} alt={venue.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         </div>
         <div className="space-y-1">

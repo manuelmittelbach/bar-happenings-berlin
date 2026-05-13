@@ -85,7 +85,7 @@ const EMPTY_FORM: EventFormData = {
 };
 
 const inputClass =
-  "w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors";
+  "w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors";
 
 export default function EventForm({
   title,
@@ -290,7 +290,7 @@ export default function EventForm({
               onPointerMove={handlePreviewPointerMove}
               onPointerUp={handlePreviewPointerUp}
               onPointerCancel={handlePreviewPointerUp}
-              className="relative h-64 border-2 border-border rounded-sm overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
+              className="relative h-64 border-2 border-border overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
             >
               <img
                 src={imagePreview}
@@ -316,7 +316,7 @@ export default function EventForm({
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors cursor-pointer ${
+            className={`border-2 border-dashed p-8 text-center transition-colors cursor-pointer ${
               isDragging
                 ? "border-foreground bg-muted/50"
                 : "border-border hover:border-muted-foreground/50"
@@ -517,7 +517,7 @@ export default function EventForm({
             onChange={(e) => update("description", e.target.value)}
             placeholder="Tell people what to expect..."
             rows={6}
-            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors resize-none"
+            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors resize-none"
           />
         </div>
 
@@ -552,7 +552,7 @@ export default function EventForm({
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 h-12 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 h-12 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (submittingLabel ?? "Submitting…") : submitLabel}
           </button>

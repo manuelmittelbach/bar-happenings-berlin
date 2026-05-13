@@ -92,7 +92,7 @@ export default function BarDetail() {
         <div className="flex items-stretch gap-4 pb-6 border-b-2 border-foreground">
           <button
             onClick={handleOpenMaps}
-            className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground font-mono text-xs font-bold uppercase tracking-[0.08em] hover:bg-accent/90 active:scale-[0.98] transition-all duration-200"
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent text-accent-foreground font-mono text-xs font-bold uppercase tracking-[0.08em] hover:bg-accent/90 active:scale-[0.98] transition-all duration-200"
           >
             <MapPin className="h-3.5 w-3.5" />
             Open in Maps
@@ -126,7 +126,7 @@ export default function BarDetail() {
                 href={venue.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
+                className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
               >
                 <Globe className="h-3.5 w-3.5" />
                 Website
@@ -137,7 +137,7 @@ export default function BarDetail() {
                 href={venue.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
+                className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
               >
                 <Instagram className="h-3.5 w-3.5" />
                 Instagram

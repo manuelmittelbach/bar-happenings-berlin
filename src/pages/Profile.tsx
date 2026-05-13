@@ -20,7 +20,7 @@ const SUPPORT_EMAIL = "hello@insidebars.co";
 type BarIdentity = { name: string; address: string; neighborhood: string };
 
 const inputClass =
-  "w-full h-11 px-3 bg-background border-2 border-foreground text-sm font-body outline-none focus:bg-muted/40 transition-colors";
+  "w-full h-11 px-3 rounded-xl bg-background border-2 border-foreground text-sm font-body outline-none focus:bg-muted/40 transition-colors";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -242,17 +242,17 @@ export default function Profile() {
   return (
     <div className="container max-w-2xl py-10 md:py-14">
       {emailJustChanged && (
-        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
+        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 text-green-600 text-sm font-medium">
           <CheckCircle2 className="h-4 w-4" /> Email updated!
         </div>
       )}
       {passwordJustReset && (
-        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
+        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 text-green-600 text-sm font-medium">
           <CheckCircle2 className="h-4 w-4" /> Password reset!
         </div>
       )}
       {loadError && (
-        <div className="mb-6 flex items-start gap-2 px-3 py-2 rounded-sm bg-red-500/10 text-red-600 text-sm font-medium border border-red-500/40">
+        <div className="mb-6 flex items-start gap-2 px-3 py-2 rounded-xl bg-red-500/10 text-red-600 text-sm font-medium border border-red-500/40">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>Couldn't load your profile data. Please refresh the page to try again.</span>
         </div>
@@ -321,7 +321,7 @@ export default function Profile() {
         >
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">Email</label>
-            <div className="flex items-center h-11 px-3 bg-muted/40 border-2 border-border text-sm font-mono text-muted-foreground select-all">
+            <div className="flex items-center h-11 px-3 rounded-xl bg-muted/40 border-2 border-border text-sm font-mono text-muted-foreground select-all">
               {user.email}
             </div>
           </div>
@@ -361,7 +361,7 @@ export default function Profile() {
       {/* Bar identity block — only for approved organizers */}
       {barIdentity && (
         <section className="mb-10 border-t border-border pt-8">
-          <div className="border border-border rounded-sm p-5 bg-muted/30">
+          <div className="border border-border p-5 bg-muted/30">
             <p className="mono-label text-muted-foreground mb-3">Bar identity</p>
             <p className="text-lg font-heading font-bold leading-tight">
               {barIdentity.name}

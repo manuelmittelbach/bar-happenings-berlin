@@ -201,7 +201,7 @@ export default function OrganizerDashboard() {
           <div className="flex justify-start mb-8">
             <Link
               to="/publish"
-              className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
+              className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
             >
               <Plus className="h-4 w-4" /> {venue?.name ? `Publish Event in ${venue.name}` : "Publish Event"}
             </Link>

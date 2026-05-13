@@ -114,7 +114,7 @@ export default function AppHero({ animate = true }: Props) {
         >
           <button
             onClick={handlePrimary}
-            className="group inline-flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-foreground px-7 font-mono uppercase text-background shadow-[0_10px_30px_-12px_hsla(18,85%,52%,0.5)] transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
+            className="group inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-foreground px-7 font-mono uppercase text-background shadow-[0_10px_30px_-12px_hsla(18,85%,52%,0.5)] transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
             style={{ fontSize: 12, letterSpacing: "0.12em" }}
           >
             <span>See tonight's events</span>
@@ -122,7 +122,7 @@ export default function AppHero({ animate = true }: Props) {
           </button>
           <button
             onClick={() => navigate("/map")}
-            className="group inline-flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-foreground bg-transparent px-7 font-mono uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
+            className="group inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-transparent px-7 font-mono uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
             style={{ fontSize: 12, letterSpacing: "0.12em" }}
           >
             <MapPin className="h-4 w-4" />
