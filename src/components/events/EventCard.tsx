@@ -13,6 +13,10 @@ interface EventCardProps {
   layout?: "grid" | "list" | "free";
   index?: number;
   onClick?: (eventId: string) => void;
+  // Hide the venue + neighborhood line. Used on the BarDetail page where
+  // every card belongs to the bar in the page title — repeating it on
+  // each row is just noise.
+  hideVenue?: boolean;
 }
 
 /* EventCard — design-faithful card variants for the homepage.
@@ -21,7 +25,7 @@ interface EventCardProps {
  * The only dynamic state on a card is the pulsing orange Now indicator
  * (rendered inside EventMeta) and a 55% opacity treatment for canceled
  * events with a small red Canceled pill in the meta row. */
-export default function EventCard({ event, layout = "list", onClick }: EventCardProps) {
+export default function EventCard({ event, layout = "list", onClick, hideVenue = false }: EventCardProps) {
   const displayTitle = useMemo(
     () => cleanEventTitle(event.title, event.venue),
     [event.title, event.venue],
@@ -36,7 +40,7 @@ export default function EventCard({ event, layout = "list", onClick }: EventCard
     }
   };
 
-  const venueLine = (
+  const venueLine = hideVenue ? null : (
     <div className="font-body text-[13px] text-muted-foreground mt-1 flex gap-1.5 items-center flex-wrap">
       <span>{event.venue}</span>
       {event.neighborhood && (

@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { MapPin, Globe, Instagram } from "lucide-react";
 import { motion } from "framer-motion";
+import type { BarlinEvent } from "@/types/event";
 import { useVenueById, useEventsByVenue } from "@/hooks/useEvents";
 import { berlinDateString } from "@/lib/dateFormat";
 import EventCard from "@/components/events/EventCard";
@@ -34,9 +36,15 @@ export default function BarDetail() {
     );
   }
 
-  const upcomingEvents = venueEvents.filter(
-    (e) => e.status !== "canceled" && e.date >= todayStr,
-  );
+  const upcomingEvents = venueEvents
+    .filter((e) => e.status !== "canceled" && e.date >= todayStr)
+    .sort((a, b) => {
+      const dateCmp = a.date.localeCompare(b.date);
+      if (dateCmp !== 0) return dateCmp;
+      const tA = a.startTime || "99:99";
+      const tB = b.startTime || "99:99";
+      return tA.localeCompare(tB);
+    });
 
   const cleanAddress = venue.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
   const handleOpenMaps = () => {
@@ -147,53 +155,94 @@ export default function BarDetail() {
           </div>
         )}
 
-        {/* Upcoming events — bordered editorial section, same border-rule
-            language as event-detail's venue block. Empty state keeps the
-            tone honest ("Nothing on the calendar yet") instead of hiding
-            the section. */}
+        {/* Upcoming events — grouped by weekday, mirrors the Later-section
+            on /. Each date gets its own sticky weekday header (weekday +
+            DOM Month + count) over the hairline, then the events of that
+            day. Sticky headers anchor at `top-[64px]` (just the global
+            header) because BarDetail has no category-filter chrome to
+            account for. */}
         <section className="mt-10">
-          {/* Sticky-Header — mirrors FreeTonightStrip / DayList /
-              Later-Wochentage. Anchored at `top-[64px]` (header height)
-              rather than the shared --chrome-bottom CSS var because
-              BarDetail has no category-filter chrome to account for —
-              and on a deep-link to /bar/:id the Index effect hasn't run
-              to set the var anyway. */}
-          <div className="sticky top-[64px] z-30 bg-background mb-3.5">
-            <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
-              <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-                Upcoming events
-              </h2>
-              <span className="flex-1" />
-              {upcomingEvents.length > 0 && (
-                <span className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                  <span className="md:hidden">{upcomingEvents.length}</span>
-                  <span className="hidden md:inline">
-                    {upcomingEvents.length}{" "}
-                    {upcomingEvents.length === 1 ? "event" : "events"}
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
           {upcomingEvents.length === 0 ? (
             <p className="font-body italic text-[16px] text-muted-foreground py-4 m-0">
               Nothing on the calendar yet. Check back soon.
             </p>
           ) : (
-            <div>
-              {upcomingEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  layout="list"
-                  onClick={(eventId) => navigate(`/event/${eventId}`)}
-                />
-              ))}
-            </div>
+            <UpcomingAgenda
+              events={upcomingEvents}
+              onEventClick={(eventId) => navigate(`/event/${eventId}`)}
+            />
           )}
         </section>
 
       </article>
+    </div>
+  );
+}
+
+/* UpcomingAgenda — same weekday-grouped layout as LaterAgenda on the
+ * Index page, scoped to a single bar. Each day gets a sticky header
+ * with the weekday name + DOM Month + event count, anchored at the
+ * global header bottom (top-[64px]) since BarDetail has no category
+ * filter chrome. */
+interface UpcomingAgendaProps {
+  events: BarlinEvent[];
+  onEventClick: (id: string) => void;
+}
+
+function UpcomingAgenda({ events, onEventClick }: UpcomingAgendaProps) {
+  const groups = useMemo(() => {
+    const out: { date: string; events: BarlinEvent[] }[] = [];
+    for (const e of events) {
+      const last = out[out.length - 1];
+      if (last && last.date === e.date) last.events.push(e);
+      else out.push({ date: e.date, events: [e] });
+    }
+    return out;
+  }, [events]);
+
+  return (
+    <div>
+      {groups.map((g) => {
+        const d = new Date(g.date + "T00:00:00");
+        const wdShort = d.toLocaleDateString("en-GB", { weekday: "short" });
+        const dom = d.getDate();
+        const mon = d.toLocaleDateString("en-GB", { month: "short" });
+        return (
+          <div
+            key={g.date}
+            className="flex gap-5 md:gap-7 mt-7 first:mt-0"
+          >
+            {/* Date leaflet — WD / DOM / MON, left-aligned. The mono caps
+                (WD, MON) inherit the same line-height as the EventMeta
+                eyebrow on the events column, so the WD caps and the
+                eyebrow row sit on the same baseline. pt-4 matches the
+                EventCard's py-4. Sticky on md+ so the date stays glued
+                to the top while scrolling a multi-event day. */}
+            <div className="w-[56px] md:w-[88px] shrink-0 pt-[22px] md:sticky md:top-[80px] md:self-start text-left">
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                {wdShort}
+              </div>
+              <div className="font-heading font-extrabold text-[34px] md:text-[44px] leading-[0.9] mt-0.5">
+                {dom}
+              </div>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mt-0.5">
+                {mon}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {g.events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  layout="list"
+                  onClick={onEventClick}
+                  hideVenue
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
