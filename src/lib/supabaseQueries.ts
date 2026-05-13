@@ -1096,14 +1096,45 @@ export async function fetchApprovedEvents(
     return true;
   };
 
-  return Array.from(byKey.values())
-    .filter(matchesScope)
+  // The recurrence rule lives only on the parent row. When the parent's
+  // date is in the past it gets filtered out by `gte("date", today)`
+  // above, leaving the earliest-upcoming child as the representative —
+  // but children carry `recurrence = ""`. Without the rule, the admin
+  // form's <select> falls back to its first option ("Weekly"), making it
+  // look like the series is weekly *and* risking a wrong write if the
+  // admin changes anything else. Fetch missing parents separately and
+  // inject their recurrence into the representative row so the UI shows
+  // the truth.
+  const representatives = Array.from(byKey.values()).filter(matchesScope);
+  const missingParentIds = Array.from(
+    new Set(
+      representatives
+        .filter((row) => !!row.parent_id && !row.recurrence)
+        .map((row) => row.parent_id as string),
+    ),
+  );
+  const parentRules = new Map<string, string>();
+  if (missingParentIds.length > 0) {
+    const { data: parents } = await supabase
+      .from("events")
+      .select("id, recurrence")
+      .in("id", missingParentIds);
+    for (const p of parents ?? []) {
+      if (p.recurrence) parentRules.set(p.id, p.recurrence);
+    }
+  }
+
+  return representatives
     .map((row): ApprovedEventListItem => {
       const seriesKey = row.parent_id || row.id;
       const siblings = (siblingsByKey.get(seriesKey) ?? []).slice().sort(
         (a, b) => a.date.localeCompare(b.date),
       );
-      return { event: mapEventRow(row), siblings };
+      const enriched =
+        row.parent_id && !row.recurrence && parentRules.has(row.parent_id)
+          ? { ...row, recurrence: parentRules.get(row.parent_id)! }
+          : row;
+      return { event: mapEventRow(enriched), siblings };
     })
     .sort((a, b) =>
       a.event.venue.localeCompare(b.event.venue, "de", { sensitivity: "base" })
