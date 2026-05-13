@@ -7,7 +7,7 @@ import { formatDateWithDay } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
-import { useCategories } from "@/hooks/useEvents";
+import { useCategories, useVenueById } from "@/hooks/useEvents";
 
 
 function renderWithLinks(text: string) {
@@ -113,6 +113,12 @@ export default function EventDetailView({
   const eyebrowParts = [categoryLabel, eyebrowDate, eyebrowTime].filter(Boolean) as string[];
   const eyebrowColor = categoryColor || "hsl(var(--accent))";
 
+  // Venue thumbnail. Loaded via the shared venues cache (no extra
+  // request when the page already touched a venue list), null when the
+  // venue has no image set or there's no venueId to look up.
+  const { venue: venueDetails } = useVenueById(event.venueId ?? "");
+  const venueImage = venueDetails?.image || null;
+
   const titleStyle: React.CSSProperties = {
     // clamp(28px, 5vw, 48px) — editorial-magazine sizing range, not
     // marketing-hero. 28px floor keeps long German compounds on two
@@ -142,14 +148,6 @@ export default function EventDetailView({
               style={{ objectPosition: event.imagePosition }}
               className="absolute inset-0 w-full h-full object-cover"
             />
-            {categoryLabel && (
-              <div
-                className="absolute top-3 left-3 z-10 inline-flex items-center font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-accent-foreground px-3 py-1 shadow-md"
-                style={{ backgroundColor: eyebrowColor }}
-              >
-                {categoryLabel}
-              </div>
-            )}
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                 <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
@@ -207,17 +205,17 @@ export default function EventDetailView({
         </div>
 
         {/* C. Display title — Syne 800, fluid magazine-masthead size.
-            lang="de" + hyphens:auto lets the browser hyphenate long
-            German compound nouns ("Helmholtz-platz") instead of letting
-            them overflow the viewport. break-words is the no-hyphen
-            fallback for foreign words / URLs the dictionary doesn't
-            know. */}
+            No `hyphens-auto` here: event titles are typically proper
+            names + mixed languages ("TAMARA LUKASHEVA // DUO ...") where
+            German hyphenation rules produced ugly mid-name splits
+            ("LU-KASHEVA"). `break-words` stays so a single
+            extra-long compound noun still wraps before overflowing the
+            viewport, but normal word boundaries are preferred. */}
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          lang="de"
-          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 hyphens-auto break-words"
+          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 break-words"
           style={titleStyle}
         >
           {displayTitle}
@@ -293,49 +291,69 @@ export default function EventDetailView({
               className="md:hidden absolute inset-0 z-10"
             />
           )}
-          <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
-            The venue
-          </div>
-          {/* Venue name links to the bar's own detail page. Desktop
-              hover flips to the accent orange — same affordance language
-              as other inline links (Open in Maps, event link footer) so
-              it reads as clickable without underline noise. Falls back
-              to a plain h3 when no venueId is set (legacy / orphan
-              rows). */}
-          {event.venueId ? (
-            <Link
-              to={`/bar/${event.venueId}`}
-              lang="de"
-              className={`block font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
-            >
-              {event.venue}
-            </Link>
-          ) : (
-            <h3
-              lang="de"
-              className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
-            >
-              {event.venue}
-            </h3>
-          )}
-          {event.address && (
-            <p className="mt-2 font-body text-sm text-muted-foreground">
-              {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
-            </p>
-          )}
-          {event.neighborhood && (
-            <p className="mt-1 font-body text-sm text-muted-foreground flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              {event.neighborhood}
-            </p>
-          )}
-          <div className="mt-4 flex items-center gap-2 flex-wrap relative z-20">
-            <button
-              onClick={onOpenMaps}
-              className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
-            >
-              Open in Maps <span aria-hidden="true">›</span>
-            </button>
+          <div className={venueImage ? "flex gap-4 md:gap-5 items-start" : ""}>
+            {/* Bordered thumbnail of the venue, left of the text block.
+                Same 2px foreground border as the rest of the bordered
+                surfaces so it reads as part of the same family. Square
+                aspect, shrink-0 so it doesn't collapse on narrow
+                phones. Hidden entirely when the venue has no image
+                (most bars right now) — keeps the full-width text
+                layout intact for the unfilled case. */}
+            {venueImage && (
+              <div className="shrink-0 w-[96px] h-[96px] md:w-[140px] md:h-[140px] border-2 border-foreground overflow-hidden">
+                <img
+                  src={venueImage}
+                  alt={event.venue}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className={venueImage ? "flex-1 min-w-0" : ""}>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
+                The venue
+              </div>
+              {/* Venue name links to the bar's own detail page. Desktop
+                  hover flips to the accent orange — same affordance
+                  language as other inline links (Open in Maps, event
+                  link footer) so it reads as clickable without
+                  underline noise. Falls back to a plain h3 when no
+                  venueId is set (legacy / orphan rows). */}
+              {event.venueId ? (
+                <Link
+                  to={`/bar/${event.venueId}`}
+                  lang="de"
+                  className={`block font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
+                >
+                  {event.venue}
+                </Link>
+              ) : (
+                <h3
+                  lang="de"
+                  className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
+                >
+                  {event.venue}
+                </h3>
+              )}
+              {event.address && (
+                <p className="mt-2 font-body text-sm text-muted-foreground">
+                  {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
+                </p>
+              )}
+              {event.neighborhood && (
+                <p className="mt-1 font-body text-sm text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  {event.neighborhood}
+                </p>
+              )}
+              <div className="mt-4 flex items-center gap-2 flex-wrap relative z-20">
+                <button
+                  onClick={onOpenMaps}
+                  className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
+                >
+                  Open in Maps <span aria-hidden="true">›</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
