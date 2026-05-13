@@ -201,36 +201,52 @@ export default function Index() {
   return (
     <div className="relative isolate">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        {/* Base vertikaler Warm-Wash — sehr flach, gibt Grundwärme */}
         <div
-          className="absolute -right-32 top-[720px] h-[520px] w-[520px] rounded-full"
+          className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.14), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
+              "linear-gradient(180deg, hsla(18, 85%, 52%, 0.035) 0%, hsla(28, 85%, 55%, 0.04) 50%, hsla(18, 85%, 52%, 0.03) 100%)",
           }}
         />
+        {/* Bridge-Ellipse — wächst nahtlos aus dem Hero-bottom-right Glow
+            heraus, eliminiert die harte Kante am Hero/Index-Übergang.
+            Etwas stärker (Hero-Glow läuft auf ~22% am Kollisionspunkt),
+            fadet dann schnell aus. */}
         <div
-          className="absolute -left-40 top-[1500px] h-[600px] w-[600px] rounded-full"
+          className="absolute right-[-18%] top-[-220px] h-[680px] w-[1600px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.10), hsla(18, 85%, 52%, 0) 60%)",
+              "radial-gradient(ellipse at center, hsla(18, 85%, 52%, 0.20), hsla(18, 85%, 52%, 0) 60%)",
             filter: "blur(50px)",
           }}
         />
+        {/* Organische Hue-Variationen — sehr breit, sehr dezent, leicht
+            versetzte Töne (Rosa-Orange 18° ↔ Amber 28°) damit der Wash an
+            verschiedenen Stellen mal wärmer und mal heller rosa wirkt
+            statt einer einzigen statischen Farbe. */}
         <div
-          className="absolute -right-48 top-[2500px] h-[680px] w-[680px] rounded-full"
+          className="absolute -left-[20%] top-[1100px] h-[700px] w-[1700px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.12), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(50px)",
+              "radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.07), hsla(28, 85%, 60%, 0) 65%)",
+            filter: "blur(60px)",
           }}
         />
         <div
-          className="absolute -left-32 top-[3600px] h-[560px] w-[560px] rounded-full"
+          className="absolute -right-[20%] top-[2400px] h-[680px] w-[1700px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.08), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(45px)",
+              "radial-gradient(ellipse at center, hsla(18, 90%, 55%, 0.08), hsla(18, 90%, 55%, 0) 65%)",
+            filter: "blur(60px)",
+          }}
+        />
+        <div
+          className="absolute -left-[15%] top-[3700px] h-[700px] w-[1700px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.06), hsla(28, 85%, 60%, 0) 65%)",
+            filter: "blur(60px)",
           }}
         />
       </div>
@@ -242,7 +258,7 @@ export default function Index() {
           block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background/80 backdrop-blur-md border-b border-foreground/10"
+        className="sticky top-[64px] z-40 backdrop-blur-md"
       >
         <div className="container py-3">
           <div className="md:hidden">
@@ -459,7 +475,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
         // Keeps the section label visible while the user scrolls
         // through the full "More tonight" list.
         <div
-          className="sticky z-30 bg-background mb-3.5"
+          className="sticky z-30 backdrop-blur-md mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
@@ -551,7 +567,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 natural (non-stuck) layout while letting cards scroll
                 cleanly into the underside of the rule when stuck. */}
             <div
-              className="sticky z-30 bg-background mb-3.5"
+              className="sticky z-30 backdrop-blur-md mb-3.5"
               style={{ top: "var(--chrome-bottom, 130px)" }}
             >
               <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">

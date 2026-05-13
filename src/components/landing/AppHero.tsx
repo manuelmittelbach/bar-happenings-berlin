@@ -16,7 +16,7 @@ export default function AppHero({ animate = true }: Props) {
 
   return (
     <section
-      className="relative isolate overflow-hidden bg-background text-foreground"
+      className="relative isolate text-foreground"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
         paddingBottom: "env(safe-area-inset-bottom)",

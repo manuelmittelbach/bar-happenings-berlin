@@ -27,7 +27,7 @@ export default function EventDetail() {
 				<button
 					onClick={() => refetch()}
 					disabled={isFetching}
-					className="mt-4 px-4 py-2 border-2 border-foreground bg-background text-foreground font-mono font-bold text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
+					className="mt-4 px-5 py-2.5 rounded-full border-2 border-foreground bg-background text-foreground font-mono font-bold text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
 				>
 					{isFetching ? "Retrying…" : "Retry"}
 				</button>
@@ -60,7 +60,28 @@ export default function EventDetail() {
 	const canEdit = roleResolved && role === "admin";
 
 	return (
-		<div className="bg-background pb-24">
+		<div className="relative isolate bg-background pb-24">
+			{/* Warm atmosphere — same hue family as Index but at a fraction
+			    of the intensity. The detail page is a reading surface, so
+			    the wash only suggests warmth without coloring the paper. */}
+			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+				<div
+					className="absolute right-[-25%] top-[-300px] h-[640px] w-[1500px] rounded-full"
+					style={{
+						background:
+							"radial-gradient(ellipse at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+						filter: "blur(60px)",
+					}}
+				/>
+				<div
+					className="absolute -left-[25%] top-[1200px] h-[680px] w-[1600px] rounded-full"
+					style={{
+						background:
+							"radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.03), hsla(28, 85%, 60%, 0) 65%)",
+						filter: "blur(70px)",
+					}}
+				/>
+			</div>
 			<EventDetailView
 				event={event}
 				recurrenceLabel={recurrenceLabel}

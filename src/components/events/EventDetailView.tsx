@@ -135,13 +135,13 @@ export default function EventDetailView({
   const articleWidth = compact ? "max-w-full" : "max-w-[880px] mx-auto";
 
   return (
-    <div className="bg-background text-foreground">
+    <div className="text-foreground">
       {headerBanner}
 
       <article className={`${articleWidth} ${articlePadding}`}>
         {/* A. Lede figure — magazine top photo when an image is available. */}
         {hasRealImage && (
-          <figure className={`relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] ${compact ? "" : "md:aspect-[16/9]"}`}>
+          <figure className={`relative border-2 border-foreground rounded-2xl md:rounded-3xl overflow-hidden mb-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
             <img
               src={event.image!}
               alt={displayTitle}
@@ -150,7 +150,7 @@ export default function EventDetailView({
             />
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
+                <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
                   {canceledLabel}
                 </span>
               </div>
@@ -159,7 +159,7 @@ export default function EventDetailView({
               <button
                 onClick={onEdit}
                 aria-label="Edit event"
-                className="absolute top-3 right-3 z-10 h-9 w-9 flex items-center justify-center bg-background/85 border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
+                className="absolute top-3 right-3 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/85 backdrop-blur-sm border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
               >
                 <Pencil className="h-4 w-4" />
               </button>
@@ -174,13 +174,6 @@ export default function EventDetailView({
             className="flex-1 min-w-0 font-mono text-[11px] font-bold uppercase tracking-[0.14em] flex items-center gap-2 flex-wrap"
             style={{ color: eyebrowColor }}
           >
-            {!hasRealImage && categoryLabel && (
-              <span
-                aria-hidden="true"
-                className="inline-block w-2 h-2 shrink-0"
-                style={{ backgroundColor: eyebrowColor }}
-              />
-            )}
             {eyebrowParts.map((part, i) => (
               <Fragment key={i}>
                 {i > 0 && <span className="opacity-60">·</span>}
@@ -189,7 +182,7 @@ export default function EventDetailView({
             ))}
           </div>
           {!hasRealImage && isCanceled && (
-            <span className="shrink-0 inline-block font-heading font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
+            <span className="shrink-0 inline-block font-heading font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
               {canceledLabel}
             </span>
           )}
@@ -197,7 +190,7 @@ export default function EventDetailView({
             <button
               onClick={onEdit}
               aria-label="Edit event"
-              className="shrink-0 h-9 w-9 flex items-center justify-center border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
+              className="shrink-0 h-9 w-9 flex items-center justify-center rounded-full border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -222,9 +215,11 @@ export default function EventDetailView({
         </motion.h1>
 
         {/* D. Action row — Share primary CTA on the left, metadata chips on
-            the right, 2px foreground bottom-rule. */}
+            the right. Softer hairline rule (foreground/15) instead of the
+            old 2px black bar — matches the calmer atmosphere on the rest
+            of the page. */}
         {(showShare || detailItems.length > 0) && (
-          <div className="flex items-center gap-3 flex-wrap pb-6 border-b-2 border-foreground">
+          <div className="flex items-center gap-3 flex-wrap pb-6 border-b border-foreground/15">
             {showShare && (
               <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="primary-cta" />
             )}
@@ -271,14 +266,17 @@ export default function EventDetailView({
         <DescriptionBlock description={event.description ?? ""} compact={compact} />
 
 
-        {/* F. Venue block — bordered editorial card with the Open in
+        {/* F. Venue block — rounded editorial card with the Open in
             Maps action. The venue name links out to the bar's own
             detail page (which carries the upcoming-events list that
             used to live behind the "All events at this bar" toggle).
             On mobile the whole card is a tap target for the bar page
             (via an absolute overlay link below) since narrow viewports
-            make precise taps on the inline venue-name link awkward. */}
-        <div className="mt-10 border-2 border-foreground p-5 relative">
+            make precise taps on the inline venue-name link awkward.
+            Solid bg-background + warm shadow lift the card off the
+            atmospheric wash so it reads as a distinct surface without
+            the harsh 2px black square it used to be. */}
+        <div className="mt-10 border-2 border-foreground rounded-2xl md:rounded-3xl bg-background p-5 md:p-6 relative shadow-[0_24px_60px_-32px_hsla(18,85%,52%,0.3)]">
           {/* Mobile-only overlay that turns the entire card into a tap
               area for the bar page. Hidden on md+ so the desktop hover
               flow (inline venue-name link + maps button) reads cleanly.
@@ -300,7 +298,7 @@ export default function EventDetailView({
                 (most bars right now) — keeps the full-width text
                 layout intact for the unfilled case. */}
             {venueImage && (
-              <div className="shrink-0 w-[96px] h-[96px] md:w-[140px] md:h-[140px] border-2 border-foreground overflow-hidden">
+              <div className="shrink-0 w-[96px] h-[96px] md:w-[140px] md:h-[140px] rounded-xl md:rounded-2xl border-2 border-foreground overflow-hidden">
                 <img
                   src={venueImage}
                   alt={event.venue}
@@ -348,7 +346,7 @@ export default function EventDetailView({
               <div className="mt-4 flex items-center gap-2 flex-wrap relative z-20">
                 <button
                   onClick={onOpenMaps}
-                  className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
                 >
                   Open in Maps <span aria-hidden="true">›</span>
                 </button>
@@ -357,13 +355,14 @@ export default function EventDetailView({
           </div>
         </div>
 
-        {/* G. Event link — full-width btn-outline footer link. */}
+        {/* G. Event link — full-width rounded footer button. Soft accent
+            shadow echoes the venue card so the two surfaces feel related. */}
         {event.url && (
           <a
             href={event.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 w-full inline-flex items-center justify-between h-12 px-5 border-2 border-foreground text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors"
+            className="mt-6 w-full inline-flex items-center justify-between h-12 px-5 rounded-2xl border-2 border-foreground bg-background text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]"
           >
             <span className="inline-flex items-center gap-2">
               <ExternalLink className="h-4 w-4" />
@@ -430,27 +429,33 @@ function DescriptionBlock({
     );
   }
 
+  // Fade the text itself via mask-image instead of overlaying an opaque
+  // gradient stripe. The old overlay used `from-background` which painted
+  // a solid cream block over the last 64px — visible as a hard edge
+  // against the warm page wash. A mask gradient lets the text dissolve
+  // into the actual background underneath, regardless of what's behind.
+  const maskStyle: React.CSSProperties = showCollapsed
+    ? {
+        maskImage:
+          "linear-gradient(to bottom, black 55%, transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to bottom, black 55%, transparent 100%)",
+      }
+    : {};
+
   return (
     <div className={`mt-7 font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6]`}>
       <div
         className={`relative ${
           showCollapsed ? "max-h-[160px] md:max-h-[200px] overflow-hidden" : ""
         }`}
+        style={maskStyle}
       >
         <div className="space-y-5">
           {description.split("\n\n").map((p, i) => (
             <p key={i}>{renderWithLinks(p)}</p>
           ))}
         </div>
-        {/* Soft fade hides the hard cutoff edge — looks like the text
-            fades out into the page background. Pointer-events-none so it
-            doesn't block link taps in the last visible line. */}
-        {showCollapsed && (
-          <div
-            aria-hidden="true"
-            className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none"
-          />
-        )}
       </div>
       {isLong && (
         <button
