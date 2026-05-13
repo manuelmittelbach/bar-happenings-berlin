@@ -123,7 +123,7 @@ export default function EventDetailView({
   const detailItems: { icon: LucideIcon; text: string }[] = [
     priceText ? { icon: Euro, text: priceText } : null,
     recurrenceLabel ? { icon: Repeat, text: recurrenceLabel } : null,
-    event.language ? { icon: Languages, text: event.language } : null,
+    event.language ? { icon: Languages, text: `in ${event.language}` } : null,
   ].filter((x): x is { icon: LucideIcon; text: string } => x !== null);
 
   const eyebrowTime = event.startTime
