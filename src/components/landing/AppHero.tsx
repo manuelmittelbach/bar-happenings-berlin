@@ -43,7 +43,7 @@ export default function AppHero({ animate = true }: Props) {
         />
       </div>
 
-      <div className="container relative z-10 flex min-h-[78svh] flex-col justify-center py-12 md:min-h-[600px] md:py-20">
+      <div className="container relative z-10 flex min-h-[78svh] flex-col justify-start pt-4 pb-12 md:min-h-[600px] md:pt-8 md:pb-20">
         <motion.div
           initial={animate ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
@@ -64,7 +64,7 @@ export default function AppHero({ animate = true }: Props) {
 
         <h1
           className="font-heading font-extrabold leading-[0.92] tracking-tight m-0"
-          style={{ fontSize: "clamp(2.5rem, 9vw, 5rem)" }}
+          style={{ fontSize: "clamp(2.25rem, 7vw, 5rem)" }}
         >
           <span className="block overflow-hidden pb-[0.05em]">
             <motion.span
@@ -130,19 +130,6 @@ export default function AppHero({ animate = true }: Props) {
           </button>
         </motion.div>
 
-        <motion.div
-          initial={animate ? { opacity: 0 } : false}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.85 }}
-          className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono uppercase text-foreground/45"
-          style={{ fontSize: 10, letterSpacing: "0.18em" }}
-        >
-          <span>Independent only</span>
-          <span className="h-px w-6 bg-foreground/20" />
-          <span>Updated daily</span>
-          <span className="hidden h-px w-6 bg-foreground/20 sm:block" />
-          <span className="hidden sm:inline">No login required</span>
-        </motion.div>
       </div>
     </section>
   );
