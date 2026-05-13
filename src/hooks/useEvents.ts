@@ -76,6 +76,15 @@ export function useVenues() {
   return useQuery({ queryKey: ["venues"], queryFn: fetchVenues });
 }
 
+export function useVenueById(venueId: string) {
+  // Reuses the full-venues list cache so opening multiple bar pages
+  // doesn't trigger N separate requests. The list is small (< few
+  // hundred bars), so client-side filter is cheap.
+  const { data: venues, isLoading, error } = useVenues();
+  const venue = venues?.find((v) => v.id === venueId) ?? null;
+  return { venue, isLoading, error };
+}
+
 export function useCategories() {
   // Categories are effectively a stable enum. staleTime: Infinity + the
   // persisted query cache (see App.tsx) means: fetched once, then served

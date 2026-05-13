@@ -1,9 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
-import { useEventById, useEventSeries, useEventsByVenue } from "@/hooks/useEvents";
+import { useEventById, useEventSeries } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
-import { berlinDateString } from "@/lib/dateFormat";
 import EventDetailView from "@/components/events/EventDetailView";
 import { PageSpinner } from "@/components/ui/page-spinner";
 
@@ -14,9 +12,6 @@ export default function EventDetail() {
 	const { data: event, isLoading, error, refetch, isFetching } = useEventById(id || "");
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
-	const todayStr = berlinDateString();
-	const { data: venueEvents = [] } = useEventsByVenue(event?.venueId ?? "", todayStr);
-	const [upcomingOpen, setUpcomingOpen] = useState(false);
 
 	if (isLoading) {
 		return <PageSpinner />;
@@ -50,10 +45,6 @@ export default function EventDetail() {
 		);
 	}
 
-	const upcomingEvents = venueEvents
-		.filter(e => e.status !== "canceled" && e.date >= todayStr)
-		.map(e => ({ id: e.id, date: e.date, startTime: e.startTime, status: e.status }));
-
 	const seriesRule = seriesMembers.find((m) => m.recurrence)?.recurrence ?? "";
 	const seriesLastDate = seriesMembers.reduce((max, m) => (m.date > max ? m.date : max), "");
 	const isLastInSeries = seriesMembers.length > 1 && event.date === seriesLastDate;
@@ -66,23 +57,15 @@ export default function EventDetail() {
 		);
 	};
 
-	const handleSelectSibling = (eventId: string) => {
-		navigate(`/event/${eventId}`);
-	};
-
 	const canEdit = roleResolved && role === "admin";
 
 	return (
 		<div className="bg-background pb-24">
 			<EventDetailView
 				event={event}
-				upcomingEvents={upcomingEvents}
 				recurrenceLabel={recurrenceLabel}
-				onSelectSibling={handleSelectSibling}
 				onOpenMaps={handleMaps}
 				showShare={true}
-				upcomingOpen={upcomingOpen}
-				onToggleUpcoming={() => setUpcomingOpen(o => !o)}
 				onEdit={canEdit ? () => navigate(`/edit-event/${event.id}`) : undefined}
 			/>
 		</div>
