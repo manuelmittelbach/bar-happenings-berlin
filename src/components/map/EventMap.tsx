@@ -6,6 +6,7 @@ import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { requestLocationOnce } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
+import { isLiveNow } from "@/lib/eventStatus";
 
 interface EventMapProps {
 	events: BarlinEvent[];
@@ -17,6 +18,7 @@ interface EventMapProps {
 const BERLIN_CENTER: [number, number] = [13.405, 52.52];
 const SOURCE_ID = "venues";
 const LAYER_ICONS = "venue-icons";
+const LAYER_PULSE = "venue-live-pulse";
 
 // Walking-person SVG — Tabler "walk" icon: stick figure mid-stride
 // (legs apart, arm forward). Used to live on event cards before the
@@ -57,14 +59,13 @@ async function buildCategoryImage(categoryId: string, color: string, count = 1):
 	canvas.height = SIZE;
 	const ctx = canvas.getContext("2d")!;
 
-	// Main circle
+	// Main circle — no white stroke, so the pulse halo behind a live
+	// marker blends seamlessly into the disk's edge instead of being
+	// interrupted by a hard white ring.
 	ctx.beginPath();
 	ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
 	ctx.fillStyle = color;
 	ctx.fill();
-	ctx.strokeStyle = "white";
-	ctx.lineWidth = 5;
-	ctx.stroke();
 
 	// SVG icon — wait for onload before drawing
 	const paths = categoryIconPaths[categoryId] ?? categoryIconPaths["other"];
@@ -110,6 +111,15 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 
 	const [loadFailed, setLoadFailed] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
+	// Tick every 60s so the geojson useMemo re-evaluates `isLive` per
+	// venue — an event that just started should begin pulsing without
+	// requiring the user to refresh. 60s granularity is enough since
+	// `isLiveNow` only changes state at minute boundaries.
+	const [nowTick, setNowTick] = useState(0);
+	useEffect(() => {
+		const id = window.setInterval(() => setNowTick((n) => n + 1), 60_000);
+		return () => window.clearInterval(id);
+	}, []);
 
 	const { data: categoryInfos = [] } = useCategories();
 	const categoryById = useMemo(
@@ -156,6 +166,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			const info = categoryById[evts[0].category];
 			const categoryId = info?.id ?? "other";
 			const allCanceled = evts.every((e) => e.status === "canceled");
+			// Live = at least one non-canceled event at this venue is currently
+			// between its startTime and endTime. Drives the pulse layer
+			// underneath the marker so live venues read at a glance.
+			const isLive = evts.some((e) => e.status !== "canceled" && isLiveNow(e));
+			// Pulse uses the category color so the halo behind each live
+			// marker reads as the same "family" as its disk (DJ marker → DJ
+			// pulse, comedy → comedy, etc.) instead of one unified orange.
+			const pulseColor = info?.color ?? "#ED5B1C";
 			return {
 				type: "Feature",
 				geometry: { type: "Point", coordinates: [venue.lng, venue.lat] },
@@ -166,6 +184,8 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					categoryId,
 					count: evts.length,
 					allCanceled,
+					isLive,
+					pulseColor,
 					eventsJson: JSON.stringify(
 						evts.map((e) => ({
 							id: e.id,
@@ -179,7 +199,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				},
 			};
 		}),
-	}), [venueEvents, venueMap, categoryById]);
+		// nowTick included so live-state refreshes every minute without needing
+		// a full data refetch or user-triggered re-render.
+	}), [venueEvents, venueMap, categoryById, nowTick]);
 
 	// Initialize map, load icons, add layers
 	useEffect(() => {
@@ -209,6 +231,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 			}
 			setLoadFailed(true);
 		}, 8000);
+
+		// requestAnimationFrame id for the pulse animation — closed over the
+		// useEffect cleanup so it gets cancelled on unmount / retry.
+		let pulseRafId: number | null = null;
 
 		// Cache the view in module state on every settled pan/zoom so navigating
 		// away (e.g. to an event detail) and back restores the user's exact
@@ -258,6 +284,24 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				});
 				sourceReadyRef.current = true;
 
+				// Pulse layer — sits BELOW the icons so it renders behind each
+				// live venue's disk. Filtered to features with isLive === true so
+				// non-live markers don't draw the circle. circle-radius and
+				// circle-opacity are mutated every animation frame to create the
+				// outward ripple.
+				map.addLayer({
+					id: LAYER_PULSE,
+					type: "circle",
+					source: SOURCE_ID,
+					filter: ["==", ["get", "isLive"], true],
+					paint: {
+						"circle-radius": 22,
+						"circle-color": ["get", "pulseColor"],
+						"circle-opacity": 0.55,
+						"circle-blur": 0.4,
+					},
+				});
+
 				// Symbol layer — icons with badge baked in, rendered in WebGL
 				map.addLayer({
 					id: LAYER_ICONS,
@@ -279,6 +323,27 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						"icon-opacity": ["case", ["get", "allCanceled"], 0.45, 1.0],
 					},
 				});
+
+				// Pulse animation — outward ripple: radius grows linearly from
+				// 18→33px over each 2200ms cycle, while opacity follows a sine
+				// curve (0 → 0.32 → 0). The sin opacity hides the radius reset
+				// at the cycle boundary so there's no jerky stop — the pulse
+				// fades in at the start, peaks mid-cycle, fades out at the end,
+				// and the next cycle starts fresh from radius 18.
+				const pulseStart = performance.now();
+				const animatePulse = (now: number) => {
+					const t = ((now - pulseStart) / 2200) % 1;
+					if (map.getLayer(LAYER_PULSE)) {
+						map.setPaintProperty(LAYER_PULSE, "circle-radius", 18 + t * 28);
+						map.setPaintProperty(
+							LAYER_PULSE,
+							"circle-opacity",
+							0.32 * Math.sin(t * Math.PI),
+						);
+					}
+					pulseRafId = requestAnimationFrame(animatePulse);
+				};
+				pulseRafId = requestAnimationFrame(animatePulse);
 
 				map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
 				map.on("mouseleave", LAYER_ICONS, () => { map.getCanvas().style.cursor = ""; });
@@ -388,6 +453,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 		mapRef.current = map;
 		return () => {
 			window.clearTimeout(watchdogId);
+			if (pulseRafId !== null) cancelAnimationFrame(pulseRafId);
 			if (mapRef.current === map) {
 				map.remove();
 				mapRef.current = null;
