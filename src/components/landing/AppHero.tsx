@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowDown, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 type Props = {
   animate?: boolean;
@@ -9,25 +9,10 @@ type Props = {
 export default function AppHero({ animate = true }: Props) {
   const navigate = useNavigate();
 
-  const handlePrimary = () => {
-    const el = document.getElementById("date-filter-bar");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   return (
-    <section
-      className="relative isolate overflow-hidden bg-background text-foreground"
-      style={{
-        paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
-    >
-      {/* Hero is opaque cream like the sticky bar below — no warm tint
-          at the boundary means no color edge. The grid pattern stays
-          inside the hero with a radial mask that fades to transparent
-          before the hero's bottom edge, so the hero-bottom and bar-top
-          meet as the same plain cream. No internal glow disks here:
-          those previously tinted the hero-bottom and created the edge. */}
+    <section className="relative isolate overflow-hidden bg-background text-foreground pt-11 pb-8">
+      {/* Background — grid pattern faded out with a radial mask so the
+          hero-bottom meets the sticky bar below as plain cream. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
           className="absolute inset-0 opacity-[0.05]"
@@ -43,12 +28,12 @@ export default function AppHero({ animate = true }: Props) {
         />
       </div>
 
-      <div className="container relative z-10 flex min-h-[78svh] flex-col justify-start pt-4 pb-12 md:min-h-[600px] md:pt-8 md:pb-20">
+      <div className="container relative z-[45]">
         <motion.div
-          initial={animate ? { opacity: 0 } : false}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-7 inline-flex items-center gap-2 self-start rounded-full border border-accent/30 bg-accent/[0.07] px-3 py-1.5 backdrop-blur-sm"
+          initial={animate ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="mb-[18px] inline-flex items-center gap-2 self-start"
         >
           <span className="relative flex h-2 w-2">
             <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
@@ -58,78 +43,59 @@ export default function AppHero({ animate = true }: Props) {
             className="font-mono uppercase text-accent"
             style={{ fontSize: 11, letterSpacing: "0.14em" }}
           >
-            Berlin · live tonight
+            Berlin · live now
           </span>
         </motion.div>
 
-        <h1
-          className="font-heading font-extrabold leading-[0.92] tracking-tight m-0"
-          style={{ fontSize: "clamp(2.25rem, 7vw, 5rem)" }}
-        >
-          <span className="block overflow-hidden pb-[0.05em]">
-            <motion.span
-              initial={animate ? { opacity: 0, y: 28 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-block"
-            >
-              What's on{" "}
-              <span
-                className="heading-editorial lowercase italic font-normal"
-                style={{ letterSpacing: "-0.01em" }}
-              >
-                tonight
-              </span>
-            </motion.span>
-          </span>
-          <span className="block overflow-hidden pb-[0.05em]">
-            <motion.span
-              initial={animate ? { opacity: 0, y: 28 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.26, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-block"
-            >
-              in Berlin bars
-              <span className="text-accent">?</span>
-            </motion.span>
-          </span>
-        </h1>
-
-        <motion.p
+        <motion.h1
+          className="heading-display leading-[0.95] m-0"
+          style={{ fontSize: "clamp(36px, 5.5vw, 72px)" }}
           initial={animate ? { opacity: 0, y: 12 } : false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.48 }}
-          className="mt-7 max-w-[480px] font-body text-[15px] leading-[1.55] text-foreground/70 md:text-[17px]"
-          style={{ textWrap: "balance" }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          All the small, independent, slightly chaotic things happening in
-          bars tonight.
+          What's on{" "}
+          <span
+            className="heading-editorial lowercase italic"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            tonight
+          </span>
+          <br />in Berlin bars
+          <span className="text-accent" style={{ fontStyle: "normal" }}>?</span>
+        </motion.h1>
+
+        <motion.p
+          className="font-body max-w-[580px] text-[15px] md:text-[18px] text-foreground/70"
+          style={{
+            lineHeight: 1.55,
+            marginTop: 22,
+            marginBottom: 0,
+            textWrap: "balance",
+          }}
+          initial={animate ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          All the small, sometimes slightly chaotic things happening in bars tonight.
         </motion.p>
 
         <motion.div
+          style={{ marginTop: 28 }}
           initial={animate ? { opacity: 0, y: 12 } : false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.62 }}
-          className="mt-9 flex flex-col gap-3 sm:flex-row sm:gap-3"
+          transition={{ duration: 0.5, delay: 0.4 }}
         >
           <button
-            onClick={handlePrimary}
-            className="group inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-foreground px-7 font-mono uppercase text-background shadow-[0_10px_30px_-12px_hsla(18,85%,52%,0.5)] transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
-            style={{ fontSize: 12, letterSpacing: "0.12em" }}
-          >
-            <span>See tonight's events</span>
-            <ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
-          </button>
-          <button
+            type="button"
             onClick={() => navigate("/map")}
-            className="group inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-transparent px-7 font-mono uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
-            style={{ fontSize: 12, letterSpacing: "0.12em" }}
+            className="group inline-flex h-14 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-7 font-mono uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
+            style={{ fontSize: 12, letterSpacing: "0.14em" }}
           >
-            <MapPin className="h-4 w-4" />
             <span>Open the map</span>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </motion.div>
-
       </div>
     </section>
   );
