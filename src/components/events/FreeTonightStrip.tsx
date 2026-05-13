@@ -52,16 +52,15 @@ export default function FreeTonightStrip({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        {/* Sticky header — matches the Later-section weekday pattern:
-            same `top: var(--chrome-bottom)` anchor, same mb-3.5 spacing
-            below the rule, same pt-2.5/pb-2.5 padding around the row.
-            Keeps the "Free tonight" label visible while the user scrolls
-            through the cards. */}
+        {/* Sticky header — matches main's structure: sticky inside
+            .container so the cream bg only covers the container width
+            (page content on the sides is visible through the gutter).
+            Hairline sits on the inner heading row. */}
         <div
-          className="sticky z-30 bg-background/30 backdrop-blur-md mb-3.5"
+          className="sticky z-30 bg-background mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+          <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
             </h2>
@@ -118,7 +117,7 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-colors no-underline text-foreground ${
+      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
         isCanceled ? "opacity-50" : ""
       }`}
     >

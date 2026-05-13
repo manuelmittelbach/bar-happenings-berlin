@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowDown, MapPin } from "lucide-react";
 
 type Props = {
   animate?: boolean;
@@ -130,7 +130,7 @@ export default function AppHero({ animate = true }: Props) {
             style={{ fontSize: 12, letterSpacing: "0.12em" }}
           >
             <span>See tonight's events</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            <ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
           </button>
           <button
             onClick={() => navigate("/map")}

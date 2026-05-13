@@ -97,7 +97,7 @@ export default function MapPage() {
               <button
                 key={d.id}
                 onClick={() => handleDayTabChange(d.id)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
+                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
                   dayTab === d.id
                     ? "border-foreground bg-foreground text-background"
                     : "border-foreground hover:bg-foreground hover:text-background"
