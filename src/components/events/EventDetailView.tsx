@@ -148,7 +148,11 @@ export default function EventDetailView({
   const hasUpcomingSiblings = upcomingEvents.length > 1;
 
   const titleStyle: React.CSSProperties = {
-    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(34px, 6vw, 60px)",
+    // 28px floor (was 34px) keeps long German compounds like "Health
+    // Plan: A Deconstruction" on two lines instead of three on 375px
+    // phones, without losing the magazine-masthead impact on tablet+
+    // viewports (where 6vw lifts the size past 28px anyway).
+    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(28px, 6vw, 60px)",
   };
 
   const articlePadding = compact ? "p-4" : "px-6 pt-8 pb-16 md:px-8";
@@ -307,7 +311,7 @@ export default function EventDetailView({
           </div>
           <h3
             lang="de"
-            className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[22px] md:text-[26px]"}`}
+            className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
           >
             {event.venue}
           </h3>
