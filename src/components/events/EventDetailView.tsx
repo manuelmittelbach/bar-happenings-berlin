@@ -95,7 +95,7 @@ export default function EventDetailView({
   const canceledLabel = event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer";
 
   // Strip € from price text since the Euro icon already conveys it.
-  // When entry info is missing (admin picked "No entry info", or the
+  // When entry info is missing (admin picked "Check at the door", or the
   // scraper couldn't parse a price from the source), fall back to
   // "Check at the door" — gives the user an actionable cue instead of
   // hiding the chip and leaving them guessing whether it's free.

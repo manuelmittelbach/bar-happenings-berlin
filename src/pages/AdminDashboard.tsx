@@ -2246,7 +2246,7 @@ function StagedEventCard({
             disabled={!canEdit}
             className="w-full h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
           >
-            <option value="">No entry info</option>
+            <option value="">Check at the door</option>
             <option value="Free">Free</option>
             <option value="Donation">Donation</option>
             <option value={CUSTOM_ENTRY_SENTINEL}>Custom…</option>
