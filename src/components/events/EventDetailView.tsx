@@ -141,7 +141,7 @@ export default function EventDetailView({
       <article className={`${articleWidth} ${articlePadding}`}>
         {/* A. Lede figure — magazine top photo when an image is available. */}
         {hasRealImage && (
-          <figure className={`relative border-2 border-foreground rounded-2xl md:rounded-3xl overflow-hidden mb-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
+          <figure className={`relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
             <img
               src={event.image!}
               alt={displayTitle}
@@ -278,7 +278,7 @@ export default function EventDetailView({
             Solid bg-background + warm shadow lift the card off the
             atmospheric wash so it reads as a distinct surface without
             the harsh 2px black square it used to be. */}
-        <div className="mt-10 border-2 border-foreground rounded-2xl md:rounded-3xl bg-background p-5 md:p-6 relative shadow-[0_24px_60px_-32px_hsla(18,85%,52%,0.3)]">
+        <div className="mt-10 border-2 border-foreground bg-background p-5 md:p-6 relative shadow-[0_24px_60px_-32px_hsla(18,85%,52%,0.3)]">
           {/* Mobile-only overlay that turns the entire card into a tap
               area for the bar page. Hidden on md+ so the desktop hover
               flow (inline venue-name link + maps button) reads cleanly.
@@ -300,7 +300,7 @@ export default function EventDetailView({
                 (most bars right now) — keeps the full-width text
                 layout intact for the unfilled case. */}
             {venueImage && (
-              <div className="shrink-0 w-[96px] h-[96px] md:w-[140px] md:h-[140px] rounded-xl md:rounded-2xl border-2 border-foreground overflow-hidden">
+              <div className="shrink-0 w-[96px] h-[96px] md:w-[140px] md:h-[140px] border-2 border-foreground overflow-hidden">
                 <img
                   src={venueImage}
                   alt={event.venue}
@@ -364,7 +364,7 @@ export default function EventDetailView({
             href={event.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 w-full inline-flex items-center justify-between h-12 px-5 rounded-2xl border-2 border-foreground bg-background text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]"
+            className="mt-6 w-full inline-flex items-center justify-between h-12 px-5 border-2 border-foreground bg-background text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]"
           >
             <span className="inline-flex items-center gap-2">
               <ExternalLink className="h-4 w-4" />

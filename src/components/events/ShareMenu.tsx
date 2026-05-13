@@ -117,7 +117,7 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
   return (
     <Popover>
       <PopoverTrigger asChild>{renderTriggerButton()}</PopoverTrigger>
-      <PopoverContent className="w-56 p-2 rounded-2xl border-2 border-foreground" align="end">
+      <PopoverContent className="w-56 p-2 border-2 border-foreground" align="end">
         {shareLinks.map((link) => (
           <a
             key={link.name}

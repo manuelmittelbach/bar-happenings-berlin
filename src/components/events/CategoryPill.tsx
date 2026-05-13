@@ -213,7 +213,7 @@ function Pill({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 whitespace-nowrap border-2 rounded-full font-mono text-[11px] font-normal uppercase tracking-[0.08em] transition-colors ${
+      className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 whitespace-nowrap border-2 font-mono text-[11px] font-normal uppercase tracking-[0.08em] transition-colors ${
         active
           ? "border-foreground bg-foreground text-background"
           : "border-border bg-background text-foreground hover:border-foreground"

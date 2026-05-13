@@ -145,7 +145,7 @@ export default function Login() {
 					</p>
 					<button
 						onClick={() => navigate("/for-bars", { state: { scrollToSignIn: true } })}
-						className="w-full h-10 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors"
+						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
 					>
 						Go to sign in
 					</button>
@@ -173,7 +173,7 @@ export default function Login() {
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
 								placeholder="Anna"
-								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 							/>
 						</div>
 						<div className="flex-1 space-y-1.5">
@@ -185,7 +185,7 @@ export default function Login() {
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
 								placeholder="Müller"
-								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 							/>
 						</div>
 					</div>
@@ -197,7 +197,7 @@ export default function Login() {
 								required
 								value={selectedVenueId}
 								onChange={(e) => setSelectedVenueId(e.target.value)}
-								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 							>
 								<option value="">Select your bar…</option>
 								{venueOptions.map(v => (
@@ -233,7 +233,7 @@ export default function Login() {
 									value={barName}
 									onChange={(e) => setBarName(e.target.value)}
 									placeholder="Zum Goldenen Hahn"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -244,7 +244,7 @@ export default function Login() {
 									value={barStreet}
 									onChange={(e) => setBarStreet(e.target.value)}
 									placeholder="Schönhauser Allee 12"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -255,7 +255,7 @@ export default function Login() {
 									value={barPostalCode}
 									onChange={(e) => setBarPostalCode(e.target.value)}
 									placeholder="10435"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 								{barPostalCode.length === 5 && (
 									<p className="text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ export default function Login() {
 									value={barCity}
 									onChange={(e) => setBarCity(e.target.value)}
 									placeholder="Berlin"
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 								/>
 							</div>
 						</>
@@ -283,7 +283,7 @@ export default function Login() {
 							value={barWebsite}
 							onChange={(e) => setBarWebsite(e.target.value)}
 							placeholder="https://yourbar.de"
-							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 						/>
 					</div>
 					<div className="space-y-1.5">
@@ -293,7 +293,7 @@ export default function Login() {
 							value={barInstagram}
 							onChange={(e) => setBarInstagram(e.target.value)}
 							placeholder="@yourbar"
-							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 						/>
 					</div>
 					<div className="space-y-1.5">
@@ -303,7 +303,7 @@ export default function Login() {
 							value={barPhone}
 							onChange={(e) => setBarPhone(e.target.value)}
 							placeholder="+49 30 123456"
-							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 						/>
 					</div>
 
@@ -316,7 +316,7 @@ export default function Login() {
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="you@example.com"
-							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+							className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 						/>
 					</div>
 
@@ -331,7 +331,7 @@ export default function Login() {
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								placeholder="••••••••"
-								className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors"
+								className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
 							/>
 							<button
 								type="button"
@@ -351,7 +351,7 @@ export default function Login() {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full h-10 bg-foreground text-background rounded-sm text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
+						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
 					>
 						{loading ? "..." : "Create account"}
 					</button>

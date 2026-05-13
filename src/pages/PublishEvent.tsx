@@ -107,7 +107,7 @@ export default function PublishEvent() {
 			secondaryActions={
 				<Link
 					to="/dashboard"
-					className="h-12 px-6 flex items-center border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors"
+					className="h-12 px-6 flex items-center border border-border text-sm font-medium hover:bg-muted transition-colors"
 				>
 					Cancel
 				</Link>

@@ -80,7 +80,7 @@ function HighlightCard({ event, categories, onClick }: HighlightCardProps) {
   return (
     <button
       onClick={() => onClick(event.id)}
-      className={`group relative flex flex-col text-left bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
+      className={`group relative flex flex-col text-left bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
         isCanceled ? "opacity-55" : ""
       }`}
       style={{ padding: "20px 18px 18px" }}

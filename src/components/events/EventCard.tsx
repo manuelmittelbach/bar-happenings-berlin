@@ -86,7 +86,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`relative grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
+        className={`relative grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-all no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
           isCanceled ? "opacity-50" : ""
         }`}
       >
@@ -110,7 +110,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`relative block bg-background border-2 border-foreground rounded-2xl hover:border-accent transition-all overflow-hidden no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
+      className={`relative block bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
         isCanceled ? "opacity-55" : ""
       }`}
       style={{ padding: "20px 18px 18px" }}
