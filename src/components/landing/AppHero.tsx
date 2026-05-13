@@ -16,7 +16,7 @@ export default function AppHero({ animate = true }: Props) {
 
   return (
     <section
-      className="relative isolate text-foreground"
+      className="relative isolate overflow-hidden bg-background text-foreground"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
         paddingBottom: "env(safe-area-inset-bottom)",
@@ -27,16 +27,16 @@ export default function AppHero({ animate = true }: Props) {
           className="absolute -bottom-40 right-[-22%] h-[600px] w-[600px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.22), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(20px)",
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
         <div
           className="absolute -top-32 left-[-15%] h-[420px] w-[420px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.10), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(20px)",
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
         <div

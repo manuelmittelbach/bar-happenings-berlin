@@ -209,16 +209,30 @@ export default function Index() {
               "linear-gradient(180deg, hsla(18, 85%, 52%, 0.035) 0%, hsla(28, 85%, 55%, 0.04) 50%, hsla(18, 85%, 52%, 0.03) 100%)",
           }}
         />
-        {/* Bridge-Ellipse — wächst nahtlos aus dem Hero-bottom-right Glow
-            heraus, eliminiert die harte Kante am Hero/Index-Übergang.
-            Etwas stärker (Hero-Glow läuft auf ~22% am Kollisionspunkt),
-            fadet dann schnell aus. */}
+        {/* Continuation des Hero-Bottom-Right-Glows. Spiegelt exakt die
+            Hero-Werte (gleiche Farbe, gleiche Intensität 0.07, gleiche
+            right: -22% Position, gleiche Größe 600×600, gleicher Blur).
+            Vertikal so positioniert, dass die obere Hälfte hinter dem
+            opaken Hero verschwindet und die untere Hälfte als nahtlose
+            Fortsetzung in den Category/Day-Bereich bleedet — sieht aus
+            wie EIN Glow der die Hero-Section-Kante ignoriert. */}
         <div
-          className="absolute right-[-18%] top-[-220px] h-[680px] w-[1600px] rounded-full"
+          className="absolute right-[-22%] top-[540px] h-[600px] w-[600px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, hsla(18, 85%, 52%, 0.20), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(50px)",
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        {/* Linker Top-Glow Continuation — spiegelt den Hero-Top-Left-Glow.
+            Sitzt am unteren linken Übergang, damit auch die linke Seite
+            der Hero/Page-Kante einen weichen Continuity-Glow bekommt. */}
+        <div
+          className="absolute left-[-15%] top-[620px] h-[420px] w-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
         {/* Organische Hue-Variationen — sehr breit, sehr dezent, leicht
@@ -258,7 +272,7 @@ export default function Index() {
           block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 backdrop-blur-md"
+        className="sticky top-[64px] z-40 bg-background/30 backdrop-blur-md border-b border-foreground/10"
       >
         <div className="container py-3">
           <div className="md:hidden">
@@ -475,7 +489,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
         // Keeps the section label visible while the user scrolls
         // through the full "More tonight" list.
         <div
-          className="sticky z-30 backdrop-blur-md mb-3.5"
+          className="sticky z-30 bg-background/30 backdrop-blur-md mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
@@ -567,7 +581,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 natural (non-stuck) layout while letting cards scroll
                 cleanly into the underside of the rule when stuck. */}
             <div
-              className="sticky z-30 backdrop-blur-md mb-3.5"
+              className="sticky z-30 bg-background/30 backdrop-blur-md mb-3.5"
               style={{ top: "var(--chrome-bottom, 130px)" }}
             >
               <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
