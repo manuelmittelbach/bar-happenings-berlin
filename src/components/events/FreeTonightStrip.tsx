@@ -34,10 +34,12 @@ export default function FreeTonightStrip({
         if (e.status === "canceled") return false;
         return isFreeEntry(e.entryInfo) || isDonationEntry(e.entryInfo);
       })
+      // Sorted purely by start time — the same chronological logic as
+      // every other event list on the site, so the section reads
+      // consistently. The Free vs Donation distinction is already
+      // carried by the pill on each card, no need to bake it into the
+      // sort order. Events without a start time fall to the end.
       .sort((a, b) => {
-        const aFree = isFreeEntry(a.entryInfo) ? 0 : 1;
-        const bFree = isFreeEntry(b.entryInfo) ? 0 : 1;
-        if (aFree !== bFree) return aFree - bFree;
         const tA = a.startTime || "99:99";
         const tB = b.startTime || "99:99";
         return tA.localeCompare(tB);
@@ -64,10 +66,14 @@ export default function FreeTonightStrip({
               {title}
             </h2>
             <span className="flex-1" />
-            {/* Counter Desktop-only — auf Mobile bringt die Zahl wenig
-                Mehrwert und würde unter den Title brechen. */}
-            <span className="hidden md:inline mono-label text-muted-foreground">
-              {freeEvents.length} Free {freeEvents.length === 1 ? "event" : "events"}
+            {/* Counter — auf Mobile nur die Zahl, auf Desktop „N Free"
+                als knappe Charakterisierung (ohne „events"-Suffix, das
+                redundant zum Section-Title wäre). */}
+            <span className="mono-label text-muted-foreground">
+              <span className="md:hidden">{freeEvents.length}</span>
+              <span className="hidden md:inline">
+                {freeEvents.length} Free
+              </span>
             </span>
           </div>
         </div>

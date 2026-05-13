@@ -418,10 +418,11 @@ export default function Index() {
         <>
           {/* TONIGHT — editorial sections + All Tonight list */}
           {showEditorial && (() => {
-            // When a filter collapses every editorial strip above, the word
-            // "More" in "More tonight" loses its referent — there's nothing
-            // above to be "more than". Drop "More" → no header in that
-            // case (and re-word the empty message accordingly).
+            // When a filter collapses every editorial strip above, the
+            // list isn't "more than" anything — it's the entire tonight
+            // surface. Switch the header from "More tonight" to "All
+            // tonight" so the section still has a clear anchor instead
+            // of an unlabeled list.
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
               highlightedTonightEvents.length > 0 ||
@@ -461,7 +462,7 @@ export default function Index() {
                   onEventClick={handleEventClick}
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More tonight" : undefined}
+                  title={hasEditorialAbove ? "More tonight" : "All tonight"}
                   /* Dedup: drop events already shown above in Tonight's
                      Highlights (e.isHighlight) and Free Tonight (free or
                      pay-what-you-want). The master list reads as "what
@@ -497,7 +498,7 @@ export default function Index() {
                   title="Free tomorrow"
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More tomorrow" : undefined}
+                  title={hasEditorialAbove ? "More tomorrow" : "All tomorrow"}
                   /* Same dedup as More tonight — drop the free/donation
                      events that already render in Free Tomorrow above. */
                   events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
@@ -609,9 +610,11 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
                 context cue while scrolling past the DaySwitcher. */}
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
             <span className="flex-1" />
-            {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
-            <span className="hidden md:inline mono-label text-muted-foreground">
-              {events.length} more {events.length === 1 ? "event" : "events"}
+            {/* Counter — auf Mobile nur die Zahl, auf Desktop „N more"
+                (ohne „events"-Suffix, redundant zum Section-Title). */}
+            <span className="mono-label text-muted-foreground">
+              <span className="md:hidden">{events.length}</span>
+              <span className="hidden md:inline">{events.length} more</span>
             </span>
           </div>
         </div>
@@ -695,10 +698,13 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 </h3>
                 <span className="mono-label text-muted-foreground">{dom} {mon}</span>
                 <span className="flex-1" />
-                {/* Counter Desktop-only — Mobile hat den Title ausgeschrieben,
-                    also brauchen wir die Zahl nicht zusätzlich. */}
-                <span className="hidden md:inline mono-label text-muted-foreground">
-                  {g.events.length} {g.events.length === 1 ? "event" : "events"}
+                {/* Counter — auf Mobile nur die Zahl, auf Desktop „N
+                    events" (Platz da, also explizit). */}
+                <span className="mono-label text-muted-foreground">
+                  <span className="md:hidden">{g.events.length}</span>
+                  <span className="hidden md:inline">
+                    {g.events.length} {g.events.length === 1 ? "event" : "events"}
+                  </span>
                 </span>
               </div>
             </div>
