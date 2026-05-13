@@ -119,9 +119,13 @@ export default function EventDetailView({
   const canceledLabel = event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer";
 
   // Strip € from price text since the Euro icon already conveys it.
+  // When entry info is missing (admin picked "No entry info", or the
+  // scraper couldn't parse a price from the source), fall back to
+  // "Check at the door" — gives the user an actionable cue instead of
+  // hiding the chip and leaving them guessing whether it's free.
   const priceText = event.entryInfo?.replace(/€/g, "");
   const detailItems: { icon: LucideIcon; text: string }[] = [
-    priceText ? { icon: Euro, text: priceText } : null,
+    { icon: Euro, text: priceText || "Check at the door" },
     recurrenceLabel ? { icon: Repeat, text: recurrenceLabel } : null,
     event.language ? { icon: Languages, text: `in ${event.language}` } : null,
   ].filter((x): x is { icon: LucideIcon; text: string } => x !== null);
