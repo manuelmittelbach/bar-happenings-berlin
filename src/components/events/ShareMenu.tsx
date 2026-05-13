@@ -99,7 +99,7 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
         <Share2 className="h-4 w-4" />
       </button>
     ) : variant === "primary-cta" ? (
-      <button onClick={onClick} className="inline-flex items-center gap-2 h-12 px-6 bg-accent text-accent-foreground font-mono text-xs font-bold uppercase tracking-[0.08em] hover:bg-accent/90 active:scale-[0.98] transition-all duration-200">
+      <button onClick={onClick} className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent text-accent-foreground font-mono text-xs font-bold uppercase tracking-[0.08em] shadow-[0_12px_30px_-12px_hsla(18,85%,52%,0.55)] hover:bg-accent/90 hover:shadow-[0_14px_34px_-12px_hsla(18,85%,52%,0.65)] active:scale-[0.98] transition-all duration-200">
         <Share2 className="h-3.5 w-3.5" />
         Share
       </button>
@@ -117,7 +117,7 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
   return (
     <Popover>
       <PopoverTrigger asChild>{renderTriggerButton()}</PopoverTrigger>
-      <PopoverContent className="w-56 p-2 border-2 border-foreground" align="end">
+      <PopoverContent className="w-56 p-2 rounded-2xl border-2 border-foreground" align="end">
         {shareLinks.map((link) => (
           <a
             key={link.name}

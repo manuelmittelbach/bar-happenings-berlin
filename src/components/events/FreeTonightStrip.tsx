@@ -58,7 +58,7 @@ export default function FreeTonightStrip({
             Keeps the "Free tonight" label visible while the user scrolls
             through the cards. */}
         <div
-          className="sticky z-30 bg-background mb-3.5"
+          className="sticky z-30 backdrop-blur-md mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
