@@ -590,18 +590,29 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       {title && (
-        <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
-          {/* Same size as the weekday separators in the Later section so all
-              list headings ("More tonight", "Tomorrow", "WED 13 MAY", …) read
-              at the same typographic weight. On narrow Mobile viewports the
-              longer titles ("Free tomorrow", "More tomorrow") may wrap to
-              two lines — that's acceptable, since keeping the day-anchor
-              ("tomorrow") in each title gives users a context cue while
-              scrolling past the DaySwitcher. */}
-          <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
-          {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
-          <div className="hidden md:block mono-label text-muted-foreground">
-            {events.length} more {events.length === 1 ? "event" : "events"}
+        // Sticky header — matches the Later-section weekday pattern
+        // (and FreeTonightStrip): same `top: var(--chrome-bottom)`
+        // anchor, same mb-3.5 spacing, same pt-2.5/pb-2.5 padding.
+        // Keeps the section label visible while the user scrolls
+        // through the full "More tonight" list.
+        <div
+          className="sticky z-30 bg-background mb-3.5"
+          style={{ top: "var(--chrome-bottom, 130px)" }}
+        >
+          <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+            {/* Same size as the weekday separators in the Later section so all
+                list headings ("More tonight", "Tomorrow", …) read at the
+                same typographic weight. On narrow Mobile viewports the
+                longer titles ("Free tomorrow", "More tomorrow") may wrap
+                to two lines — that's acceptable, since keeping the
+                day-anchor ("tomorrow") in each title gives users a
+                context cue while scrolling past the DaySwitcher. */}
+            <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
+            <span className="flex-1" />
+            {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
+            <span className="hidden md:inline mono-label text-muted-foreground">
+              {events.length} more {events.length === 1 ? "event" : "events"}
+            </span>
           </div>
         </div>
       )}
@@ -655,10 +666,9 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
     <div className="container py-6 md:py-8">
       {groups.map((g) => {
         const d = new Date(g.date + "T00:00:00");
-        // Two weekday formats — long for mobile (where we drop the counter
-        // and need the title to carry more visual weight), short for
-        // desktop (where the row also has the events counter).
-        const wdShort = d.toLocaleDateString("en-GB", { weekday: "short" });
+        // Long weekday name on every viewport — matches "Tonight" /
+        // "Tomorrow" labels in the day switcher, which are also fully
+        // spelled out, so the visual rhythm stays consistent.
         const wdLong = d.toLocaleDateString("en-GB", { weekday: "long" });
         const dom = d.getDate();
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
@@ -681,8 +691,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
             >
               <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-                  <span className="md:hidden">{wdLong}</span>
-                  <span className="hidden md:inline">{wdShort}</span>
+                  {wdLong}
                 </h3>
                 <span className="mono-label text-muted-foreground">{dom} {mon}</span>
                 <span className="flex-1" />

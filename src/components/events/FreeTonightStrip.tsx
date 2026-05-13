@@ -50,19 +50,33 @@ export default function FreeTonightStrip({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap border-b-2 border-foreground pb-3.5 mt-10 mb-5">
-          <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-            {title}
-          </h2>
-          {/* Counter Desktop-only — auf Mobile bringt die Zahl wenig
-              Mehrwert und würde unter den Title brechen. Auf Desktop
-              balanciert sie das Visual (Title links, Count rechts). */}
-          <div className="hidden md:block mono-label text-muted-foreground">
-            {freeEvents.length} Free {freeEvents.length === 1 ? "event" : "events"}
+        {/* Sticky header — matches the Later-section weekday pattern:
+            same `top: var(--chrome-bottom)` anchor, same mb-3.5 spacing
+            below the rule, same pt-2.5/pb-2.5 padding around the row.
+            Keeps the "Free tonight" label visible while the user scrolls
+            through the cards. */}
+        <div
+          className="sticky z-30 bg-background mb-3.5"
+          style={{ top: "var(--chrome-bottom, 130px)" }}
+        >
+          <div className="border-b-2 border-foreground pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+            <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
+              {title}
+            </h2>
+            <span className="flex-1" />
+            {/* Counter Desktop-only — auf Mobile bringt die Zahl wenig
+                Mehrwert und würde unter den Title brechen. */}
+            <span className="hidden md:inline mono-label text-muted-foreground">
+              {freeEvents.length} Free {freeEvents.length === 1 ? "event" : "events"}
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3.5">
+        {/* Mobile: vertical stack (one card per row) so nothing hides
+            behind a swipe gesture. Desktop: responsive grid so the
+            available horizontal space isn't wasted on a single-column
+            list of wide cards. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {freeEvents.map((event) => (
             <FreeCard
               key={event.id}
@@ -98,23 +112,35 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
-      className={`group grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-colors no-underline text-foreground ${
+      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-colors no-underline text-foreground ${
         isCanceled ? "opacity-50" : ""
       }`}
     >
-      <div className="min-w-0">
-        <FreeMeta event={event} categories={categories} />
-        <h3 className={`font-body text-[24px] font-bold leading-[1.2] mt-2 mb-0 ${isCanceled ? "line-through" : ""}`}>
-          {displayTitle}
-        </h3>
-        <div className="font-body text-[13px] text-muted-foreground mt-1 truncate">
-          {event.venue}
-          {event.neighborhood ? ` · ${event.neighborhood}` : ""}
-        </div>
-      </div>
-      <span className="self-start shrink-0 inline-flex items-center px-2.5 py-1 bg-accent text-accent-foreground font-mono text-[11px] font-bold uppercase tracking-[0.14em]">
+      {/* Pill anchors to the top-right so the title can wrap to full card
+          width — works for both wide mobile-carousel cards and narrow
+          desktop-grid cells without two competing layouts. */}
+      <span className="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 bg-accent text-accent-foreground font-mono text-[11px] font-bold uppercase tracking-[0.14em] z-10">
         {tagLabel}
       </span>
+      <div className="min-w-0 pr-16">
+        <FreeMeta event={event} categories={categories} />
+      </div>
+      <h3
+        lang="de"
+        className={`font-body text-[22px] md:text-[24px] font-bold leading-[1.2] mt-2 mb-0 hyphens-auto break-words ${
+          isCanceled ? "line-through" : ""
+        }`}
+      >
+        {displayTitle}
+      </h3>
+      {/* Venue · neighborhood — line-clamp-2 lets long venue names wrap
+          over two lines before they truncate, instead of clipping with
+          an ellipsis on a single line (which on narrow desktop-grid
+          cells hid the neighborhood entirely). */}
+      <div className="font-body text-[13px] text-muted-foreground mt-1 line-clamp-2">
+        {event.venue}
+        {event.neighborhood ? ` · ${event.neighborhood}` : ""}
+      </div>
     </Link>
   );
 }
