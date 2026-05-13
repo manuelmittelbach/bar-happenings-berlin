@@ -148,11 +148,15 @@ export default function EventDetailView({
   const hasUpcomingSiblings = upcomingEvents.length > 1;
 
   const titleStyle: React.CSSProperties = {
-    // 28px floor (was 34px) keeps long German compounds like "Health
-    // Plan: A Deconstruction" on two lines instead of three on 375px
-    // phones, without losing the magazine-masthead impact on tablet+
-    // viewports (where 6vw lifts the size past 28px anyway).
-    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(28px, 6vw, 60px)",
+    // clamp(28px, 5vw, 48px) — editorial-magazine sizing range, not
+    // marketing-hero. 28px floor keeps long German compounds on two
+    // lines on 375px phones; 48px cap (was 60px) lands in the same
+    // range as The Verge / Pitchfork article headlines, so the title
+    // reads as "long-form" rather than "billboard" on wide viewports.
+    // The 5vw curve scales gently between the two so tablets don't
+    // overshoot. Venue ratio stays healthy at 1.4×–1.85× across all
+    // viewports — no need to adjust the H3 sibling.
+    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(28px, 5vw, 48px)",
   };
 
   const articlePadding = compact ? "p-4" : "px-6 pt-8 pb-16 md:px-8";
