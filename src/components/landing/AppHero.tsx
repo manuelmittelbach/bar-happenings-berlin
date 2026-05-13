@@ -41,8 +41,6 @@ export default function AppHero({ animate = true }: Props) {
               "radial-gradient(ellipse at 50% 42%, black 22%, transparent 90%)",
           }}
         />
-        <div className="absolute right-6 top-6 hidden h-px w-40 origin-right -rotate-[18deg] bg-foreground/20 md:block" />
-        <div className="absolute right-6 top-9 hidden h-px w-24 origin-right -rotate-[18deg] bg-foreground/10 md:block" />
       </div>
 
       <div className="container relative z-10 flex min-h-[78svh] flex-col justify-center py-12 md:min-h-[600px] md:py-20">
