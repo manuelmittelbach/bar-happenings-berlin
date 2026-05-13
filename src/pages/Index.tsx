@@ -200,22 +200,11 @@ export default function Index() {
 
   return (
     <div className="relative isolate">
+      {/* Body-Atmosphäre — paarweise Orange + Amber Disks im Hero-Style,
+          über die Page verteilt. Abwechselnd Orange-rechts/Amber-links
+          und Amber-rechts/Orange-links, wirkt organisch wie Hero-Light
+          das sich weiterzieht. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        {/* Base vertikaler Warm-Wash — sehr flach, gibt Grundwärme */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, hsla(18, 85%, 52%, 0.035) 0%, hsla(28, 85%, 55%, 0.04) 50%, hsla(18, 85%, 52%, 0.03) 100%)",
-          }}
-        />
-        {/* Continuation des Hero-Bottom-Right-Glows. Spiegelt exakt die
-            Hero-Werte (gleiche Farbe, gleiche Intensität 0.07, gleiche
-            right: -22% Position, gleiche Größe 600×600, gleicher Blur).
-            Vertikal so positioniert, dass die obere Hälfte hinter dem
-            opaken Hero verschwindet und die untere Hälfte als nahtlose
-            Fortsetzung in den Category/Day-Bereich bleedet — sieht aus
-            wie EIN Glow der die Hero-Section-Kante ignoriert. */}
         <div
           className="absolute right-[-22%] top-[540px] h-[600px] w-[600px] rounded-full"
           style={{
@@ -224,9 +213,6 @@ export default function Index() {
             filter: "blur(40px)",
           }}
         />
-        {/* Linker Top-Glow Continuation — spiegelt den Hero-Top-Left-Glow.
-            Sitzt am unteren linken Übergang, damit auch die linke Seite
-            der Hero/Page-Kante einen weichen Continuity-Glow bekommt. */}
         <div
           className="absolute left-[-15%] top-[620px] h-[420px] w-[420px] rounded-full"
           style={{
@@ -235,32 +221,68 @@ export default function Index() {
             filter: "blur(40px)",
           }}
         />
-        {/* Organische Hue-Variationen — sehr breit, sehr dezent, leicht
-            versetzte Töne (Rosa-Orange 18° ↔ Amber 28°) damit der Wash an
-            verschiedenen Stellen mal wärmer und mal heller rosa wirkt
-            statt einer einzigen statischen Farbe. */}
         <div
-          className="absolute -left-[20%] top-[1100px] h-[700px] w-[1700px] rounded-full"
+          className="absolute left-[-22%] top-[1400px] h-[600px] w-[600px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.07), hsla(28, 85%, 60%, 0) 65%)",
-            filter: "blur(60px)",
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
         <div
-          className="absolute -right-[20%] top-[2400px] h-[680px] w-[1700px] rounded-full"
+          className="absolute right-[-15%] top-[1500px] h-[420px] w-[420px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, hsla(18, 90%, 55%, 0.08), hsla(18, 90%, 55%, 0) 65%)",
-            filter: "blur(60px)",
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
         <div
-          className="absolute -left-[15%] top-[3700px] h-[700px] w-[1700px] rounded-full"
+          className="absolute right-[-22%] top-[2300px] h-[600px] w-[600px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.06), hsla(28, 85%, 60%, 0) 65%)",
-            filter: "blur(60px)",
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute left-[-15%] top-[2400px] h-[420px] w-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute left-[-22%] top-[3200px] h-[600px] w-[600px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute right-[-15%] top-[3300px] h-[420px] w-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute right-[-22%] top-[4100px] h-[600px] w-[600px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        <div
+          className="absolute left-[-15%] top-[4200px] h-[420px] w-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+            filter: "blur(40px)",
           }}
         />
       </div>
@@ -272,7 +294,7 @@ export default function Index() {
           block separated by identical 2px lines. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background/30 backdrop-blur-md border-b border-foreground/10"
+        className="sticky top-[64px] z-40 bg-background border-b border-border"
       >
         <div className="container py-3">
           <div className="md:hidden">
@@ -483,16 +505,13 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       {title && (
-        // Sticky header — matches the Later-section weekday pattern
-        // (and FreeTonightStrip): same `top: var(--chrome-bottom)`
-        // anchor, same mb-3.5 spacing, same pt-2.5/pb-2.5 padding.
-        // Keeps the section label visible while the user scrolls
-        // through the full "More tonight" list.
+        // Sticky header — matches main's structure: sticky inside
+        // .container, hairline on the inner heading row.
         <div
-          className="sticky z-30 bg-background/30 backdrop-blur-md mb-3.5"
+          className="sticky z-30 bg-background mb-3.5"
           style={{ top: "var(--chrome-bottom, 130px)" }}
         >
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+          <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             {/* Same size as the weekday separators in the Later section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
                 same typographic weight. On narrow Mobile viewports the
@@ -569,22 +588,13 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7">
-            {/* Sticky weekday header — `top` is driven by the --chrome-bottom
-                CSS var (set in the effect above) so the header pins exactly
-                to the bottom edge of the live category bar instead of a
-                hardcoded estimate; falls back to 130px before measurement.
-                The 14px spacing below the rule lives on the wrapper as
-                `mb-3.5`, NOT `pb-3.5`: padding inside the wrapper would
-                extend its opaque bg-background block past the black rule
-                and visually clip EventCards that should be visible right
-                up to the line. Margin keeps the visual spacing in the
-                natural (non-stuck) layout while letting cards scroll
-                cleanly into the underside of the rule when stuck. */}
+            {/* Sticky weekday header — matches main's structure: sticky
+                inside .container, hairline on the inner heading row. */}
             <div
-              className="sticky z-30 bg-background/30 backdrop-blur-md mb-3.5"
+              className="sticky z-30 bg-background mb-3.5"
               style={{ top: "var(--chrome-bottom, 130px)" }}
             >
-              <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+              <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>

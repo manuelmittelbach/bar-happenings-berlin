@@ -61,24 +61,43 @@ export default function EventDetail() {
 
 	return (
 		<div className="relative isolate bg-background pb-24">
-			{/* Warm atmosphere — same hue family as Index but at a fraction
-			    of the intensity. The detail page is a reading surface, so
-			    the wash only suggests warmth without coloring the paper. */}
+			{/* Warm atmosphere — selbes Disk-Pattern wie auf Index, damit
+			    Detail- und Liste-Seite dieselbe Color-Sprache sprechen.
+			    Zwei Paare (Orange + Amber Disks mit Hero-Spec) reichen
+			    für die typische Artikellänge. */}
 			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+				{/* Pair 1 — orange right, amber left, sits at the lede figure */}
 				<div
-					className="absolute right-[-25%] top-[-300px] h-[640px] w-[1500px] rounded-full"
+					className="absolute right-[-22%] top-[100px] h-[600px] w-[600px] rounded-full"
 					style={{
 						background:
-							"radial-gradient(ellipse at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-						filter: "blur(60px)",
+							"radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+						filter: "blur(40px)",
 					}}
 				/>
 				<div
-					className="absolute -left-[25%] top-[1200px] h-[680px] w-[1600px] rounded-full"
+					className="absolute left-[-15%] top-[180px] h-[420px] w-[420px] rounded-full"
 					style={{
 						background:
-							"radial-gradient(ellipse at center, hsla(28, 85%, 60%, 0.03), hsla(28, 85%, 60%, 0) 65%)",
-						filter: "blur(70px)",
+							"radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+						filter: "blur(40px)",
+					}}
+				/>
+				{/* Pair 2 — flips sides, sits around the venue card / footer */}
+				<div
+					className="absolute left-[-22%] top-[1000px] h-[600px] w-[600px] rounded-full"
+					style={{
+						background:
+							"radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
+						filter: "blur(40px)",
+					}}
+				/>
+				<div
+					className="absolute right-[-15%] top-[1100px] h-[420px] w-[420px] rounded-full"
+					style={{
+						background:
+							"radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
+						filter: "blur(40px)",
 					}}
 				/>
 			</div>
