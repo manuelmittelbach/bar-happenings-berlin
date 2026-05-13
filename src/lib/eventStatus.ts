@@ -3,7 +3,8 @@ import type { BarlinEvent } from "@/types/event";
 // Event "disappears from the main page" moment.
 // - endTime present → cutoff is the endTime itself (rolls to the next day
 //   when endTime < startTime, e.g. 22:00–02:00).
-// - endTime missing → cutoff is startTime + 2h.
+// - endTime missing → cutoff is startTime + 90min (matches the "Now"
+//   indicator window in isLiveNow so a card never lingers past Now).
 // - Neither time parseable → fall back to end of event.date (midnight).
 export function isEventStillOnline(
   event: Pick<BarlinEvent, "date" | "startTime" | "endTime">,
@@ -25,7 +26,7 @@ export function isEventStillOnline(
     const [h, m] = event.startTime.split(":").map(Number);
     if (!Number.isNaN(h) && !Number.isNaN(m)) {
       const start = new Date(y, mo - 1, d, h, m, 0, 0);
-      const cutoff = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      const cutoff = new Date(start.getTime() + 90 * 60 * 1000);
       return now.getTime() < cutoff.getTime();
     }
   }
@@ -81,7 +82,7 @@ export function endsNextDay(startTime?: string, endTime?: string): boolean {
 
 // Dashboard tab split:
 // - If endTime is set: in past once endTime has passed (on next day if endTime < startTime).
-// - If endTime is missing: same as !isEventStillOnline (startTime + 2h cutoff).
+// - If endTime is missing: same as !isEventStillOnline (startTime + 90min cutoff).
 export function isEventInPast(
   event: Pick<BarlinEvent, "date" | "startTime" | "endTime">,
   now: Date = new Date(),
