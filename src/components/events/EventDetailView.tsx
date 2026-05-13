@@ -1,8 +1,9 @@
 import React, { ReactNode, Fragment, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { MapPin, ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
-import { formatDateWithDay, formatDateShort } from "@/lib/dateFormat";
+import { formatDateWithDay } from "@/lib/dateFormat";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
@@ -28,13 +29,6 @@ function renderWithLinks(text: string) {
   return parts;
 }
 
-export interface UpcomingEvent {
-  id: string;
-  date: string;
-  startTime?: string;
-  status?: string;
-}
-
 export interface EventDetailViewProps {
   // Core event payload. The admin preview synthesizes this from a staged row.
   event: Pick<
@@ -42,6 +36,7 @@ export interface EventDetailViewProps {
     | "id"
     | "title"
     | "venue"
+    | "venueId"
     | "address"
     | "neighborhood"
     | "date"
@@ -59,17 +54,8 @@ export interface EventDetailViewProps {
     | "canceledBy"
   >;
 
-  // Future-only events at the same venue, sorted by date+startTime. The
-  // current event is included; it's marked active in the pill grid.
-  // Length <= 1 hides the venue-block "All events at this bar" button.
-  upcomingEvents: UpcomingEvent[];
-
   // Pre-computed recurrence label (e.g. "Every Tuesday"). null = hide.
   recurrenceLabel: string | null;
-
-  // Pill click for sibling navigation. Receives the target event id. When
-  // undefined, pills render inert (used by admin preview).
-  onSelectSibling?: (eventId: string) => void;
 
   // "Open in Maps" handler.
   onOpenMaps: () => void;
@@ -85,12 +71,6 @@ export interface EventDetailViewProps {
   // for the "Live preview" strip).
   headerBanner?: ReactNode;
 
-  // Controlled state for the "All events at this bar" pill grid. When
-  // provided, lets the parent persist open/closed across sibling
-  // navigations (so the panel doesn't snap shut while a new event loads).
-  upcomingOpen?: boolean;
-  onToggleUpcoming?: () => void;
-
   // Admin-only edit shortcut. When provided, renders a pencil button in
   // the hero (or eyebrow row when there's no hero image).
   onEdit?: () => void;
@@ -98,15 +78,11 @@ export interface EventDetailViewProps {
 
 export default function EventDetailView({
   event,
-  upcomingEvents,
   recurrenceLabel,
-  onSelectSibling,
   onOpenMaps,
   showShare,
   compact = false,
   headerBanner,
-  upcomingOpen,
-  onToggleUpcoming,
   onEdit,
 }: EventDetailViewProps) {
   const displayTitle = cleanEventTitle(event.title || "(untitled)", event.venue);
@@ -136,16 +112,6 @@ export default function EventDetailView({
   const eyebrowDate = event.date ? formatDateWithDay(event.date) : null;
   const eyebrowParts = [categoryLabel, eyebrowDate, eyebrowTime].filter(Boolean) as string[];
   const eyebrowColor = categoryColor || "hsl(var(--accent))";
-
-  // Internally-controlled fallback when the parent doesn't pass controlled props.
-  const [localUpcomingOpen, setLocalUpcomingOpen] = useState(false);
-  const upcomingIsControlled = upcomingOpen !== undefined;
-  const upcomingIsOpen = upcomingIsControlled ? upcomingOpen : localUpcomingOpen;
-  const toggleUpcoming = upcomingIsControlled
-    ? (onToggleUpcoming ?? (() => {}))
-    : () => setLocalUpcomingOpen((o) => !o);
-
-  const hasUpcomingSiblings = upcomingEvents.length > 1;
 
   const titleStyle: React.CSSProperties = {
     // clamp(28px, 5vw, 48px) — editorial-magazine sizing range, not
@@ -307,18 +273,51 @@ export default function EventDetailView({
         <DescriptionBlock description={event.description ?? ""} compact={compact} />
 
 
-        {/* F. Venue block — bordered editorial card with "Open in Maps" +
-            "All events at this bar" controls. */}
-        <div className="mt-10 border-2 border-foreground p-5">
+        {/* F. Venue block — bordered editorial card with the Open in
+            Maps action. The venue name links out to the bar's own
+            detail page (which carries the upcoming-events list that
+            used to live behind the "All events at this bar" toggle).
+            On mobile the whole card is a tap target for the bar page
+            (via an absolute overlay link below) since narrow viewports
+            make precise taps on the inline venue-name link awkward. */}
+        <div className="mt-10 border-2 border-foreground p-5 relative">
+          {/* Mobile-only overlay that turns the entire card into a tap
+              area for the bar page. Hidden on md+ so the desktop hover
+              flow (inline venue-name link + maps button) reads cleanly.
+              The Open-in-Maps button below uses relative z-20 to stay
+              clickable above this overlay. */}
+          {event.venueId && (
+            <Link
+              to={`/bar/${event.venueId}`}
+              aria-label={`Open ${event.venue} page`}
+              className="md:hidden absolute inset-0 z-10"
+            />
+          )}
           <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
             The venue
           </div>
-          <h3
-            lang="de"
-            className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
-          >
-            {event.venue}
-          </h3>
+          {/* Venue name links to the bar's own detail page. Desktop
+              hover flips to the accent orange — same affordance language
+              as other inline links (Open in Maps, event link footer) so
+              it reads as clickable without underline noise. Falls back
+              to a plain h3 when no venueId is set (legacy / orphan
+              rows). */}
+          {event.venueId ? (
+            <Link
+              to={`/bar/${event.venueId}`}
+              lang="de"
+              className={`block font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
+            >
+              {event.venue}
+            </Link>
+          ) : (
+            <h3
+              lang="de"
+              className={`font-heading font-extrabold uppercase tracking-[-0.01em] hyphens-auto break-words ${compact ? "text-[20px]" : "text-[20px] md:text-[26px]"}`}
+            >
+              {event.venue}
+            </h3>
+          )}
           {event.address && (
             <p className="mt-2 font-body text-sm text-muted-foreground">
               {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
@@ -330,39 +329,17 @@ export default function EventDetailView({
               {event.neighborhood}
             </p>
           )}
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
+          <div className="mt-4 flex items-center gap-2 flex-wrap relative z-20">
             <button
               onClick={onOpenMaps}
               className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
             >
-              Open in Google Maps <span aria-hidden="true">›</span>
+              Open in Maps <span aria-hidden="true">›</span>
             </button>
-            {hasUpcomingSiblings && (
-              <button
-                onClick={toggleUpcoming}
-                aria-expanded={upcomingIsOpen}
-                className={`inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] transition-colors active:scale-[0.98] ${
-                  upcomingIsOpen
-                    ? "bg-foreground text-background"
-                    : "bg-transparent text-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {upcomingIsOpen ? "Hide all events" : "All events at this bar"}
-              </button>
-            )}
           </div>
         </div>
 
-        {/* G. Upcoming pill grid — revealed by the venue-block toggle. */}
-        {hasUpcomingSiblings && upcomingIsOpen && (
-          <UpcomingPills
-            events={upcomingEvents}
-            activeId={event.id}
-            onSelectSibling={onSelectSibling}
-          />
-        )}
-
-        {/* H. Event link — full-width btn-outline footer link. */}
+        {/* G. Event link — full-width btn-outline footer link. */}
         {event.url && (
           <a
             href={event.url}
@@ -471,50 +448,3 @@ function DescriptionBlock({
   );
 }
 
-function UpcomingPills({
-  events,
-  activeId,
-  onSelectSibling,
-}: {
-  events: UpcomingEvent[];
-  activeId: string;
-  onSelectSibling?: (eventId: string) => void;
-}) {
-  // Only show start time on a pill when the same date has multiple events —
-  // otherwise the date alone is unambiguous and reads cleaner.
-  const dateCounts: Record<string, number> = {};
-  events.forEach((e) => {
-    dateCounts[e.date] = (dateCounts[e.date] ?? 0) + 1;
-  });
-
-  return (
-    <div className="border-2 border-foreground border-t-0 px-5 py-4">
-      <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-        Upcoming dates
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {events.map((e) => {
-          const isActive = e.id === activeId;
-          const clickable = !!onSelectSibling && !isActive;
-          const showTime = (dateCounts[e.date] ?? 0) > 1 && !!e.startTime;
-          const label = showTime
-            ? `${formatDateShort(e.date)} · ${e.startTime}`
-            : formatDateShort(e.date);
-          return (
-            <button
-              key={e.id}
-              onClick={clickable ? () => onSelectSibling!(e.id) : undefined}
-              className={`inline-flex items-center px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em] border-2 transition-all active:scale-95 ${
-                isActive
-                  ? "bg-accent text-accent-foreground border-accent"
-                  : `border-foreground text-foreground ${clickable ? "hover:bg-foreground hover:text-background cursor-pointer" : "cursor-default opacity-60"}`
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
