@@ -200,10 +200,11 @@ export default function Index() {
 
   return (
     <div className="relative isolate">
-      {/* Body-Atmosphäre — paarweise Orange + Amber Disks im Hero-Style,
-          über die Page verteilt. Abwechselnd Orange-rechts/Amber-links
-          und Amber-rechts/Orange-links, wirkt organisch wie Hero-Light
-          das sich weiterzieht. */}
+      {/* Body-Atmosphäre — paarweise Orange + Amber Disks unter der
+          Filter-Bar (Hero und Bar sind opak und decken alles in ihrer
+          Box ab, also keine Disks hier oben — die würden eh nur als
+          Farbkante an der Hero/Bar-Grenze sichtbar). Disks erst ab
+          unter der Bar, abwechselnd Seite, leicht überlappend. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
           className="absolute right-[-22%] top-[540px] h-[600px] w-[600px] rounded-full"
@@ -289,9 +290,10 @@ export default function Index() {
       <AppHero animate={animateHero} />
 
       {/* Sticky category filter — icon-disk row (mobile scroller / desktop
-          row) matching /map. Bottom border is 2px foreground to match the
-          header rule above, so the sticky chrome reads as one stacked
-          block separated by identical 2px lines. */}
+          row) matching /map. Opaque bg-background like the "More tonight"
+          sticky header: when scrolling, event cards are cleanly hidden
+          underneath instead of bleeding through blurred. The border-b
+          hairline marks the bar's bottom edge. */}
       <div
         ref={categoryBarRef}
         className="sticky top-[64px] z-40 bg-background border-b border-border"

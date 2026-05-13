@@ -22,23 +22,13 @@ export default function AppHero({ animate = true }: Props) {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
+      {/* Hero is opaque cream like the sticky bar below — no warm tint
+          at the boundary means no color edge. The grid pattern stays
+          inside the hero with a radial mask that fades to transparent
+          before the hero's bottom edge, so the hero-bottom and bar-top
+          meet as the same plain cream. No internal glow disks here:
+          those previously tinted the hero-bottom and created the edge. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          className="absolute -bottom-40 right-[-22%] h-[600px] w-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute -top-32 left-[-15%] h-[420px] w-[420px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
         <div
           className="absolute inset-0 opacity-[0.05]"
           style={{
@@ -46,9 +36,9 @@ export default function AppHero({ animate = true }: Props) {
               "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
             backgroundSize: "48px 48px",
             maskImage:
-              "radial-gradient(ellipse at center, black 25%, transparent 80%)",
+              "radial-gradient(ellipse at 50% 42%, black 22%, transparent 90%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse at center, black 25%, transparent 80%)",
+              "radial-gradient(ellipse at 50% 42%, black 22%, transparent 90%)",
           }}
         />
         <div className="absolute right-6 top-6 hidden h-px w-40 origin-right -rotate-[18deg] bg-foreground/20 md:block" />
