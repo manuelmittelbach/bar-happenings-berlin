@@ -95,7 +95,7 @@ export function CategoryIconRow({
         <div className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${
           !activeCategory
             ? "bg-accent text-background"
-            : "bg-muted border-2 border-border"
+            : "bg-background border-2 border-border"
         }`}>
           <LayoutGrid className="h-6 w-6" />
         </div>
@@ -122,7 +122,7 @@ export function CategoryIconRow({
               className={`w-14 h-14 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isActive
                   ? "text-background scale-105 shadow-md"
-                  : "bg-muted border-2 border-border group-hover:border-foreground group-hover:scale-105"
+                  : "bg-background border-2 border-border group-hover:border-foreground group-hover:scale-105"
               }`}
             >
               {Icon ? <Icon className="h-7 w-7" /> : <span className="text-[26px] leading-none">{info?.emoji ?? "✦"}</span>}
@@ -270,7 +270,7 @@ export function CategoryIconBar({
         <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
           !activeCategory
             ? "bg-accent text-background "
-            : "bg-muted border-2 border-border"
+            : "bg-background border-2 border-border"
         }`}>
           <LayoutGrid className="h-5 w-5" />
         </div>
@@ -297,7 +297,7 @@ export function CategoryIconBar({
               className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isActive
                   ? "text-background scale-105"
-                  : "bg-muted border-2 border-border"
+                  : "bg-background border-2 border-border"
               }`}
             >
               {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
