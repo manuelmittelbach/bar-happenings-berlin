@@ -90,7 +90,20 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
                 isActive ? "opacity-100" : "opacity-55"
               }`}
             >
-              {t.label}
+              {/* Inline-block so the 2px accent underline hugs the label
+                  width instead of stretching across the whole tab.
+                  `pb-0.5` keeps a 2px gap between text descender and the
+                  rule so it reads as a deliberate marker, not a typo
+                  underline. Transparent border on inactive tabs holds
+                  layout height steady — the label doesn't shift when
+                  switching tabs. */}
+              <span
+                className={`inline-block pb-0.5 border-b-2 ${
+                  isActive ? "border-accent" : "border-transparent"
+                }`}
+              >
+                {t.label}
+              </span>
             </div>
             <div
               className="font-mono font-normal uppercase text-muted-foreground mt-1 truncate"

@@ -13,6 +13,7 @@ interface EventMapProps {
 	venueMap: Record<string, Venue>;
 	userLocation: { lat: number; lng: number } | null;
 	onEventClick: (id: string) => void;
+	onVenueClick: (venueId: string) => void;
 }
 
 const BERLIN_CENTER: [number, number] = [13.405, 52.52];
@@ -99,12 +100,13 @@ async function buildCategoryImage(categoryId: string, color: string, count = 1):
 	return ctx.getImageData(0, 0, SIZE, SIZE);
 }
 
-export default function EventMap({ events, venueMap, userLocation, onEventClick }: EventMapProps) {
+export default function EventMap({ events, venueMap, userLocation, onEventClick, onVenueClick }: EventMapProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 	const popupRef = useRef<maplibregl.Popup | null>(null);
 	const onEventClickRef = useRef(onEventClick);
+	const onVenueClickRef = useRef(onVenueClick);
 	const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
 	const sourceReadyRef = useRef(false);
 	const [locating, setLocating] = useState(false);
@@ -140,6 +142,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 	}, [categoryInfos, categoryById]);
 
 	useEffect(() => { onEventClickRef.current = onEventClick; }, [onEventClick]);
+	useEffect(() => { onVenueClickRef.current = onVenueClick; }, [onVenueClick]);
 
 	// Same pattern as onEventClick: the click handler on LAYER_ICONS is
 	// registered once inside the "load" callback, so without a ref it
@@ -360,6 +363,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				map.on("click", LAYER_ICONS, (e) => {
 					if (!e.features?.length) return;
 					const props = e.features[0].properties as {
+						venueId: string;
 						venueName: string;
 						neighborhood: string;
 						eventsJson: string;
@@ -398,10 +402,33 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					nameRow.style.cssText =
 						"display:flex;align-items:flex-end;justify-content:space-between;gap:10px;";
 
+					// Venue name is a tappable link to /bar/<id> — the popup is
+					// venue-centric (the user just tapped a marker), so opening
+					// the bar page from here matches expectation. Styled as a
+					// button so it inherits accessibility semantics; cursor +
+					// hover-accent telegraph affordance, mobile users get the
+					// implicit "tap the bar name on a map pin opens the bar"
+					// affordance.
 					const nameEl = document.createElement("h3");
 					nameEl.style.cssText =
-						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;";
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;cursor:pointer;transition:color 0.12s ease;";
+					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
+					nameEl.setAttribute("role", "link");
+					nameEl.setAttribute("tabindex", "0");
+					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
+					const goToVenue = () => {
+						if (props.venueId) {
+							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
+						}
+					};
+					nameEl.addEventListener("click", goToVenue);
+					nameEl.addEventListener("keydown", (ev) => {
+						if (ev.key === "Enter" || ev.key === " ") {
+							ev.preventDefault();
+							goToVenue();
+						}
+					});
 					nameRow.appendChild(nameEl);
 
 					const ul = userLocationRef.current;

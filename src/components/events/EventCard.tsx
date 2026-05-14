@@ -41,7 +41,11 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
   };
 
   const venueLine = hideVenue ? null : (
-    <div className="font-body text-[13px] text-muted-foreground mt-1 flex gap-1.5 items-center flex-wrap">
+    /* Bumped to 15px/foreground-80 so the venue + neighborhood read as
+       a clear secondary tier between the 22px title above and the 13px
+       muted description below. At 13px/muted both lines blurred into
+       the same gray noise. */
+    <div className="font-body text-[15px] text-foreground/80 flex gap-1.5 items-center flex-wrap">
       <span>{event.venue}</span>
       {event.neighborhood && (
         <>
