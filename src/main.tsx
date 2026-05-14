@@ -3,6 +3,26 @@ import { Capacitor } from "@capacitor/core";
 import App from "./App.tsx";
 import "./index.css";
 
+// DEBUG: shift "now" by N ms across the whole app — useful for testing
+// time-dependent UI (event end times, still-running carry-overs, day
+// rollovers). Set back to 0 before shipping.
+const DEBUG_TIME_OFFSET_MS = 60 * 60 * 1000;
+if (DEBUG_TIME_OFFSET_MS !== 0) {
+  const RealDate = Date;
+  const realNow = RealDate.now.bind(RealDate);
+  const offsetNow = () => realNow() + DEBUG_TIME_OFFSET_MS;
+  class FakeDate extends RealDate {
+    constructor(...args: unknown[]) {
+      if (args.length === 0) super(offsetNow());
+      else super(...(args as [string | number | Date]));
+    }
+    static now() { return offsetNow(); }
+  }
+  (globalThis as { Date: typeof Date }).Date = FakeDate as typeof Date;
+  // eslint-disable-next-line no-console
+  console.warn(`[DEBUG] Time offset active: +${DEBUG_TIME_OFFSET_MS / 60000} min`);
+}
+
 if (Capacitor.isNativePlatform()) {
   document.documentElement.classList.add("is-native");
 }
