@@ -198,9 +198,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 							endTime: e.endTime ?? "",
 							status: e.status,
 							canceledBy: e.canceledBy ?? null,
-							// Per-event category color so the popup button can hover/
-							// click in the category hue (Live Music → green, DJ → purple,
-							// etc.) instead of a unified orange.
+							// Per-event category id + color so the popup row can
+							// render the matching icon disc and hover/click in the
+							// category hue (Live Music → green, DJ → purple, etc.).
+							categoryId: e.category ?? "other",
 							categoryColor: categoryById[e.category]?.color ?? "#ED5B1C",
 						}))
 					),
@@ -372,24 +373,44 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						endTime: string;
 						status?: string;
 						canceledBy?: "organizer" | "admin" | null;
+						categoryId: string;
 						categoryColor: string;
 					}[] = JSON.parse(props.eventsJson);
 
+					// Editorial popup — cream paper, soft 1px ink border + subtle
+					// drop shadow for definition without the brutalist 2px rule.
+					// Sharp corners stay (editorial signature). Width is content-
+					// driven: shrinks around short venue names, expands up to
+					// 320px for longer ones (titles wrap to a second line past
+					// the cap rather than ellipsing).
 					const popupEl = document.createElement("div");
-					popupEl.style.cssText = "min-width:260px;max-width:340px;font-family:sans-serif;border:1px solid #d1d5db;border-radius:3px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
+					popupEl.style.cssText =
+						"display:inline-block;min-width:220px;max-width:320px;font-family:'DM Sans',system-ui,sans-serif;background:#f8f5ef;border:1px solid #0f0f0f;border-radius:0;overflow:hidden;box-shadow:0 6px 20px rgba(15,15,15,0.1),0 1px 3px rgba(15,15,15,0.06);";
 
-					// Header strip — venue name on the left, walking-time chip
-					// on the right when the user's location is known. Right
-					// padding stays at 40px so MapLibre's close button (also
-					// absolutely positioned in the top-right) has room.
+					// HEADER — neighborhood mono eyebrow, Georgia serif venue
+					// name, walking chip right-aligned. 40px right padding leaves
+					// room for the absolutely-positioned close button.
 					const headerEl = document.createElement("div");
 					headerEl.style.cssText =
-						"display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #d1d5db;padding:11px 40px 11px 12px;background:#f5f5f5;";
+						"padding:14px 44px 12px 14px;border-bottom:1px solid #d2cdc2;background:#f8f5ef;";
 
-					const nameEl = document.createElement("p");
-					nameEl.style.cssText = "font-weight:700;font-size:15px;margin:0;flex:1 1 auto;min-width:0;";
+					if (props.neighborhood) {
+						const eyebrow = document.createElement("p");
+						eyebrow.style.cssText =
+							"font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#ED5B1C;margin:0 0 4px;line-height:1;";
+						eyebrow.textContent = props.neighborhood;
+						headerEl.appendChild(eyebrow);
+					}
+
+					const nameRow = document.createElement("div");
+					nameRow.style.cssText =
+						"display:flex;align-items:flex-end;justify-content:space-between;gap:10px;";
+
+					const nameEl = document.createElement("h3");
+					nameEl.style.cssText =
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;";
 					nameEl.textContent = props.venueName;
-					headerEl.appendChild(nameEl);
+					nameRow.appendChild(nameEl);
 
 					const ul = userLocationRef.current;
 					if (ul) {
@@ -400,55 +421,86 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 						// the indicator stops being useful and just clutters the
 						// header.
 						if (min <= 20) {
-						const walkEl = document.createElement("span");
-						walkEl.style.cssText =
-							"display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;";
-						walkEl.setAttribute("title", `~${min} min walking from your location`);
-						walkEl.innerHTML = `${PERSON_SVG}<span>${min} min</span>`;
-						headerEl.appendChild(walkEl);
+							const walkEl = document.createElement("span");
+							walkEl.style.cssText =
+								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;padding-bottom:2px;";
+							walkEl.setAttribute("title", `~${min} min walking from your location`);
+							walkEl.innerHTML = `${PERSON_SVG}<span>${min}m</span>`;
+							nameRow.appendChild(walkEl);
 						}
 					}
-
+					headerEl.appendChild(nameRow);
 					popupEl.appendChild(headerEl);
 
+					// SCROLL ROWS — each event is a flex row: 36px category disc
+					// (color + white icon, same glyph as the marker) on the
+					// left, title + mono dateline on the right.
 					const scrollEl = document.createElement("div");
 					scrollEl.className = "map-popup-scroll";
-					scrollEl.style.cssText = "max-height:220px;overflow-x:hidden;overflow-y:auto;padding:4px 12px;";
-					evts.forEach((evt) => {
-						const btn = document.createElement("button");
-						const isLast = evts.indexOf(evt) === evts.length - 1;
+					scrollEl.style.cssText =
+						"max-height:268px;overflow-x:hidden;overflow-y:auto;background:#f8f5ef;";
+
+					evts.forEach((evt, i) => {
+						const isLast = i === evts.length - 1;
 						const isCanceled = evt.status === "canceled";
+
+						const btn = document.createElement("button");
 						btn.className = "map-popup-btn";
-						btn.style.cssText = `display:block;width:100%;text-align:left;padding:5px 0;border:none;${isLast ? "" : "border-bottom:1px solid #f0f0f0;"}background:none;cursor:pointer;`;
-						// `--hover-color` CSS custom property drives the `:hover`
-						// background defined in index.css for `.map-popup-btn`.
-						// Setting it per-button lets each event row hover in its
-						// own category hue (Live Music → green, DJ → purple, etc.).
+						btn.style.cssText =
+							`display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:none;${isLast ? "" : "border-bottom:1px solid #d2cdc2;"}background:none;cursor:pointer;transition:background 0.12s ease;`;
+						// `--hover-color` drives the row's :hover background in
+						// index.css. Setting it per-row lets each event hover in
+						// its own category hue.
 						btn.style.setProperty("--hover-color", evt.categoryColor);
+
+						// Category disc — matches the marker glyph so the popup
+						// row keeps a visual link to the map marker the user
+						// just tapped.
+						const disc = document.createElement("span");
+						disc.className = "map-popup-disc";
+						disc.style.cssText =
+							`flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:${isCanceled ? "#bbb" : evt.categoryColor};transition:background 0.12s ease;`;
+						const iconPaths =
+							categoryIconPaths[evt.categoryId] ?? categoryIconPaths["other"];
+						disc.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke 0.12s ease;">${iconPaths}</svg>`;
+						btn.appendChild(disc);
+
+						const txtCol = document.createElement("div");
+						txtCol.style.cssText = "flex:1 1 auto;min-width:0;";
+
+						const titleP = document.createElement("p");
+						titleP.style.cssText =
+							`font-family:'DM Sans',system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.25;margin:0;color:${isCanceled ? "#888" : "#0f0f0f"};${isCanceled ? "text-decoration:line-through;" : ""}overflow-wrap:anywhere;`;
+						titleP.textContent = evt.title;
+						txtCol.appendChild(titleP);
+
 						const dateStr = new Date(evt.date + "T00:00:00").toLocaleDateString("en-GB", {
 							weekday: "short", day: "numeric", month: "short",
 						});
-						const titleP = document.createElement("p");
-						titleP.style.cssText = `font-size:14px;font-weight:600;margin:0;color:${isCanceled ? "#888" : "#111"};${isCanceled ? "text-decoration:line-through;" : ""}`;
-						titleP.textContent = evt.title;
+
 						const metaP = document.createElement("p");
-						metaP.style.cssText = "font-size:12px;color:#888;margin:3px 0 0;";
+						metaP.className = "map-popup-meta";
+						metaP.style.cssText =
+							"font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#6b6b6b;margin:3px 0 0;letter-spacing:0.02em;line-height:1;";
+
 						if (isCanceled) {
 							const badge = document.createElement("span");
-							badge.textContent = evt.canceledBy === "admin" ? "CANCELED" : "CANCELED BY ORGANIZER";
-							badge.style.cssText = "display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.5px;color:#dc2626;background:#fee2e2;padding:1px 6px;margin-right:6px;border-radius:2px;";
+							badge.textContent =
+								evt.canceledBy === "admin" ? "CANCELED" : "BY ORGANIZER";
+							badge.style.cssText =
+								"display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#dc2626;background:#fee2e2;padding:1px 5px;margin-right:6px;";
 							metaP.appendChild(badge);
 						}
 						metaP.appendChild(document.createTextNode(dateStr));
+
 						if (evt.startTime) {
 							const sep = document.createElement("span");
-							sep.style.cssText = "opacity:0.5;margin:0 4px;";
+							sep.style.cssText = "opacity:0.5;margin:0 5px;";
 							sep.textContent = "·";
 							metaP.appendChild(sep);
-							// Live = currently between startTime and endTime → swap the
-							// time text for an "● Now" indicator with a pulsing orange
-							// dot. Mirrors the EventMeta caps row on the home page so the
-							// affordance language stays consistent across surfaces.
+							// Live = currently between startTime and endTime → swap
+							// the time text for an "● NOW" indicator with a pulsing
+							// orange dot. Mirrors EventMeta on the home page.
 							const liveNow =
 								!isCanceled &&
 								isLiveNow({
@@ -462,31 +514,132 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 									"display:inline-flex;align-items:center;gap:5px;color:#ED5B1C;font-weight:700;";
 								const dot = document.createElement("span");
 								dot.style.cssText =
-									"display:inline-block;width:7px;height:7px;border-radius:50%;background:#ED5B1C;animation:ib-pulse 1.6s ease-in-out infinite;";
+									"display:inline-block;width:6px;height:6px;border-radius:50%;background:#ED5B1C;animation:ib-pulse 1.6s ease-in-out infinite;";
 								nowEl.appendChild(dot);
-								nowEl.appendChild(document.createTextNode("Now"));
+								nowEl.appendChild(document.createTextNode("NOW"));
 								metaP.appendChild(nowEl);
 							} else {
 								metaP.appendChild(document.createTextNode(evt.startTime));
 							}
 						}
-						btn.appendChild(titleP);
-						btn.appendChild(metaP);
+						txtCol.appendChild(metaP);
+						btn.appendChild(txtCol);
+
 						btn.addEventListener("click", () => {
 							btn.style.background = evt.categoryColor;
-							btn.querySelector<HTMLElement>("p:first-child")!.style.color = "white";
-							btn.querySelector<HTMLElement>("p:last-child")!.style.color = "rgba(255,255,255,0.75)";
+							titleP.style.color = "white";
+							metaP.style.color = "rgba(255,255,255,0.8)";
 							setTimeout(() => onEventClickRef.current(evt.id), 80);
 						});
 						scrollEl.appendChild(btn);
 					});
 					popupEl.appendChild(scrollEl);
 
+					// Shrink-to-wrapped-text — CSS `inline-block + max-width`
+					// only collapses around content when the natural (unwrapped)
+					// width fits within max-width. Once text wraps, the box
+					// stays glued to max-width even if the wrapped lines are
+					// narrower. Workaround: measure rendered line widths off-
+					// screen, then explicit-set the popup width to the longest
+					// line + the surrounding padding. Result: a box that hugs
+					// the actual content instead of stretching to 320px.
+					document.body.appendChild(popupEl);
+					popupEl.style.position = "fixed";
+					popupEl.style.left = "-9999px";
+					popupEl.style.top = "-9999px";
+					popupEl.style.visibility = "hidden";
+
+					// `Element.getClientRects()` on a block element returns ONE
+					// rect (its bounding box) — useless for line-by-line text
+					// measurement. The Range API instead returns one rect per
+					// rendered line of the selected content, which is what we
+					// need to find the longest visible line.
+					const widestLineIn = (el: Element): number => {
+						const r = document.createRange();
+						r.selectNodeContents(el);
+						const rects = r.getClientRects();
+						let max = 0;
+						for (let i = 0; i < rects.length; i++) {
+							if (rects[i].width > max) max = rects[i].width;
+						}
+						return max;
+					};
+
+					let widestHeaderLine = 0;
+					headerEl.querySelectorAll("p, h3").forEach((el) => {
+						const w = widestLineIn(el);
+						if (w > widestHeaderLine) widestHeaderLine = w;
+					});
+					let widestRowTextLine = 0;
+					popupEl.querySelectorAll(".map-popup-btn p").forEach((p) => {
+						const w = widestLineIn(p);
+						if (w > widestRowTextLine) widestRowTextLine = w;
+					});
+
+					// Header padding contribution: 14L + 44R (44R reserves space
+					// for the absolutely-positioned close button). Row text-
+					// column is offset by 14L padding + 36 disc + 12 gap + 14R.
+					const HEADER_CHROME = 14 + 44;
+					const ROW_CHROME = 14 + 36 + 12 + 14;
+					const computed = Math.max(
+						widestHeaderLine + HEADER_CHROME,
+						widestRowTextLine + ROW_CHROME,
+						220,
+					);
+					const finalWidth = Math.min(320, Math.ceil(computed));
+
+					popupEl.style.position = "";
+					popupEl.style.left = "";
+					popupEl.style.top = "";
+					popupEl.style.visibility = "";
+					popupEl.style.width = finalWidth + "px";
+					document.body.removeChild(popupEl);
+
 					popupRef.current?.remove();
-					const popup = new maplibregl.Popup({ offset: 24, maxWidth: "260px" })
+					// Force the popup to always anchor centered above or below
+					// the marker, never to the side. With maplibre's default
+					// auto-anchor a wide popup near a left/right edge can open
+					// half-off-screen on mobile, and the chosen anchor flips
+					// unpredictably between markers — confusing for users.
+					// Locking to top/bottom keeps the popup's position relative
+					// to the marker constant (always "above" or "below"); we
+					// just pick which one based on the marker's vertical screen
+					// position so the popup opens into open map space.
+					const mapRect = map.getContainer().getBoundingClientRect();
+					const markerPx = map.project(coords);
+					const popupAnchor = markerPx.y < mapRect.height * 0.5 ? "top" : "bottom";
+
+					const popup = new maplibregl.Popup({
+						offset: 18,
+						maxWidth: "320px",
+						anchor: popupAnchor,
+					})
 						.setLngLat(coords)
 						.setDOMContent(popupEl)
 						.addTo(map);
+
+					// Horizontal-only auto-pan: with the anchor locked to top
+					// or bottom, vertical overflow is already handled by the
+					// anchor flip. But a wide popup centered on a marker near
+					// the left/right map edge can still spill off-screen, so
+					// we measure post-layout and nudge sideways by the
+					// overflow pixels.
+					requestAnimationFrame(() => {
+						const popupRect = popupEl.getBoundingClientRect();
+						const margin = 12;
+						let dx = 0;
+						if (popupRect.left < mapRect.left + margin) {
+							dx = popupRect.left - mapRect.left - margin;
+						} else if (popupRect.right > mapRect.right - margin) {
+							dx = popupRect.right - mapRect.right + margin;
+						}
+						if (dx !== 0) {
+							map.panBy([dx, 0], {
+								duration: 320,
+								easing: (t) => t * (2 - t),
+							});
+						}
+					});
 					popup.on("close", () => {
 						if (popupRef.current === popup) popupRef.current = null;
 					});
