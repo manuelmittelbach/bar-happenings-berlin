@@ -270,31 +270,39 @@ export default function Index() {
         <PageSpinner />
       ) : (
         <>
-          {/* TONIGHT — editorial sections + All Tonight list */}
+          {/* TONIGHT — editorial sections + All Tonight list, OR a single
+              flat "{Category} tonight" list when a category filter is
+              active (the filter IS the discovery; splitting the result
+              into Highlights/Free/More fragments a small subset into
+              multiple mini-sections). */}
           {showEditorial && (() => {
-            // When a filter collapses every editorial strip above, the
-            // list isn't "more than" anything — it's the entire tonight
-            // surface. Switch the header from "More tonight" to "All
-            // tonight" so the section still has a clear anchor instead
-            // of an unlabeled list.
+            const activeCategoryLabel = activeCategory
+              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
+              : null;
+
+            // Category filter active → flat chronological list. Highlight/
+            // Free signals stay on each EventCard inline (pills + indicator),
+            // so no info is lost by collapsing the editorial structure.
+            if (activeCategoryLabel) {
+              return (
+                <DayList
+                  title={`${activeCategoryLabel} tonight`}
+                  events={filtered}
+                  onEventClick={handleEventClick}
+                  emptyMessage={`No ${activeCategoryLabel} tonight.`}
+                  onEmptyCta={{ label: "Change category →", onClick: () => setActiveCategory("") }}
+                />
+              );
+            }
+
+            // No category filter — full editorial structure. When every
+            // strip collapses (e.g. nothing free + nothing highlighted),
+            // the list isn't "more than" anything — it's the entire
+            // tonight surface, so swap "More" → "All".
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
               highlightedTonightEvents.length > 0 ||
               todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
-            // With a category filter active, swap the generic "Nothing on
-            // tonight" for the more useful "No <label> tonight" + a
-            // "Change category" CTA that clears the filter. Without a
-            // filter the original "See what's on tomorrow" CTA still
-            // makes sense.
-            const activeCategoryLabel = activeCategory
-              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
-              : null;
-            const tonightEmptyMessage = activeCategoryLabel
-              ? `No ${activeCategoryLabel} tonight.`
-              : "That's it for tonight.";
-            const tonightEmptyCta = activeCategoryLabel
-              ? { label: "Change category →", onClick: () => setActiveCategory("") }
-              : { label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") };
             return (
               <>
                 {/* Carry-over from the previous calendar day — sits above
@@ -325,24 +333,33 @@ export default function Index() {
                     (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
                   )}
                   onEventClick={handleEventClick}
-                  emptyMessage={tonightEmptyMessage}
-                  onEmptyCta={tonightEmptyCta}
+                  emptyMessage="That's it for tonight."
+                  onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
                 />
               </>
             );
           })()}
 
           {dayTab === "tomorrow" && (() => {
-            const hasEditorialAbove = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const activeCategoryLabel = activeCategory
               ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
               : null;
-            const tomorrowEmptyMessage = activeCategoryLabel
-              ? `No ${activeCategoryLabel} tomorrow.`
-              : "That's it for tomorrow.";
-            const tomorrowEmptyCta = activeCategoryLabel
-              ? { label: "Change category →", onClick: () => setActiveCategory("") }
-              : { label: "See what's on later →", onClick: () => setActiveDate("Later") };
+
+            // Same flat-list short-circuit as tonight when a category
+            // filter is active.
+            if (activeCategoryLabel) {
+              return (
+                <DayList
+                  title={`${activeCategoryLabel} tomorrow`}
+                  events={filtered}
+                  onEventClick={handleEventClick}
+                  emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
+                  onEmptyCta={{ label: "Change category →", onClick: () => setActiveCategory("") }}
+                />
+              );
+            }
+
+            const hasEditorialAbove = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
             return (
               <>
                 <FreeTonightStrip
@@ -357,8 +374,8 @@ export default function Index() {
                      events that already render in Free Tomorrow above. */
                   events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
                   onEventClick={handleEventClick}
-                  emptyMessage={tomorrowEmptyMessage}
-                  onEmptyCta={tomorrowEmptyCta}
+                  emptyMessage="That's it for tomorrow."
+                  onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
                 />
               </>
             );
