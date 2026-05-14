@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -12,7 +11,7 @@ import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import AppHero from "@/components/landing/AppHero";
 
 import type { BarlinEvent } from "@/types/event";
-import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
+import { useEvents, useCategories } from "@/hooks/useEvents";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
@@ -26,7 +25,7 @@ let heroAnimationPlayed = false;
 export default function Index() {
   const navigate = useNavigate();
   const {
-    searchQuery, setSearchQuery,
+    searchQuery,
     activeCategory, setActiveCategory,
     activeDate, setActiveDate,
   } = useFilterParams();
@@ -82,7 +81,6 @@ export default function Index() {
   const cutoffDate = berlinDateStringOffset(13);
 
   const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
-  const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   const categories = useMemo(
     () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
@@ -469,6 +467,14 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
   }
 
   return (
+    /* Each weekday gets its own <section> as the containing block for
+       its sticky header, AND the inter-day visual gap lives INSIDE the
+       previous section as pb-7 (instead of mt-7 between sections). The
+       sections butt up flush, so when Friday's section.bottom reaches
+       chrome-bottom, Saturday's section.top is there at the same
+       instant — Saturday sticks, Friday gets pushed up by section-end.
+       Visually: Saturday rises from Friday's bottom hairline upward,
+       pushing Friday up by its own height. */
     <div className="container py-6 md:py-8">
       {groups.map((g) => {
         const d = new Date(g.date + "T00:00:00");
@@ -480,8 +486,6 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7 first:mt-0">
-            {/* Sticky weekday header — matches main's structure: sticky
-                inside .container, hairline on the inner heading row. */}
             <div
               className="sticky z-30 bg-background mb-3.5"
               style={{ top: "var(--chrome-bottom, 130px)" }}
