@@ -68,6 +68,7 @@ interface EventFormProps {
   footer?: ReactNode;
   recurrenceLocked?: boolean;
   optionalStartTime?: boolean;
+  optionalEndTime?: boolean;
   optionalDescription?: boolean;
 }
 
@@ -99,6 +100,7 @@ export default function EventForm({
   footer,
   recurrenceLocked = false,
   optionalStartTime = false,
+  optionalEndTime = false,
   optionalDescription = false,
 }: EventFormProps) {
   const { data: categoriesData = [] } = useCategories();
@@ -233,6 +235,10 @@ export default function EventForm({
         return;
       }
     }
+    if (!optionalEndTime && !formData.endTime) {
+      toast.error("Please add an end time.");
+      return;
+    }
     if (formData.endTime && formData.startTime === formData.endTime) {
       toast.error("End time must differ from start time.");
       return;
@@ -366,9 +372,13 @@ export default function EventForm({
             />
           </div>
           <div className="space-y-1.5 min-w-0">
-            <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> End</label>
+            <label className="text-sm font-medium flex items-center gap-1">
+              <Clock className="h-3 w-3" /> End{optionalEndTime ? "" : " *"}
+            </label>
             <input
-              type="time" value={formData.endTime}
+              type="time"
+              required={!optionalEndTime}
+              value={formData.endTime}
               onChange={(e) => update("endTime", e.target.value)}
               className={`${inputClass} appearance-none min-w-0`}
             />
