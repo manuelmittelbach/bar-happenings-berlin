@@ -57,15 +57,11 @@ export default function FreeTonightStrip({
           zwischen FreeTonight-Cards und dem nächsten Header genauso
           groß wie zwischen DaySwitcher und FreeTonight-Header. */}
       <div className="container py-6 md:py-8">
-        {/* Sticky header — matches main's structure: sticky inside
-            .container so the cream bg only covers the container width
-            (page content on the sides is visible through the gutter).
-            Hairline sits on the inner heading row. */}
-        <div
-          className="sticky z-30 bg-background mb-3.5"
-          style={{ top: "var(--chrome-bottom, 130px)" }}
-        >
-          <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap -mx-6 px-6 md:mx-0 md:px-0">
+        {/* Inline section header — runs borderless so the heading sits in
+            quiet whitespace. A sticky+hairline variant felt busy when
+            stacked on top of the day+category chrome. */}
+        <div className="mb-3.5">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
             </h2>
