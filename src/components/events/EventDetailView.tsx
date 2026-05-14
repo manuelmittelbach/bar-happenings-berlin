@@ -1,4 +1,4 @@
-import React, { ReactNode, Fragment } from "react";
+import React, { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Euro, Repeat, Languages, Clock, Calendar, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
@@ -250,15 +250,12 @@ export default function EventDetailView({
                 whitespace before them. Left-aligned reads as a proper
                 meta row below the title. */}
             {detailItems.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              <div className="flex items-center gap-4 flex-wrap font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                 {detailItems.map((item, i) => (
-                  <Fragment key={i}>
-                    {i > 0 && <span className="opacity-60">·</span>}
-                    <span className="inline-flex items-center gap-1.5">
-                      <item.icon className="h-3.5 w-3.5 shrink-0" />
-                      <span>{item.text}</span>
-                    </span>
-                  </Fragment>
+                  <span key={i} className="inline-flex items-center gap-1.5">
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span>{item.text}</span>
+                  </span>
                 ))}
               </div>
             )}
