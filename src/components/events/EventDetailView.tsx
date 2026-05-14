@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Pencil, Euro, Repeat, Languages, Clock, Calendar, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
-import { cleanEventTitle } from "@/lib/cleanTitle";
+import { cleanEventTitle, addSoftHyphens } from "@/lib/cleanTitle";
 import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
 import { useCategories } from "@/hooks/useEvents";
@@ -214,20 +214,23 @@ export default function EventDetailView({
         </div>
 
         {/* C. Display title — Syne 800, fluid magazine-masthead size.
-            No `hyphens-auto` here: event titles are typically proper
-            names + mixed languages ("TAMARA LUKASHEVA // DUO ...") where
-            German hyphenation rules produced ugly mid-name splits
-            ("LU-KASHEVA"). `break-words` stays so a single
-            extra-long compound noun still wraps before overflowing the
-            viewport, but normal word boundaries are preferred. */}
+            Two-pronged hyphenation: `addSoftHyphens` pre-inserts soft
+            hyphens at CamelCase boundaries so mashed-up titles like
+            "JazzformationJustFriends" can split into their word
+            components, and `hyphens-auto` lets the browser also break
+            dictionary words at proper syllable boundaries via the
+            inherited `lang="en"` on <html>. Trade-off: proper names
+            ("LUKASHEVA") can occasionally get awkward dictionary splits
+            ("LU-KASHEVA"). Accepted for the much more common case of
+            long German/English compounds that otherwise overflow. */}
         <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 break-words"
+          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
           style={titleStyle}
         >
-          {displayTitle}
+          {addSoftHyphens(displayTitle)}
         </motion.h1>
 
         {/* D. Action row — Share primary CTA on the left, metadata chips on
@@ -262,22 +265,15 @@ export default function EventDetailView({
           </div>
         )}
 
-        {/* Doors / next-day microcopy lives just under the action row.
-            Hide doors when it equals the start time — the eyebrow already
-            shows that time, so a duplicate "Doors 20:00" line would just
-            add visual noise. */}
-        {(() => {
-          const showDoors = !!event.doorsTime && event.doorsTime !== event.startTime;
-          const showEndsNextDay = !!event.startTime && endsNextDay(event.startTime, event.endTime);
-          if (!showDoors && !showEndsNextDay) return null;
-          return (
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-              {showDoors && <>Doors {event.doorsTime}</>}
-              {showDoors && showEndsNextDay && " · "}
-              {showEndsNextDay && <>Ends next day</>}
-            </p>
-          );
-        })()}
+        {/* Next-day microcopy lives just under the action row. Doors has
+            been moved into the "About the event" section below so it sits
+            with descriptive event context rather than between the chip
+            row and the venue block. */}
+        {!!event.startTime && endsNextDay(event.startTime, event.endTime) && (
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            Ends next day
+          </p>
+        )}
 
         {/* E. Venue block — compact info stack (Resident Advisor style).
             No section eyebrow, no display-heading-sized venue name —
@@ -333,6 +329,15 @@ export default function EventDetailView({
           <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
             About the event
           </h2>
+          {/* Doors as the first line under the section heading — pairs
+              with the descriptive copy below as practical "what time to
+              show up" context. Hidden when it equals startTime (the
+              eyebrow time already conveys that, so it would duplicate). */}
+          {!!event.doorsTime && event.doorsTime !== event.startTime && (
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              Doors {event.doorsTime}
+            </p>
+          )}
           <DescriptionBlock
             description={event.description ?? ""}
             compact={compact}
