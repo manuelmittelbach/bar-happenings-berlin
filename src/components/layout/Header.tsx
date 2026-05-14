@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
-/* Navigation items — For bars (bar-owner pitch + signin page) and About.
- * The Wordmark on the left already routes to home (the Tonight surface),
- * so a separate "Tonight" link in the nav was redundant. */
+/* Navigation items — Map + For bars (bar-owner pitch + signin page).
+ * About moved to the footer to keep the header focused on primary
+ * discovery surfaces. The Wordmark on the left already routes to home
+ * (the Tonight surface), so a separate "Tonight" link is redundant. */
 const navItems: { label: string; path: string }[] = [
   { label: "Map", path: "/map" },
   { label: "For organizer", path: "/for-bars" },
-  { label: "About",    path: "/about" },
 ];
 
 /* Wordmark — "Inside · Bars" with a 7px accent dot between the words.
@@ -142,7 +142,7 @@ export default function Header() {
       </div>
 
       {/* Mobile nav — drops down from below the header. Primary nav items
-          (Map / For organizer / About) lay out in a horizontal row to save
+          (Map / For organizer) lay out in a horizontal row to save
           vertical space; auth/role buttons stay stacked underneath because
           they're full-width affordances. */}
       <AnimatePresence>
