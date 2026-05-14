@@ -40,6 +40,10 @@ export default function Index() {
     if (t === "tonight") setActiveDate("All");
     else if (t === "tomorrow") setActiveDate("Tomorrow");
     else setActiveDate("Later");
+    // Always land at the top when switching day tabs — scroll position
+    // from the previous day's list would be meaningless against the new
+    // day's content and reads as "stuck mid-page" on switch.
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [setActiveDate]);
 
   const isNative = useIsNative();
