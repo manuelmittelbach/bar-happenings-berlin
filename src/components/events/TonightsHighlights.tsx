@@ -43,12 +43,14 @@ export default function TonightsHighlights({
           <div>
             <div className="mono-label text-accent mb-1.5">Editor's picks</div>
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              Highlights tonight
+              {sorted.length === 1 ? "Highlight tonight" : "Highlights tonight"}
             </h2>
           </div>
-          {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
-          <div className="hidden md:block mono-label text-muted-foreground">
-            {sorted.length} curated
+          {/* Counter — auf Mobile nur die Zahl, auf Desktop „N curated"
+              (analog FreeTonightStrip). */}
+          <div className="mono-label text-muted-foreground">
+            <span className="md:hidden">{sorted.length}</span>
+            <span className="hidden md:inline">{sorted.length} curated</span>
           </div>
         </div>
 

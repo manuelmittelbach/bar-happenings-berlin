@@ -213,7 +213,7 @@ export default function Index() {
           so users can jump between days without scrolling back up. */}
       <div
         ref={categoryBarRef}
-        className="sticky z-40 bg-background"
+        className="sticky z-40 bg-background border-b-2 border-foreground md:border-b-0"
         style={{ top: "var(--header-h)" }}
       >
         {/* Mobile — rounded-full Tonight/Tomorrow/Later buttons. */}

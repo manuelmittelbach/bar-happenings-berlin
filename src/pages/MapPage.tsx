@@ -84,9 +84,10 @@ export default function MapPage() {
           full DaySwitcher tab-style on desktop so the day chrome reads
           consistently with Index. Filters drawer was deliberately
           removed from the Map. */}
-      <div className="shrink-0 bg-background z-[50]">
-        {/* No hard rule below the chrome — the map fades into the background
-            via a gradient overlay at its top edge (see below). */}
+      <div className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0 z-[50]">
+        {/* Mobile keeps the 2px foreground rule as the map's hard top edge.
+            Desktop drops the rule — the map fades into the background via
+            the gradient overlay below for a softer editorial feel. */}
         <div>
           {/* Mobile — rectangle buttons */}
           <div className="md:hidden container flex items-center gap-2 py-2.5">
@@ -135,14 +136,19 @@ export default function MapPage() {
 
       {/* Map fills remaining height */}
       <div className="flex-1 min-h-0 relative">
-        {/* Top fade — softens the seam between chrome and map so the
-            tiles bleed into the background instead of meeting a hard edge. */}
+        {/* Desktop-only top fade — softens the seam between chrome and map.
+            Mobile keeps the hard 2px foreground rule (see chrome above) so
+            the brutalist editorial language stays intact on phones. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 z-[100] h-8 bg-gradient-to-b from-background to-transparent"
+          className="hidden md:block pointer-events-none absolute inset-x-0 top-0 z-[100] h-16"
+          style={{
+            background:
+              "linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.85) 35%, hsl(var(--background) / 0) 100%)",
+          }}
         />
         <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
-          {filtered.length} {filtered.length === 1 ? "event" : "events"}
+          {filtered.length} {filtered.length === 1 ? "event" : "events"} {dayTab}
         </div>
         {(searchQuery || activeNeighborhood) && (
           <div className="absolute top-2 left-2 z-[9999] flex flex-wrap items-center gap-2 max-w-[calc(100%-7rem)]">
