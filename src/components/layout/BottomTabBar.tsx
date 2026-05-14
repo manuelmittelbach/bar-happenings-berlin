@@ -18,7 +18,12 @@ const TABS: TabDef[] = [
     to: "/",
     label: "List",
     Icon: ListBullets,
-    isActive: (p) => p === "/" || p.startsWith("/event/") || p.startsWith("/bar/"),
+    // Active strictly on the List surface. /event/* and /bar/* are
+    // their own editorial pages — neither List nor Map is "where you
+    // are" when reading a detail, so leaving both inactive avoids the
+    // misleading List-stays-black hint after drilling in from either
+    // surface.
+    isActive: (p) => p === "/",
   },
   {
     key: "map",
