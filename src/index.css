@@ -8,6 +8,13 @@
 
 @layer base {
   :root {
+    /* Total header chrome height — base 64 plus the iOS safe-area inset on
+       devices with a notch / Dynamic Island. `env(safe-area-inset-top)` is
+       0 on devices without a notch and outside Capacitor, so this value
+       degrades cleanly to plain 64px in the browser. Stickies that pin
+       under the header reference this via `top: var(--header-h)`. */
+    --header-h: calc(64px + env(safe-area-inset-top));
+
     /* Realigned to the Inside Bars design system's exact hex values:
        #f8f5ef cream paper, #f3eee5 card, #e8e3da muted, #d2cdc2 border,
        #0f0f0f near-black ink, #ED5B1C accent orange. The previous HSL

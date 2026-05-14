@@ -9,6 +9,7 @@ import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import AppHero from "@/components/landing/AppHero";
+import { useIsNative } from "@/hooks/useIsNative";
 
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useCategories } from "@/hooks/useEvents";
@@ -41,6 +42,7 @@ export default function Index() {
     else setActiveDate("Later");
   }, [setActiveDate]);
 
+  const isNative = useIsNative();
   const [animateHero] = useState(() => !heroAnimationPlayed);
   useEffect(() => {
     if (animateHero) heroAnimationPlayed = true;
@@ -62,7 +64,7 @@ export default function Index() {
     const update = () => {
       document.documentElement.style.setProperty(
         "--chrome-bottom",
-        `${64 + el.offsetHeight}px`,
+        `calc(var(--header-h) + ${el.offsetHeight}px)`,
       );
     };
     update();
@@ -196,7 +198,7 @@ export default function Index() {
 
   return (
     <div className="relative isolate">
-      <AppHero animate={animateHero} />
+      {!isNative && <AppHero animate={animateHero} />}
 
       {/* Sticky category filter — icon-disk row (mobile scroller / desktop
           row) matching /map. Opaque bg-background like the "More tonight"
@@ -205,7 +207,8 @@ export default function Index() {
           hairline marks the bar's bottom edge. */}
       <div
         ref={categoryBarRef}
-        className="sticky top-[64px] z-40 bg-background border-b border-border"
+        className="sticky z-40 bg-background border-b border-border"
+        style={{ top: "var(--header-h)" }}
       >
         <div className="container py-3">
           <div className="md:hidden">
