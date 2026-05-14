@@ -539,7 +539,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 container for the sticky, so the next weekday cleanly
                 pushes the previous one out as it scrolls into view. */}
             <div
-              className="mb-2.5 sticky z-30 bg-background pt-6 pb-3 md:pt-7 md:pb-4"
+              className="mb-2.5 sticky z-30 bg-background pt-[34px] pb-3 md:pt-[42px] md:pb-4"
               style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
             >
               {/* Vertical padding on the sticky weekday gives the heading
