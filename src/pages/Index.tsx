@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
@@ -8,8 +8,6 @@ import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
-import AppHero from "@/components/landing/AppHero";
-import { useIsNative } from "@/hooks/useIsNative";
 
 import type { BarlinEvent } from "@/types/event";
 import { useEvents, useCategories } from "@/hooks/useEvents";
@@ -19,9 +17,6 @@ import { useFilterParams } from "@/lib/useFilterParams";
 import { isFreeOrDonation } from "@/lib/entryInfo";
 
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
-
-// Hero animation runs once per page-load; internal navigations skip it.
-let heroAnimationPlayed = false;
 
 export default function Index() {
   const navigate = useNavigate();
@@ -53,12 +48,6 @@ export default function Index() {
     setActiveCategory(c);
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [setActiveCategory]);
-
-  const isNative = useIsNative();
-  const [animateHero] = useState(() => !heroAnimationPlayed);
-  useEffect(() => {
-    if (animateHero) heroAnimationPlayed = true;
-  }, [animateHero]);
 
   const categoryBarRef = useRef<HTMLDivElement>(null);
 
@@ -212,8 +201,6 @@ export default function Index() {
 
   return (
     <div className="relative isolate">
-      {!isNative && <AppHero animate={animateHero} />}
-
       {/* Sticky chrome — Day filter + Category filter pinned together
           on both viewports. Mobile shows rounded-full Tonight/Tomorrow/
           Later buttons; desktop shows the editorial DaySwitcher (weekday
