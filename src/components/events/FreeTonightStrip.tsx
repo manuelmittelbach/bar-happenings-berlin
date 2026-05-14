@@ -105,9 +105,7 @@ interface FreeCardProps {
 
 function FreeCard({ event, categories, onClick }: FreeCardProps) {
   const displayTitle = cleanEventTitle(event.title, event.venue);
-  const isFree = isFreeEntry(event.entryInfo);
   const isCanceled = event.status === "canceled";
-  const tagLabel = isFree ? "Free" : "Donation";
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,14 +120,12 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
         isCanceled ? "opacity-50" : ""
       }`}
     >
-      {/* Pill anchors to the top-right so the title can wrap to full card
-          width — works for both wide mobile-carousel cards and narrow
-          desktop-grid cells without two competing layouts. */}
-      <span className="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 bg-accent text-accent-foreground font-mono text-[11px] font-bold uppercase tracking-[0.14em] z-10">
-        {tagLabel}
-      </span>
-      <div className="min-w-0 pr-16">
-        <FreeMeta event={event} categories={categories} />
+      {/* Meta row renders the small Free/Donation pill inline — matches
+          the treatment in TonightsHighlights cards. The previous big
+          accent pill anchored top-right was visually heavier than the
+          rest of the card chrome. */}
+      <div className="min-w-0">
+        <EventMeta event={event} categories={categories} size="md" />
       </div>
       <h3
         lang="de"
@@ -149,11 +145,4 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
       </div>
     </Link>
   );
-}
-
-/* Free-card meta omits the inline Free/Donation pill because the wide card
- * already shows it on the right side. Time + category only. */
-function FreeMeta({ event, categories }: { event: BarlinEvent; categories: CategoryRow[] }) {
-  const clone = { ...event, entryInfo: "" } as BarlinEvent;
-  return <EventMeta event={clone} categories={categories} size="md" />;
 }

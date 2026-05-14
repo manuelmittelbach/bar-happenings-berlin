@@ -50,13 +50,17 @@ export default function EventMeta({ event, categories, size = "sm" }: EventMetaP
         {cat?.label ?? event.category}
       </span>
 
+      {/* Entry pills (Free / Donation) stay at a fixed 10px regardless of
+          the meta row's size prop, so the small grid cards (Tonight's
+          Highlights) and the wide free cards (FreeTonightStrip) show
+          identical pill chrome. Only time + category scale with `size`. */}
       {free && (
-        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em]">
+        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em] text-[10px]">
           Free
         </span>
       )}
       {donation && (
-        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em]">
+        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em] text-[10px]">
           Donation
         </span>
       )}
