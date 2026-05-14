@@ -154,19 +154,29 @@
   }
 }
 
-.maplibregl-popup-content { padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+.maplibregl-popup-content { padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+/* Hide the default tip — the brutalist 2px-bordered cream card reads
+   as its own object against the map; a CSS-triangle tip with a white
+   background would break the cream palette and look stitched-on. The
+   18px popup offset keeps the card visually anchored to its marker. */
+.maplibregl-popup-tip { display: none !important; }
 
 .map-popup-scroll::-webkit-scrollbar       { width: 4px; }
-.map-popup-scroll::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 2px; }
-.map-popup-scroll::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 2px; }
+.map-popup-scroll::-webkit-scrollbar-track { background: #ede8de; }
+.map-popup-scroll::-webkit-scrollbar-thumb { background: #0f0f0f; }
 
 @media (hover: hover) {
-  .map-popup-btn:hover p:first-child { color: white !important; }
-  .map-popup-btn:hover p:last-child  { color: rgba(255,255,255,0.75) !important; }
-  /* `--hover-color` is set per-button in EventMap.tsx to the event's
-     category color (Live Music → green, DJ → purple, etc.). Falls back
-     to the accent orange if no inline property was set. */
-  .map-popup-btn:hover               { background: var(--hover-color, #f97316) !important; }
+  /* Row hover — background snaps to the event's category color
+     (Live Music → green, DJ → purple, etc.) so the popup keeps the
+     marker's color identity even after the user has tapped through. */
+  .map-popup-btn:hover               { background: var(--hover-color, #ED5B1C) !important; }
+  .map-popup-btn:hover p             { color: white !important; }
+  .map-popup-btn:hover .map-popup-meta { color: rgba(255,255,255,0.85) !important; }
+  /* Disc inverts on hover — cream fill with category-color icon — so it
+     pops as a clear anchor on the now-colored row instead of dissolving
+     into the same hue. */
+  .map-popup-btn:hover .map-popup-disc { background: #f8f5ef !important; }
+  .map-popup-btn:hover .map-popup-disc svg { stroke: var(--hover-color, #ED5B1C) !important; }
 }
 
 @layer utilities {
@@ -246,14 +256,30 @@
   margin-top: -32px;
 }
 
+/* Close button — ghost X in the top-right, muted-ink by default,
+   tints to accent orange on hover. Drops the full-black square so the
+   popup reads as a soft editorial card instead of a brutalist callout. */
 .maplibregl-popup-close-button {
-  font-size: 22px;
-  width: 36px;
-  height: 36px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #374151;
+  color: #6b6b6b;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  top: 4px;
+  right: 4px;
+  padding: 0;
+  transition: color 0.12s ease;
+}
+.maplibregl-popup-close-button:hover {
+  background: transparent !important;
+  color: #ED5B1C !important;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus */
