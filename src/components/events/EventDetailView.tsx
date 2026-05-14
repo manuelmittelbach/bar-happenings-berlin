@@ -1,6 +1,6 @@
 import React, { ReactNode, Fragment, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
+import { ExternalLink, Pencil, Euro, Repeat, Languages, Clock, Calendar, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -107,7 +107,7 @@ export default function EventDetailView({
 
   const eyebrowTime = event.startTime
     ? `${event.startTime}${event.endTime ? `–${event.endTime}` : ""}`
-    : null;
+    : "Starttime unknown";
   const eyebrowDate = event.date
     ? new Date(event.date + "T00:00:00Z").toLocaleDateString("en-GB", {
         day: "numeric",
@@ -115,8 +115,20 @@ export default function EventDetailView({
         timeZone: "UTC",
       })
     : null;
-  const eyebrowParts = [categoryLabel, eyebrowTime, eyebrowDate].filter(Boolean) as string[];
+  // Each eyebrow part carries its own glyph: category renders as a
+  // filled colored dot (echoes the wordmark accent), time gets a Clock,
+  // date gets a Calendar. Makes the row scannable when the time string
+  // is long ("Starttime unknown") and prevents Date/Time from blurring
+  // into each other as two mono-caps fragments.
   const eyebrowColor = categoryColor || "hsl(var(--accent))";
+  type EyebrowPart =
+    | { kind: "category"; text: string }
+    | { kind: "time" | "date"; icon: LucideIcon; text: string };
+  const eyebrowParts: EyebrowPart[] = [
+    { kind: "category" as const, text: categoryLabel },
+    eyebrowTime ? { kind: "time" as const, icon: Clock, text: eyebrowTime } : null,
+    eyebrowDate ? { kind: "date" as const, icon: Calendar, text: eyebrowDate } : null,
+  ].filter((x): x is EyebrowPart => x !== null);
 
   // Venue thumbnail. Loaded via the shared venues cache (no extra
   // request when the page already touched a venue list), null when the
@@ -181,7 +193,18 @@ export default function EventDetailView({
             {eyebrowParts.map((part, i) => (
               <Fragment key={i}>
                 {i > 0 && <span className="opacity-60">·</span>}
-                <span>{part}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  {part.kind === "category" ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-block rounded-full shrink-0"
+                      style={{ width: 7, height: 7, backgroundColor: eyebrowColor }}
+                    />
+                  ) : (
+                    <part.icon className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span>{part.text}</span>
+                </span>
               </Fragment>
             ))}
           </div>
