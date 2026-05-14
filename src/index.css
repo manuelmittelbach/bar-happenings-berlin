@@ -12,8 +12,12 @@
        devices with a notch / Dynamic Island. `env(safe-area-inset-top)` is
        0 on devices without a notch and outside Capacitor, so this value
        degrades cleanly to plain 64px in the browser. Stickies that pin
-       under the header reference this via `top: var(--header-h)`. */
+       under the header reference this via `top: var(--header-h)`.
+       In native (.is-native, set in main.tsx for Capacitor builds) we
+       drop the header entirely and only reserve the notch inset, since
+       primary nav lives in the bottom tab bar instead. */
     --header-h: calc(64px + env(safe-area-inset-top));
+    --tab-bar-h: calc(56px + env(safe-area-inset-bottom));
 
     /* Realigned to the Inside Bars design system's exact hex values:
        #f8f5ef cream paper, #f3eee5 card, #e8e3da muted, #d2cdc2 border,
@@ -65,6 +69,13 @@
     /* --font-serif: 'Playfair Display', 'Georgia', serif; */
     --font-body: 'DM Sans', sans-serif;
     --font-mono: 'Space Mono', monospace;
+  }
+
+  /* Native (Capacitor / iOS) override: header lives only as a safe-area
+     reservation, primary nav moves to BottomTabBar. The `is-native` class
+     is set on <html> in main.tsx when Capacitor.isNativePlatform() is true. */
+  html.is-native {
+    --header-h: env(safe-area-inset-top);
   }
 
   .dark {

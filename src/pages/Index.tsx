@@ -200,16 +200,41 @@ export default function Index() {
     <div className="relative isolate">
       {!isNative && <AppHero animate={animateHero} />}
 
-      {/* Sticky category filter — icon-disk row (mobile scroller / desktop
-          row) matching /map. Opaque bg-background like the "More tonight"
-          sticky header: when scrolling, event cards are cleanly hidden
-          underneath instead of bleeding through blurred. The border-b
-          hairline marks the bar's bottom edge. */}
+      {/* Sticky chrome — on mobile, Day buttons sit ON TOP of the category
+          icon bar so both filters scroll together (mirrors /map). On desktop
+          only the category pills live here; the editorial DaySwitcher
+          renders below the chrome as before. The border-b hairline marks
+          the bar's bottom edge. */}
       <div
         ref={categoryBarRef}
         className="sticky z-40 bg-background border-b border-border"
         style={{ top: "var(--header-h)" }}
       >
+        {/* Mobile — rounded-full Tonight/Tomorrow/Later buttons. Same
+            treatment as MapPage so the day chrome reads identically across
+            list and map surfaces. 1px hairline below separates the day
+            filter from the category icon row underneath. */}
+        <div className="md:hidden border-b border-border">
+          <div id="date-filter-bar" className="container flex items-center gap-2 py-2.5">
+            {([
+              { id: "tonight",  label: "Tonight"  },
+              { id: "tomorrow", label: "Tomorrow" },
+              { id: "later",    label: "Later"    },
+            ] as { id: DayTab; label: string }[]).map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleDayTabChange(d.id)}
+                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
+                  dayTab === d.id
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground hover:bg-foreground hover:text-background"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="container py-3">
           <div className="md:hidden">
             <CategoryIconBar
@@ -228,14 +253,13 @@ export default function Index() {
         </div>
       </div>
 
-      {/* DaySwitcher — Tonight · Tomorrow · Later */}
+      {/* Desktop-only DaySwitcher — Tonight · Tomorrow · Later. On mobile
+          the day filter lives in the sticky chrome above (matches /map). */}
       <div
-        id="date-filter-bar"
-        /* 64 header + sticky category icon row + buffer — keeps the
-           Tonight/Tomorrow/Later tabs visible just under the sticky chrome
-           after a Header "Tonight" click instead of slipping behind it. */
+        /* 64 header + sticky category row + buffer — keeps the tabs visible
+           just under the sticky chrome after a programmatic scroll-to. */
         style={{ scrollMarginTop: 130 }}
-        className="container pt-2"
+        className="hidden md:block container pt-2"
       >
         <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
       </div>
