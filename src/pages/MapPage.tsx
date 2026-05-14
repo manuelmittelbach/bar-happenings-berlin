@@ -114,7 +114,7 @@ export default function MapPage() {
         </div>
 
         {/* Category filters — sits closer to the map as the secondary filter. */}
-        <div className="container py-3">
+        <div className="container py-1.5 md:py-3">
           <div className="md:hidden">
             <CategoryIconBar
               categories={categories}
