@@ -107,7 +107,7 @@ export default function EventDetailView({
 
   const eyebrowTime = event.startTime
     ? `${event.startTime}${event.endTime ? `–${event.endTime}` : ""}`
-    : "Starttime unknown";
+    : "Unknown";
   const eyebrowDate = event.date
     ? new Date(event.date + "T00:00:00Z").toLocaleDateString("en-GB", {
         day: "numeric",
@@ -118,7 +118,7 @@ export default function EventDetailView({
   // Each eyebrow part carries its own glyph: category renders as a
   // filled colored dot (echoes the wordmark accent), time gets a Clock,
   // date gets a Calendar. Makes the row scannable when the time string
-  // is long ("Starttime unknown") and prevents Date/Time from blurring
+  // is long ("Unknown") and prevents Date/Time from blurring
   // into each other as two mono-caps fragments.
   const eyebrowColor = categoryColor || "hsl(var(--accent))";
   type EyebrowPart =
