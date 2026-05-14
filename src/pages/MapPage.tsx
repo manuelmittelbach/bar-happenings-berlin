@@ -83,10 +83,10 @@ export default function MapPage() {
           consistently with Index. Filters drawer was deliberately
           removed from the Map. */}
       <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
-        {/* 1px hairline below the day filter on mobile only — desktop's
-            DaySwitcher already brings its own 2px bottom rule, so a
-            second line would just stack. */}
-        <div className="border-b border-border md:border-b-0">
+        {/* Mid-chrome hairline between day filter and categories is dropped —
+            only the 2px foreground rule below the whole chrome remains,
+            which doubles as the map's top edge. */}
+        <div>
           {/* Mobile — rectangle buttons */}
           <div className="md:hidden container flex items-center gap-2 py-2.5">
             {([

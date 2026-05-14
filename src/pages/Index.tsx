@@ -207,14 +207,15 @@ export default function Index() {
           the bar's bottom edge. */}
       <div
         ref={categoryBarRef}
-        className="sticky z-40 bg-background border-b border-border"
+        className="sticky z-40 bg-background"
         style={{ top: "var(--header-h)" }}
       >
         {/* Mobile — rounded-full Tonight/Tomorrow/Later buttons. Same
             treatment as MapPage so the day chrome reads identically across
-            list and map surfaces. 1px hairline below separates the day
-            filter from the category icon row underneath. */}
-        <div className="md:hidden border-b border-border">
+            list and map surfaces. Chrome runs borderless: the opaque
+            background alone separates it from the cards underneath when
+            scrolling, which reads cleaner than a hairline + gap stack. */}
+        <div className="md:hidden">
           <div id="date-filter-bar" className="container flex items-center gap-2 py-2.5">
             {([
               { id: "tonight",  label: "Tonight"  },
