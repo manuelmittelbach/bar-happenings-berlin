@@ -18,6 +18,10 @@
        primary nav lives in the bottom tab bar instead. */
     --header-h: calc(64px + env(safe-area-inset-top));
     --tab-bar-h: calc(56px + env(safe-area-inset-bottom));
+    /* Anchor for fixed/absolute FABs (location dot on Map, List CTA, etc.) —
+       16px above the bottom chrome. In browser/PWA: just the iOS safe area
+       + 16. In native: tab-bar height + 16, so FABs clear the BottomTabBar. */
+    --fab-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
 
     /* Realigned to the Inside Bars design system's exact hex values:
        #f8f5ef cream paper, #f3eee5 card, #e8e3da muted, #d2cdc2 border,
@@ -76,6 +80,7 @@
      is set on <html> in main.tsx when Capacitor.isNativePlatform() is true. */
   html.is-native {
     --header-h: env(safe-area-inset-top);
+    --fab-bottom: calc(var(--tab-bar-h) + 16px);
   }
 
   .dark {

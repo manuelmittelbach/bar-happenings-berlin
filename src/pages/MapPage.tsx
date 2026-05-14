@@ -177,7 +177,7 @@ export default function MapPage() {
       <button
         onClick={() => navigate("/")}
         style={{
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+          bottom: "var(--fab-bottom)",
           fontSize: 12,
           letterSpacing: "0.14em",
         }}

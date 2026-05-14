@@ -607,7 +607,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 				title="Zu meinem Standort"
 				style={{
 					position: "absolute",
-					bottom: 16,
+					bottom: "var(--fab-bottom)",
 					left: 16,
 					zIndex: 1000,
 					width: 44,
