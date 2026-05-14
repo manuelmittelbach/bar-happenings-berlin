@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Euro, Repeat, Languages, Clock, Calendar, type LucideIcon } from "lucide-react";
+import { Pencil, Euro, Repeat, Languages, Clock, Calendar, ChevronRight, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { cleanEventTitle, addSoftHyphens } from "@/lib/cleanTitle";
@@ -260,33 +260,48 @@ export default function EventDetailView({
               className="md:hidden absolute inset-0 z-10"
             />
           )}
-          {event.venueId ? (
-            <Link
-              to={`/bar/${event.venueId}`}
-              lang="de"
-              className={`font-body block leading-tight break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
-            >
-              {event.venue}
-            </Link>
-          ) : (
-            <h3
-              lang="de"
-              className={`font-body leading-tight break-words ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
-            >
-              {event.venue}
-            </h3>
-          )}
-          {event.address && (
-            <p className="mt-0.5 font-body text-[14px] text-muted-foreground leading-snug">
-              {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
-            </p>
-          )}
-          <button
-            onClick={onOpenMaps}
-            className="relative z-20 mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
-          >
-            Open in Maps <span aria-hidden="true">→</span>
-          </button>
+          {/* Flex wrapper so a Resident-Advisor-style chevron can sit on
+              the right of the venue stack, telegraphing that the whole
+              block is tappable on mobile. Without the chevron the
+              absolute-inset link is invisible and users don't realise
+              they can drill into the bar page from here. */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              {event.venueId ? (
+                <Link
+                  to={`/bar/${event.venueId}`}
+                  lang="de"
+                  className={`font-body block leading-tight break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
+                >
+                  {event.venue}
+                </Link>
+              ) : (
+                <h3
+                  lang="de"
+                  className={`font-body leading-tight break-words ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
+                >
+                  {event.venue}
+                </h3>
+              )}
+              {event.address && (
+                <p className="mt-0.5 font-body text-[14px] text-muted-foreground leading-snug">
+                  {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
+                </p>
+              )}
+              <button
+                onClick={onOpenMaps}
+                className="relative z-20 mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
+              >
+                Open in Maps <span aria-hidden="true">→</span>
+              </button>
+            </div>
+            {event.venueId && (
+              <ChevronRight
+                aria-hidden
+                className="md:hidden shrink-0 h-6 w-6 text-muted-foreground"
+              />
+            )}
+          </div>
         </section>
 
         {/* Lede figure — moved out of the article top into this slot
