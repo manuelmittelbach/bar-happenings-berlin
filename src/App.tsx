@@ -143,6 +143,7 @@ import Profile from "./pages/Profile";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import Instagram from "./pages/Instagram";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/layout/Layout";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
@@ -214,6 +215,7 @@ const App = () => (
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/instagram" element={<Instagram />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
