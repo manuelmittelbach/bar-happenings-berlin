@@ -117,18 +117,6 @@ export default function BarDetail() {
       </div>
 
       <article className="max-w-[880px] mx-auto px-6 pt-4 pb-16 md:px-8">
-        {/* A. Lede figure — magazine top photo when a venue image exists.
-            Same border + shadow as EventDetail's lede. */}
-        {venue.image && (
-          <figure className="relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] md:aspect-[16/9] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)]">
-            <img
-              src={venue.image}
-              alt={venue.name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </figure>
-        )}
-
         {/* C. Display title — Syne 800, fluid masthead size, mixed case
             (was uppercase before; aligning to EventDetail's title style).
             Soft hyphens at CamelCase boundaries + browser hyphenation via
@@ -144,6 +132,20 @@ export default function BarDetail() {
         >
           {addSoftHyphens(venue.name)}
         </motion.h1>
+
+        {/* A. Lede figure — sits between the bar name and the action chip
+            row. Acts as a visual signature for the venue without
+            dominating the masthead the way a hero image at the very top
+            would. Same border + shadow as EventDetail's lede. */}
+        {venue.image && (
+          <figure className="relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] md:aspect-[16/9] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)]">
+            <img
+              src={venue.image}
+              alt={venue.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </figure>
+        )}
 
         {/* D. Action chip row — Website / Instagram as inline mono caps
             chips matching EventDetail's price/language/recurrence row.
