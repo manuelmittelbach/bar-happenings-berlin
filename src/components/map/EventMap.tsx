@@ -487,6 +487,17 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						const txtCol = document.createElement("div");
 						txtCol.style.cssText = "flex:1 1 auto;min-width:0;";
 
+						if (isCanceled) {
+							const badgeRow = document.createElement("div");
+							badgeRow.style.cssText = "margin:0 0 4px;line-height:1;";
+							const badge = document.createElement("span");
+							badge.textContent = "CANCELED";
+							badge.style.cssText =
+								"display:inline-block;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#dc2626;background:#fee2e2;padding:1px 5px;";
+							badgeRow.appendChild(badge);
+							txtCol.appendChild(badgeRow);
+						}
+
 						const titleP = document.createElement("p");
 						titleP.style.cssText =
 							`font-family:'DM Sans',system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.25;margin:0;color:${isCanceled ? "#888" : "#0f0f0f"};${isCanceled ? "text-decoration:line-through;" : ""}overflow-wrap:anywhere;`;
@@ -502,14 +513,6 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						metaP.style.cssText =
 							"font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#6b6b6b;margin:3px 0 0;letter-spacing:0.02em;line-height:1;";
 
-						if (isCanceled) {
-							const badge = document.createElement("span");
-							badge.textContent =
-								evt.canceledBy === "admin" ? "CANCELED" : "BY ORGANIZER";
-							badge.style.cssText =
-								"display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#dc2626;background:#fee2e2;padding:1px 5px;margin-right:6px;";
-							metaP.appendChild(badge);
-						}
 						metaP.appendChild(document.createTextNode(dateStr));
 
 						if (evt.startTime) {
