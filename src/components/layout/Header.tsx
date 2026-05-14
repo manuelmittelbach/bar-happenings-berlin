@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
 
-/* Navigation items — Map + For bars (bar-owner pitch + signin page).
- * About moved to the footer to keep the header focused on primary
- * discovery surfaces. The Wordmark on the left already routes to home
- * (the Tonight surface), so a separate "Tonight" link is redundant. */
+/* Navigation items — bar-owner pitch + signin page only. Map was
+ * removed from the header: the desktop Map FAB on the index page and
+ * the native BottomTabBar's Map tab already expose the surface, so a
+ * third entry in the header chrome was redundant. About moved to the
+ * footer to keep the header focused on primary discovery surfaces.
+ * The Wordmark on the left already routes to home (the Tonight surface),
+ * so a separate "Tonight" link is redundant. */
 const navItems: { label: string; path: string }[] = [
-  { label: "Map", path: "/map" },
   { label: "For organizer", path: "/for-bars" },
 ];
 
