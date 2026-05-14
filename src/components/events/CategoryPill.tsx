@@ -253,6 +253,20 @@ export function CategoryIconBar({
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
+  /* Disk treatment — editorial restraint: the disk itself stays neutral
+     (cream paper / muted border, same as before), only the ICON carries
+     the category hue. That makes the row read as a color-key at a glance
+     without any glow or chrome that would push the chip into "arcade"
+     territory. ACTIVE: the disk fills with the category color, the icon
+     drops to background, and a precise 2px scale-up provides the
+     selection signal — no glow, no halo. Hex+alpha (#RRGGBBAA) is
+     supported in every browser the app targets, including WKWebView. */
+  const activeDiskStyle = (color: string): React.CSSProperties => ({
+    backgroundColor: color,
+    borderColor: color,
+    color: "hsl(var(--background))",
+  });
+
   return (
     /* Wrapper is `relative` so the right-edge gradient overlay (a sibling
        div positioned absolutely) can sit on top of the scrollable row.
@@ -260,44 +274,44 @@ export function CategoryIconBar({
        hint so users on mobile realize "more categories are off-screen". */
     <div className="relative -mx-4">
       <div className="flex gap-2 overflow-x-auto px-4 scrollbar-hide">
-        {/* All */}
+        {/* All — brand accent (#ED5B1C) carries the icon in both states,
+            same disk grammar as the category chips below. */}
         <button
           onClick={() => onSelect("")}
           className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
             !activeCategory ? "text-accent" : "text-muted-foreground"
           }`}
         >
-        <div className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
-          !activeCategory
-            ? "bg-accent text-background "
-            : "bg-muted border-2 border-border"
-        }`}>
-          <LayoutGrid className="h-5 w-5" />
-        </div>
-        <span className="text-[10px] font-mono font-normal uppercase tracking-wider">All</span>
-      </button>
+          <div
+            style={!activeCategory ? activeDiskStyle("#ED5B1C") : { color: "#ED5B1C" }}
+            className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
+              !activeCategory ? "scale-105" : "bg-background border-border"
+            }`}
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </div>
+          <span className="text-[10px] font-mono font-normal uppercase tracking-wider">All</span>
+        </button>
 
       {sorted.map((cat) => {
         const info = catData.find((c) => c.id === cat);
         const Icon = info ? categoryIcons[info.id] : undefined;
         const isActive = activeCategory === cat;
         const shortLabel = desktopShortLabels[cat] || info?.label || cat;
-        const activeColor = info?.color;
+        const catColor = info?.color ?? "#6b7280";
         return (
           <button
             key={cat}
             onClick={() => onSelect(cat)}
-            style={isActive && activeColor ? { color: activeColor } : undefined}
+            style={isActive ? { color: catColor } : undefined}
             className={`shrink-0 flex flex-col items-center gap-1.5 px-1 py-1 transition-colors ${
               isActive ? "" : "text-muted-foreground"
             }`}
           >
             <div
-              style={isActive && activeColor ? { backgroundColor: activeColor } : undefined}
-              className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 ${
-                isActive
-                  ? "text-background scale-105"
-                  : "bg-muted border-2 border-border"
+              style={isActive ? activeDiskStyle(catColor) : { color: catColor }}
+              className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
+                isActive ? "scale-105" : "bg-background border-border"
               }`}
             >
               {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
