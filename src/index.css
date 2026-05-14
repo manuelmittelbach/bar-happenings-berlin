@@ -155,6 +155,14 @@
 }
 
 .maplibregl-popup-content { padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+
+/* Venue title in the popup header — link affordance. Hover shifts to
+   accent so users see the venue name is tappable; on touch devices the
+   cursor doesn't help but the convention (tap the bar name on a map pin
+   opens the bar page) is well-established. */
+@media (hover: hover) {
+  .map-popup-venue-link:hover { color: #ED5B1C !important; }
+}
 /* Hide the default tip — the brutalist 2px-bordered cream card reads
    as its own object against the map; a CSS-triangle tip with a white
    background would break the cream palette and look stitched-on. The

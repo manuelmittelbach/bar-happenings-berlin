@@ -187,6 +187,7 @@ export default function MapPage() {
           venueMap={venueMap}
           userLocation={userLocation}
           onEventClick={(id) => navigate(`/event/${id}`)}
+          onVenueClick={(id) => navigate(`/bar/${id}`)}
         />
         {/* Loading / venue-gap overlay — covers the moment between events
             arriving and venues arriving (race), and persists if the venues
@@ -202,9 +203,11 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* List button — only on web (desktop + mobile browser). In the
-          native iOS app the BottomTabBar already exposes a "List" tab,
-          so a floating List FAB on the map would be redundant chrome. */}
+      {/* List button — mobile-web only. Native iOS has the BottomTabBar's
+          List tab; desktop has the List link in the header chrome. The
+          mobile-web case still needs an in-page affordance because there's
+          no bottom tab bar in the browser and the header is scrolled
+          out of reach at the bottom of a long map view. */}
       {!isNative && (
         <button
           onClick={() => navigate("/")}
@@ -213,11 +216,10 @@ export default function MapPage() {
             fontSize: 12,
             letterSpacing: "0.14em",
           }}
-          className="fixed right-0 md:right-4 z-[9999] inline-flex h-12 w-12 md:w-auto items-center justify-center gap-2 md:px-5 bg-foreground text-background font-mono font-bold md:font-normal uppercase border-2 border-r-0 md:border-r-2 border-background md:border-foreground rounded-l-full md:rounded-none shadow-lg md:shadow-none transition-colors hover:bg-foreground/90 md:hover:bg-background md:hover:text-foreground"
+          className="md:hidden fixed right-0 z-[9999] inline-flex h-12 w-12 items-center justify-center bg-foreground text-background font-mono font-bold uppercase border-2 border-r-0 border-background rounded-l-full shadow-lg transition-colors hover:bg-foreground/90"
           aria-label="Open list view"
         >
           <List className="h-4 w-4" />
-          <span className="hidden md:inline">List</span>
         </button>
       )}
     </div>

@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -46,6 +45,15 @@ export default function Index() {
     // day's content and reads as "stuck mid-page" on switch.
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [setActiveDate]);
+
+  // Same reasoning as the day-tab switch: when the user picks a new
+  // category (or clears via "All"), the previous scroll position points
+  // at a different set of events and reads as "stuck mid-page". Reset
+  // to the top so the user sees the new feed from its first card.
+  const handleCategoryChange = useCallback((c: string) => {
+    setActiveCategory(c);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [setActiveCategory]);
 
   const isNative = useIsNative();
   const [animateHero] = useState(() => !heroAnimationPlayed);
@@ -253,14 +261,14 @@ export default function Index() {
             <CategoryIconBar
               categories={categories}
               activeCategory={activeCategory}
-              onSelect={setActiveCategory}
+              onSelect={handleCategoryChange}
             />
           </div>
           <div className="hidden md:block">
             <CategoryRowPills
               categories={categories}
               activeCategory={activeCategory}
-              onSelect={setActiveCategory}
+              onSelect={handleCategoryChange}
             />
           </div>
         </div>
@@ -290,7 +298,7 @@ export default function Index() {
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tonight.`}
-                  onEmptyCta={{ label: "Change category →", onClick: () => setActiveCategory("") }}
+                  onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
                 />
               );
             }
@@ -354,7 +362,7 @@ export default function Index() {
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
-                  onEmptyCta={{ label: "Change category →", onClick: () => setActiveCategory("") }}
+                  onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
                 />
               );
             }
@@ -390,24 +398,6 @@ export default function Index() {
         </>
       )}
 
-      {/* Desktop-only floating Map button — mirrors the List FAB on
-          MapPage so the two surfaces are reachable from each other with
-          a single click. Hidden on mobile because the BottomTabBar
-          already exposes the Map tab there; a redundant FAB on phones
-          would just compete with the existing nav chrome. */}
-      <button
-        onClick={() => navigate("/map")}
-        style={{
-          bottom: "var(--fab-bottom)",
-          fontSize: 12,
-          letterSpacing: "0.14em",
-        }}
-        className="hidden md:inline-flex fixed right-4 z-[9999] h-12 items-center justify-center gap-2 px-5 bg-foreground text-background font-mono uppercase border-2 border-foreground transition-colors hover:bg-background hover:text-foreground"
-        aria-label="Open map view"
-      >
-        <MapPin className="h-4 w-4" />
-        <span>Map</span>
-      </button>
     </div>
   );
 }
