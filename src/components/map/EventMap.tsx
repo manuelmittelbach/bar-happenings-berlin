@@ -387,20 +387,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick 
 					popupEl.style.cssText =
 						"display:inline-block;min-width:220px;max-width:320px;font-family:'DM Sans',system-ui,sans-serif;background:#f8f5ef;border:1px solid #0f0f0f;border-radius:0;overflow:hidden;box-shadow:0 6px 20px rgba(15,15,15,0.1),0 1px 3px rgba(15,15,15,0.06);";
 
-					// HEADER — neighborhood mono eyebrow, Georgia serif venue
-					// name, walking chip right-aligned. 40px right padding leaves
-					// room for the absolutely-positioned close button.
+					// HEADER — Georgia serif venue name, walking chip right-
+					// aligned. 40px right padding leaves room for the
+					// absolutely-positioned close button.
 					const headerEl = document.createElement("div");
 					headerEl.style.cssText =
 						"padding:14px 44px 12px 14px;border-bottom:1px solid #d2cdc2;background:#f8f5ef;";
-
-					if (props.neighborhood) {
-						const eyebrow = document.createElement("p");
-						eyebrow.style.cssText =
-							"font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#ED5B1C;margin:0 0 4px;line-height:1;";
-						eyebrow.textContent = props.neighborhood;
-						headerEl.appendChild(eyebrow);
-					}
 
 					const nameRow = document.createElement("div");
 					nameRow.style.cssText =
