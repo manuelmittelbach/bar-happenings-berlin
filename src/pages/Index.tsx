@@ -40,9 +40,8 @@ export default function Index() {
     if (t === "tonight") setActiveDate("All");
     else if (t === "tomorrow") setActiveDate("Tomorrow");
     else setActiveDate("Later");
-    // Always land at the top when switching day tabs — scroll position
-    // from the previous day's list would be meaningless against the new
-    // day's content and reads as "stuck mid-page" on switch.
+    // Every tab switch resets to the page top — scroll position from the
+    // previous day's list isn't meaningful against the new day's content.
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [setActiveDate]);
 
@@ -521,7 +520,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
        instant — Saturday sticks, Friday gets pushed up by section-end.
        Visually: Saturday rises from Friday's bottom hairline upward,
        pushing Friday up by its own height. */
-    <div className="container py-6 md:py-8">
+    <div className="container pb-6 md:pb-8">
       {groups.map((g) => {
         const d = new Date(g.date + "T00:00:00");
         // Long weekday name on every viewport — matches "Tonight" /
@@ -531,7 +530,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const dom = d.getDate();
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
-          <section key={g.date} className="mt-20 first:mt-5">
+          <section key={g.date} className="mt-20 first:mt-0">
             {/* Sticky weekday header — only the Later section's day
                 separators pin to the top of the content area while their
                 section scrolls past. Pinning at var(--chrome-bottom) drops
