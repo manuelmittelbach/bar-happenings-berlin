@@ -27,18 +27,10 @@ export default function StillRunningStrip({
 
   return (
     <section>
-      {/* Container holds the sticky header + cards. pb (instead of pt)
-          extends the sticky's containing block past the cards so the
-          next section (Highlights / FreeTonight) butts directly against
-          this section's bottom — the chain swap with the next sticky
-          header happens at the same scroll instant the previous one
-          gets pushed up. */}
       <div className="container py-6 md:py-8">
-        <div
-          className="sticky z-30 bg-background mb-3.5"
-          style={{ top: "var(--chrome-bottom, 130px)" }}
-        >
-          <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap -mx-6 px-6 md:mx-0 md:px-0">
+        {/* Inline section header — runs borderless. */}
+        <div className="mb-3.5">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               Since yesterday
             </h2>

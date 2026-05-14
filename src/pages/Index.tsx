@@ -423,13 +423,9 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       {title && (
-        // Sticky header — matches main's structure: sticky inside
-        // .container, hairline on the inner heading row.
-        <div
-          className="sticky z-30 bg-background mb-3.5"
-          style={{ top: "var(--chrome-bottom, 130px)" }}
-        >
-          <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap -mx-6 px-6 md:mx-0 md:px-0">
+        // Inline section header — borderless.
+        <div className="mb-3.5">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
             {/* Same size as the weekday separators in the Later section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
                 same typographic weight. On narrow Mobile viewports the
@@ -514,11 +510,8 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7 first:mt-0">
-            <div
-              className="sticky z-30 bg-background mb-3.5"
-              style={{ top: "var(--chrome-bottom, 130px)" }}
-            >
-              <div className="border-b border-border pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap -mx-6 px-6 md:mx-0 md:px-0">
+            <div className="mb-3.5">
+              <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>
