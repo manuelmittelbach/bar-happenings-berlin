@@ -42,6 +42,14 @@ export default function Header() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
+  // "For organizer" is the pitch page that recruits bar owners. Once a
+  // user is already an organizer or admin, the pitch is redundant and
+  // just eats horizontal space in the nav.
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.path === "/for-bars" && user && (role === "organizer" || role === "admin")) return false;
+    return true;
+  });
+
   const goHome = () => {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
     if (location.pathname === "/") {
@@ -103,7 +111,7 @@ export default function Header() {
         {/* Desktop nav — 28px gap between links, then the role-aware right
             cluster. Hidden under md; mobile uses the menu drawer below. */}
         <nav className="hidden md:flex items-center" style={{ gap: 28 }}>
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
 
@@ -133,8 +141,10 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Mobile nav — same link labels and order, full-width buttons,
-          opens/closes with a height transition. */}
+      {/* Mobile nav — drops down from below the header. Primary nav items
+          (Map / For organizer / About) lay out in a horizontal row to save
+          vertical space; auth/role buttons stay stacked underneath because
+          they're full-width affordances. */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -144,55 +154,101 @@ export default function Header() {
             transition={{ duration: 0.2 }}
             className="md:hidden border-t-2 border-foreground overflow-hidden"
           >
-            <nav className="container flex flex-col gap-4 py-6">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-left transition-colors"
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: isActive(item.path) ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <nav className="container py-5">
+              <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                {visibleNavItems.map((item) => {
+                  const active = isActive(item.path);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileOpen(false)}
+                      className={`shrink-0 inline-flex h-9 items-center px-2.5 border-2 transition-colors ${
+                        active
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                      }`}
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
 
-              {!loading && user && (
-                <>
-                  {role === "organizer" && (
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMobileOpen(false)}
-                      className="inline-flex h-11 w-full items-center justify-center border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                    >
-                      Your Bar
-                    </Link>
-                  )}
-                  {role === "admin" && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className="inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                    >
-                      <Shield className="h-4 w-4" /> Admin
-                    </Link>
-                  )}
-                  <Link
-                    to="/profile"
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 border-2 border-foreground font-heading text-xs font-bold uppercase tracking-wider"
-                  >
-                    <User className="h-4 w-4" /> Profile
-                  </Link>
-                </>
-              )}
+                {!loading && user && (
+                  <>
+                    {role === "organizer" && (() => {
+                      const active = isActive("/dashboard");
+                      return (
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setMobileOpen(false)}
+                          className={`shrink-0 inline-flex h-9 items-center px-2.5 border-2 transition-colors ${
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                          }`}
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Your Bar
+                        </Link>
+                      );
+                    })()}
+                    {role === "admin" && (() => {
+                      const active = isActive("/admin");
+                      return (
+                        <Link
+                          to="/admin"
+                          onClick={() => setMobileOpen(false)}
+                          className={`shrink-0 inline-flex h-9 items-center gap-1.5 px-2.5 border-2 transition-colors ${
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                          }`}
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          <Shield className="h-3.5 w-3.5" /> Admin
+                        </Link>
+                      );
+                    })()}
+                    {(() => {
+                      const active = isActive("/profile");
+                      return (
+                        <Link
+                          to="/profile"
+                          onClick={() => setMobileOpen(false)}
+                          aria-label="Profile"
+                          className={`shrink-0 inline-flex h-9 w-9 items-center justify-center border-2 transition-colors ${
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <User className="h-4 w-4" />
+                        </Link>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
             </nav>
           </motion.div>
         )}

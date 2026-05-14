@@ -80,7 +80,7 @@ export default function BarDetail() {
           transition={{ duration: 0.3 }}
           lang="de"
           className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] uppercase mb-6 hyphens-auto break-words"
-          style={{ fontSize: "clamp(28px, 5vw, 48px)" }}
+          style={{ fontSize: "clamp(26px, 4.5vw, 40px)" }}
         >
           {venue.name}
         </motion.h1>

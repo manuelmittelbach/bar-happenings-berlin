@@ -56,7 +56,7 @@ export default function FreeTonightStrip({
           gestapelte py den Abstand doppelt machen. So bleibt der Spacing
           zwischen FreeTonight-Cards und dem nächsten Header genauso
           groß wie zwischen DaySwitcher und FreeTonight-Header. */}
-      <div className="container pt-6 md:pt-8">
+      <div className="container py-6 md:py-8">
         {/* Sticky header — matches main's structure: sticky inside
             .container so the cream bg only covers the container width
             (page content on the sides is visible through the gutter).

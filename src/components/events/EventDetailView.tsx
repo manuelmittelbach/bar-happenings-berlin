@@ -1,6 +1,6 @@
 import React, { ReactNode, Fragment, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
+import { ExternalLink, Pencil, Euro, Repeat, Languages, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -125,15 +125,12 @@ export default function EventDetailView({
   const venueImage = venueDetails?.image || null;
 
   const titleStyle: React.CSSProperties = {
-    // clamp(28px, 5vw, 48px) — editorial-magazine sizing range, not
-    // marketing-hero. 28px floor keeps long German compounds on two
-    // lines on 375px phones; 48px cap (was 60px) lands in the same
-    // range as The Verge / Pitchfork article headlines, so the title
-    // reads as "long-form" rather than "billboard" on wide viewports.
-    // The 5vw curve scales gently between the two so tablets don't
-    // overshoot. Venue ratio stays healthy at 1.4×–1.85× across all
-    // viewports — no need to adjust the H3 sibling.
-    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(28px, 5vw, 48px)",
+    // clamp(26px, 4.5vw, 40px) — pulled back from the previous
+    // (28px, 5vw, 48px) range so the H1 reads as a magazine article
+    // headline rather than a billboard. 40px cap is in the Pitchfork /
+    // The Verge zone; 26px floor still keeps long German compounds on
+    // two lines on 375px phones. Venue H3 ratio stays healthy.
+    fontSize: compact ? "clamp(22px, 5vw, 30px)" : "clamp(26px, 4.5vw, 40px)",
   };
 
   const articlePadding = compact ? "p-4" : "px-6 pt-8 pb-16 md:px-8";
@@ -344,16 +341,10 @@ export default function EventDetailView({
                   {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
                 </p>
               )}
-              {event.neighborhood && (
-                <p className="mt-1 font-body text-sm text-muted-foreground flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  {event.neighborhood}
-                </p>
-              )}
               <div className="mt-4 flex items-center gap-2 flex-wrap relative z-20">
                 <button
                   onClick={onOpenMaps}
-                  className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 h-[38px] px-4 border-2 border-foreground bg-transparent text-foreground font-mono text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-foreground hover:text-background transition-colors active:scale-[0.98]"
                 >
                   Open in Maps <span aria-hidden="true">›</span>
                 </button>
