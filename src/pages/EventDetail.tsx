@@ -104,39 +104,40 @@ export default function EventDetail() {
 
 	return (
 		<div className="relative isolate bg-background pb-24">
-			{/* Native top bar — sticky Back / Share row, pinned right below the
-			    safe-area-top spacer. Mirrors the iOS pattern Resident Advisor
-			    uses on event-detail screens: small chevron-back on the left,
-			    iOS-style share square on the right, no chrome between them.
-			    In the browser we let the page's natural layout (back via
-			    browser gesture, ShareMenu in the action row) handle these. */}
-			{isNative && (
-				<div
-					className="sticky z-40 bg-background"
-					style={{ top: "var(--header-h)" }}
-				>
-					<div className="flex items-center justify-between px-3 py-2">
-						<button
-							onClick={() => navigate(-1)}
-							className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 transition-opacity"
-							aria-label="Back"
-						>
-							<ChevronLeft className="h-5 w-5" />
-							<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
-						</button>
-						<button
-							onClick={handleShare}
-							className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-2 border-foreground text-foreground active:scale-95 active:opacity-80 transition-all"
-							aria-label="Share"
-						>
-							<Share className="h-3.5 w-3.5" />
-							<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
-								Share
-							</span>
-						</button>
-					</div>
+			{/* Sticky Back / Share row — used on both native (below safe-area
+			    spacer at top: env(safe-area-inset-top)) and web (below the
+			    wordmark Header at top: 64px). Same chevron-back + outlined-
+			    Share-pill pattern in both contexts so the event detail
+			    surface reads identically across the app and browser. */}
+			<div
+				className="sticky z-40 bg-background"
+				style={{ top: "var(--header-h)" }}
+			>
+				<div className="container flex items-center justify-between py-2">
+					<button
+						onClick={() => navigate(-1)}
+						className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+						aria-label="Back"
+					>
+						<ChevronLeft className="h-5 w-5" />
+						<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+					</button>
+					<button
+						onClick={handleShare}
+						className={`inline-flex items-center gap-1.5 h-8 px-3 border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all ${isNative ? "rounded-full" : ""}`}
+						aria-label="Share"
+					>
+						<Share className="h-3.5 w-3.5" />
+						<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
+							Share
+						</span>
+					</button>
 				</div>
-			)}
+			</div>
+
+			{/* Inline Share in the action row is now redundant on every
+			    surface (top bar handles it everywhere) — flag pulled to
+			    false unconditionally below. */}
 			{/* Warm atmosphere — selbes Disk-Pattern wie auf Index, damit
 			    Detail- und Liste-Seite dieselbe Color-Sprache sprechen.
 			    Zwei Paare (Orange + Amber Disks mit Hero-Spec) reichen
@@ -181,9 +182,9 @@ export default function EventDetail() {
 				event={event}
 				recurrenceLabel={recurrenceLabel}
 				onOpenMaps={handleMaps}
-				/* In native, the sticky top bar already provides Share — hide
-				   the inline action-row CTA to avoid two share affordances. */
-				showShare={!isNative}
+				/* Share moved to the sticky top bar on every surface
+				   (web + native), so the inline action-row CTA is off. */
+				showShare={false}
 				onEdit={canEdit ? () => navigate(`/edit-event/${event.id}`) : undefined}
 			/>
 		</div>
