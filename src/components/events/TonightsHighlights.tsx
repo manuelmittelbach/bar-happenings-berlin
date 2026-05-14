@@ -39,7 +39,7 @@ export default function TonightsHighlights({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap pb-3.5 mt-6 mb-5">
+        <div className="flex items-baseline justify-between gap-4 flex-wrap mt-6 mb-2.5">
           <div>
             <div className="mono-label text-accent mb-1.5">Editor's picks</div>
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
