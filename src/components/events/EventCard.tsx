@@ -45,12 +45,12 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
        a clear secondary tier between the 22px title above and the 13px
        muted description below. At 13px/muted both lines blurred into
        the same gray noise. */
-    <div className="font-body text-[15px] text-foreground/80 flex gap-1.5 items-center flex-wrap">
-      <span>{event.venue}</span>
+    <div className="font-body text-[15px] text-foreground/80 flex gap-1.5 items-center flex-wrap min-w-0">
+      <span className="break-words">{event.venue}</span>
       {event.neighborhood && (
         <>
           <span className="opacity-50">·</span>
-          <span>{event.neighborhood}</span>
+          <span className="break-words">{event.neighborhood}</span>
         </>
       )}
     </div>
@@ -68,7 +68,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       >
         <EventMeta event={event} categories={categories} />
         <h3
-          className={`font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent ${
+          className={`font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words line-clamp-3 ${
             isCanceled ? "line-through" : ""
           }`}
         >
@@ -76,7 +76,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
         </h3>
         {venueLine}
         {event.description && (
-          <p className="font-body text-[13px] leading-[1.5] text-muted-foreground mt-1.5 line-clamp-1">
+          <p className="font-body text-[13px] leading-[1.5] text-muted-foreground mt-1.5 line-clamp-1 break-words">
             {event.description}
           </p>
         )}
@@ -97,7 +97,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
         <div className="min-w-0">
           <EventMeta event={event} categories={categories} size="md" />
           <h3
-            className={`font-body text-[24px] font-bold leading-[1.2] mt-2 mb-0 ${
+            className={`font-body text-[24px] font-bold leading-[1.2] mt-2 mb-0 break-words line-clamp-2 ${
               isCanceled ? "line-through" : ""
             }`}
           >
@@ -122,7 +122,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       <span className="absolute top-0 left-0 right-0 h-1.5 bg-accent" />
       <EventMeta event={event} categories={categories} />
       <h3
-        className={`font-body text-[20px] font-bold leading-[1.22] mt-2.5 mb-0 ${
+        className={`font-body text-[20px] font-bold leading-[1.22] mt-2.5 mb-0 break-words line-clamp-3 ${
           isCanceled ? "line-through" : ""
         }`}
       >
