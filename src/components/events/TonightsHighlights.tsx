@@ -43,7 +43,7 @@ export default function TonightsHighlights({
           <div>
             <div className="mono-label text-accent mb-1.5">Editor's picks</div>
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              Tonight's Highlights
+              Highlights tonight
             </h2>
           </div>
           {/* Counter Desktop-only — see FreeTonightStrip for rationale. */}
