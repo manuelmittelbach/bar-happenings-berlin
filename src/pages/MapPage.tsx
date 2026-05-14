@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { List, Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useIsNative } from "@/hooks/useIsNative";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import EventMap from "@/components/map/EventMap";
@@ -13,6 +14,7 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 
 export default function MapPage() {
   const navigate = useNavigate();
+  const isNative = useIsNative();
   const {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
@@ -82,10 +84,9 @@ export default function MapPage() {
           full DaySwitcher tab-style on desktop so the day chrome reads
           consistently with Index. Filters drawer was deliberately
           removed from the Map. */}
-      <div className="shrink-0 bg-background border-b-2 border-foreground z-[50]">
-        {/* Mid-chrome hairline between day filter and categories is dropped —
-            only the 2px foreground rule below the whole chrome remains,
-            which doubles as the map's top edge. */}
+      <div className="shrink-0 bg-background z-[50]">
+        {/* No hard rule below the chrome — the map fades into the background
+            via a gradient overlay at its top edge (see below). */}
         <div>
           {/* Mobile — rectangle buttons */}
           <div className="md:hidden container flex items-center gap-2 py-2.5">
@@ -134,6 +135,12 @@ export default function MapPage() {
 
       {/* Map fills remaining height */}
       <div className="flex-1 min-h-0 relative">
+        {/* Top fade — softens the seam between chrome and map so the
+            tiles bleed into the background instead of meeting a hard edge. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 z-[100] h-8 bg-gradient-to-b from-background to-transparent"
+        />
         <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
           {filtered.length} {filtered.length === 1 ? "event" : "events"}
         </div>
@@ -169,24 +176,24 @@ export default function MapPage() {
         />
       </div>
 
-      {/* List button — half-pill icon dock on mobile (matches the
-          original Index FAB language: cream halo border, shadow, flush
-          right edge). On desktop it switches to the editorial sharp
-          rectangle with breathing room and invert-on-hover so it speaks
-          the same language as the hero CTA. */}
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          bottom: "var(--fab-bottom)",
-          fontSize: 12,
-          letterSpacing: "0.14em",
-        }}
-        className="fixed right-0 md:right-4 z-[9999] inline-flex h-12 w-12 md:w-auto items-center justify-center gap-2 md:px-5 bg-foreground text-background font-mono font-bold md:font-normal uppercase border-2 border-r-0 md:border-r-2 border-background md:border-foreground rounded-l-full md:rounded-none shadow-lg md:shadow-none transition-colors hover:bg-foreground/90 md:hover:bg-background md:hover:text-foreground"
-        aria-label="Open list view"
-      >
-        <List className="h-4 w-4" />
-        <span className="hidden md:inline">List</span>
-      </button>
+      {/* List button — only on web (desktop + mobile browser). In the
+          native iOS app the BottomTabBar already exposes a "List" tab,
+          so a floating List FAB on the map would be redundant chrome. */}
+      {!isNative && (
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            bottom: "var(--fab-bottom)",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+          }}
+          className="fixed right-0 md:right-4 z-[9999] inline-flex h-12 w-12 md:w-auto items-center justify-center gap-2 md:px-5 bg-foreground text-background font-mono font-bold md:font-normal uppercase border-2 border-r-0 md:border-r-2 border-background md:border-foreground rounded-l-full md:rounded-none shadow-lg md:shadow-none transition-colors hover:bg-foreground/90 md:hover:bg-background md:hover:text-foreground"
+          aria-label="Open list view"
+        >
+          <List className="h-4 w-4" />
+          <span className="hidden md:inline">List</span>
+        </button>
+      )}
     </div>
   );
 }

@@ -73,7 +73,7 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
     <div
       role="tablist"
       aria-label="Day"
-      className="flex gap-0 border-b-2 border-border mt-5"
+      className="flex gap-0 mt-5"
     >
       {tabs.map((t) => {
         const isActive = active === t.id;
@@ -83,9 +83,7 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.id)}
-            className={`flex-1 md:flex-none min-w-0 text-center md:text-left px-3 md:px-6 pt-3.5 pb-4 -mb-[2px] bg-transparent font-heading transition-colors ${
-              isActive ? "border-b-[3px] border-accent" : "border-b-[3px] border-transparent"
-            }`}
+            className="flex-1 min-w-0 text-center md:text-left px-3 md:px-6 pt-3.5 pb-4 bg-transparent font-heading transition-colors"
           >
             <div
               className={`font-heading font-medium leading-[1.05] text-[18px] md:text-[22px] ${
