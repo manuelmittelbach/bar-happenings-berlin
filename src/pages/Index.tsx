@@ -105,13 +105,17 @@ export default function Index() {
       (!searchQuery || fuzzyMatchAny([e.venue, e.neighborhood], searchQuery)),
     [activeCategory, searchQuery],
   );
+  // Canceled events stay in the today/tomorrow editorial feeds — EventCard
+  // already shows them with line-through + "Canceled" pill, and filtering
+  // them out hid free-tomorrow cancellations entirely (user expected to see
+  // them so they know not to show up). `filtered` (used by More tonight /
+  // tomorrow and Later) still drops canceled events more than a day out.
   const todayEvents = useMemo(
     () =>
       eventsData.filter(
         (e) =>
           e.date === today &&
           isEventStillOnline(e) &&
-          e.status !== "canceled" &&
           matchesFilters(e),
       ),
     [eventsData, today, matchesFilters],
@@ -121,7 +125,6 @@ export default function Index() {
       eventsData.filter(
         (e) =>
           e.date === tomorrow &&
-          e.status !== "canceled" &&
           matchesFilters(e),
       ),
     [eventsData, tomorrow, matchesFilters],
@@ -139,7 +142,6 @@ export default function Index() {
           (e) =>
             e.date === yesterday &&
             isEventStillOnline(e) &&
-            e.status !== "canceled" &&
             matchesFilters(e),
         )
         .sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99")),

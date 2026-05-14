@@ -30,10 +30,7 @@ export default function FreeTonightStrip({
 }: FreeTonightStripProps) {
   const freeEvents = useMemo(() => {
     return events
-      .filter((e) => {
-        if (e.status === "canceled") return false;
-        return isFreeEntry(e.entryInfo) || isDonationEntry(e.entryInfo);
-      })
+      .filter((e) => isFreeEntry(e.entryInfo) || isDonationEntry(e.entryInfo))
       // Sorted purely by start time — the same chronological logic as
       // every other event list on the site, so the section reads
       // consistently. The Free vs Donation distinction is already
