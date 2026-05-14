@@ -39,18 +39,19 @@ export default function TonightsHighlights({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="flex items-baseline justify-between gap-4 flex-wrap mb-2.5">
-          <div>
-            <div className="mono-label text-accent mb-1.5">Editor's picks</div>
+        <div className="mb-2.5">
+          <div className="mono-label text-accent mb-1.5">Editor's picks</div>
+          {/* Counter sits on the same row as the h2 (not the eyebrow above)
+              so its baseline lines up with "Highlights tonight" instead of
+              "Editor's picks". */}
+          <div className="flex items-baseline justify-between gap-4 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {sorted.length === 1 ? "Highlight tonight" : "Highlights tonight"}
             </h2>
-          </div>
-          {/* Counter — auf Mobile nur die Zahl, auf Desktop „N curated"
-              (analog FreeTonightStrip). */}
-          <div className="mono-label text-muted-foreground">
-            <span className="md:hidden">{sorted.length}</span>
-            <span className="hidden md:inline">{sorted.length} curated</span>
+            <div className="mono-label text-muted-foreground">
+              <span className="md:hidden">{sorted.length}</span>
+              <span className="hidden md:inline">{sorted.length} curated</span>
+            </div>
           </div>
         </div>
 
