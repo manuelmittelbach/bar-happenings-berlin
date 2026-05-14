@@ -22,9 +22,17 @@ export default function MapPage() {
     activeDate, setActiveDate,
   } = useFilterParams();
 
-  const { data: eventsData = [] } = useEvents();
-  const { data: venuesData = [] } = useVenues();
+  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
+  const { data: venuesData = [], isLoading: venuesLoading } = useVenues();
   const { data: categoriesData = [] } = useCategories();
+  // `venueMap` empty (venues still loading or fetch failed) silently drops
+  // every event from the map layer in EventMap, since each event needs a
+  // venue with lat/lng to become a marker. That produces the "badge says
+  // 19 events but the map is empty" bug. We detect the gap here so the
+  // overlay below can show a loading or error state instead of an empty
+  // map while events appear to be present.
+  const venuesMissing = !venuesLoading && venuesData.length === 0;
+  const stillLoading = eventsLoading || venuesLoading;
   // Slug-IDs (categories.id) — passed to CategoryPill and used as activeCategory value.
   const categories = useMemo(
     () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
@@ -180,6 +188,18 @@ export default function MapPage() {
           userLocation={userLocation}
           onEventClick={(id) => navigate(`/event/${id}`)}
         />
+        {/* Loading / venue-gap overlay — covers the moment between events
+            arriving and venues arriving (race), and persists if the venues
+            fetch failed entirely. Without this, the map looks empty even
+            though the badge says "19 events tonight", which reads as a
+            bug rather than a loading state. */}
+        {(stillLoading || venuesMissing) && (
+          <div className="absolute inset-0 z-[150] flex items-center justify-center bg-background/85 pointer-events-none">
+            <div className="font-mono text-xs uppercase tracking-wider text-foreground/70">
+              {venuesMissing ? "Venues unavailable — retry" : "Loading map…"}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* List button — only on web (desktop + mobile browser). In the
