@@ -505,9 +505,23 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const dom = d.getDate();
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
-          <section key={g.date} className="mt-7 first:mt-0">
-            <div className="mb-2.5">
-              <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
+          <section key={g.date} className="mt-12 first:mt-0">
+            {/* Sticky weekday header — only the Later section's day
+                separators pin to the top of the content area while their
+                section scrolls past. Pinning at var(--chrome-bottom) drops
+                the heading right below the sticky day+category chrome.
+                Each section's `<section>` parent is the implicit scroll
+                container for the sticky, so the next weekday cleanly
+                pushes the previous one out as it scrolls into view. */}
+            <div
+              className="mb-2.5 sticky z-30 bg-background"
+              style={{ top: "var(--chrome-bottom, 130px)" }}
+            >
+              {/* No top padding on the sticky weekday so the heading text
+                  sits flush against the chrome's bottom edge — minimum
+                  visual gap, weekday reads as glued to the chrome rather
+                  than floating below it. */}
+              <div className="pb-1 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>
