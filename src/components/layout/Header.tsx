@@ -103,7 +103,10 @@ export default function Header() {
   return (
     <header
       className="sticky top-0 z-50 border-b-2 border-foreground backdrop-blur-md"
-      style={{ backgroundColor: "hsl(var(--background) / 0.95)" }}
+      style={{
+        backgroundColor: "hsl(var(--background) / 0.95)",
+        paddingTop: "env(safe-area-inset-top)",
+      }}
     >
       <div className="container flex items-center justify-between" style={{ height: 64 }}>
         <Wordmark onClick={goHome} />
