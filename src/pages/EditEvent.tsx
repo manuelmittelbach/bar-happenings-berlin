@@ -196,6 +196,7 @@ export default function EditEvent() {
       onSubmit={handleSubmit}
       recurrenceLocked={seriesInfo.isSeries}
       optionalStartTime={isAdmin}
+      optionalEndTime={isAdmin}
       optionalDescription={isAdmin}
       secondaryActions={
         <Link
