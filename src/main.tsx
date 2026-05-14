@@ -6,7 +6,7 @@ import "./index.css";
 // DEBUG: shift "now" by N ms across the whole app — useful for testing
 // time-dependent UI (event end times, still-running carry-overs, day
 // rollovers). Set back to 0 before shipping.
-const DEBUG_TIME_OFFSET_MS = 60 * 60 * 1000;
+const DEBUG_TIME_OFFSET_MS: number = 0;
 if (DEBUG_TIME_OFFSET_MS !== 0) {
   const RealDate = Date;
   const realNow = RealDate.now.bind(RealDate);
