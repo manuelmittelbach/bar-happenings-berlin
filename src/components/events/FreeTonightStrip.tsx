@@ -60,8 +60,8 @@ export default function FreeTonightStrip({
         {/* Inline section header — runs borderless so the heading sits in
             quiet whitespace. A sticky+hairline variant felt busy when
             stacked on top of the day+category chrome. */}
-        <div className="mb-3.5">
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+        <div className="mb-2.5">
+          <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
             </h2>

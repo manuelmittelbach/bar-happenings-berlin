@@ -423,16 +423,12 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       {title && (
-        // Inline section header — borderless.
-        <div className="mb-3.5">
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+        // Inline section header — borderless, tight gap to first card.
+        <div className="mb-2.5">
+          <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             {/* Same size as the weekday separators in the Later section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
-                same typographic weight. On narrow Mobile viewports the
-                longer titles ("Free tomorrow", "More tomorrow") may wrap
-                to two lines — that's acceptable, since keeping the
-                day-anchor ("tomorrow") in each title gives users a
-                context cue while scrolling past the DaySwitcher. */}
+                same typographic weight. */}
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
             <span className="flex-1" />
             {/* Counter — auf Mobile nur die Zahl, auf Desktop „N more"
@@ -510,8 +506,8 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
           <section key={g.date} className="mt-7 first:mt-0">
-            <div className="mb-3.5">
-              <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+            <div className="mb-2.5">
+              <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>

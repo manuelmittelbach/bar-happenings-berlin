@@ -29,8 +29,8 @@ export default function StillRunningStrip({
     <section>
       <div className="container py-6 md:py-8">
         {/* Inline section header — runs borderless. */}
-        <div className="mb-3.5">
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap">
+        <div className="mb-2.5">
+          <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               Since yesterday
             </h2>
