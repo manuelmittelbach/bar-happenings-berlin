@@ -540,13 +540,12 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 container for the sticky, so the next weekday cleanly
                 pushes the previous one out as it scrolls into view. */}
             <div
-              className="mb-2.5 sticky z-30 bg-background"
-              style={{ top: "var(--chrome-bottom, 130px)" }}
+              className="mb-2.5 sticky z-30 bg-background py-3 md:py-4"
+              style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
             >
-              {/* No padding on the sticky weekday inner row — heading text
-                  flush against the chrome's bottom when pinned, and the
-                  gap to the first card matches every other section
-                  (mb-2.5 = 10px). */}
+              {/* Vertical padding on the sticky weekday gives the heading
+                  breathing room above and below when pinned. Gap to the
+                  first card still 10px via mb-2.5 on the wrapper. */}
               <div className="flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
