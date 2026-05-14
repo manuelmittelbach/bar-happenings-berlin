@@ -51,12 +51,12 @@ export default function EventMeta({ event, categories, size = "sm" }: EventMetaP
       </span>
 
       {free && (
-        <span className="ml-1 px-1.5 py-0.5 border border-accent text-accent tracking-[0.1em]">
+        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em]">
           Free
         </span>
       )}
       {donation && (
-        <span className="ml-1 px-1.5 py-0.5 border border-accent text-accent tracking-[0.1em]">
+        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em]">
           Donation
         </span>
       )}
