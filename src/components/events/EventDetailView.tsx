@@ -147,34 +147,6 @@ export default function EventDetailView({
       {headerBanner}
 
       <article className={`${articleWidth} ${articlePadding}`}>
-        {/* A. Lede figure — magazine top photo when an image is available. */}
-        {hasRealImage && (
-          <figure className={`relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
-            <img
-              src={event.image!}
-              alt={displayTitle}
-              style={{ objectPosition: event.imagePosition }}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {isCanceled && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
-                  {canceledLabel}
-                </span>
-              </div>
-            )}
-            {onEdit && (
-              <button
-                onClick={onEdit}
-                aria-label="Edit event"
-                className="absolute top-3 right-3 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/85 backdrop-blur-sm border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            )}
-          </figure>
-        )}
-
         {/* B. Eyebrow row — category color · date · time, with overlays
             relocated here when the lede figure is absent. Bumped to
             13/14px (was 11px) so the byline reads as a proper meta row
@@ -316,6 +288,38 @@ export default function EventDetailView({
             Open in Maps <span aria-hidden="true">→</span>
           </button>
         </section>
+
+        {/* Lede figure — moved out of the article top into this slot
+            (between the venue block and the About section). Acts as an
+            editorial divider: visual break before the descriptive copy
+            starts, keeping the masthead + chip + venue stack at the top
+            cleanly typographic when an event has a photo. */}
+        {hasRealImage && (
+          <figure className={`relative border-2 border-foreground overflow-hidden mt-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
+            <img
+              src={event.image!}
+              alt={displayTitle}
+              style={{ objectPosition: event.imagePosition }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {isCanceled && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
+                  {canceledLabel}
+                </span>
+              </div>
+            )}
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                aria-label="Edit event"
+                className="absolute top-3 right-3 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/85 backdrop-blur-sm border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+          </figure>
+        )}
 
         {/* F. About the event — labelled section so the description reads
             as deliberate editorial copy rather than orphan body text.
