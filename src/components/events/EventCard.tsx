@@ -66,7 +66,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
           isCanceled ? "opacity-55" : ""
         }`}
       >
-        <EventMeta event={event} categories={categories} />
+        <EventMeta event={event} categories={categories} size="md" />
         <h3
           className={`font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words line-clamp-3 ${
             isCanceled ? "line-through" : ""
