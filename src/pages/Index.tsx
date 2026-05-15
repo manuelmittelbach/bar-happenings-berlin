@@ -564,7 +564,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
         // <section>, NOT on this wrapper, so the heading hugs the chrome's
         // bottom edge when pinned instead of sitting 24px lower.
         <div
-          className="mb-2.5 sticky md:static bg-background z-30"
+          className="mb-2.5 sticky bg-background z-30"
           style={{ top: 0 }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
