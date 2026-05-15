@@ -452,7 +452,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// the indicator stops being useful and just clutters the
 						// header. Same 15min threshold powers the "Nearby tonight"
 						// section on the index page, kept in sync deliberately.
-						if (min <= 30) {
+						if (min <= 15) {
 							const walkEl = document.createElement("span");
 							walkEl.style.cssText =
 								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;padding-bottom:2px;text-transform:uppercase;letter-spacing:0.08em;";
