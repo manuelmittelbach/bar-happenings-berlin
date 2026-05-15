@@ -389,7 +389,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					// the cap rather than ellipsing).
 					const popupEl = document.createElement("div");
 					popupEl.style.cssText =
-						"display:inline-block;min-width:220px;max-width:320px;font-family:'DM Sans',system-ui,sans-serif;background:#f8f5ef;border:1px solid #0f0f0f;border-radius:0;overflow:hidden;box-shadow:0 6px 20px rgba(15,15,15,0.1),0 1px 3px rgba(15,15,15,0.06);";
+						// min-width bumped to 300px so popups stay close to the
+						// 320px max even when content (short venue + short event
+						// titles like "Pubquiz") wouldn't naturally drive the box
+						// wider. The 80px band between min and max keeps the
+						// box from looking pinched.
+						"display:inline-block;min-width:300px;max-width:320px;font-family:'DM Sans',system-ui,sans-serif;background:#f8f5ef;border:1px solid #0f0f0f;border-radius:0;overflow:hidden;box-shadow:0 6px 20px rgba(15,15,15,0.1),0 1px 3px rgba(15,15,15,0.06);";
 
 					// HEADER — Georgia serif venue name, walking chip right-
 					// aligned. 40px right padding leaves room for the
@@ -411,7 +416,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					// affordance.
 					const nameEl = document.createElement("h3");
 					nameEl.style.cssText =
-						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;cursor:pointer;transition:color 0.12s ease;";
+						// overflow-wrap:break-word (not :anywhere) — only break
+						// long unhyphenated venue names when truly necessary.
+						// `:anywhere` was too aggressive and let the browser
+						// collapse the popup to min-width 220 by breaking even
+						// inside otherwise-fitting words, leaving lots of empty
+						// horizontal space. `break-word` keeps words intact when
+						// they can fit and only breaks them as a last resort.
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
 					nameEl.setAttribute("role", "link");
@@ -440,7 +452,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// the indicator stops being useful and just clutters the
 						// header. Same 15min threshold powers the "Nearby tonight"
 						// section on the index page, kept in sync deliberately.
-						if (min <= 15) {
+						if (min <= 30) {
 							const walkEl = document.createElement("span");
 							walkEl.style.cssText =
 								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;padding-bottom:2px;text-transform:uppercase;letter-spacing:0.08em;";

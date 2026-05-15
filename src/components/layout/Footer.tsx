@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
+import { EXPLORE_SCROLL_KEY, SCROLL_HOME_EVENT } from "@/pages/Index";
 import { setDiscoverActive } from "@/hooks/useDiscoverActive";
 
 export default function Footer() {
@@ -10,17 +10,13 @@ export default function Footer() {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
     setDiscoverActive(false);
 
-    const scrollToTop = (smooth = false) => {
-      window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    };
-
     if (location.pathname === "/") {
-      scrollToTop(true);
+      // Index scrolls its internal container, not the window. Dispatch the
+      // shared scroll-home event so Index moves its scrollRef to the top.
+      window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT));
     } else {
       navigate("/");
-      setTimeout(() => scrollToTop(), 50);
+      setTimeout(() => window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT)), 50);
     }
   };
 

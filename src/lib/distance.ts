@@ -23,7 +23,7 @@ export function computeNearbyEvents(
   events: BarlinEvent[],
   venueMap: Map<string, Venue>,
   userLocation: { lat: number; lng: number },
-  maxWalkingMin = 15,
+  maxWalkingMin = 30,
   limit = 6,
 ): { event: BarlinEvent; min: number }[] {
   const withDistance: { event: BarlinEvent; min: number }[] = [];
