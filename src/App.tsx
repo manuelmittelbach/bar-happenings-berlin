@@ -215,9 +215,11 @@ const App = () => (
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/instagram" element={<Instagram />} />
-            <Route path="/landing" element={<Landing />} />
             <Route path="*" element={<NotFound />} />
           </Route>
+          {/* Landing owns its own chrome (nav + footer) — render outside Layout
+              so the global Header doesn't stack on top of the marketing nav. */}
+          <Route path="/landing" element={<Landing />} />
         </Routes>
         </AuthCallbackGate>
       </BrowserRouter>

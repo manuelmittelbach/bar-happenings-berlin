@@ -1,5 +1,5 @@
-import AppHero from "@/components/landing/AppHero";
+import LandingDraft from "@/components/landing/LandingDraft";
 
 export default function Landing() {
-  return <AppHero />;
+  return <LandingDraft />;
 }
