@@ -62,7 +62,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
-        className={`group relative flex flex-col gap-1.5 py-4 border-b-2 border-border no-underline text-foreground ${
+        className={`group relative flex flex-col gap-1.5 py-4 border-b border-foreground/15 no-underline text-foreground ${
           isCanceled ? "opacity-55" : ""
         }`}
       >

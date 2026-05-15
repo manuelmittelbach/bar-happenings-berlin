@@ -33,7 +33,7 @@ export default function StillRunningStrip({
           className="mb-2.5 sticky md:static bg-background z-30"
           style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
         >
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b border-foreground/15">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               Since yesterday
             </h2>
