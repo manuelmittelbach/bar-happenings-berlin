@@ -74,27 +74,28 @@ export default function EventMeta({ event, categories, size = "sm", walkingMin }
         </span>
       )}
       {walkingMin !== undefined && (
-        // Walking-distance chip — same accent treatment as the map popup's
-        // walking pill (small person icon + minutes), kept compact so it fits
-        // at the end of a meta row even on narrow viewports. Tilde signals
-        // straight-line approximation since haversine ignores real routes.
-        <span className="ml-auto inline-flex items-center gap-1 text-accent tracking-[0.08em]">
+        // Walking-distance chip — uses the same Tabler "walk" SVG and
+        // accent color as the map popup chip so the signal is identical
+        // across the index and the map. The chip pushes to the row's end
+        // via ml-auto so it sits flush right next to the line break.
+        <span className="ml-auto inline-flex items-center gap-1 text-accent">
           <svg
             aria-hidden="true"
-            width="10"
-            height="10"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <circle cx="12" cy="5" r="2" />
-            <path d="m9 21 1.5-7 4-5 3 4 3 1" />
-            <path d="M5 14h3l1.5-4" />
+            <path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+            <path d="M7 21l3 -4" />
+            <path d="M16 21l-2 -4l-3 -3l1 -6" />
+            <path d="M6 12l2 -3l4 -1l3 3l3 1" />
           </svg>
-          ~{walkingMin} min
+          {walkingMin} min
         </span>
       )}
     </div>

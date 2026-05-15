@@ -171,6 +171,22 @@ export default function Index() {
     () => new Set(nearbyTomorrow.map((n) => n.event.id)),
     [nearbyTomorrow],
   );
+  // Walking-minutes by event id for every event whose venue is within the
+  // 15-min cutoff — unrelated to whether that event made the top-6 Nearby
+  // strip. Used by the DayList / LaterAgenda so a walking-chip surfaces on
+  // any walkable event in any list, including the category-filtered
+  // single-flat-list view where the Nearby strip itself doesn't render.
+  const walkingMinByEventId = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!userLocation) return m;
+    // Re-using computeNearbyEvents with a generous limit captures every
+    // walkable event without re-implementing the haversine + cutoff logic.
+    // The limit just needs to exceed any realistic count of bars in a
+    // 15-min walking radius — 200 is far above what Berlin has.
+    const all = computeNearbyEvents(eventsData, venueMap, userLocation, 15, 200);
+    for (const { event, min } of all) m.set(event.id, min);
+    return m;
+  }, [eventsData, venueMap, userLocation]);
   // Yesterday's events that haven't reached their endTime / startTime+2h yet.
   // Only populated in the post-midnight window where cross-day events leak in.
   const stillRunningYesterday = useMemo(
@@ -326,6 +342,7 @@ export default function Index() {
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tonight.`}
                   onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
+                  walkingMinByEventId={walkingMinByEventId}
                 />
               );
             }
@@ -367,6 +384,7 @@ export default function Index() {
                   events={todayEvents}
                   categories={categoriesData}
                   onEventClick={handleEventClick}
+                  walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
                   title={hasEditorialAbove ? "More tonight" : "All tonight"}
@@ -384,6 +402,7 @@ export default function Index() {
                   onEventClick={handleEventClick}
                   emptyMessage="That's it for tonight."
                   onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
+                  walkingMinByEventId={walkingMinByEventId}
                 />
               </>
             );
@@ -404,6 +423,7 @@ export default function Index() {
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
                   onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
+                  walkingMinByEventId={walkingMinByEventId}
                 />
               );
             }
@@ -423,6 +443,7 @@ export default function Index() {
                   categories={categoriesData}
                   onEventClick={handleEventClick}
                   title="Free tomorrow"
+                  walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
                   title={hasEditorialAbove ? "More tomorrow" : "All tomorrow"}
@@ -437,6 +458,7 @@ export default function Index() {
                   onEventClick={handleEventClick}
                   emptyMessage="That's it for tomorrow."
                   onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
+                  walkingMinByEventId={walkingMinByEventId}
                 />
               </>
             );
@@ -446,6 +468,7 @@ export default function Index() {
             <LaterAgenda
               events={filtered}
               onEventClick={handleEventClick}
+              walkingMinByEventId={walkingMinByEventId}
             />
           )}
         </>
@@ -473,9 +496,15 @@ interface DayListProps {
   // Optional inline CTA shown under the empty-state message (Tonight uses
   // it to send users to the Tomorrow tab; Tomorrow doesn't need one).
   onEmptyCta?: { label: string; onClick: () => void };
+  // When a card's event id appears in this map, the EventCard renders a
+  // walking-distance chip in its meta row. Index passes a map covering all
+  // events ≤ 15 min from the user — so a walkable event surfaces its chip
+  // in this list even when the Nearby strip itself is collapsed (e.g. in
+  // the category-filtered short-circuit).
+  walkingMinByEventId?: Map<string, number>;
 }
 
-function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayListProps) {
+function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkingMinByEventId }: DayListProps) {
   // Empty state — drop the "More tonight" / "More tomorrow" header + counter
   // entirely. With a filter applied the list often collapses to zero, and
   // pairing the bold header "More tonight" with the body line "Nothing more
@@ -534,6 +563,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
             event={event}
             layout="list"
             onClick={onEventClick}
+            walkingMin={walkingMinByEventId?.get(event.id)}
           />
         ))}
       </div>
@@ -549,9 +579,13 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
 interface LaterAgendaProps {
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
+  // Same role as DayList's walkingMinByEventId — Later events that happen
+  // to be at a walkable venue still get the chip, so the walking signal
+  // stays consistent across the index.
+  walkingMinByEventId?: Map<string, number>;
 }
 
-function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
+function LaterAgenda({ events, onEventClick, walkingMinByEventId }: LaterAgendaProps) {
   const groups = useMemo(() => {
     const out: { date: string; events: BarlinEvent[] }[] = [];
     for (const e of events) {
@@ -626,6 +660,7 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
                 event={event}
                 layout="list"
                 onClick={onEventClick}
+                walkingMin={walkingMinByEventId?.get(event.id)}
               />
             ))}
           </section>
