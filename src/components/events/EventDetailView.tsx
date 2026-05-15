@@ -4,7 +4,6 @@ import { Pencil, Euro, Repeat, Languages, Clock, Calendar, ChevronRight, type Lu
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
 import { cleanEventTitle, addSoftHyphens } from "@/lib/cleanTitle";
-import { endsNextDay } from "@/lib/eventStatus";
 import type { BarlinEvent } from "@/types/event";
 import { useCategories } from "@/hooks/useEvents";
 
@@ -232,16 +231,6 @@ export default function EventDetailView({
               </div>
             )}
           </div>
-        )}
-
-        {/* Next-day microcopy lives just under the action row. Doors has
-            been moved into the "About the event" section below so it sits
-            with descriptive event context rather than between the chip
-            row and the venue block. */}
-        {!!event.startTime && endsNextDay(event.startTime, event.endTime) && (
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            Ends next day
-          </p>
         )}
 
         {/* E. Venue block — compact info stack (Resident Advisor style).
