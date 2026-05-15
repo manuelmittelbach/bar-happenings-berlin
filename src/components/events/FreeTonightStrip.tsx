@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
+import EventCard from "@/components/events/EventCard";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
@@ -54,10 +55,14 @@ export default function FreeTonightStrip({
           zwischen FreeTonight-Cards und dem nächsten Header genauso
           groß wie zwischen DaySwitcher und FreeTonight-Header. */}
       <div className="container py-6 md:py-8">
-        {/* Inline section header — runs borderless so the heading sits in
-            quiet whitespace. A sticky+hairline variant felt busy when
-            stacked on top of the day+category chrome. */}
-        <div className="mb-2.5">
+        {/* Mobile: section header pins below the day+category chrome.
+            Top-padding lives on the container, NOT on this sticky wrapper —
+            that way the heading hugs the chrome's bottom edge when pinned
+            instead of sitting 24px lower. Desktop stays static. */}
+        <div
+          className="mb-2.5 sticky md:static bg-background z-30"
+          style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+        >
           <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
@@ -75,11 +80,22 @@ export default function FreeTonightStrip({
           </div>
         </div>
 
-        {/* Mobile: vertical stack (one card per row) so nothing hides
-            behind a swipe gesture. Desktop: responsive grid so the
-            available horizontal space isn't wasted on a single-column
-            list of wide cards. */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        {/* Mobile: flat list rows (identical chrome to "More tonight"
+            below) — cards on a narrow viewport read as extra weight when
+            every row is already one-per-line. Desktop: responsive grid of
+            FreeCards so the wide horizontal space isn't wasted on a
+            single-column list. */}
+        <div className="md:hidden">
+          {freeEvents.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              layout="list"
+              onClick={onEventClick}
+            />
+          ))}
+        </div>
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {freeEvents.map((event) => (
             <FreeCard
               key={event.id}

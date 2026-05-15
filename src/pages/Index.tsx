@@ -435,8 +435,15 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta }: DayL
   return (
     <section className="container py-6 md:py-8">
       {title && (
-        // Inline section header — borderless, tight gap to first card.
-        <div className="mb-2.5">
+        // Section header — sticky on mobile so it pins below the
+        // day+category chrome (matches StillRunningStrip /
+        // FreeTonightStrip). Static on desktop. Top-padding lives on the
+        // <section>, NOT on this wrapper, so the heading hugs the chrome's
+        // bottom edge when pinned instead of sitting 24px lower.
+        <div
+          className="mb-2.5 sticky md:static bg-background z-30"
+          style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+        >
           <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             {/* Same size as the weekday separators in the Later section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
@@ -517,22 +524,20 @@ function LaterAgenda({ events, onEventClick }: LaterAgendaProps) {
         const dom = d.getDate();
         const mon = d.toLocaleDateString("en-GB", { month: "short" });
         return (
-          <section key={g.date} className="mt-20 first:mt-0">
-            {/* Sticky weekday header — only the Later section's day
-                separators pin to the top of the content area while their
-                section scrolls past. Pinning at var(--chrome-bottom) drops
-                the heading right below the sticky day+category chrome.
-                Each section's `<section>` parent is the implicit scroll
-                container for the sticky, so the next weekday cleanly
+          <section key={g.date} className="mt-20 first:mt-0 pt-6 md:pt-8">
+            {/* Sticky weekday header — pins below the day+category chrome
+                while its section scrolls past. Top-padding lives on the
+                <section> (not the sticky wrapper), so when pinned the
+                weekday hugs the chrome's bottom edge instead of sitting
+                ~34px lower. Inner pt-2.5 keeps 10px breathing room above
+                the text when stuck. Each section is the implicit scroll
+                container for its sticky, so the next weekday cleanly
                 pushes the previous one out as it scrolls into view. */}
             <div
-              className="mb-2.5 sticky z-30 bg-background pt-[34px] md:pt-[42px]"
+              className="mb-2.5 sticky z-30 bg-background"
               style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
             >
-              {/* Vertical padding on the sticky weekday gives the heading
-                  breathing room above and below when pinned. Gap to the
-                  first card still 10px via mb-2.5 on the wrapper. */}
-              <div className="flex items-baseline gap-3.5 flex-wrap">
+              <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
                   {wdLong}
                 </h3>

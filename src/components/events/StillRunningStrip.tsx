@@ -23,7 +23,16 @@ export default function StillRunningStrip({
   return (
     <section>
       <div className="container py-6 md:py-8">
-        <div className="mb-2.5">
+        {/* Section header is sticky on mobile so the heading pins below the
+            day+category chrome. Top-padding lives on the container (not the
+            sticky wrapper) so when pinned, the heading sits tight under the
+            chrome — only the inner pt-2.5 gives breathing room. Static on
+            desktop where the wider layout makes multiple stickies feel
+            busier than helpful. */}
+        <div
+          className="mb-2.5 sticky md:static bg-background z-30"
+          style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+        >
           <div className="pt-2.5 flex items-baseline gap-3.5 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               Since yesterday
