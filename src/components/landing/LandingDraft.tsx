@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
 
@@ -8,9 +8,21 @@ import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
  * Locked to 100dvh, no scroll. Slim top nav · centered hero with floating
  * preview card cluster on the right · slim legal strip pinned to the bottom.
  * Card cluster hides below lg — small viewports get the text + CTAs centered.
+ *
+ * Footer-treatment A/B via ?footer=ink (default: black slab) or ?footer=cream
+ * (paper strip with hairline). Tiny dev toggle pinned bottom-right swaps in
+ * place so the design call can be made by eye, not by argument.
  */
 export default function LandingDraft() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const footerMode = searchParams.get("footer") === "cream" ? "cream" : "ink";
+  const setFooterMode = (mode: "ink" | "cream") => {
+    const next = new URLSearchParams(searchParams);
+    if (mode === "ink") next.delete("footer");
+    else next.set("footer", "cream");
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
@@ -273,25 +285,76 @@ export default function LandingDraft() {
         </div>
       </section>
 
-      {/* ─── SLIM LEGAL STRIP ─── */}
-      <footer className="shrink-0 border-t-2 border-foreground bg-background">
-        <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-foreground/55">
-          <span className="mono-label">
-            <span className="font-bold text-foreground">147</span> bars{" "}
-            <span className="text-foreground/25">·</span>{" "}
-            <span className="font-bold text-foreground">31</span> tonight{" "}
-            <span className="text-foreground/25">·</span>{" "}
-            <span className="font-bold text-foreground">12</span> Kieze
-          </span>
-          <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
-            <Link to="/about" className="hover:text-accent">About</Link>
-            <Link to="/instagram" className="hover:text-accent">Instagram</Link>
-            <Link to="/contact" className="hover:text-accent">Contact</Link>
-            <Link to="/impressum" className="hover:text-accent">Impressum</Link>
-            <Link to="/datenschutz" className="hover:text-accent">Datenschutz</Link>
+      {/* ─── SLIM LEGAL STRIP ─── two treatments, A/B'd via ?footer=… */}
+      {footerMode === "ink" ? (
+        <footer className="shrink-0 bg-foreground text-background">
+          <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-background/60">
+            <span className="mono-label">
+              <span className="font-bold text-background">147</span> bars{" "}
+              <span className="text-background/30">·</span>{" "}
+              <span className="font-bold text-background">31</span> tonight{" "}
+              <span className="text-background/30">·</span>{" "}
+              <span className="font-bold text-background">12</span> Kieze
+            </span>
+            <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
+              <Link to="/about" className="hover:text-accent">About</Link>
+              <Link to="/instagram" className="hover:text-accent">Instagram</Link>
+              <Link to="/contact" className="hover:text-accent">Contact</Link>
+              <Link to="/impressum" className="hover:text-accent">Impressum</Link>
+              <Link to="/datenschutz" className="hover:text-accent">Datenschutz</Link>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      ) : (
+        <footer className="shrink-0 border-t-2 border-foreground bg-background">
+          <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-foreground/55">
+            <span className="mono-label">
+              <span className="font-bold text-foreground">147</span> bars{" "}
+              <span className="text-foreground/25">·</span>{" "}
+              <span className="font-bold text-foreground">31</span> tonight{" "}
+              <span className="text-foreground/25">·</span>{" "}
+              <span className="font-bold text-foreground">12</span> Kieze
+            </span>
+            <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
+              <Link to="/about" className="hover:text-accent">About</Link>
+              <Link to="/instagram" className="hover:text-accent">Instagram</Link>
+              <Link to="/contact" className="hover:text-accent">Contact</Link>
+              <Link to="/impressum" className="hover:text-accent">Impressum</Link>
+              <Link to="/datenschutz" className="hover:text-accent">Datenschutz</Link>
+            </div>
+          </div>
+        </footer>
+      )}
+
+      {/* ─── DEV A/B TOGGLE — pinned bottom-right, doesn't disturb composition.
+              Remove this block once the footer treatment is locked in. */}
+      <div
+        className="fixed bottom-3 right-3 z-50 flex border-2 border-foreground bg-background shadow-[3px_3px_0_0_#0f0f0f]"
+        style={{ fontSize: 10 }}
+      >
+        <button
+          type="button"
+          onClick={() => setFooterMode("ink")}
+          className={`mono-label px-3 py-1.5 transition-colors ${
+            footerMode === "ink"
+              ? "bg-foreground text-background"
+              : "text-foreground/60 hover:text-foreground"
+          }`}
+        >
+          Ink
+        </button>
+        <button
+          type="button"
+          onClick={() => setFooterMode("cream")}
+          className={`mono-label border-l-2 border-foreground px-3 py-1.5 transition-colors ${
+            footerMode === "cream"
+              ? "bg-foreground text-background"
+              : "text-foreground/60 hover:text-foreground"
+          }`}
+        >
+          Cream
+        </button>
+      </div>
     </div>
   );
 }
