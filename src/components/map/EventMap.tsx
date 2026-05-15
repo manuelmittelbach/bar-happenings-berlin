@@ -436,15 +436,16 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						const meters = haversineMeters(ul.lat, ul.lng, coords[1], coords[0]);
 						const min = walkingMinutes(meters);
 						// Only surface the chip when the venue is genuinely within
-						// walking range. Past ~20 min users would U-Bahn/bike, so
+						// walking range. Past ~15 min users would U-Bahn/bike, so
 						// the indicator stops being useful and just clutters the
-						// header.
-						if (min <= 20) {
+						// header. Same 15min threshold powers the "Nearby tonight"
+						// section on the index page, kept in sync deliberately.
+						if (min <= 15) {
 							const walkEl = document.createElement("span");
 							walkEl.style.cssText =
 								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;padding-bottom:2px;";
 							walkEl.setAttribute("title", `~${min} min walking from your location`);
-							walkEl.innerHTML = `${PERSON_SVG}<span>${min}m</span>`;
+							walkEl.innerHTML = `${PERSON_SVG}<span>${min} min</span>`;
 							nameRow.appendChild(walkEl);
 						}
 					}

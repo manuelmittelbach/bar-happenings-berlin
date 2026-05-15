@@ -8,6 +8,10 @@ interface EventMetaProps {
   categories: CategoryRow[];
   // Slightly larger mono in the wide "free" variant
   size?: "sm" | "md";
+  // When set, render an accent-colored walking-distance chip at the end of
+  // the row (e.g. "6 min"). Set by the Nearby strip on the index page; left
+  // undefined elsewhere so existing cards stay untouched.
+  walkingMin?: number;
 }
 
 /* EventMeta — the time · category · FREE/DONATION/Canceled row shared by
@@ -18,7 +22,7 @@ interface EventMetaProps {
  * Temporal "Soon / Over / Might be over" badges were removed per the
  * design — only the Now indicator and the static category/price pills
  * remain. */
-export default function EventMeta({ event, categories, size = "sm" }: EventMetaProps) {
+export default function EventMeta({ event, categories, size = "sm", walkingMin }: EventMetaProps) {
   const cat = categories.find((c) => c.id === event.category);
   const isCanceled = event.status === "canceled";
   const live = !isCanceled && isLiveNow(event);
@@ -67,6 +71,30 @@ export default function EventMeta({ event, categories, size = "sm" }: EventMetaP
       {isCanceled && (
         <span className="ml-1 px-1.5 py-0.5 border tracking-[0.1em]" style={{ borderColor: "#b91c1c", color: "#b91c1c" }}>
           Canceled
+        </span>
+      )}
+      {walkingMin !== undefined && (
+        // Walking-distance chip — same accent treatment as the map popup's
+        // walking pill (small person icon + minutes), kept compact so it fits
+        // at the end of a meta row even on narrow viewports. Tilde signals
+        // straight-line approximation since haversine ignores real routes.
+        <span className="ml-auto inline-flex items-center gap-1 text-accent tracking-[0.08em]">
+          <svg
+            aria-hidden="true"
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="5" r="2" />
+            <path d="m9 21 1.5-7 4-5 3 4 3 1" />
+            <path d="M5 14h3l1.5-4" />
+          </svg>
+          ~{walkingMin} min
         </span>
       )}
     </div>
