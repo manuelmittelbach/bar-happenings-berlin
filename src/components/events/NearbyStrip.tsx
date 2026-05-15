@@ -43,7 +43,7 @@ export default function NearbyStrip({
         {/* Sticky on mobile, static on desktop — same chrome as the other
             section headers (FreeTonightStrip, StillRunningStrip, DayList). */}
         <div
-          className="mb-2.5 sticky md:static bg-background z-30"
+          className="mb-2.5 sticky bg-background z-30"
           style={{ top: 0 }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">

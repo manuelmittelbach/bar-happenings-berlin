@@ -66,7 +66,7 @@ export default function FreeTonightStrip({
             that way the heading hugs the chrome's bottom edge when pinned
             instead of sitting 24px lower. Desktop stays static. */}
         <div
-          className="mb-2.5 sticky md:static bg-background z-30"
+          className="mb-2.5 sticky bg-background z-30"
           style={{ top: 0 }}
         >
           {/* Gray rule under the heading — same 2px border-border as the
