@@ -311,12 +311,11 @@ export default function Index() {
           </div>
         </div>
         {/* Desktop — DaySwitcher tab strip above the category pills.
-            Same scroll-margin anchor as before so programmatic scroll-to
-            ends up just below the page header. */}
-        <div
-          style={{ scrollMarginTop: 130 }}
-          className="hidden md:block container pt-2"
-        >
+            Padding-top intentionally absent: MapPage's chrome doesn't
+            have it either, so dropping it here keeps the two surfaces
+            visually aligned on PC. scrollMarginTop is unnecessary now
+            that the chrome isn't part of the document scroll context. */}
+        <div className="hidden md:block container">
           <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
         </div>
         <div className="container py-1.5 md:py-3">
