@@ -66,7 +66,7 @@ export default function FreeTonightStrip({
           {/* Gray rule under the heading — same 2px border-border as the
               EventCard list separators below, so the section header reads
               as part of the same list rhythm. */}
-          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b border-foreground/15">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               {title}
             </h2>
