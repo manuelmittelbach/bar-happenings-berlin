@@ -31,7 +31,7 @@ export default function NearbyStrip({
   nearby,
   onEventClick,
   title = "Nearby tonight",
-  maxWalkingMin = 30,
+  maxWalkingMin = 15,
 }: NearbyStripProps) {
   const { data: categories = [] } = useCategories();
 

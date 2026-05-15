@@ -192,7 +192,7 @@ export default function Index() {
     // walkable event without re-implementing the haversine + cutoff logic.
     // The limit just needs to exceed any realistic count of bars in a
     // 15-min walking radius — 200 is far above what Berlin has.
-    const all = computeNearbyEvents(eventsData, venueMap, userLocation, 30, 200);
+    const all = computeNearbyEvents(eventsData, venueMap, userLocation, 15, 200);
     for (const { event, min } of all) m.set(event.id, min);
     return m;
   }, [eventsData, venueMap, userLocation]);
@@ -280,7 +280,7 @@ export default function Index() {
        That keeps the day + category chrome rock-still at the top edge
        (no mobile-URL-bar drift, no backdrop-blur jitter), and matches
        the architecture the user already knows from the Map page. */
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden overscroll-x-none">
       {/* Chrome — Day filter + Category filter at the top, no longer
           sticky/fixed (just sits at the top of the flex column). Mobile
           shows rounded-full Tonight/Tomorrow/Later buttons; desktop
@@ -339,7 +339,15 @@ export default function Index() {
       {/* Internal scroll container — the only scrollable surface in this
           page. Sticky section headers inside (`top: 0`) now pin to this
           container's top edge, which sits right under the chrome above. */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+        {/* Inner flex column with min-h-full so when the list is short
+            (single event under a category filter), the Footer's mt-auto
+            below still pushes it to the bottom of the scroll viewport
+            instead of floating right under the last card with a wall of
+            cream below. When the list is tall enough to scroll, the inner
+            grows past min-h-full and behaves normally. */}
+        <div className="flex flex-col min-h-full">
+          <div className="flex-1">
         {eventsLoading ? (
           <PageSpinner />
         ) : (
@@ -496,10 +504,18 @@ export default function Index() {
           )}
           </>
         )}
-        {/* Footer lives inside the scroll container so users reach it at
-            the natural end of the feed. Native context has the BottomTabBar
-            instead — Footer would crowd the bar and duplicate links. */}
-        {!isNative && <Footer />}
+          </div>
+          {/* Footer lives inside the scroll container so users reach it at
+              the natural end of the feed. mt-auto pushes it flush to the
+              scroll viewport's bottom edge when the list above is short.
+              Native context has the BottomTabBar instead — Footer would
+              crowd the bar and duplicate links. */}
+          {!isNative && (
+            <div className="mt-auto">
+              <Footer />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
