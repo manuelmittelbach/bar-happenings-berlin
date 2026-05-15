@@ -754,7 +754,17 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		const loc = await requestLocationOnce();
 		setLocating(false);
 		if (!loc) {
-			alert("Location access was denied.\n\niOS: Settings → Privacy & Security → Location Services → Safari → Allow While Using App\n\nAndroid/Desktop: allow location in your browser settings.");
+			// Branch by platform — iOS sets permissions per-app via system
+			// Settings, desktop/Android via the browser's site-permission UI.
+			// Don't name a specific browser (the previous "Safari" reference
+			// confused users on Chrome/Firefox on Mac where Safari isn't even
+			// installed). Generic "your browser" works across vendors.
+			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+			alert(
+				isIOS
+					? "Location access was denied.\n\nOpen Settings → Privacy & Security → Location Services, scroll to your browser, and set it to ‘While Using the App’."
+					: "Location access was denied.\n\nClick the location icon in your browser's address bar and allow location, or change it in your browser's site settings."
+			);
 			return;
 		}
 		map.flyTo({ center: [loc.lng, loc.lat], zoom: 15, duration: 1200 });
