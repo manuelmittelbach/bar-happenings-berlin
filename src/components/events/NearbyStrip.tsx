@@ -1,4 +1,8 @@
+import { Link } from "react-router-dom";
+import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventCard from "@/components/events/EventCard";
+import EventMeta from "@/components/events/EventMeta";
+import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent } from "@/types/event";
 
 interface NearbyStripProps {
@@ -16,11 +20,12 @@ interface NearbyStripProps {
 }
 
 /* NearbyStrip — events at walkable distance from the user's location.
- * Mirrors FreeTonightStrip / StillRunningStrip structurally (sticky header
- * on mobile, gray rule, EventCard list rows). Each card surfaces a walking
- * minutes chip via EventCard.walkingMin. Caller is responsible for only
- * rendering this strip when location is actually available and the list
- * isn't empty.
+ * Mirrors FreeTonightStrip structurally:
+ *   - Mobile: flat EventCard list rows (matches the rest of the mobile feed).
+ *   - Desktop: responsive grid of NearbyCard (mirrors FreeCard's chrome —
+ *     2px black border, soft shadow, padded meta + title + venue + walking).
+ * Caller is responsible for only rendering when location is available and
+ * the list isn't empty.
  */
 export default function NearbyStrip({
   nearby,
@@ -28,6 +33,8 @@ export default function NearbyStrip({
   title = "Nearby tonight",
   maxWalkingMin = 15,
 }: NearbyStripProps) {
+  const { data: categories = [] } = useCategories();
+
   if (nearby.length === 0) return null;
 
   return (
@@ -53,10 +60,9 @@ export default function NearbyStrip({
           </div>
         </div>
 
-        {/* Flat list rows on every breakpoint — Nearby is sorted by distance
-            (an ordinal property), so a grid would scramble the "closest →
-            farthest" reading order on desktop. */}
-        <div>
+        {/* Mobile: flat list rows — Nearby is sorted by distance, so a
+            single-column list reads cleanly "closest → farthest". */}
+        <div className="md:hidden">
           {nearby.map(({ event, min }) => (
             <EventCard
               key={event.id}
@@ -67,7 +73,69 @@ export default function NearbyStrip({
             />
           ))}
         </div>
+
+        {/* Desktop: bordered card grid mirroring Free tonight's treatment.
+            The wider viewport has room for a multi-column grid, and matching
+            FreeCard's chrome keeps the editorial rhythm consistent between
+            the two strips. */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+          {nearby.map(({ event, min }) => (
+            <NearbyCard
+              key={event.id}
+              event={event}
+              walkingMin={min}
+              categories={categories}
+              onClick={onEventClick}
+            />
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+interface NearbyCardProps {
+  event: BarlinEvent;
+  walkingMin: number;
+  categories: ReturnType<typeof useCategories>["data"];
+  onClick: (eventId: string) => void;
+}
+
+/* NearbyCard — desktop grid card. Same border/shadow chrome as FreeCard
+ * so the two strips share a visual family; the only differentiator is
+ * the walking-distance chip baked into the EventMeta row. */
+function NearbyCard({ event, walkingMin, categories, onClick }: NearbyCardProps) {
+  const displayTitle = cleanEventTitle(event.title, event.venue);
+  const isCanceled = event.status === "canceled";
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onClick(event.id);
+  };
+
+  return (
+    <Link
+      to={`/event/${event.id}`}
+      onClick={handleClick}
+      className={`relative group flex flex-col h-full px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent transition-all no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
+        isCanceled ? "opacity-50" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <EventMeta event={event} categories={categories ?? []} size="md" walkingMin={walkingMin} />
+      </div>
+      <h3
+        lang="de"
+        className={`font-body text-[22px] md:text-[24px] font-bold leading-[1.2] mt-2 mb-0 hyphens-auto break-words ${
+          isCanceled ? "line-through" : ""
+        }`}
+      >
+        {displayTitle}
+      </h3>
+      <div className="font-body text-[13px] text-muted-foreground mt-1 line-clamp-2">
+        {event.venue}
+        {event.neighborhood ? ` · ${event.neighborhood}` : ""}
+      </div>
+    </Link>
   );
 }

@@ -15,6 +15,11 @@ interface FreeTonightStripProps {
   // Override the section title — defaults to "Free tonight" but the
   // Tomorrow tab reuses this component with "Free tomorrow".
   title?: string;
+  // When an event id is in this map, its card renders a walking chip in
+  // the meta row. Index passes a map covering every event whose venue is
+  // ≤ 15 min from the user — so a free event that's ALSO nearby shows
+  // both signals here, not just the "Free" pill.
+  walkingMinByEventId?: Map<string, number>;
 }
 
 /* FreeTonight — wide cards with FREE / DONATION pill on the right.
@@ -28,6 +33,7 @@ export default function FreeTonightStrip({
   onEventClick,
   limit = 10,
   title = "Free tonight",
+  walkingMinByEventId,
 }: FreeTonightStripProps) {
   const freeEvents = useMemo(() => {
     return events
@@ -95,6 +101,7 @@ export default function FreeTonightStrip({
               event={event}
               layout="list"
               onClick={onEventClick}
+              walkingMin={walkingMinByEventId?.get(event.id)}
             />
           ))}
         </div>
@@ -105,6 +112,7 @@ export default function FreeTonightStrip({
               event={event}
               categories={categories}
               onClick={onEventClick}
+              walkingMin={walkingMinByEventId?.get(event.id)}
             />
           ))}
         </div>
@@ -117,9 +125,10 @@ interface FreeCardProps {
   event: BarlinEvent;
   categories: CategoryRow[];
   onClick: (eventId: string) => void;
+  walkingMin?: number;
 }
 
-function FreeCard({ event, categories, onClick }: FreeCardProps) {
+function FreeCard({ event, categories, onClick, walkingMin }: FreeCardProps) {
   const displayTitle = cleanEventTitle(event.title, event.venue);
   const isCanceled = event.status === "canceled";
 
@@ -141,7 +150,7 @@ function FreeCard({ event, categories, onClick }: FreeCardProps) {
           accent pill anchored top-right was visually heavier than the
           rest of the card chrome. */}
       <div className="min-w-0">
-        <EventMeta event={event} categories={categories} size="md" />
+        <EventMeta event={event} categories={categories} size="md" walkingMin={walkingMin} />
       </div>
       <h3
         lang="de"
