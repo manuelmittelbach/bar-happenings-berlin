@@ -7,14 +7,17 @@ import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryP
 import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
+import NearbyStrip from "@/components/events/NearbyStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 
-import type { BarlinEvent } from "@/types/event";
-import { useEvents, useCategories } from "@/hooks/useEvents";
+import type { BarlinEvent, Venue } from "@/types/event";
+import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { isFreeOrDonation } from "@/lib/entryInfo";
+import { computeNearbyEvents } from "@/lib/distance";
 
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
 
@@ -85,6 +88,15 @@ export default function Index() {
 
   const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
   const { data: categoriesData = [] } = useCategories();
+  const { data: venuesData = [] } = useVenues();
+  const { location: userLocation } = useUserLocation();
+  // venueId → Venue lookup so NearbyStrip can resolve coords cheaply on
+  // every render. Map (not Record) since we only need .get/.has.
+  const venueMap = useMemo(() => {
+    const m = new Map<string, Venue>();
+    for (const v of venuesData) m.set(v.id, v);
+    return m;
+  }, [venuesData]);
   const categories = useMemo(
     () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
     [categoriesData],
@@ -129,6 +141,35 @@ export default function Index() {
   const highlightedTonightEvents = useMemo(
     () => todayEvents.filter((e) => e.isHighlight),
     [todayEvents],
+  );
+
+  // Nearby strips — only populated when the user has granted location
+  // (useUserLocation returns null until then, which collapses both
+  // strips and skips the dedupe below entirely). Computed once per pool
+  // here so the resulting IDs can drive "More tonight"/"More tomorrow"
+  // dedupe — otherwise the same event would render in both Nearby and
+  // More.
+  const nearbyTonight = useMemo(
+    () =>
+      userLocation
+        ? computeNearbyEvents(todayEvents, venueMap, userLocation)
+        : [],
+    [todayEvents, venueMap, userLocation],
+  );
+  const nearbyTomorrow = useMemo(
+    () =>
+      userLocation
+        ? computeNearbyEvents(tomorrowEvents, venueMap, userLocation)
+        : [],
+    [tomorrowEvents, venueMap, userLocation],
+  );
+  const nearbyTonightIds = useMemo(
+    () => new Set(nearbyTonight.map((n) => n.event.id)),
+    [nearbyTonight],
+  );
+  const nearbyTomorrowIds = useMemo(
+    () => new Set(nearbyTomorrow.map((n) => n.event.id)),
+    [nearbyTomorrow],
   );
   // Yesterday's events that haven't reached their endTime / startTime+2h yet.
   // Only populated in the post-midnight window where cross-day events leak in.
@@ -296,6 +337,7 @@ export default function Index() {
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
               highlightedTonightEvents.length > 0 ||
+              nearbyTonight.length > 0 ||
               todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
             return (
               <>
@@ -312,6 +354,15 @@ export default function Index() {
                   categories={categoriesData}
                   onEventClick={handleEventClick}
                 />
+                {/* Nearby — only renders when useUserLocation has a value
+                    (NearbyStrip short-circuits on empty input). Sits above
+                    Free tonight because proximity beats price as a
+                    universal "is this relevant to me right now" filter. */}
+                <NearbyStrip
+                  nearby={nearbyTonight}
+                  onEventClick={handleEventClick}
+                  title="Nearby tonight"
+                />
                 <FreeTonightStrip
                   events={todayEvents}
                   categories={categoriesData}
@@ -320,11 +371,15 @@ export default function Index() {
                 <DayList
                   title={hasEditorialAbove ? "More tonight" : "All tonight"}
                   /* Dedup: drop events already shown above in Tonight's
-                     Highlights (e.isHighlight) and Free Tonight (free or
-                     pay-what-you-want). The master list reads as "what
-                     else is on tonight" instead of repeating cards. */
+                     Highlights (e.isHighlight), Nearby Tonight, and Free
+                     Tonight (free or pay-what-you-want). The master list
+                     reads as "what else is on tonight" instead of repeating
+                     cards across editorial lenses. */
                   events={filtered.filter(
-                    (e) => !e.isHighlight && !isFreeOrDonation(e.entryInfo),
+                    (e) =>
+                      !e.isHighlight &&
+                      !isFreeOrDonation(e.entryInfo) &&
+                      !nearbyTonightIds.has(e.id),
                   )}
                   onEventClick={handleEventClick}
                   emptyMessage="That's it for tonight."
@@ -353,9 +408,16 @@ export default function Index() {
               );
             }
 
-            const hasEditorialAbove = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            const hasEditorialAbove =
+              nearbyTomorrow.length > 0 ||
+              tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
             return (
               <>
+                <NearbyStrip
+                  nearby={nearbyTomorrow}
+                  onEventClick={handleEventClick}
+                  title="Nearby tomorrow"
+                />
                 <FreeTonightStrip
                   events={tomorrowEvents}
                   categories={categoriesData}
@@ -364,9 +426,14 @@ export default function Index() {
                 />
                 <DayList
                   title={hasEditorialAbove ? "More tomorrow" : "All tomorrow"}
-                  /* Same dedup as More tonight — drop the free/donation
-                     events that already render in Free Tomorrow above. */
-                  events={filtered.filter((e) => !isFreeOrDonation(e.entryInfo))}
+                  /* Same dedup as More tonight — drop free/donation events
+                     and anything Nearby Tomorrow already surfaced, so the
+                     master list reads as "what else is on tomorrow". */
+                  events={filtered.filter(
+                    (e) =>
+                      !isFreeOrDonation(e.entryInfo) &&
+                      !nearbyTomorrowIds.has(e.id),
+                  )}
                   onEventClick={handleEventClick}
                   emptyMessage="That's it for tomorrow."
                   onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}

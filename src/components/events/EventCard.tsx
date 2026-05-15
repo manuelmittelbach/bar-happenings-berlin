@@ -17,6 +17,9 @@ interface EventCardProps {
   // every card belongs to the bar in the page title — repeating it on
   // each row is just noise.
   hideVenue?: boolean;
+  // Set by NearbyStrip to surface a walking-distance chip in the meta row.
+  // Other call sites omit it so the chip stays Nearby-specific.
+  walkingMin?: number;
 }
 
 /* EventCard — design-faithful card variants for the homepage.
@@ -25,7 +28,7 @@ interface EventCardProps {
  * The only dynamic state on a card is the pulsing orange Now indicator
  * (rendered inside EventMeta) and a 55% opacity treatment for canceled
  * events with a small red Canceled pill in the meta row. */
-export default function EventCard({ event, layout = "list", onClick, hideVenue = false }: EventCardProps) {
+export default function EventCard({ event, layout = "list", onClick, hideVenue = false, walkingMin }: EventCardProps) {
   const displayTitle = useMemo(
     () => cleanEventTitle(event.title, event.venue),
     [event.title, event.venue],
@@ -66,7 +69,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
           isCanceled ? "opacity-55" : ""
         }`}
       >
-        <EventMeta event={event} categories={categories} size="md" />
+        <EventMeta event={event} categories={categories} size="md" walkingMin={walkingMin} />
         <h3
           className={`font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words line-clamp-3 ${
             isCanceled ? "line-through" : ""
