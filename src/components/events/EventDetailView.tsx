@@ -210,7 +210,7 @@ export default function EventDetailView({
             old 2px black bar — matches the calmer atmosphere on the rest
             of the page. */}
         {(showShare || detailItems.length > 0) && (
-          <div className="flex items-center gap-3 flex-wrap pb-3 border-b border-foreground/15">
+          <div className="flex items-center gap-3 flex-wrap pb-3 border-b-2 border-border">
             {showShare && (
               <ShareMenu eventTitle={displayTitle} eventId={event.id} variant="primary-cta" />
             )}
@@ -341,7 +341,7 @@ export default function EventDetailView({
             Hairline above separates it visually from the venue section.
             The Event link sits inside this section as a mono-caps row
             (matches the Open-in-Maps row grammar). */}
-        <section className="mt-6 pt-4 border-t border-foreground/15">
+        <section className="mt-6 pt-4 border-t-2 border-border">
           <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
             About the event
           </h2>
