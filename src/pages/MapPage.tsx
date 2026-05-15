@@ -1,9 +1,8 @@
 import { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { List, Search, MapPin, X } from "lucide-react";
+import { Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { useIsNative } from "@/hooks/useIsNative";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import EventMap from "@/components/map/EventMap";
@@ -14,7 +13,6 @@ import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 
 export default function MapPage() {
   const navigate = useNavigate();
-  const isNative = useIsNative();
   const {
     searchQuery, setSearchQuery,
     activeCategory, setActiveCategory,
@@ -203,25 +201,6 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* List button — mobile-web only. Native iOS has the BottomTabBar's
-          List tab; desktop has the List link in the header chrome. The
-          mobile-web case still needs an in-page affordance because there's
-          no bottom tab bar in the browser and the header is scrolled
-          out of reach at the bottom of a long map view. */}
-      {!isNative && (
-        <button
-          onClick={() => navigate("/")}
-          style={{
-            bottom: "var(--fab-bottom)",
-            fontSize: 12,
-            letterSpacing: "0.14em",
-          }}
-          className="md:hidden fixed right-0 z-[9999] inline-flex h-12 w-12 items-center justify-center bg-foreground text-background font-mono font-bold uppercase border-2 border-r-0 border-background rounded-l-full shadow-lg transition-colors hover:bg-foreground/90"
-          aria-label="Open list view"
-        >
-          <List className="h-4 w-4" />
-        </button>
-      )}
     </div>
   );
 }
