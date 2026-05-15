@@ -9,6 +9,8 @@ import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
 import NearbyStrip from "@/components/events/NearbyStrip";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
+import Footer from "@/components/layout/Footer";
+import { useIsNative } from "@/hooks/useIsNative";
 
 import type { BarlinEvent, Venue } from "@/types/event";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
@@ -20,6 +22,12 @@ import { isFreeOrDonation } from "@/lib/entryInfo";
 import { computeNearbyEvents } from "@/lib/distance";
 
 export const EXPLORE_SCROLL_KEY = "inside-bars-explore-scroll-y";
+// Custom event dispatched by Header / Footer "Inside Bars" wordmarks when
+// the user is already on "/". Index listens and scrolls its internal list
+// container to the top — necessary because the page itself no longer
+// scrolls (we lock the viewport and scroll inside a div instead, so
+// window.scrollTo doesn't do anything).
+export const SCROLL_HOME_EVENT = "inside-bars:scroll-home";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -34,14 +42,21 @@ export default function Index() {
     : activeDate === "Later" ? "later"
     : "tonight";
 
+  // Resetting scroll on tab/category change targets the internal list
+  // container — the page-level window scroll no longer exists. Inline
+  // helper to avoid repeating the null-check at every call site.
+  const resetScroll = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
   const handleDayTabChange = useCallback((t: DayTab) => {
     if (t === "tonight") setActiveDate("All");
     else if (t === "tomorrow") setActiveDate("Tomorrow");
     else setActiveDate("Later");
-    // Every tab switch resets to the page top — scroll position from the
+    // Every tab switch resets to the top — scroll position from the
     // previous day's list isn't meaningful against the new day's content.
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, [setActiveDate]);
+    resetScroll();
+  }, [setActiveDate, resetScroll]);
 
   // Same reasoning as the day-tab switch: when the user picks a new
   // category (or clears via "All"), the previous scroll position points
@@ -49,32 +64,26 @@ export default function Index() {
   // to the top so the user sees the new feed from its first card.
   const handleCategoryChange = useCallback((c: string) => {
     setActiveCategory(c);
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, [setActiveCategory]);
+    resetScroll();
+  }, [setActiveCategory, resetScroll]);
 
-  const categoryBarRef = useRef<HTMLDivElement>(null);
+  // Internal list scroll container — the page itself no longer scrolls
+  // (Layout locks Index's viewport like the Map page), so the section
+  // headers stick relative to THIS container instead of the window, and
+  // the scroll-memory save/restore reads its scrollTop instead of
+  // window.scrollY.
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Publish the actual category bar height as a CSS variable so the Later
-  // section's sticky weekday header can stick exactly at the chrome's bottom
-  // edge. A hardcoded top-[130px] guessed wrong on both breakpoints: desktop
-  // pills render ~63px tall (chrome ends ~127px) and mobile icon discs render
-  // ~103px tall (chrome ends ~167px). The mismatch left a hairline of cards
-  // shimmering between the chrome's bottom rule and "Thu 14 May" on desktop,
-  // and clipped the heading on mobile. ResizeObserver covers font swaps,
-  // category counts changing, and orientation changes without remeasure code.
+  // Header / Footer wordmark scrolls back to top via custom event — they
+  // can't call window.scrollTo because the document doesn't scroll
+  // anymore. Smooth so the gesture matches the "click wordmark to reset"
+  // affordance from before the refactor.
   useEffect(() => {
-    const el = categoryBarRef.current;
-    if (!el) return;
-    const update = () => {
-      document.documentElement.style.setProperty(
-        "--chrome-bottom",
-        `calc(var(--header-h) + ${el.offsetHeight}px)`,
-      );
+    const handler = () => {
+      scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener(SCROLL_HOME_EVENT, handler);
+    return () => window.removeEventListener(SCROLL_HOME_EVENT, handler);
   }, []);
 
   const today = berlinDateString();
@@ -183,7 +192,7 @@ export default function Index() {
     // walkable event without re-implementing the haversine + cutoff logic.
     // The limit just needs to exceed any realistic count of bars in a
     // 15-min walking radius — 200 is far above what Berlin has.
-    const all = computeNearbyEvents(eventsData, venueMap, userLocation, 15, 200);
+    const all = computeNearbyEvents(eventsData, venueMap, userLocation, 30, 200);
     for (const { event, min } of all) m.set(event.id, min);
     return m;
   }, [eventsData, venueMap, userLocation]);
@@ -240,33 +249,44 @@ export default function Index() {
     if (!savedScrollY) return;
     const scrollY = Number(savedScrollY);
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+    // Two rAFs because the list content (sections, EventCards) only
+    // mounts after eventsLoading flips false on the next paint — the
+    // first frame restores onto a possibly-shorter list (Spinner only),
+    // the second catches the real list once it's in the DOM. Same logic
+    // as before, just targeting the internal scroll container.
     const firstFrame = requestAnimationFrame(() => {
-      window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
+      scrollRef.current?.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
       requestAnimationFrame(() => {
-        window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
+        scrollRef.current?.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
       });
     });
     return () => cancelAnimationFrame(firstFrame);
   }, []);
 
   const handleEventClick = useCallback((eventId: string) => {
-    sessionStorage.setItem(EXPLORE_SCROLL_KEY, String(window.scrollY));
+    sessionStorage.setItem(
+      EXPLORE_SCROLL_KEY,
+      String(scrollRef.current?.scrollTop ?? 0),
+    );
     navigate(`/event/${eventId}`);
   }, [navigate]);
 
   const showEditorial = dayTab === "tonight";
+  const isNative = useIsNative();
 
   return (
-    <div className="relative isolate">
-      {/* Sticky chrome — Day filter + Category filter pinned together
-          on both viewports. Mobile shows rounded-full Tonight/Tomorrow/
-          Later buttons; desktop shows the editorial DaySwitcher (weekday
-          + date) above the category pills. Both filters stick to the top
-          so users can jump between days without scrolling back up. */}
+    /* Map-style locked viewport — the outer container fills Layout's main
+       area and the inner list container is the only thing that scrolls.
+       That keeps the day + category chrome rock-still at the top edge
+       (no mobile-URL-bar drift, no backdrop-blur jitter), and matches
+       the architecture the user already knows from the Map page. */
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Chrome — Day filter + Category filter at the top, no longer
+          sticky/fixed (just sits at the top of the flex column). Mobile
+          shows rounded-full Tonight/Tomorrow/Later buttons; desktop
+          shows the editorial DaySwitcher above the category pills. */}
       <div
-        ref={categoryBarRef}
-        className="sticky z-40 bg-background border-b-2 border-foreground md:border-b-0"
-        style={{ top: "var(--header-h)" }}
+        className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0"
       >
         {/* Mobile — rounded-full Tonight/Tomorrow/Later buttons. */}
         <div className="md:hidden">
@@ -317,10 +337,14 @@ export default function Index() {
         </div>
       </div>
 
-      {eventsLoading ? (
-        <PageSpinner />
-      ) : (
-        <>
+      {/* Internal scroll container — the only scrollable surface in this
+          page. Sticky section headers inside (`top: 0`) now pin to this
+          container's top edge, which sits right under the chrome above. */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
+        {eventsLoading ? (
+          <PageSpinner />
+        ) : (
+          <>
           {/* TONIGHT — editorial sections + All Tonight list, OR a single
               flat "{Category} tonight" list when a category filter is
               active (the filter IS the discovery; splitting the result
@@ -471,9 +495,13 @@ export default function Index() {
               walkingMinByEventId={walkingMinByEventId}
             />
           )}
-        </>
-      )}
-
+          </>
+        )}
+        {/* Footer lives inside the scroll container so users reach it at
+            the natural end of the feed. Native context has the BottomTabBar
+            instead — Footer would crowd the bar and duplicate links. */}
+        {!isNative && <Footer />}
+      </div>
     </div>
   );
 }
@@ -538,7 +566,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
         // bottom edge when pinned instead of sitting 24px lower.
         <div
           className="mb-2.5 sticky md:static bg-background z-30"
-          style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+          style={{ top: 0 }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             {/* Same size as the weekday separators in the Later section so all
@@ -636,7 +664,7 @@ function LaterAgenda({ events, onEventClick, walkingMinByEventId }: LaterAgendaP
                 pushes the previous one out as it scrolls into view. */}
             <div
               className="mb-2.5 sticky z-30 bg-background"
-              style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+              style={{ top: 0 }}
             >
               <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
                 <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">

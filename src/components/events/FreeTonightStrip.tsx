@@ -67,7 +67,7 @@ export default function FreeTonightStrip({
             instead of sitting 24px lower. Desktop stays static. */}
         <div
           className="mb-2.5 sticky md:static bg-background z-30"
-          style={{ top: "calc(var(--chrome-bottom, 130px) - 2px)" }}
+          style={{ top: 0 }}
         >
           {/* Gray rule under the heading — same 2px border-border as the
               EventCard list separators below, so the section header reads

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { User, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { EXPLORE_SCROLL_KEY } from "@/pages/Index";
+import { EXPLORE_SCROLL_KEY, SCROLL_HOME_EVENT } from "@/pages/Index";
 
 /* Navigation items — List + Map switcher + bar-owner pitch. List
  * duplicates the Wordmark's destination on purpose: paired with Map
@@ -69,10 +69,15 @@ export default function Header() {
   const goHome = () => {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
     if (location.pathname === "/") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Index now scrolls inside its own container, not the window. Dispatch
+      // an event Index listens for and scrolls its scrollRef to the top.
+      window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT));
     } else {
+      // Other-page → "/" transitions: navigate, then fire the scroll-home
+      // event on the next tick once Index has mounted and attached its
+      // listener. removeItem above prevents scroll-memory from competing.
       navigate("/");
-      setTimeout(() => window.scrollTo({ top: 0, behavior: "auto" }), 50);
+      setTimeout(() => window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT)), 50);
     }
   };
 

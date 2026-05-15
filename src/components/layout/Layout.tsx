@@ -7,10 +7,19 @@ import { useIsNative } from "@/hooks/useIsNative";
 export default function Layout() {
   const { pathname } = useLocation();
   const isMap = pathname === "/map";
+  // Index uses the same locked-viewport architecture as Map: the page
+  // doesn't scroll, only an internal list container does. Locks the day +
+  // category chrome at the top of the viewport so it can't drift when the
+  // mobile browser URL bar collapses or the page header's backdrop-filter
+  // repaints under it. Footer is dropped here and re-rendered inside
+  // Index's scroll container (so users still hit it at the end of the
+  // list), the same way Map drops it altogether.
+  const isIndex = pathname === "/";
+  const lockedViewport = isMap || isIndex;
   const isNative = useIsNative();
 
   return (
-    <div className={`flex flex-col ${isMap ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}>
+    <div className={`flex flex-col ${lockedViewport ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}>
       {/* Native context drops the top header entirely — `--header-h` is
           overridden to just env(safe-area-inset-top) so notch-aware stickies
           (category bar) still pin at the right height with nothing above.
@@ -28,11 +37,11 @@ export default function Layout() {
       )}
       <main
         className="flex-1 flex flex-col min-h-0"
-        style={isNative && !isMap ? { paddingBottom: "var(--tab-bar-h)" } : undefined}
+        style={isNative && !lockedViewport ? { paddingBottom: "var(--tab-bar-h)" } : undefined}
       >
         <Outlet />
       </main>
-      {isNative ? <BottomTabBar /> : !isMap && <Footer />}
+      {isNative ? <BottomTabBar /> : !lockedViewport && <Footer />}
     </div>
   );
 }
