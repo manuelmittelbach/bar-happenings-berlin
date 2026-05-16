@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
 import Header from "@/components/layout/Header";
-import { useEvents, useCategories, useVenues } from "@/hooks/useEvents";
+import Footer from "@/components/layout/Footer";
+import { useEvents, useCategories } from "@/hooks/useEvents";
 import { berlinDateString } from "@/lib/dateFormat";
 import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
@@ -12,33 +13,20 @@ import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
 
 /**
- * LandingDraft — single-viewport marketing landing for /landing.
+ * LandingDraft — marketing landing for /landing.
  *
- * Locked to 100dvh, no scroll. Slim top nav · centered hero with floating
- * preview card cluster on the right · slim legal strip pinned to the bottom.
- * Card cluster hides below lg — small viewports get the text + CTAs centered.
- *
- * Footer-treatment A/B via ?footer=ink (default: black slab) or ?footer=cream
- * (paper strip with hairline). Tiny dev toggle pinned bottom-right swaps in
- * place so the design call can be made by eye, not by argument.
+ * Slim top nav · centered hero with floating preview card cluster on the
+ * right · shared site Footer pinned below. Card cluster hides below lg —
+ * small viewports get the text + CTAs centered.
  */
 export default function LandingDraft() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const footerMode = searchParams.get("footer") === "cream" ? "cream" : "ink";
-  const setFooterMode = (mode: "ink" | "cream") => {
-    const next = new URLSearchParams(searchParams);
-    if (mode === "ink") next.delete("footer");
-    else next.set("footer", "cream");
-    setSearchParams(next, { replace: true });
-  };
 
-  // ─── Live data — drives the hero card stack + footer counts ───
+  // ─── Live data — drives the hero card stack ───
   // useEvents / useVenues / useCategories all share the React-Query cache
   // with the rest of the app, so navigating from /landing to / doesn't
   // re-fetch. Falls back gracefully to empty arrays while loading.
   const { data: eventsData = [] } = useEvents();
-  const { data: venuesData = [] } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   const today = berlinDateString();
 
@@ -182,10 +170,8 @@ export default function LandingDraft() {
     if (hasVisibleCards) cardsHaveMountedRef.current = true;
   }, [hasVisibleCards]);
 
-  // Footer stats — live counts pulled from the actual dataset, not magic
-  // numbers. Bars = total venues. Tonight = today's events that haven't
-  // ended yet. Kieze = distinct neighborhoods across the bar list.
-  const barsCount = venuesData.length;
+  // Tonight count — feeds the "1 of N" label on the mobile card and the
+  // accent sticker on the desktop cluster.
   const tonightCount = useMemo(
     () =>
       eventsData.filter(
@@ -196,14 +182,9 @@ export default function LandingDraft() {
       ).length,
     [eventsData, today],
   );
-  const kiezeCount = useMemo(() => {
-    const s = new Set<string>();
-    for (const v of venuesData) if (v.neighborhood) s.add(v.neighborhood);
-    return s.size;
-  }, [venuesData]);
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       {/* ─── TOP NAV ─── shared product Header, identical to / and /map */}
       <div className="shrink-0">
         <Header />
@@ -271,20 +252,20 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={() => navigate("/map")}
+                onClick={() => navigate("/")}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                <span>Open the map</span>
+                <span>Events tonight</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/map")}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-background px-6 font-mono font-bold uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                Browse tonight
+                Open the map
               </button>
             </motion.div>
 
@@ -317,7 +298,7 @@ export default function LandingDraft() {
                 The slight tilt mirrors the desktop deck's offset feel. */}
             {visibleCards[0] && (
               <motion.div
-                className="mt-10 lg:hidden"
+                className="mt-10 mb-12 lg:hidden"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
@@ -336,26 +317,34 @@ export default function LandingDraft() {
                   <span className="text-foreground/25">·</span>
                   <span>1 of {tonightCount}</span>
                 </div>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={visibleCards[0].event.id}
-                    initial={{ opacity: 0, y: 14, rotate: -3 }}
-                    animate={{ opacity: 1, y: 0, rotate: -1.2 }}
-                    exit={{ opacity: 0, y: -10, rotate: 1.5 }}
-                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
-                    style={{
-                      padding: "20px 18px 16px",
-                      transformOrigin: "left center",
-                    }}
-                  >
-                    <HeroEventCard
-                      event={visibleCards[0].event}
-                      categories={categoriesData}
-                      variant="primary"
-                    />
-                  </motion.div>
-                </AnimatePresence>
+                {/* Reservation slot — min-h is the *outer* container,
+                    not the card. Each card renders at its natural
+                    height (short title → short card, long title +
+                    description → tall card — that variation is the
+                    point), and the slot absorbs the difference so the
+                    footer stays put when a taller card cycles in. */}
+                <div className="min-h-[200px]">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={visibleCards[0].event.id}
+                      initial={{ opacity: 0, y: 14, rotate: -3 }}
+                      animate={{ opacity: 1, y: 0, rotate: -1.2 }}
+                      exit={{ opacity: 0, y: -10, rotate: 1.5 }}
+                      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                      className="relative border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
+                      style={{
+                        padding: "20px 18px 16px",
+                        transformOrigin: "left center",
+                      }}
+                    >
+                      <HeroEventCard
+                        event={visibleCards[0].event}
+                        categories={categoriesData}
+                        variant="primary"
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </div>
@@ -436,92 +425,25 @@ export default function LandingDraft() {
               })}
             </AnimatePresence>
 
-            {/* Live-count sticker — stays put while cards cycle around it */}
+            {/* Live-count sticker — stays put while cards cycle around it.
+                Reads as a CTA (accent slab, bold, shadow), so it acts like
+                one: click → /, same destination as the "Events tonight"
+                secondary button. */}
             {tonightCount > 0 && (
-              <div
-                className="absolute bottom-[1%] right-[3%] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f]"
-                style={{ transform: "rotate(8deg)", zIndex: 10 }}
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="group absolute bottom-[1%] right-[3%] rotate-[8deg] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f] transition-all hover:-translate-y-0.5 hover:translate-x-0.5 hover:rotate-[8deg] hover:shadow-[4px_4px_0_0_#0f0f0f] active:translate-x-1 active:translate-y-1 active:rotate-[8deg] active:shadow-[2px_2px_0_0_#0f0f0f]"
+                style={{ zIndex: 10 }}
               >
                 {tonightCount} tonight
-              </div>
+              </button>
             )}
           </motion.div>
         </div>
       </section>
 
-      {/* ─── SLIM LEGAL STRIP ─── two treatments, A/B'd via ?footer=…
-          Counts are live: bars = total venues, tonight = today's events
-          still online, Kieze = distinct neighborhoods. */}
-      {footerMode === "ink" ? (
-        <footer className="shrink-0 bg-foreground text-background">
-          <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-background/60">
-            <span className="mono-label">
-              <span className="font-bold text-background">{barsCount}</span> bars{" "}
-              <span className="text-background/30">·</span>{" "}
-              <span className="font-bold text-background">{tonightCount}</span> tonight{" "}
-              <span className="text-background/30">·</span>{" "}
-              <span className="font-bold text-background">{kiezeCount}</span> Kieze
-            </span>
-            <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
-              <Link to="/about" className="hover:text-accent">About</Link>
-              <Link to="/instagram" className="hover:text-accent">Instagram</Link>
-              <Link to="/contact" className="hover:text-accent">Contact</Link>
-              <Link to="/impressum" className="hover:text-accent">Impressum</Link>
-              <Link to="/datenschutz" className="hover:text-accent">Datenschutz</Link>
-            </div>
-          </div>
-        </footer>
-      ) : (
-        <footer className="shrink-0 border-t-2 border-foreground bg-background">
-          <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-foreground/55">
-            <span className="mono-label">
-              <span className="font-bold text-foreground">{barsCount}</span> bars{" "}
-              <span className="text-foreground/25">·</span>{" "}
-              <span className="font-bold text-foreground">{tonightCount}</span> tonight{" "}
-              <span className="text-foreground/25">·</span>{" "}
-              <span className="font-bold text-foreground">{kiezeCount}</span> Kieze
-            </span>
-            <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
-              <Link to="/about" className="hover:text-accent">About</Link>
-              <Link to="/instagram" className="hover:text-accent">Instagram</Link>
-              <Link to="/contact" className="hover:text-accent">Contact</Link>
-              <Link to="/impressum" className="hover:text-accent">Impressum</Link>
-              <Link to="/datenschutz" className="hover:text-accent">Datenschutz</Link>
-            </div>
-          </div>
-        </footer>
-      )}
-
-      {/* ─── DEV A/B TOGGLE — pinned bottom-right, doesn't disturb composition.
-              Hidden on mobile where it overlapped the footer link row.
-              Remove this block once the footer treatment is locked in. */}
-      <div
-        className="fixed bottom-3 right-3 z-50 hidden border-2 border-foreground bg-background shadow-[3px_3px_0_0_#0f0f0f] md:flex"
-        style={{ fontSize: 10 }}
-      >
-        <button
-          type="button"
-          onClick={() => setFooterMode("ink")}
-          className={`mono-label px-3 py-1.5 transition-colors ${
-            footerMode === "ink"
-              ? "bg-foreground text-background"
-              : "text-foreground/60 hover:text-foreground"
-          }`}
-        >
-          Ink
-        </button>
-        <button
-          type="button"
-          onClick={() => setFooterMode("cream")}
-          className={`mono-label border-l-2 border-foreground px-3 py-1.5 transition-colors ${
-            footerMode === "cream"
-              ? "bg-foreground text-background"
-              : "text-foreground/60 hover:text-foreground"
-          }`}
-        >
-          Cream
-        </button>
-      </div>
+      <Footer />
     </div>
   );
 }
