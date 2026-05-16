@@ -29,37 +29,45 @@ export default function LandingDraft() {
       {/* ─── TOP NAV ─── */}
       <nav className="shrink-0 border-b-2 border-foreground bg-background">
         <div className="container flex h-14 items-center justify-between">
-          <Link to="/landing" className="flex items-baseline gap-2.5">
-            <span className="heading-display text-[20px] leading-none">INSIDE BARS</span>
+          <Link to="/landing" className="flex items-center gap-2.5">
+            <span
+              className="heading-display inline-flex items-center leading-none"
+              style={{ fontSize: 20, gap: 8 }}
+            >
+              Inside
+              <span
+                aria-hidden="true"
+                className="rounded-full bg-accent"
+                style={{ width: 7, height: 7 }}
+              />
+              Bars
+            </span>
             <span className="mono-label hidden text-[10px] text-foreground/45 md:inline">
               — Berlin Edition
             </span>
           </Link>
 
-          <div className="flex items-center gap-6">
+          {/* Right-side nav — mirrors the Index Header navItems verbatim:
+              List · Map · For organizer (no Sign In, matching the product
+              header convention). */}
+          <div className="flex items-center gap-7">
             <Link
               to="/"
-              className="mono-label hidden text-foreground/70 transition-colors hover:text-foreground md:inline"
+              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
             >
-              Tonight
+              List
             </Link>
             <Link
               to="/map"
-              className="mono-label hidden text-foreground/70 transition-colors hover:text-foreground md:inline"
+              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
             >
               Map
             </Link>
             <Link
               to="/for-bars"
-              className="mono-label hidden text-foreground/70 transition-colors hover:text-foreground md:inline"
+              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
             >
-              For Bars
-            </Link>
-            <Link
-              to="/login"
-              className="mono-label text-foreground transition-colors hover:text-accent"
-            >
-              Sign In
+              For organizer
             </Link>
           </div>
         </div>
@@ -86,19 +94,6 @@ export default function LandingDraft() {
         <div className="container relative grid w-full grid-cols-1 items-center gap-8 py-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
           {/* ── LEFT: copy ── */}
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="mb-4 inline-flex items-center gap-2"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-              </span>
-              <span className="mono-label text-accent">Berlin · Wed · 18:42</span>
-            </motion.div>
-
             <motion.h1
               className="heading-display m-0 leading-[0.92]"
               style={{ fontSize: "clamp(40px, 5.6vw, 78px)" }}

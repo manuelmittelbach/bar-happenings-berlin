@@ -15,14 +15,15 @@ const navItems: { label: string; path: string }[] = [
 ];
 
 /* Wordmark — "Inside · Bars" with a 7px accent dot between the words.
- * Size matches the design's Wordmark size="md" (22px Syne extrabold,
- * 8px gap, no letter-spacing). Used on desktop. */
+ * Editorial serif via .heading-display (Georgia bold uppercase, tight
+ * tracking) to match the Landing wordmark so the brand mark reads the
+ * same across marketing and product surfaces. */
 function Wordmark({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="font-heading font-extrabold uppercase inline-flex items-center"
-      style={{ fontSize: 22, gap: 8, letterSpacing: 0 }}
+      className="heading-display inline-flex items-center"
+      style={{ fontSize: 20, gap: 8 }}
       aria-label="Inside Bars — home"
     >
       Inside
@@ -37,15 +38,15 @@ function Wordmark({ onClick }: { onClick: () => void }) {
 }
 
 /* Compact "IB" monogram — used on mobile web where the full wordmark
- * would crowd the nav row. Same Syne extrabold uppercase as the desktop
+ * would crowd the nav row. Same Georgia bold uppercase as the desktop
  * wordmark, just two glyphs sitting tight together (no accent dot —
  * dropped per spec for a cleaner monogram). */
 function WordmarkCompact({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="font-heading font-extrabold uppercase inline-flex items-center"
-      style={{ fontSize: 20, letterSpacing: 0 }}
+      className="heading-display inline-flex items-center"
+      style={{ fontSize: 20 }}
       aria-label="Inside Bars — home"
     >
       IB
@@ -83,11 +84,12 @@ export default function Header() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  /* Desktop nav link — flat mono caps 11px, 0.12em tracking, 2px bottom
-   * border on active. Regular weight (400) reads as byline/eyebrow next
-   * to the serif display headlines on the page. Optional `icon` lets the
-   * Admin / Profile entries share the same flat treatment as plain text
-   * links (no outlined-button chrome). */
+  /* Desktop nav link — flat mono caps 12px, 0.1em tracking (matches the
+   * .mono-label utility used on the Landing nav), 2px bottom border on
+   * active. Regular weight (400) reads as byline/eyebrow next to the
+   * serif display headlines on the page. Optional `icon` lets the Admin
+   * / Profile entries share the same flat treatment as plain text links
+   * (no outlined-button chrome). */
   const NavLink = ({
     label,
     path,
@@ -106,9 +108,9 @@ export default function Header() {
         className="transition-colors py-2 inline-flex items-center gap-1.5"
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 400,
-          letterSpacing: "0.12em",
+          letterSpacing: "0.1em",
           textTransform: "uppercase",
           color: active ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
           textDecoration: "none",
@@ -129,7 +131,7 @@ export default function Header() {
         paddingTop: "env(safe-area-inset-top)",
       }}
     >
-      <div className="container flex items-center gap-4" style={{ height: 64 }}>
+      <div className="container flex items-center gap-4" style={{ height: 56 }}>
         {/* Brand mark — full "Inside · Bars" wordmark on desktop, compact
             "I · B" monogram on mobile web (still left-aligned, nav stays
             right-aligned). Native iOS doesn't render the Header at all

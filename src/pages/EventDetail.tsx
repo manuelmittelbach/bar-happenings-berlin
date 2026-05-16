@@ -106,7 +106,7 @@ export default function EventDetail() {
 		<div className="relative isolate bg-background pb-24">
 			{/* Sticky Back / Share row — used on both native (below safe-area
 			    spacer at top: env(safe-area-inset-top)) and web (below the
-			    wordmark Header at top: 64px). Same chevron-back + outlined-
+			    wordmark Header at top: 56px). Same chevron-back + outlined-
 			    Share-pill pattern in both contexts so the event detail
 			    surface reads identically across the app and browser. */}
 			<div
