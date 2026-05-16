@@ -3,13 +3,13 @@ import { User, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { EXPLORE_SCROLL_KEY, SCROLL_HOME_EVENT } from "@/pages/Index";
 
-/* Navigation items — List + Map switcher + bar-owner pitch. List
+/* Navigation items — Events + Map switcher + bar-owner pitch. Events
  * duplicates the Wordmark's destination on purpose: paired with Map
  * it reads as a clear surface switcher in the desktop header chrome
  * (instead of a floating FAB on either page). About moved to the
  * footer to keep the header focused on primary discovery surfaces. */
 const navItems: { label: string; path: string }[] = [
-  { label: "List", path: "/" },
+  { label: "Events", path: "/" },
   { label: "Map", path: "/map" },
   { label: "Bars", path: "/bars" },
 ];

@@ -1,6 +1,15 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
+import Header from "@/components/layout/Header";
+import { useEvents, useCategories, useVenues } from "@/hooks/useEvents";
+import { berlinDateString } from "@/lib/dateFormat";
+import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
+import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
+import { cleanEventTitle } from "@/lib/cleanTitle";
+import type { BarlinEvent } from "@/types/event";
+import type { CategoryRow } from "@/lib/supabaseQueries";
 
 /**
  * LandingDraft — single-viewport marketing landing for /landing.
@@ -24,54 +33,115 @@ export default function LandingDraft() {
     setSearchParams(next, { replace: true });
   };
 
+  // ─── Live data — drives the hero card stack + footer counts ───
+  // useEvents / useVenues / useCategories all share the React-Query cache
+  // with the rest of the app, so navigating from /landing to / doesn't
+  // re-fetch. Falls back gracefully to empty arrays while loading.
+  const { data: eventsData = [] } = useEvents();
+  const { data: venuesData = [] } = useVenues();
+  const { data: categoriesData = [] } = useCategories();
+  const today = berlinDateString();
+
+  // Hero card seed — stable across renders within a single visit, fresh
+  // on each page load. Lets the landing show different events each visit
+  // without re-shuffling on every re-render.
+  const [shuffleSeed] = useState(() => Math.random());
+
+  // Carousel pool — up to 8 of today's events, shuffled deterministically
+  // per visit. The hero stack cycles through this pool every few seconds;
+  // smaller cap keeps the loop short enough to feel intentional rather
+  // than an endless slideshow.
+  const HERO_POOL_SIZE = 8;
+  const heroPool = useMemo(() => {
+    const todaysEvents = eventsData.filter(
+      (e) =>
+        e.date === today &&
+        isEventStillOnline(e) &&
+        e.status !== "canceled",
+    );
+    let seed = Math.floor(shuffleSeed * 1e9);
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = seed;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const shuffled = [...todaysEvents].sort(() => rand() - 0.5);
+    // Spread across distinct venues first so consecutive cards in the
+    // cycle don't share a bar — pad with remaining events if the pool
+    // still has room.
+    const picks: BarlinEvent[] = [];
+    const seenVenues = new Set<string>();
+    for (const e of shuffled) {
+      if (!seenVenues.has(e.venue)) {
+        picks.push(e);
+        seenVenues.add(e.venue);
+      }
+      if (picks.length === HERO_POOL_SIZE) break;
+    }
+    if (picks.length < HERO_POOL_SIZE) {
+      for (const e of shuffled) {
+        if (!picks.includes(e)) picks.push(e);
+        if (picks.length === HERO_POOL_SIZE) break;
+      }
+    }
+    return picks;
+  }, [eventsData, today, shuffleSeed]);
+
+  // Carousel cycle — the stack advances one slot every CYCLE_MS. With a
+  // linear easing and a transition duration just under the interval, the
+  // cards drift in continuous, constant-velocity motion: no perceptible
+  // "rest" at each slot. Skips entirely when the pool is too small.
+  const CYCLE_MS = 28000;
+  const [cycleIndex, setCycleIndex] = useState(0);
+  useEffect(() => {
+    if (heroPool.length < 2) return;
+    const id = setInterval(() => setCycleIndex((i) => i + 1), CYCLE_MS);
+    return () => clearInterval(id);
+  }, [heroPool.length]);
+
+  // Visible slice — three events visible at any time. With a pool of N,
+  // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
+  // secondary, tertiary. AnimatePresence handles the enter/exit transitions
+  // when this array changes on each cycle tick.
+  const visibleCards = useMemo(() => {
+    const N = heroPool.length;
+    if (N === 0) return [] as { event: BarlinEvent; role: "primary" | "secondary" | "tertiary" }[];
+    const slots: ("primary" | "secondary" | "tertiary")[] = ["primary", "secondary", "tertiary"];
+    const count = Math.min(3, N);
+    return slots.slice(0, count).map((role, offset) => ({
+      event: heroPool[(cycleIndex + offset) % N],
+      role,
+    }));
+  }, [heroPool, cycleIndex]);
+
+  // Footer stats — live counts pulled from the actual dataset, not magic
+  // numbers. Bars = total venues. Tonight = today's events that haven't
+  // ended yet. Kieze = distinct neighborhoods across the bar list.
+  const barsCount = venuesData.length;
+  const tonightCount = useMemo(
+    () =>
+      eventsData.filter(
+        (e) =>
+          e.date === today &&
+          isEventStillOnline(e) &&
+          e.status !== "canceled",
+      ).length,
+    [eventsData, today],
+  );
+  const kiezeCount = useMemo(() => {
+    const s = new Set<string>();
+    for (const v of venuesData) if (v.neighborhood) s.add(v.neighborhood);
+    return s.size;
+  }, [venuesData]);
+
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
-      {/* ─── TOP NAV ─── */}
-      <nav className="shrink-0 border-b-2 border-foreground bg-background">
-        <div className="container flex h-14 items-center justify-between">
-          <Link to="/landing" className="flex items-center gap-2.5">
-            <span
-              className="heading-display inline-flex items-center leading-none"
-              style={{ fontSize: 20, gap: 8 }}
-            >
-              Inside
-              <span
-                aria-hidden="true"
-                className="rounded-full bg-accent"
-                style={{ width: 7, height: 7 }}
-              />
-              Bars
-            </span>
-            <span className="mono-label hidden text-[10px] text-foreground/45 md:inline">
-              — Berlin Edition
-            </span>
-          </Link>
-
-          {/* Right-side nav — mirrors the Index Header navItems verbatim:
-              List · Map · For organizer (no Sign In, matching the product
-              header convention). */}
-          <div className="flex items-center gap-7">
-            <Link
-              to="/"
-              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
-            >
-              List
-            </Link>
-            <Link
-              to="/map"
-              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
-            >
-              Map
-            </Link>
-            <Link
-              to="/for-bars"
-              className="mono-label text-foreground/70 transition-colors hover:text-foreground"
-            >
-              For organizer
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* ─── TOP NAV ─── shared product Header, identical to / and /map */}
+      <div className="shrink-0">
+        <Header />
+      </div>
 
       {/* ─── HERO (fills remaining viewport) ─── */}
       <section className="relative isolate flex flex-1 min-h-0 items-center overflow-hidden">
@@ -168,128 +238,94 @@ export default function LandingDraft() {
             </motion.a>
           </div>
 
-          {/* ── RIGHT: floating preview card cluster (lg+) ── */}
+          {/* ── RIGHT: cycling preview cluster (lg+) ──
+              3-card stack that rotates through tonight's pool: new card
+              enters from behind the tertiary slot, each existing card
+              advances one slot forward (tertiary → secondary → primary),
+              and the primary card exits forward-down. All real Supabase
+              data; smooth spring-eased transition per cycle tick. */}
           <motion.div
-            className="relative hidden h-[400px] lg:block"
+            className="relative hidden h-[460px] w-full lg:block"
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* secondary card, stacked behind */}
-            <div
-              className="absolute right-[6%] top-[8%] w-[240px] border-2 border-foreground bg-card shadow-[8px_8px_0_0_#0f0f0f]"
-              style={{ transform: "rotate(6deg)" }}
-            >
-              <div className="flex items-center gap-2 border-b-2 border-foreground px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7c3aed" }} />
-                <span className="mono-label text-[10px] text-foreground/70">Wed · 21:00</span>
+            <AnimatePresence mode="popLayout">
+              {visibleCards.map(({ event, role }) => {
+                const slot = SLOT_TRANSFORMS[role];
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={SLOT_TRANSFORMS.enter}
+                    animate={{
+                      x: slot.x,
+                      y: slot.y,
+                      rotate: slot.rotate,
+                      scale: slot.scale,
+                      opacity: 1,
+                    }}
+                    // Exit applies the same per-slot delta (Δx≈-90,
+                    // Δy≈+70, Δrotate≈-7°, Δscale≈+0.12) as a normal
+                    // slot transition, and uses the *same duration*
+                    // as the slot drift below. Result: angular and
+                    // linear velocity stay constant across enter →
+                    // tertiary → secondary → primary → exit. The card
+                    // never accelerates, never pauses, just drifts and
+                    // rotates at one steady speed throughout its life.
+                    // zIndex jumps to 99 instantly so the fading card
+                    // stays on top of whatever's animating into primary.
+                    exit={{
+                      x: -70,
+                      y: 200,
+                      rotate: -10,
+                      scale: 1.12,
+                      opacity: 0,
+                      zIndex: 99,
+                      transition: {
+                        duration: 28,
+                        ease: "linear",
+                        zIndex: { duration: 0 },
+                      },
+                    }}
+                    transition={{ duration: 28, ease: "linear" }}
+                    className="absolute left-0 top-0 w-[360px] border-2 border-foreground bg-background shadow-[12px_12px_0_0_#0f0f0f]"
+                    style={{
+                      padding: "22px 20px 18px",
+                      zIndex: slot.z,
+                      transformOrigin: "center center",
+                    }}
+                  >
+                    <HeroEventCard event={event} categories={categoriesData} variant="primary" />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+
+            {/* Live-count sticker — stays put while cards cycle around it */}
+            {tonightCount > 0 && (
+              <div
+                className="absolute bottom-[1%] right-[3%] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f]"
+                style={{ transform: "rotate(8deg)", zIndex: 10 }}
+              >
+                {tonightCount} tonight
               </div>
-              <div className="px-4 py-3">
-                <p className="heading-display text-[16px] leading-tight">PUB QUIZ // EN/DE</p>
-                <p className="font-body mt-1 text-[12px] text-foreground/70">
-                  Das Hotel · Kreuzberg
-                </p>
-              </div>
-            </div>
-
-            {/* hand-drawn arrow + annotation */}
-            <span
-              className="absolute right-[26%] top-[-4px] font-mono text-[11px] uppercase tracking-wider text-foreground/60"
-              style={{ transform: "rotate(-5deg)" }}
-            >
-              free tonight
-            </span>
-            <svg
-              aria-hidden
-              viewBox="0 0 180 110"
-              className="absolute right-[10%] top-[8px] w-[130px] text-foreground/55"
-              style={{ transform: "rotate(8deg)" }}
-            >
-              <path
-                d="M10 12 Q 70 6, 95 38 T 158 90"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray="5 4"
-              />
-              <path
-                d="M158 90 L 148 82 M158 90 L 152 96"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            {/* PRIMARY card */}
-            <motion.div
-              className="absolute left-[2%] top-[6%] w-[340px] border-2 border-foreground bg-card shadow-[12px_12px_0_0_#0f0f0f]"
-              style={{ transform: "rotate(-3deg)" }}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className="flex items-center justify-between border-b-2 border-foreground px-5 py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
-                    <span className="relative h-2 w-2 rounded-full bg-accent" />
-                  </span>
-                  <span className="mono-label text-[10px]">Live · 19:30</span>
-                </div>
-                <span
-                  className="stamp border-accent text-[9px] text-accent"
-                  style={{ transform: "rotate(4deg)" }}
-                >
-                  Tonight
-                </span>
-              </div>
-
-              <div className="px-5 py-4">
-                <p className="mono-label mb-1.5 text-[10px] text-foreground/55">Open Mic</p>
-                <h3 className="heading-display mb-2 text-[26px] leading-[0.95]">
-                  JAZZ TRIO<br />+ 3 POETS
-                </h3>
-                <p className="font-body text-[13px] leading-[1.45] text-foreground/75">
-                  Bring your own poem. Or just your beer. Three sets, no cover, donation jar
-                  by the bar.
-                </p>
-
-                <div className="mt-4 flex items-center justify-between border-t border-foreground/15 pt-3">
-                  <div>
-                    <p className="font-body text-[13px] font-semibold">Klunkerkranich</p>
-                    <p className="font-body text-[12px] text-foreground/55">
-                      Neukölln · 8 min walk
-                    </p>
-                  </div>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* sticky-note sticker */}
-            <div
-              className="absolute bottom-[4%] right-[2%] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f]"
-              style={{ transform: "rotate(8deg)" }}
-            >
-              31 spots open
-            </div>
+            )}
           </motion.div>
         </div>
       </section>
 
-      {/* ─── SLIM LEGAL STRIP ─── two treatments, A/B'd via ?footer=… */}
+      {/* ─── SLIM LEGAL STRIP ─── two treatments, A/B'd via ?footer=…
+          Counts are live: bars = total venues, tonight = today's events
+          still online, Kieze = distinct neighborhoods. */}
       {footerMode === "ink" ? (
         <footer className="shrink-0 bg-foreground text-background">
           <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-background/60">
             <span className="mono-label">
-              <span className="font-bold text-background">147</span> bars{" "}
+              <span className="font-bold text-background">{barsCount}</span> bars{" "}
               <span className="text-background/30">·</span>{" "}
-              <span className="font-bold text-background">31</span> tonight{" "}
+              <span className="font-bold text-background">{tonightCount}</span> tonight{" "}
               <span className="text-background/30">·</span>{" "}
-              <span className="font-bold text-background">12</span> Kieze
+              <span className="font-bold text-background">{kiezeCount}</span> Kieze
             </span>
             <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
               <Link to="/about" className="hover:text-accent">About</Link>
@@ -304,11 +340,11 @@ export default function LandingDraft() {
         <footer className="shrink-0 border-t-2 border-foreground bg-background">
           <div className="container flex h-11 flex-wrap items-center justify-between gap-2 text-foreground/55">
             <span className="mono-label">
-              <span className="font-bold text-foreground">147</span> bars{" "}
+              <span className="font-bold text-foreground">{barsCount}</span> bars{" "}
               <span className="text-foreground/25">·</span>{" "}
-              <span className="font-bold text-foreground">31</span> tonight{" "}
+              <span className="font-bold text-foreground">{tonightCount}</span> tonight{" "}
               <span className="text-foreground/25">·</span>{" "}
-              <span className="font-bold text-foreground">12</span> Kieze
+              <span className="font-bold text-foreground">{kiezeCount}</span> Kieze
             </span>
             <div className="mono-label flex flex-wrap gap-x-5 gap-y-1">
               <Link to="/about" className="hover:text-accent">About</Link>
@@ -351,5 +387,106 @@ export default function LandingDraft() {
         </button>
       </div>
     </div>
+  );
+}
+
+/* Carousel slot transforms — each visible card animates between these
+ * three positions (primary at front, secondary in middle, tertiary at
+ * back) plus enter (behind tertiary, fully transparent). Exit isn't a
+ * dedicated slot: the leaving card fades in place at the primary slot
+ * (handled inline at the JSX site). All values are absolute translations
+ * from the container's top-left corner; the cards share a 360px base
+ * width and differ only in scale/rotation/position so the inner chrome
+ * stays identical across slots. */
+const SLOT_TRANSFORMS = {
+  primary:   { x:  20, y: 130, rotate:  -3, scale: 1.00, z: 3 },
+  secondary: { x: 110, y:  60, rotate:   5, scale: 0.88, z: 2 },
+  tertiary:  { x: 200, y:   0, rotate:  11, scale: 0.76, z: 1 },
+  // Incoming: tucked further back-right than tertiary, fully transparent.
+  // Animates over the full cycle duration so a new card slowly emerges
+  // from behind rather than popping in.
+  enter:     { x: 300, y: -60, rotate:  18, scale: 0.60, opacity: 0 },
+} as const;
+
+/* HeroEventCard — inner chrome for each layered preview card. Mirrors the
+ * real EventCard system (accent strip, mono meta row with Now indicator,
+ * body-font bold title, hairline venue line) at three size variants. */
+function HeroEventCard({
+  event,
+  categories,
+  variant,
+}: {
+  event: BarlinEvent;
+  categories: CategoryRow[];
+  variant: "primary" | "secondary" | "tertiary";
+}) {
+  const cat = categories.find((c) => c.id === event.category);
+  const live = variant === "primary" && isLiveNow(event);
+  const free = isFreeEntry(event.entryInfo);
+  const donation = !free && isDonationEntry(event.entryInfo);
+  const title = cleanEventTitle(event.title, event.venue);
+
+  const titleSize = variant === "primary" ? 22 : variant === "secondary" ? 17 : 15;
+  const venueSize = variant === "primary" ? 14 : variant === "secondary" ? 13 : 12;
+  const showDescription = variant === "primary" && !!event.description;
+
+  return (
+    <>
+      <span className="absolute left-0 right-0 top-0 h-1.5 bg-accent" />
+      <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em]">
+        {event.startTime && (
+          <>
+            {live ? (
+              <span className="inline-flex items-center gap-1.5 text-accent">
+                <span className="relative inline-flex h-2 w-2">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
+                  <span className="relative inline-block h-2 w-2 rounded-full bg-accent" />
+                </span>
+                Now
+              </span>
+            ) : (
+              <span>{event.startTime}</span>
+            )}
+            <span className="text-muted-foreground">·</span>
+          </>
+        )}
+        <span style={cat?.color ? { color: cat.color } : { color: "var(--accent)" }}>
+          {cat?.label ?? event.category}
+        </span>
+        {free && (
+          <span className="ml-0.5 border border-current px-1.5 py-0.5 tracking-[0.1em] text-muted-foreground text-[9px]">
+            Free
+          </span>
+        )}
+        {donation && (
+          <span className="ml-0.5 border border-current px-1.5 py-0.5 tracking-[0.1em] text-muted-foreground text-[9px]">
+            Donation
+          </span>
+        )}
+      </div>
+      <h3
+        className="font-body mt-2 font-bold leading-[1.18] break-words line-clamp-2"
+        style={{ fontSize: titleSize }}
+      >
+        {title}
+      </h3>
+      <div
+        className="font-body mt-1 flex flex-wrap items-center gap-1.5 text-foreground/80"
+        style={{ fontSize: venueSize }}
+      >
+        <span className="break-words">{event.venue}</span>
+        {event.neighborhood && (
+          <>
+            <span className="opacity-50">·</span>
+            <span>{event.neighborhood}</span>
+          </>
+        )}
+      </div>
+      {showDescription && (
+        <p className="font-body mt-2 text-[13px] leading-[1.45] text-muted-foreground line-clamp-2">
+          {event.description}
+        </p>
+      )}
+    </>
   );
 }
