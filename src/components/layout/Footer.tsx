@@ -32,7 +32,7 @@ export default function Footer() {
           <div className="max-w-xs mx-auto md:mx-0">
             <button
               onClick={goHome}
-              className="font-heading text-2xl font-extrabold uppercase tracking-tight inline-flex items-center"
+              className="heading-display text-2xl inline-flex items-center"
               style={{ gap: 8 }}
               aria-label="Inside Bars — home"
             >

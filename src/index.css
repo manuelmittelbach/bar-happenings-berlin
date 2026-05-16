@@ -8,15 +8,15 @@
 
 @layer base {
   :root {
-    /* Total header chrome height — base 64 plus the iOS safe-area inset on
+    /* Total header chrome height — base 56 plus the iOS safe-area inset on
        devices with a notch / Dynamic Island. `env(safe-area-inset-top)` is
        0 on devices without a notch and outside Capacitor, so this value
-       degrades cleanly to plain 64px in the browser. Stickies that pin
+       degrades cleanly to plain 56px in the browser. Stickies that pin
        under the header reference this via `top: var(--header-h)`.
        In native (.is-native, set in main.tsx for Capacitor builds) we
        drop the header entirely and only reserve the notch inset, since
        primary nav lives in the bottom tab bar instead. */
-    --header-h: calc(64px + env(safe-area-inset-top));
+    --header-h: calc(56px + env(safe-area-inset-top));
     --tab-bar-h: calc(56px + env(safe-area-inset-bottom));
     /* Anchor for fixed/absolute FABs (location dot on Map, List CTA, etc.) —
        16px above the bottom chrome. In browser/PWA: just the iOS safe area
