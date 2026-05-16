@@ -23,13 +23,8 @@ export default function Footer() {
   return (
     <footer className="border-t-2 border-foreground bg-foreground text-primary-foreground">
       <div className="container py-12">
-        {/* Footer head — wordmark + tagline on the left, a single flat row
-            of links on the right. With only four items left after dropping
-            the Discover column, two stub columns ("INFO" / "LEGAL", two
-            items each) read as filler; one inline row separated by mono
-            dots fits the editorial tone of the rest of the page. */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 text-center md:text-left">
-          <div className="max-w-xs mx-auto md:mx-0">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-12 md:gap-16">
+          <div className="max-w-xs">
             <button
               onClick={goHome}
               className="heading-display text-2xl inline-flex items-center"
@@ -51,49 +46,73 @@ export default function Footer() {
 
           <nav
             aria-label="Footer"
-            className="flex flex-wrap justify-center md:justify-end items-center gap-x-3 gap-y-2 text-sm"
+            className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-8 text-sm"
           >
-            <Link
-              to="/for-bars"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              For organizer
-            </Link>
-            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
-            <Link
-              to="/about"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              About
-            </Link>
-            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
-            <Link
-              to="/contact"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              Contact
-            </Link>
-            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
-            <Link
-              to="/instagram"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              Instagram
-            </Link>
-            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
-            <Link
-              to="/impressum"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              Impressum
-            </Link>
-            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
-            <Link
-              to="/datenschutz"
-              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-            >
-              Datenschutz
-            </Link>
+            <div>
+              <h3 className="mono-label text-primary-foreground/40 mb-3">Site</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/about"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mono-label text-primary-foreground/40 mb-3">Connect</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/instagram"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    Instagram
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/for-bars"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    For organizers
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mono-label text-primary-foreground/40 mb-3">Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/impressum"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    Impressum
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/datenschutz"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  >
+                    Datenschutz
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </nav>
         </div>
 
