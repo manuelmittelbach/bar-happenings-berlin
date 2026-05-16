@@ -95,18 +95,46 @@ export default function LandingDraft() {
   // "rest" at each slot. Skips entirely when the pool is too small.
   const CYCLE_MS = 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
+  // Tracks whether the immediate first tick has already fired. We only
+  // want to kick a zero-delay tick the very first time cycling starts;
+  // on every later resume (e.g. after a hidden→visible flip) the cycle
+  // continues at the normal CYCLE_MS cadence.
+  const hasKickedRef = useRef(false);
   useEffect(() => {
     if (heroPool.length < 2) return;
-    // Kick the first tick on the next frame so the initial slot poses
-    // get one paint, then drift begins immediately. Without this, the
-    // stack sat static for a full CYCLE_MS before any motion — because
-    // the cards no longer drift in from the `enter` pose, there was
-    // nothing else animating during the first cycle.
-    const firstTick = setTimeout(() => setCycleIndex((i) => i + 1), 0);
-    const id = setInterval(() => setCycleIndex((i) => i + 1), CYCLE_MS);
+    // Cycle ticks pause while the tab is hidden. Without this, the
+    // setInterval kept firing (browser-throttled) while requestAnimation
+    // Frame was paused — framer queued up exit/enter animations that
+    // couldn't progress, so the user came back to a fan of half-faded
+    // cards with no clear primary. Pausing the interval keeps DOM and
+    // animation state in lockstep with the active frame loop.
+    let firstTick: ReturnType<typeof setTimeout> | undefined;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (interval) return;
+      if (!hasKickedRef.current) {
+        firstTick = setTimeout(() => {
+          hasKickedRef.current = true;
+          setCycleIndex((i) => i + 1);
+        }, 0);
+      }
+      interval = setInterval(() => setCycleIndex((i) => i + 1), CYCLE_MS);
+    };
+    const stop = () => {
+      if (firstTick) clearTimeout(firstTick);
+      if (interval) clearInterval(interval);
+      firstTick = undefined;
+      interval = undefined;
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      clearTimeout(firstTick);
-      clearInterval(id);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      stop();
     };
   }, [heroPool.length]);
 
