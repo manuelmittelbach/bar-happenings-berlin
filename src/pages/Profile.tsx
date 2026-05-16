@@ -305,7 +305,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="h-3.5 w-3.5" />
                 {saving ? "Saving…" : "Save changes"}
@@ -349,7 +349,7 @@ export default function Profile() {
             <button
               type="submit"
               disabled={changingEmail}
-              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <AtSign className="h-3.5 w-3.5" />
               {changingEmail ? "Sending…" : "Update email"}
@@ -363,7 +363,7 @@ export default function Profile() {
         <section className="mb-10 border-t border-border pt-8">
           <div className="border border-border p-5 bg-muted/30">
             <p className="mono-label text-muted-foreground mb-3">Bar identity</p>
-            <p className="text-lg font-heading font-bold leading-tight">
+            <p className="text-lg font-serif font-bold leading-tight">
               {barIdentity.name}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -463,7 +463,7 @@ export default function Profile() {
             <button
               type="submit"
               disabled={changingPassword}
-              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-heading text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <KeyRound className="h-3.5 w-3.5" />
               {changingPassword ? "Updating…" : "Update password"}
@@ -476,7 +476,7 @@ export default function Profile() {
         <button
           type="button"
           onClick={handleSignOut}
-          className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors"
+          className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground text-foreground font-mono text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
