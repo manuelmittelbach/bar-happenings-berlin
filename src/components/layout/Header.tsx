@@ -37,19 +37,20 @@ function Wordmark({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* Compact "IB" monogram — used on mobile web where the full wordmark
- * would crowd the nav row. Same Georgia bold uppercase as the desktop
- * wordmark, just two glyphs sitting tight together (no accent dot —
- * dropped per spec for a cleaner monogram). */
+/* Compact "iB" monogram — used on mobile web where the full wordmark
+ * would crowd the nav row. Georgia bold with a lowercase "i" so the
+ * monogram has a touch of editorial wordmark personality instead of
+ * reading as a generic two-letter acronym. `normal-case` neutralizes
+ * the uppercase from .heading-display. */
 function WordmarkCompact({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="heading-display inline-flex items-center"
-      style={{ fontSize: 20 }}
+      className="heading-display normal-case inline-flex items-center"
+      style={{ fontSize: 22 }}
       aria-label="Inside Bars — home"
     >
-      IB
+      iB
     </button>
   );
 }

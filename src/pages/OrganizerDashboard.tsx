@@ -193,7 +193,7 @@ export default function OrganizerDashboard() {
                   <span className="text-sm text-muted-foreground font-medium">{stat.label}</span>
                   <stat.icon className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <p className="font-heading text-3xl font-bold">{stat.value}</p>
+                <p className="font-serif text-3xl font-bold">{stat.value}</p>
               </div>
             ))}
           </div>
@@ -265,7 +265,7 @@ export default function OrganizerDashboard() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <span className="font-heading text-base font-semibold break-all min-w-0">{parent.title}</span>
+                          <span className="font-serif text-base font-semibold break-all min-w-0">{parent.title}</span>
                           {recurrenceLabel && (
                             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-sm font-medium bg-muted text-muted-foreground">
                               <Repeat className="h-3 w-3" /> {recurrenceLabel}

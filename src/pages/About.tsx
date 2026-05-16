@@ -23,7 +23,7 @@ export default function About() {
               that feels local, curated, and true to the spirit of Berlin's independent bar culture.
             </p>
 
-            <h2 className="font-heading text-xl font-semibold text-foreground pt-4">What we believe</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground pt-4">What we believe</h2>
 
             <ul className="space-y-2">
               <li>• Small bars are the cultural backbone of Berlin</li>
@@ -33,7 +33,7 @@ export default function About() {
               <li>• Community events don't need corporate platforms</li>
             </ul>
 
-            <h2 className="font-heading text-xl font-semibold text-foreground pt-4">Who's behind this</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground pt-4">Who's behind this</h2>
 
             <p>
               Inside Bars is an independent project built by a small team in Berlin. We're regulars at the kind of bars
@@ -47,7 +47,7 @@ export default function About() {
               </a>
             </p>
 
-            <h2 className="font-heading text-xl font-semibold text-foreground pt-4">Map data</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground pt-4">Map data</h2>
 
             <p className="text-xs">
               Map tiles by{" "}

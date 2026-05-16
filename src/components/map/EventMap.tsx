@@ -794,7 +794,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					</p>
 					<button
 						onClick={() => setRetryNonce((n) => n + 1)}
-						className="inline-flex h-11 px-6 items-center bg-foreground text-background font-heading font-bold uppercase tracking-widest text-xs hover:bg-foreground/90 transition-colors"
+						className="inline-flex h-11 px-6 items-center bg-foreground text-background font-mono font-bold uppercase tracking-widest text-xs hover:bg-foreground/90 transition-colors"
 					>
 						Erneut versuchen
 					</button>

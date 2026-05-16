@@ -874,7 +874,7 @@ export default function AdminDashboard() {
               {pendingOrganizersLoading ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
-                <p className="font-heading text-2xl font-bold">{String(pendingOrganizers.length)}</p>
+                <p className="font-serif text-2xl font-bold">{String(pendingOrganizers.length)}</p>
               )}
             </div>
             <div className="border border-border rounded-sm p-4 space-y-2">
@@ -886,7 +886,7 @@ export default function AdminDashboard() {
                 <Skeleton className="h-7 w-12" />
               ) : (
                 <>
-                  <p className="font-heading text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount)}</p>
+                  <p className="font-serif text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount)}</p>
                   <p className="text-xs text-muted-foreground font-mono">
                     {scrapedPendingCount} scraped · {manualPendingCount} manual · {recurringPendingCount} recurring
                   </p>
@@ -1198,7 +1198,7 @@ function BarCard({
     <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-heading text-sm font-semibold">{venue.name}</p>
+          <p className="font-serif text-sm font-semibold">{venue.name}</p>
           <span
             className={`text-xs px-2 py-0.5 rounded-sm font-medium ${
               hasOwner ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"
@@ -1460,7 +1460,7 @@ function OrganizerCard({
       <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-heading text-sm font-semibold">{display?.name ?? "(no venue)"}</p>
+          <p className="font-serif text-sm font-semibold">{display?.name ?? "(no venue)"}</p>
           {isSubmittedBar && (
             <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
               Bar not yet in table
@@ -1976,14 +1976,14 @@ function StagedEventCard({
                 if (isApproved) setVenueIdLocal(e.target.value);
                 else onVenueChange(e.target.value);
               }}
-              className="h-8 px-2 bg-muted/50 border border-border rounded-sm text-sm font-heading font-semibold outline-none focus:border-foreground transition-colors"
+              className="h-8 px-2 bg-muted/50 border border-border rounded-sm text-sm font-serif font-semibold outline-none focus:border-foreground transition-colors"
             >
               {venues.map(v => (
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
             </select>
           ) : (
-            <p className="font-heading text-sm font-semibold">{staged.venueName}</p>
+            <p className="font-serif text-sm font-semibold">{staged.venueName}</p>
           )}
           <button
             type="button"
