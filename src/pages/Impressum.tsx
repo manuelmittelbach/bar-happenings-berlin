@@ -6,7 +6,7 @@ export default function Impressum() {
 
         <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               Angaben gemäß § 5 DDG
             </h2>
             <p>
@@ -21,7 +21,7 @@ export default function Impressum() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">Kontakt</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">Kontakt</h2>
             <p>
               E-Mail:{" "}
               <a
@@ -34,14 +34,14 @@ export default function Impressum() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
             </h2>
             <p>Manuel Mittelbach, Ackerstraße 14, 10115 Berlin</p>
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               EU-Streitschlichtung
             </h2>
             <p>
@@ -61,7 +61,7 @@ export default function Impressum() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">Haftung für Inhalte</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">Haftung für Inhalte</h2>
             <p>
               Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten
               nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als
@@ -72,7 +72,7 @@ export default function Impressum() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">Haftung für Links</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">Haftung für Links</h2>
             <p>
               Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen
               Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr

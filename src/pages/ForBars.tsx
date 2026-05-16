@@ -120,7 +120,7 @@ export default function ForBars() {
 										type="button"
 										onClick={handleSignOut}
 										disabled={signingOut}
-										className="mt-1 inline-flex items-center gap-2 h-9 px-4 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
+										className="mt-1 inline-flex items-center gap-2 h-9 px-4 border-2 border-foreground text-foreground font-mono text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
 									>
 										<LogOut className="h-3.5 w-3.5" />
 										{signingOut ? "Signing out…" : "Sign out"}
@@ -147,7 +147,7 @@ export default function ForBars() {
 										<span className="font-mono text-[10px] tracking-widest text-accent">
 											{b.num}
 										</span>
-										<span className="font-heading font-bold uppercase tracking-tight text-xs md:text-sm leading-tight">
+										<span className="font-mono font-bold uppercase tracking-tight text-xs md:text-sm leading-tight">
 											{b.label}
 										</span>
 									</li>
@@ -171,7 +171,7 @@ export default function ForBars() {
 										type="button"
 										onClick={handleSignOut}
 										disabled={signingOut}
-										className="inline-flex w-full h-11 items-center justify-center gap-2 border-2 border-foreground text-foreground font-heading text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
+										className="inline-flex w-full h-11 items-center justify-center gap-2 border-2 border-foreground text-foreground font-mono text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors disabled:opacity-60"
 									>
 										<LogOut className="h-3.5 w-3.5" />
 										{signingOut ? "Signing out…" : "Sign out to switch account"}

@@ -15,7 +15,7 @@ export default function VenueBlock({ venue, otherEvents }: VenueBlockProps) {
           <img src={venue.image} alt={venue.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         </div>
         <div className="space-y-1">
-          <h4 className="font-heading text-base font-semibold">{venue.name}</h4>
+          <h4 className="font-serif text-base font-semibold">{venue.name}</h4>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
             <MapPin className="h-3 w-3" /> {venue.neighborhood} · {venue.address}
           </p>
