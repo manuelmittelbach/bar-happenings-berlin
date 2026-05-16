@@ -54,6 +54,13 @@ export default function Footer() {
             className="flex flex-wrap justify-center md:justify-end items-center gap-x-3 gap-y-2 text-sm"
           >
             <Link
+              to="/for-bars"
+              className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+            >
+              For organizer
+            </Link>
+            <span aria-hidden="true" className="text-primary-foreground/25 font-mono text-xs">·</span>
+            <Link
               to="/about"
               className="text-primary-foreground/70 hover:text-primary-foreground transition-colors"
             >

@@ -11,6 +11,7 @@ import { EXPLORE_SCROLL_KEY, SCROLL_HOME_EVENT } from "@/pages/Index";
 const navItems: { label: string; path: string }[] = [
   { label: "List", path: "/" },
   { label: "Map", path: "/map" },
+  { label: "Bars", path: "/bars" },
   { label: "For organizer", path: "/for-bars" },
 ];
 

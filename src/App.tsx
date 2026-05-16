@@ -139,6 +139,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import EditEvent from "./pages/EditEvent";
 import EditBarAccount from "./pages/EditBarAccount";
 import BarDetail from "./pages/BarDetail";
+import BarsList from "./pages/BarsList";
 import Profile from "./pages/Profile";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
@@ -199,6 +200,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/event/:id" element={<EventDetail />} />
             <Route path="/bar/:id" element={<BarDetail />} />
+            <Route path="/bars" element={<BarsList />} />
             <Route path="/publish" element={<PublishEvent />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<OrganizerDashboard />} />
