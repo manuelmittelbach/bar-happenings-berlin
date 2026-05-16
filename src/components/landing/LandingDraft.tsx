@@ -95,35 +95,47 @@ export default function LandingDraft() {
   // "rest" at each slot. Skips entirely when the pool is too small.
   const CYCLE_MS = 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
-  // Tracks whether the immediate first tick has already fired. We only
-  // want to kick a zero-delay tick the very first time cycling starts;
-  // on every later resume (e.g. after a hidden→visible flip) the cycle
-  // continues at the normal CYCLE_MS cadence.
-  const hasKickedRef = useRef(false);
+  // Wall-clock anchor for the cycle phase. Without this, every visibility
+  // resume would queue the next tick CYCLE_MS into the future, regardless
+  // of how long the tab had been hidden — so after a long absence the
+  // cards just sat at their slot poses for up to 28s before drifting
+  // again, which read as "rotation stopped". Tracking the next tick's
+  // wall-clock time lets us catch up (fire immediately if overdue) or
+  // resume mid-cycle with only the remaining time to wait.
+  const nextTickAtRef = useRef(0);
   useEffect(() => {
     if (heroPool.length < 2) return;
-    // Cycle ticks pause while the tab is hidden. Without this, the
-    // setInterval kept firing (browser-throttled) while requestAnimation
-    // Frame was paused — framer queued up exit/enter animations that
-    // couldn't progress, so the user came back to a fan of half-faded
-    // cards with no clear primary. Pausing the interval keeps DOM and
-    // animation state in lockstep with the active frame loop.
-    let firstTick: ReturnType<typeof setTimeout> | undefined;
+    // Cycle ticks pause while the tab is hidden so that DOM and framer's
+    // rAF-driven animation loop stay in lockstep (otherwise the throttled
+    // setInterval keeps firing while rAF is asleep, queueing transitions
+    // that all snap into chaos on resume).
+    let pendingTick: ReturnType<typeof setTimeout> | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
+    const tick = () => {
+      nextTickAtRef.current = performance.now() + CYCLE_MS;
+      setCycleIndex((i) => i + 1);
+    };
     const start = () => {
-      if (interval) return;
-      if (!hasKickedRef.current) {
-        firstTick = setTimeout(() => {
-          hasKickedRef.current = true;
-          setCycleIndex((i) => i + 1);
-        }, 0);
-      }
-      interval = setInterval(() => setCycleIndex((i) => i + 1), CYCLE_MS);
+      if (interval || pendingTick) return;
+      const now = performance.now();
+      // First start (next anchor is 0) → kick on the next frame so the
+      // initial slot poses get one paint, then drift begins. Resumes
+      // after a hidden phase pay only the remaining time until the
+      // anchor; if we're already past it, fire immediately.
+      const delay =
+        nextTickAtRef.current === 0
+          ? 0
+          : Math.max(0, nextTickAtRef.current - now);
+      pendingTick = setTimeout(() => {
+        pendingTick = undefined;
+        tick();
+        interval = setInterval(tick, CYCLE_MS);
+      }, delay);
     };
     const stop = () => {
-      if (firstTick) clearTimeout(firstTick);
+      if (pendingTick) clearTimeout(pendingTick);
       if (interval) clearInterval(interval);
-      firstTick = undefined;
+      pendingTick = undefined;
       interval = undefined;
     };
     const handleVisibility = () => {
