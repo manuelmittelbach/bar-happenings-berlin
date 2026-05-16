@@ -82,7 +82,7 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
 
   const renderTriggerButton = (onClick?: () => void): ReactNode =>
     variant === "full" ? (
-      <button onClick={onClick} className="w-full h-12 bg-accent/10 border-2 border-accent/40 text-[13px] font-heading font-bold uppercase tracking-wider text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_18px_hsl(18_85%_52%/0.3)] transition-all duration-300 flex items-center justify-center gap-2">
+      <button onClick={onClick} className="w-full h-12 bg-accent/10 border-2 border-accent/40 text-[13px] font-mono font-bold uppercase tracking-wider text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_18px_hsl(18_85%_52%/0.3)] transition-all duration-300 flex items-center justify-center gap-2">
         <Share2 className="h-4 w-4" /> Share with friends
       </button>
     ) : variant === "header" ? (
@@ -104,7 +104,7 @@ export default function ShareMenu({ eventTitle, eventId, variant = "icon" }: Sha
         Share
       </button>
     ) : (
-      <button onClick={onClick} className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-heading font-bold uppercase tracking-wider w-full">
+      <button onClick={onClick} className="flex flex-col items-center gap-1.5 py-3 border-2 border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all text-[10px] font-mono font-bold uppercase tracking-wider w-full">
         <Share2 className="h-5 w-5" />
         Share
       </button>

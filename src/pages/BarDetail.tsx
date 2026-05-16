@@ -127,7 +127,7 @@ export default function BarDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
           lang="de"
-          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
+          className="font-serif font-bold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
           style={{ fontSize: "clamp(26px, 4.5vw, 40px)" }}
         >
           {addSoftHyphens(venue.name)}
@@ -269,7 +269,7 @@ function UpcomingAgenda({ events, onEventClick }: UpcomingAgendaProps) {
               <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                 {wdShort}
               </div>
-              <div className="font-heading font-extrabold text-[34px] md:text-[44px] leading-[0.9] mt-0.5">
+              <div className="font-serif font-bold text-[34px] md:text-[44px] leading-[0.9] mt-0.5">
                 {dom}
               </div>
               <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mt-0.5">

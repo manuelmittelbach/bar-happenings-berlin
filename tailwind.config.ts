@@ -17,7 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Syne", "sans-serif"],
+        heading: ["Georgia", "Charter", "Iowan Old Style", "serif"],
+        serif: ["Georgia", "Charter", "Iowan Old Style", "serif"],
         body: ["DM Sans", "sans-serif"],
         mono: ["Space Mono", "monospace"],
       },

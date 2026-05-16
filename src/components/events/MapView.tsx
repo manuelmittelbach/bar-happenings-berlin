@@ -107,7 +107,7 @@ export default function MapView({ events, onEventClick }: MapViewProps) {
 
       marker.bindPopup(
         `<div style="min-width:180px;">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${event.title}</div>
+          <div style="font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:14px;line-height:1.2;margin-bottom:4px;">${event.title}</div>
           <div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-bottom:6px;">${venue.name}${event.startTime ? ` · ${event.startTime}` : ""}</div>
           <div style="cursor:pointer;font-family:'Space Mono',monospace;font-size:10px;color:hsl(18,85%,52%);text-transform:uppercase;letter-spacing:0.5px;" data-event-id="${event.id}">→ View details</div>
         </div>`,

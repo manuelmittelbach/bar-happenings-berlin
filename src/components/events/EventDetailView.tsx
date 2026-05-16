@@ -169,7 +169,7 @@ export default function EventDetailView({
             ))}
           </div>
           {!hasRealImage && isCanceled && (
-            <span className="shrink-0 inline-block font-heading font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
+            <span className="shrink-0 inline-block font-mono font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
               {canceledLabel}
             </span>
           )}
@@ -198,7 +198,7 @@ export default function EventDetailView({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="font-heading font-extrabold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
+          className="font-serif font-bold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
           style={titleStyle}
         >
           {addSoftHyphens(displayTitle)}
@@ -308,7 +308,7 @@ export default function EventDetailView({
             />
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <span className="inline-block font-heading font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
+                <span className="inline-block font-mono font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
                   {canceledLabel}
                 </span>
               </div>

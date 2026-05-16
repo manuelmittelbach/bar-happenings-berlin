@@ -6,7 +6,7 @@ export default function Datenschutz() {
 
         <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               1. Verantwortlicher
             </h2>
             <p>
@@ -25,7 +25,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               2. Erhebung und Speicherung personenbezogener Daten
             </h2>
             <p className="mb-2">
@@ -54,7 +54,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               3. Auftragsverarbeitung – Supabase
             </h2>
             <p>
@@ -67,7 +67,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               4. Karten-Daten (OpenFreeMap / OpenStreetMap)
             </h2>
             <p>
@@ -79,7 +79,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               5. Speicherdauer
             </h2>
             <p>
@@ -90,7 +90,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               6. Deine Rechte
             </h2>
             <p>
@@ -109,7 +109,7 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
               7. Änderungen dieser Erklärung
             </h2>
             <p>
