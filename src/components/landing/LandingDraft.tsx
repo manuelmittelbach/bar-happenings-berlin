@@ -97,8 +97,17 @@ export default function LandingDraft() {
   const [cycleIndex, setCycleIndex] = useState(0);
   useEffect(() => {
     if (heroPool.length < 2) return;
+    // Kick the first tick on the next frame so the initial slot poses
+    // get one paint, then drift begins immediately. Without this, the
+    // stack sat static for a full CYCLE_MS before any motion — because
+    // the cards no longer drift in from the `enter` pose, there was
+    // nothing else animating during the first cycle.
+    const firstTick = setTimeout(() => setCycleIndex((i) => i + 1), 0);
     const id = setInterval(() => setCycleIndex((i) => i + 1), CYCLE_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearTimeout(firstTick);
+      clearInterval(id);
+    };
   }, [heroPool.length]);
 
   // Visible slice — three events visible at any time. With a pool of N,
