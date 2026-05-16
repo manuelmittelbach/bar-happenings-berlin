@@ -39,6 +39,14 @@ const PLZ_MAP = {
 
 type Neighborhood = (typeof PLZ_MAP)[keyof typeof PLZ_MAP];
 
+// All canonical Berlin neighborhoods we recognize, deduped + alphabetized.
+// Derived from PLZ_MAP so adding a new PLZ automatically extends the list.
+// Use this anywhere the UI needs to enumerate hoods (filters, selects, etc.)
+// instead of deriving from data — that way empty neighborhoods still appear.
+export const ALL_NEIGHBORHOODS: readonly Neighborhood[] = [
+	...new Set(Object.values(PLZ_MAP)),
+].sort((a, b) => a.localeCompare(b)) as Neighborhood[];
+
 const AMBIGUOUS: Record<string, { default: Neighborhood; streetOverrides: { pattern: RegExp; value: Neighborhood }[] }> = {
 	"10315": {
 		default: "Lichtenberg",
