@@ -144,7 +144,22 @@ export default function BarsList() {
       <div className="container max-w-[1100px] pt-10 md:pt-14">
         {/* Masthead — mono eyebrow over serif display title, mirroring
             EventDetail / BarDetail typography hierarchy. Count gives the
-            directory immediate scale without needing chrome. */}
+            directory immediate scale without needing chrome. The "A→Z"
+            tag in the eyebrow doubles as a structural hint: the index
+            below is grouped alphabetically, not by recency or hood. */}
+        <header className="mb-9 md:mb-12">
+          <h1
+            className="heading-display leading-[0.95]"
+            style={{ fontSize: "clamp(40px, 7.2vw, 84px)" }}
+          >
+            All the BARS<span className="text-accent">.</span>
+          </h1>
+          <p className="mt-5 max-w-xl text-balance text-[15px] leading-[1.55] text-foreground/70 md:text-base">
+            Every independent bar we've mapped in Berlin. Grouped A→Z,
+            searchable by name, filterable by neighborhood.
+          </p>
+        </header>
+
         {/* Filter row — bar-name search input + neighborhood pill bar.
             Sits below the masthead and above the index, so users see
             scope before they scan. Editorial shape system: the input
