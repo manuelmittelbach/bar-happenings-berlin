@@ -210,7 +210,11 @@ export default function LandingDraft() {
       </div>
 
       {/* ─── HERO (fills remaining viewport) ─── */}
-      <section className="relative isolate flex flex-1 min-h-0 items-center overflow-hidden">
+      {/* items-start on mobile pins the headline near the top of the
+          viewport (the desktop card cluster is hidden there, so
+          centering left a heavy empty band above the type); items-center
+          restores the balanced cluster-and-copy composition at lg+. */}
+      <section className="relative isolate flex flex-1 min-h-0 items-start overflow-hidden lg:items-center">
         {/* faint grid paper texture */}
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <div
@@ -227,12 +231,12 @@ export default function LandingDraft() {
           />
         </div>
 
-        <div className="container relative grid w-full grid-cols-1 items-center gap-8 py-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+        <div className="container relative grid w-full grid-cols-1 items-center gap-8 pt-16 pb-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:pt-6">
           {/* ── LEFT: copy ── */}
           <div>
             <motion.h1
-              className="heading-display m-0 leading-[0.92]"
-              style={{ fontSize: "clamp(40px, 5.6vw, 78px)" }}
+              className="heading-display m-0 leading-[1.1]"
+              style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.15 }}
@@ -250,7 +254,7 @@ export default function LandingDraft() {
             </motion.h1>
 
             <motion.p
-              className="font-body mt-5 max-w-[500px] text-[15px] leading-[1.5] text-foreground/70 text-balance md:text-[17px]"
+              className="font-body mt-7 max-w-[500px] text-[17px] leading-[1.5] text-foreground/70 text-balance md:mt-5"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -260,7 +264,7 @@ export default function LandingDraft() {
             </motion.p>
 
             <motion.div
-              className="mt-6 flex flex-wrap items-center gap-3"
+              className="mt-8 flex flex-wrap items-center gap-3 md:mt-6"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.42 }}
@@ -268,7 +272,7 @@ export default function LandingDraft() {
               <button
                 type="button"
                 onClick={() => navigate("/map")}
-                className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
+                className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
                 <span>Open the map</span>
@@ -277,7 +281,7 @@ export default function LandingDraft() {
               <button
                 type="button"
                 onClick={() => navigate("/")}
-                className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-background px-6 font-mono uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
+                className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-background px-6 font-mono font-bold uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
                 Browse tonight
@@ -288,7 +292,7 @@ export default function LandingDraft() {
             <motion.a
               href="#"
               onClick={(e) => e.preventDefault()}
-              className="group mt-3 inline-flex items-center gap-2 text-foreground/65 transition-colors hover:text-foreground"
+              className="group mt-4 inline-flex items-center gap-2 text-foreground/65 transition-colors hover:text-foreground md:mt-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.55 }}
@@ -302,6 +306,58 @@ export default function LandingDraft() {
               </span>
               <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </motion.a>
+
+            {/* ── Mobile-only preview card ──
+                Single cycling event card that anchors the bottom half of
+                the hero on phones — the desktop 3-card cluster is hidden
+                below lg, so without this the composition reads top-heavy
+                with a big empty zone above the footer. Same cycling pool
+                and index as the desktop stack; crossfades per tick
+                instead of drifting (small viewport, less room for drift).
+                The slight tilt mirrors the desktop deck's offset feel. */}
+            {visibleCards[0] && (
+              <motion.div
+                className="mt-10 lg:hidden"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div
+                  className="font-mono mb-2.5 flex items-baseline gap-2 uppercase text-foreground/55"
+                  style={{ fontSize: 10, letterSpacing: "0.18em" }}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="relative inline-flex h-1.5 w-1.5">
+                      <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
+                      <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+                    </span>
+                    Tonight
+                  </span>
+                  <span className="text-foreground/25">·</span>
+                  <span>1 of {tonightCount}</span>
+                </div>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={visibleCards[0].event.id}
+                    initial={{ opacity: 0, y: 14, rotate: -3 }}
+                    animate={{ opacity: 1, y: 0, rotate: -1.2 }}
+                    exit={{ opacity: 0, y: -10, rotate: 1.5 }}
+                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
+                    style={{
+                      padding: "20px 18px 16px",
+                      transformOrigin: "left center",
+                    }}
+                  >
+                    <HeroEventCard
+                      event={visibleCards[0].event}
+                      categories={categoriesData}
+                      variant="primary"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            )}
           </div>
 
           {/* ── RIGHT: cycling preview cluster (lg+) ──
@@ -437,9 +493,10 @@ export default function LandingDraft() {
       )}
 
       {/* ─── DEV A/B TOGGLE — pinned bottom-right, doesn't disturb composition.
+              Hidden on mobile where it overlapped the footer link row.
               Remove this block once the footer treatment is locked in. */}
       <div
-        className="fixed bottom-3 right-3 z-50 flex border-2 border-foreground bg-background shadow-[3px_3px_0_0_#0f0f0f]"
+        className="fixed bottom-3 right-3 z-50 hidden border-2 border-foreground bg-background shadow-[3px_3px_0_0_#0f0f0f] md:flex"
         style={{ fontSize: 10 }}
       >
         <button
