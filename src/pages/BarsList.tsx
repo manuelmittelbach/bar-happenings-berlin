@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { MapPin, Search, X } from "lucide-react";
 import { useVenues } from "@/hooks/useEvents";
 import { addSoftHyphens } from "@/lib/cleanTitle";
@@ -22,31 +21,47 @@ export default function BarsList() {
   const [nameQuery, setNameQuery] = useState("");
   const [activeHood, setActiveHood] = useState("");
 
-  // Build the neighborhood pill list from the canonical Berlin hoods
-  // list (ALL_NEIGHBORHOODS), not from the data — that way every hood
-  // we recognize shows up even if no bar has been added there yet, so
-  // the filter reads as a complete map of the city. Count is overlaid
-  // from the venue data and drives the sort (busiest first); hoods
-  // with zero bars sink to the bottom alphabetically.
-  const neighborhoods = useMemo(() => {
-    const counts = new Map<string, number>();
+  // Hood pill order is locked to the unfiltered dataset so the row
+  // doesn't reshuffle as the user types. Sort is one-time: by total
+  // bar count (busiest first), then alphabetical for ties; empty hoods
+  // sink to the bottom. Recomputes only when the underlying venues
+  // list changes.
+  const hoodOrder = useMemo(() => {
+    const totals = new Map<string, number>();
     for (const v of venues) {
       const h = (v.neighborhood || "").trim();
       if (!h) continue;
-      counts.set(h, (counts.get(h) || 0) + 1);
+      totals.set(h, (totals.get(h) || 0) + 1);
     }
-    // Union of canonical list + any hood that appears in data but
-    // isn't in the canonical list (defensive — a row might carry a
-    // value we don't recognize). Dedupe by name.
-    const names = new Set<string>([...ALL_NEIGHBORHOODS, ...counts.keys()]);
+    const names = new Set<string>([...ALL_NEIGHBORHOODS, ...totals.keys()]);
     return [...names]
-      .map((name) => ({ name, count: counts.get(name) || 0 }))
+      .map((name) => ({ name, total: totals.get(name) || 0 }))
       .sort((a, b) => {
-        if ((b.count > 0) !== (a.count > 0)) return b.count > 0 ? 1 : -1;
-        if (b.count !== a.count) return b.count - a.count;
+        if ((b.total > 0) !== (a.total > 0)) return b.total > 0 ? 1 : -1;
+        if (b.total !== a.total) return b.total - a.total;
         return a.name.localeCompare(b.name);
       });
   }, [venues]);
+
+  // Live counts per hood reflect the current name-search (but NOT the
+  // active hood — otherwise picking a hood would zero out all sibling
+  // counts). Overlaid onto the locked `hoodOrder` so labels update
+  // live while positions stay stable.
+  const neighborhoods = useMemo(() => {
+    const pool = nameQuery.trim()
+      ? venues.filter((v) => fuzzyMatchAny([v.name], nameQuery))
+      : venues;
+    const liveCounts = new Map<string, number>();
+    for (const v of pool) {
+      const h = (v.neighborhood || "").trim();
+      if (!h) continue;
+      liveCounts.set(h, (liveCounts.get(h) || 0) + 1);
+    }
+    return hoodOrder.map(({ name }) => ({
+      name,
+      count: liveCounts.get(name) || 0,
+    }));
+  }, [hoodOrder, venues, nameQuery]);
 
   // Filter pass — fuzzy match on name (same helper as Index/Map search
   // so the "ä/ö/typo" behavior reads consistent across surfaces), then
@@ -80,7 +95,6 @@ export default function BarsList() {
     return out;
   }, [filtered]);
 
-  const hasFilters = !!nameQuery.trim() || !!activeHood;
   const clearAll = () => {
     setNameQuery("");
     setActiveHood("");
@@ -131,24 +145,6 @@ export default function BarsList() {
         {/* Masthead — mono eyebrow over serif display title, mirroring
             EventDetail / BarDetail typography hierarchy. Count gives the
             directory immediate scale without needing chrome. */}
-        <header className="mb-8 md:mb-10">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Directory · {venues.length} {venues.length === 1 ? "bar" : "bars"} in Berlin
-          </p>
-          <motion.h1
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="font-serif font-bold tracking-[-0.02em] leading-[0.95] mt-3"
-            style={{ fontSize: "clamp(40px, 7vw, 72px)" }}
-          >
-            Bars
-          </motion.h1>
-          <p className="mt-4 max-w-xl font-body text-[15px] md:text-[16px] leading-relaxed text-muted-foreground">
-            Every venue we follow, A to Z. Tap a bar to see what's coming up.
-          </p>
-        </header>
-
         {/* Filter row — bar-name search input + neighborhood pill bar.
             Sits below the masthead and above the index, so users see
             scope before they scan. Editorial shape system: the input
@@ -158,27 +154,27 @@ export default function BarsList() {
         <div className="mb-8 md:mb-10 space-y-3">
           {/* Search by bar — fuzzy text input with leading icon. Clear
               button appears once the user has typed something. */}
-          <label className="relative block">
+          <label className="relative block w-full md:max-w-sm">
             <span className="sr-only">Search bars by name</span>
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
             />
             <input
               type="search"
               value={nameQuery}
               onChange={(e) => setNameQuery(e.target.value)}
               placeholder="Search bars by name…"
-              className="w-full h-12 pl-11 pr-11 bg-card border-2 border-foreground rounded-xl font-body text-[15px] outline-none focus:shadow-[0_0_0_3px_hsla(18,85%,52%,0.15)] transition-shadow placeholder:text-muted-foreground/70"
+              className="w-full h-10 pl-10 pr-10 bg-card border-2 border-foreground rounded-xl font-body text-[14px] outline-none focus:shadow-[0_0_0_3px_hsla(18,85%,52%,0.15)] transition-shadow placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
             {nameQuery && (
               <button
                 type="button"
                 onClick={() => setNameQuery("")}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </label>
@@ -209,22 +205,6 @@ export default function BarsList() {
             </div>
           )}
 
-          {/* Result summary — only renders when filters are active so
-              the page stays quiet by default. Mono caps for metadata
-              treatment + a clear-all chip on the right. */}
-          {hasFilters && (
-            <div className="flex items-center justify-between pt-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-              <span>
-                {filtered.length} of {venues.length} {venues.length === 1 ? "bar" : "bars"}
-              </span>
-              <button
-                onClick={clearAll}
-                className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                Clear filters <X className="h-3 w-3" />
-              </button>
-            </div>
-          )}
         </div>
 
         {showNoDirectory && (
@@ -276,7 +256,7 @@ export default function BarsList() {
                     {group.items.length} {group.items.length === 1 ? "bar" : "bars"}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
                   {group.items.map((v) => (
                     <BarCard key={v.id} venue={v} />
                   ))}
@@ -365,7 +345,7 @@ function BarCard({ venue }: { venue: Venue }) {
   return (
     <Link
       to={`/bar/${venue.id}`}
-      className="group block border-2 border-foreground bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-24px_hsla(18,85%,52%,0.45)]"
+      className="group block bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted border-b-2 border-foreground">
         {venue.image ? (
@@ -393,6 +373,10 @@ function BarCard({ venue }: { venue: Venue }) {
           </div>
         )}
         {venue.neighborhood && (
+          // Neighborhood badge — sits on top of the image, top-left.
+          // Dark foreground fill + primary-foreground text reads as a
+          // hand-applied stamp on the photo, gives the image something
+          // editorial to anchor without needing a caption row.
           <span
             className="absolute left-3 top-3 inline-flex items-center gap-1 bg-foreground text-primary-foreground px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
           >
@@ -402,15 +386,14 @@ function BarCard({ venue }: { venue: Venue }) {
         )}
       </div>
       <div className="p-4 md:p-5">
-        <h2
+        <h3
           lang="de"
-          className="font-serif font-bold leading-[1.05] tracking-[-0.01em] hyphens-auto break-words"
-          style={{ fontSize: "clamp(20px, 2.2vw, 24px)" }}
+          className="font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words hyphens-auto"
         >
           {addSoftHyphens(venue.name)}
-        </h2>
+        </h3>
         {cleanAddress && (
-          <p className="mt-2 font-body text-[13px] text-muted-foreground leading-snug line-clamp-2">
+          <p className="mt-1.5 font-body text-[13px] leading-[1.5] text-foreground/80 line-clamp-1 break-words">
             {cleanAddress}
           </p>
         )}

@@ -12,7 +12,6 @@ const navItems: { label: string; path: string }[] = [
   { label: "List", path: "/" },
   { label: "Map", path: "/map" },
   { label: "Bars", path: "/bars" },
-  { label: "For organizer", path: "/for-bars" },
 ];
 
 /* Wordmark — "Inside · Bars" with a 7px accent dot between the words.
@@ -61,13 +60,7 @@ export default function Header() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
-  // "For organizer" is the pitch page that recruits bar owners. Once a
-  // user is already an organizer or admin, the pitch is redundant and
-  // just eats horizontal space in the nav.
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.path === "/for-bars" && user && (role === "organizer" || role === "admin")) return false;
-    return true;
-  });
+  const visibleNavItems = navItems;
 
   const goHome = () => {
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
