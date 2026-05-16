@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
@@ -90,7 +90,7 @@ export default function LandingDraft() {
   }, [eventsData, today, shuffleSeed]);
 
   // Carousel cycle — the stack advances one slot every CYCLE_MS. With a
-  // linear easing and a transition duration just under the interval, the
+  // linear easing and a transition duration matching the interval, the
   // cards drift in continuous, constant-velocity motion: no perceptible
   // "rest" at each slot. Skips entirely when the pool is too small.
   const CYCLE_MS = 28000;
@@ -115,6 +115,23 @@ export default function LandingDraft() {
       role,
     }));
   }, [heroPool, cycleIndex]);
+
+  // First-mount flag — tracks whether the AnimatePresence has rendered
+  // a non-empty card set yet. Flipped via useEffect *after* the first
+  // render where visibleCards has any entries; before that flip, all
+  // initial cards get their slot pose as `initial`, so they appear
+  // pre-placed at primary/secondary/tertiary with no entry animation.
+  // After the flip, every newly-keyed card (one per cycle tick) gets
+  // SLOT_TRANSFORMS.enter and drifts in from off-stage. Tracking the
+  // first non-empty render (rather than the first React render) matters
+  // because event data loads async: on the very first render the pool
+  // is empty and no cards mount at all, so framer would otherwise treat
+  // the eventual first batch as a mid-cycle entrance.
+  const cardsHaveMountedRef = useRef(false);
+  const hasVisibleCards = visibleCards.length > 0;
+  useEffect(() => {
+    if (hasVisibleCards) cardsHaveMountedRef.current = true;
+  }, [hasVisibleCards]);
 
   // Footer stats — live counts pulled from the actual dataset, not magic
   // numbers. Bars = total venues. Tonight = today's events that haven't
@@ -250,20 +267,33 @@ export default function LandingDraft() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout" initial={false}>
               {visibleCards.map(({ event, role }) => {
                 const slot = SLOT_TRANSFORMS[role];
+                const slotPose = {
+                  x: slot.x,
+                  y: slot.y,
+                  rotate: slot.rotate,
+                  scale: slot.scale,
+                  opacity: 1,
+                };
+                // Before the first non-empty render has committed, the
+                // three starting cards skip their entry animation via
+                // initial={false} (framer documented shorthand for "snap
+                // to animate on mount"), so they appear pre-placed at
+                // primary / secondary / tertiary. Every later mount (new
+                // tertiary on each cycle tick) uses SLOT_TRANSFORMS.enter
+                // so it visibly drifts in from off-stage. Framer only
+                // reads `initial` on mount; recomputing it on
+                // already-mounted cards is a no-op.
+                const initialPose = cardsHaveMountedRef.current
+                  ? SLOT_TRANSFORMS.enter
+                  : false;
                 return (
                   <motion.div
                     key={event.id}
-                    initial={SLOT_TRANSFORMS.enter}
-                    animate={{
-                      x: slot.x,
-                      y: slot.y,
-                      rotate: slot.rotate,
-                      scale: slot.scale,
-                      opacity: 1,
-                    }}
+                    initial={initialPose}
+                    animate={slotPose}
                     // Exit applies the same per-slot delta (Δx≈-90,
                     // Δy≈+70, Δrotate≈-7°, Δscale≈+0.12) as a normal
                     // slot transition, and uses the *same duration*
