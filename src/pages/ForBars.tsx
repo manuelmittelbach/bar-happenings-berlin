@@ -192,21 +192,21 @@ export default function ForBars() {
 
 							<form onSubmit={handleSubmit} className="max-w-sm mx-auto space-y-4">
 								<div className="space-y-1.5">
-									<label className="text-sm font-medium">Email</label>
+									<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Email</label>
 									<input
 										type="email"
 										required
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										placeholder="you@example.com"
-										className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
+										className="w-full h-11 px-3 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 									/>
 								</div>
 
 								{!isForgotPassword && (
 									<div className="space-y-1.5">
 										<div className="flex items-center justify-between">
-											<label className="text-sm font-medium">Password</label>
+											<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Password</label>
 											<button
 												type="button"
 												onClick={() => {
@@ -227,7 +227,7 @@ export default function ForBars() {
 												value={password}
 												onChange={(e) => setPassword(e.target.value)}
 												placeholder="••••••••"
-												className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
+												className="w-full h-10 px-3 pr-10 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 											/>
 											<button
 												type="button"
@@ -251,7 +251,7 @@ export default function ForBars() {
 								<button
 									type="submit"
 									disabled={loading}
-									className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
+									className="w-full h-11 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors disabled:opacity-60"
 								>
 									{loading ? "..." : isForgotPassword ? "Send reset link" : "Sign in"}
 								</button>
