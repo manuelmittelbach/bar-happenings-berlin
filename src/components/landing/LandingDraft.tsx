@@ -240,7 +240,7 @@ export default function LandingDraft() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              Quiz nights, jazz trios, open mics, queer karaoke — mapped across independent
+              Live music, comedy, DJs, quiz nights and more — mapped across independent
               Berlin bars.
             </motion.p>
 

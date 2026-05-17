@@ -4,12 +4,11 @@ import { motion } from "framer-motion";
 import { ArrowRight, Mail, MessageSquareText, Sparkles } from "lucide-react";
 
 const topics = [
-  { id: "tip",      label: "Submit a tip",     subject: "Event tip" },
-  { id: "claim",    label: "Claim your bar",   subject: "Claim my bar" },
-  { id: "press",    label: "Press / Media",    subject: "Press inquiry" },
-  { id: "bug",      label: "Report a bug",     subject: "Bug report" },
-  { id: "feedback", label: "General feedback", subject: "Feedback" },
-  { id: "hi",       label: "Just say hi",      subject: "Hi" },
+  { id: "collab",   label: "Want to collaborate", subject: "Collaboration" },
+  { id: "claim",    label: "Claim your bar",      subject: "Claim my bar" },
+  { id: "press",    label: "Press / Media",       subject: "Press inquiry" },
+  { id: "bug",      label: "Report a bug",        subject: "Bug report" },
+  { id: "feedback", label: "General feedback",    subject: "Feedback" },
 ] as const;
 
 type TopicId = (typeof topics)[number]["id"];
@@ -17,7 +16,7 @@ type TopicId = (typeof topics)[number]["id"];
 const EMAIL = "hello@insidebars.co";
 
 export default function Contact() {
-  const [topicId, setTopicId] = useState<TopicId>("tip");
+  const [topicId, setTopicId] = useState<TopicId>("collab");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -80,7 +79,7 @@ export default function Contact() {
           >
             Let's{" "}
             <span className="heading-editorial italic lowercase font-light tracking-tight">
-              talk
+              connect
             </span>
             <span className="text-accent">.</span>
           </motion.h1>
@@ -91,8 +90,9 @@ export default function Contact() {
             transition={{ duration: 0.5, delay: 0.25 }}
             className="mt-6 max-w-xl text-balance text-lg leading-[1.5] text-foreground/75 md:text-xl"
           >
-            Questions, tips, ideas, or just a hello — we read everything
-            and reply to most of it.
+            We're always looking to collaborate — with new bars,
+            partners, and people who love Berlin's small venues as
+            much as we do.
           </motion.p>
         </div>
       </section>
@@ -107,9 +107,29 @@ export default function Contact() {
             className="pointer-events-none absolute left-1/2 top-12 bottom-12 hidden w-[2px] -translate-x-1/2 bg-foreground md:block"
           />
 
-          {/* ── LEFT — intent (chips + email + collab) ── */}
+          {/* ── LEFT — intent (collab CTA → chips → email) ── */}
           <div className="md:pr-10 lg:pr-14">
-            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
+            {/* Top-priority ask — Inside Bars is actively looking for
+                someone to run our Instagram, so the collab CTA sits at
+                the head of the left column. Hard shadow + accent
+                sparkle so it reads as the page's primary call. */}
+            <Link
+              to="/instagram"
+              className="group flex items-start gap-3 border-2 border-foreground bg-card p-5 shadow-[8px_8px_0_0_#0f0f0f] transition-all hover:bg-foreground hover:text-background hover:shadow-[6px_6px_0_0_hsl(var(--accent))]"
+            >
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />
+              <div className="flex-1">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 group-hover:text-background/70">
+                  Photographers, writers, regulars
+                </div>
+                <p className="mt-1 font-serif text-lg font-semibold leading-tight">
+                  Help us run our Instagram{" "}
+                  <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                </p>
+              </div>
+            </Link>
+
+            <div className="mt-10 mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
               Reach out if you want to
             </div>
 
@@ -141,9 +161,9 @@ export default function Contact() {
             </ul>
 
             {/* Email card — the brand-canon "I prefer email" path.
-                Sharp 2px border, 8px hard shadow. Matches the About
-                page Reach-Out card so the two pages read as a set. */}
-            <div className="mt-10 border-2 border-foreground bg-card p-5 shadow-[8px_8px_0_0_#0f0f0f]">
+                Plain bordered block (no hard shadow) so it sits
+                visually below the top collab CTA in the hierarchy. */}
+            <div className="mt-10 border-2 border-foreground bg-background p-5">
               <div className="mb-2 flex items-baseline gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
                 <Mail className="h-3 w-3" />
                 Email us directly
@@ -158,26 +178,6 @@ export default function Contact() {
                 Prefer plain email? Skip the form — we read every message.
               </p>
             </div>
-
-            {/* Looking for collaborators — sub-card. Inside Bars is
-                still looking for someone to run social, so we surface
-                that here instead of pretending we have an Instagram
-                handle to follow. Links to the /instagram pitch page. */}
-            <Link
-              to="/instagram"
-              className="group mt-4 flex items-start gap-3 border-2 border-foreground bg-background p-5 transition-all hover:bg-foreground hover:text-background"
-            >
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />
-              <div className="flex-1">
-                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 group-hover:text-background/70">
-                  Photographers, writers, regulars
-                </div>
-                <p className="mt-1 font-serif text-base font-semibold">
-                  Help us run our Instagram{" "}
-                  <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
-                </p>
-              </div>
-            </Link>
           </div>
 
           {/* ── RIGHT — form ── */}
