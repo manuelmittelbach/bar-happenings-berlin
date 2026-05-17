@@ -203,13 +203,19 @@ export default function BarsList() {
           if (aDay !== bDay) return bDay - aDay;
           return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
         });
-        // dayBars = distinct bars with at least one event on the
-        // selected day. The hood header surfaces this number ("3
-        // tonight") because the directory's unit is bars, not events.
+        // dayBars (used for hood ordering) and dayEvents (used for
+        // the section-header counter). Two different stats because
+        // the SORT favors hood diversity (many bars active = high
+        // dayBars) while the displayed COUNTER favors raw activity
+        // ("X events tonight" — what's literally on).
         const dayBars = sorted.filter(
           (v) => (eventsForDayByVenue.get(v.id)?.length || 0) > 0,
         ).length;
-        return { name, items: sorted, dayBars };
+        const dayEvents = sorted.reduce(
+          (acc, v) => acc + (eventsForDayByVenue.get(v.id)?.length || 0),
+          0,
+        );
+        return { name, items: sorted, dayBars, dayEvents };
       })
       .sort((a, b) => {
         if (a.name === "Other") return 1;
@@ -222,10 +228,18 @@ export default function BarsList() {
       });
   }, [filteredVenues, eventsForDayByVenue]);
 
-  const totalDayBars = useMemo(() => {
+  // Total event count across filtered venues for the selected day.
+  // Drives the masthead counter label ("X events tonight"). Counts
+  // events, not bars — a single bar with 3 events on the selected day
+  // contributes 3 to this number. Matches the natural reading of "X
+  // events tonight" as "X events are happening" rather than "X bars
+  // are active". Per-hood section-header counters still surface the
+  // bars-with-events number (more useful at the hood level because
+  // the user is choosing between bars there).
+  const totalDayEvents = useMemo(() => {
     let n = 0;
     for (const v of filteredVenues) {
-      if ((eventsForDayByVenue.get(v.id)?.length || 0) > 0) n++;
+      n += eventsForDayByVenue.get(v.id)?.length || 0;
     }
     return n;
   }, [filteredVenues, eventsForDayByVenue]);
@@ -311,30 +325,21 @@ export default function BarsList() {
 
       <div className="container pt-4 md:pt-6">
         {/* Masthead — heading-display 24/30px under a hairline rule
-            with a day-aware counter on the right. The counter pairs
-            "X listed" (total directory under the name search) with "Y
-            {dayWord}" (live count of bars with events on the selected
-            day) so the page's headline number is the live signal. */}
+            with an event counter on the right. Just the live signal:
+            "{N} event{s} {dayWord}". Bar count is intentionally
+            omitted (the user reads it from the directory below), so
+            the page's headline number stays singular and live. */}
         <header className="mb-6 md:mb-8">
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               All the bars
             </h1>
             <span className="flex-1" />
-            <span className="mono-label text-muted-foreground">
-              <span className="md:hidden">
-                {filteredVenues.length}
-                {totalDayBars > 0 && (
-                  <span className="text-accent"> · {totalDayBars} {dayWord}</span>
-                )}
+            {totalDayEvents > 0 && (
+              <span className="mono-label text-accent">
+                {totalDayEvents} event{totalDayEvents !== 1 ? "s" : ""} {dayWord}
               </span>
-              <span className="hidden md:inline">
-                {filteredVenues.length} listed
-                {totalDayBars > 0 && (
-                  <span className="text-accent"> · {totalDayBars} {dayWord}</span>
-                )}
-              </span>
-            </span>
+            )}
           </div>
         </header>
 
@@ -477,20 +482,11 @@ export default function BarsList() {
                       {hood.name}
                     </h2>
                     <span className="flex-1" />
-                    <span className="mono-label text-muted-foreground">
-                      <span className="md:hidden">
-                        {hood.items.length}
-                        {hood.dayBars > 0 && (
-                          <span className="text-accent"> · {hood.dayBars} {dayWord}</span>
-                        )}
+                    {hood.dayEvents > 0 && (
+                      <span className="mono-label text-accent">
+                        {hood.dayEvents} event{hood.dayEvents !== 1 ? "s" : ""} {dayWord}
                       </span>
-                      <span className="hidden md:inline">
-                        {hood.items.length} bar{hood.items.length !== 1 ? "s" : ""}
-                        {hood.dayBars > 0 && (
-                          <span className="text-accent"> · {hood.dayBars} {dayWord}</span>
-                        )}
-                      </span>
-                    </span>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
