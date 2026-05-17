@@ -173,7 +173,7 @@ export default function About() {
             </h2>
           </div>
 
-          <ul className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2">
             {beliefs.map((b, i) => (
               <motion.li
                 key={b.num}
@@ -194,28 +194,6 @@ export default function About() {
                 </p>
               </motion.li>
             ))}
-            {/* Sixth slot — empty card with a stamp-style "join us"
-                CTA so the grid completes visually on lg (3-col)
-                and the manifesto doesn't dead-end on a half-row. */}
-            <li className="hidden border-t-2 border-foreground pt-4 lg:flex lg:flex-col lg:gap-3">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/40">
-                +
-              </span>
-              <h3 className="font-serif text-xl font-semibold leading-tight">
-                And one more —
-              </h3>
-              <p className="text-[15px] leading-[1.55] text-foreground/70">
-                If you run a bar, you should be the one telling people what's
-                on. Not Instagram's algorithm.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("/for-bars")}
-                className="mt-1 inline-flex items-center gap-1 self-start font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
-              >
-                List your bar <span aria-hidden="true">→</span>
-              </button>
-            </li>
           </ul>
         </div>
       </section>
