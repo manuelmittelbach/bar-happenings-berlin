@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Search, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, MapPin, Search, X } from "lucide-react";
 import { useVenues } from "@/hooks/useEvents";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
@@ -20,6 +21,12 @@ export default function BarsList() {
   const { data: venues = [], isLoading } = useVenues();
   const [nameQuery, setNameQuery] = useState("");
   const [activeHood, setActiveHood] = useState("");
+  // Two collapsible filter panels. Default closed so the masthead +
+  // A→Z directory read as the star of the page; filters open on intent.
+  // Independent toggles — both can be open simultaneously if the user
+  // wants to layer name + hood, but each fires on its own click.
+  const [nameOpen, setNameOpen] = useState(false);
+  const [hoodOpen, setHoodOpen] = useState(false);
 
   // Hood pill order is locked to the unfiltered dataset so the row
   // doesn't reshuffle as the user types. Sort is one-time: by total
@@ -147,79 +154,115 @@ export default function BarsList() {
             directory immediate scale without needing chrome. The "A→Z"
             tag in the eyebrow doubles as a structural hint: the index
             below is grouped alphabetically, not by recency or hood. */}
-        <header className="mb-9 md:mb-12">
+        <header className="mb-8 md:mb-10">
           <h1
             className="heading-display leading-[0.95]"
-            style={{ fontSize: "clamp(40px, 7.2vw, 84px)" }}
+            style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
           >
             All the BARS<span className="text-accent">.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-balance text-[15px] leading-[1.55] text-foreground/70 md:text-base">
-            Every independent bar we've mapped in Berlin. Grouped A→Z,
-            searchable by name, filterable by neighborhood.
-          </p>
         </header>
 
-        {/* Filter row — bar-name search input + neighborhood pill bar.
-            Sits below the masthead and above the index, so users see
-            scope before they scan. Editorial shape system: the input
-            gets rounded-xl, neighborhood pills are sharp (border-2,
-            rounded-none) on desktop and rounded-full on mobile to stay
-            consistent with the category-filter shape rule. */}
-        <div className="mb-8 md:mb-10 space-y-3">
-          {/* Search by bar — fuzzy text input with leading icon. Clear
-              button appears once the user has typed something. */}
-          <label className="relative block w-full md:max-w-sm">
-            <span className="sr-only">Search bars by name</span>
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+        {/* Filter row — two brutalist toggle buttons that expand into
+            their panels on click. Default collapsed so the masthead +
+            A→Z index get the visual weight; filters are utility that
+            shows up on intent. Active filter values surface inline in
+            the closed-button label (e.g. "Name · kreuzberg") so the
+            user always knows what's filtered without expanding. */}
+        <div className="mb-8 md:mb-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterToggle
+              icon={<Search className="h-3.5 w-3.5" />}
+              labelShort="Search"
+              labelLong="Search by name"
+              open={nameOpen}
+              onToggle={() => setNameOpen((s) => !s)}
             />
-            <input
-              type="search"
-              value={nameQuery}
-              onChange={(e) => setNameQuery(e.target.value)}
-              placeholder="Search bars by name…"
-              className="w-full h-10 pl-10 pr-10 bg-card border-2 border-foreground rounded-xl font-body text-[14px] outline-none focus:shadow-[0_0_0_3px_hsla(18,85%,52%,0.15)] transition-shadow placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+            <FilterToggle
+              icon={<MapPin className="h-3.5 w-3.5" />}
+              labelShort="Neighborhood"
+              labelLong="Filter by neighborhood"
+              open={hoodOpen}
+              onToggle={() => setHoodOpen((s) => !s)}
             />
-            {nameQuery && (
-              <button
-                type="button"
-                onClick={() => setNameQuery("")}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
+          </div>
+
+          {/* Search input panel — slides + fades in below the buttons.
+              Auto-focuses the input once the panel mounts so the user
+              can start typing immediately after clicking "Search by
+              name". */}
+          <AnimatePresence initial={false}>
+            {nameOpen && (
+              <motion.div
+                key="name-panel"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
+                <label className="relative block w-full md:max-w-sm mt-4">
+                  <span className="sr-only">Search bars by name</span>
+                  <Search
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                  />
+                  <input
+                    type="search"
+                    autoFocus
+                    value={nameQuery}
+                    onChange={(e) => setNameQuery(e.target.value)}
+                    placeholder="Search bars by name…"
+                    className="w-full h-11 pl-10 pr-10 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+                  />
+                  {nameQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setNameQuery("")}
+                      aria-label="Clear search"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </label>
+              </motion.div>
             )}
-          </label>
+          </AnimatePresence>
 
-          {/* Search by neighborhood — wraps across multiple rows so
-              every hood is visible at once, no horizontal scroll. "All"
-              sits first as the implicit clear. Counts shown in mono to
-              read as metadata, not part of the label. Pills are sharp
-              on desktop (border-2, rounded-none) and round on mobile
-              (rounded-full) per the existing filter shape system. */}
-          {neighborhoods.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <HoodPill
-                label="All"
-                active={!activeHood}
-                onClick={() => setActiveHood("")}
-              />
-              {neighborhoods.map((h) => (
-                <HoodPill
-                  key={h.name}
-                  label={h.name}
-                  count={h.count}
-                  active={activeHood === h.name}
-                  disabled={h.count === 0}
-                  onClick={() => setActiveHood(activeHood === h.name ? "" : h.name)}
-                />
-              ))}
-            </div>
-          )}
-
+          {/* Neighborhood pill grid — wraps across multiple rows so
+              every hood is visible at once. Same shape system as
+              before: sharp on desktop, round on mobile. */}
+          <AnimatePresence initial={false}>
+            {hoodOpen && neighborhoods.length > 0 && (
+              <motion.div
+                key="hood-panel"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap items-center gap-2 mt-4">
+                  <HoodPill
+                    label="All"
+                    active={!activeHood}
+                    onClick={() => setActiveHood("")}
+                  />
+                  {neighborhoods.map((h) => (
+                    <HoodPill
+                      key={h.name}
+                      label={h.name}
+                      count={h.count}
+                      active={activeHood === h.name}
+                      disabled={h.count === 0}
+                      onClick={() => setActiveHood(activeHood === h.name ? "" : h.name)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {showNoDirectory && (
@@ -267,9 +310,6 @@ export default function BarsList() {
                   <span className="font-serif font-bold leading-none text-[40px] md:text-[52px]">
                     {group.letter}
                   </span>
-                  <span className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    {group.items.length} {group.items.length === 1 ? "bar" : "bars"}
-                  </span>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
                   {group.items.map((v) => (
@@ -282,6 +322,48 @@ export default function BarsList() {
         )}
       </div>
     </div>
+  );
+}
+
+/* FilterToggle — brutalist 2px-bordered button that expands/collapses
+ * its filter panel. Stays visually identical regardless of whether a
+ * filter is active — clearing happens inside the panel (the input's
+ * own × and the "All" pill), so the button doesn't double as a state
+ * display. Just icon + label + chevron. Chevron flips on open.
+ *
+ * Two labels: short for mobile (compact chip feel — "Search" /
+ * "Neighborhood"), long for desktop (declarative dropdown button —
+ * "Search by name" / "Filter by neighborhood"). */
+function FilterToggle({
+  icon,
+  labelShort,
+  labelLong,
+  open,
+  onToggle,
+}: {
+  icon: React.ReactNode;
+  labelShort: string;
+  labelLong: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="inline-flex h-11 items-center gap-2 border-2 border-foreground bg-background px-3.5 md:px-5 md:min-w-[240px] font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
+    >
+      {icon}
+      <span className="md:mr-auto">
+        <span className="md:hidden">{labelShort}</span>
+        <span className="hidden md:inline">{labelLong}</span>
+      </span>
+      <ChevronDown
+        aria-hidden
+        className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+      />
+    </button>
   );
 }
 
@@ -408,7 +490,7 @@ function BarCard({ venue }: { venue: Venue }) {
           {addSoftHyphens(venue.name)}
         </h3>
         {cleanAddress && (
-          <p className="mt-1.5 font-body text-[13px] leading-[1.5] text-foreground/80 line-clamp-1 break-words">
+          <p className="hidden md:block mt-1.5 font-body text-[13px] leading-[1.5] text-foreground/80 line-clamp-1 break-words">
             {cleanAddress}
           </p>
         )}
