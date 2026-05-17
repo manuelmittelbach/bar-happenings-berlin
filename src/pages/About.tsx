@@ -117,10 +117,10 @@ export default function About() {
             </h2>
             <p className="mt-5 text-[15px] leading-[1.65] text-foreground/75 md:text-base">
               Berlin's bar scene is one of the most vibrant in the world.
-              Every night, dozens of small venues host live music, quiz
-              nights, open mics, language exchanges, film screenings, board
-              game evenings, drag, karaoke, jazz trios, talks. But most of
-              these events are{" "}
+              Every night, dozens of small venues host live music, open
+              mics, comedy nights, DJ sets, quizzes, karaoke, drag shows,
+              screenings, and dating nights. But most of these events
+              are{" "}
               <span className="text-foreground">
                 buried in Instagram stories
               </span>
