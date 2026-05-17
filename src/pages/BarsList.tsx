@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, MapPin, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useVenues, useEvents } from "@/hooks/useEvents";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
@@ -37,23 +36,20 @@ export default function BarsList() {
   // All upcoming events. Same hook the Index page uses, so the shared
   // cache means switching Events ↔ Bars doesn't refetch.
   const { data: events = [], isLoading: eventsLoading } = useEvents();
+  // Name + neighborhood filters are LOCAL to the bars page. Picking
+  // a hood here should not leak to Events/Map — those surfaces have
+  // their own discovery logic, and a stray "Kreuzberg" filter
+  // following the user there would silently hide most of what they
+  // came to see.
   const [nameQuery, setNameQuery] = useState("");
-  // Two collapsible filter panels — name search and neighborhood pick.
-  // Both default closed so the masthead + hood-grouped directory get
-  // the visual weight; filters open on intent. Each toggles
-  // independently so the user can layer name + hood if they want.
-  const [nameOpen, setNameOpen] = useState(false);
-  const [hoodOpen, setHoodOpen] = useState(false);
+  const [activeNeighborhood, setActiveNeighborhood] = useState("");
 
-  // Day + neighborhood filters — shared with Index + MapPage via
-  // useFilterParams so the user's selection follows them across the
-  // three surfaces. Picking "Kreuzberg" on Bars and clicking through
-  // to Events keeps the Kreuzberg lens. Same "All" = tonight encoding
+  // Day filter — shared with Index + MapPage via useFilterParams so
+  // the Tonight/Tomorrow/Later choice DOES follow the user across the
+  // three surfaces (intentional: the "what day am I looking at"
+  // mental model spans pages). Same "All" = tonight encoding
   // Index/Map already use.
-  const {
-    activeDate, setActiveDate,
-    activeNeighborhood, setActiveNeighborhood,
-  } = useFilterParams();
+  const { activeDate, setActiveDate } = useFilterParams();
   const dayTab: DayTab =
     activeDate === "Tomorrow" ? "tomorrow"
     : activeDate === "Later" ? "later"
@@ -343,104 +339,63 @@ export default function BarsList() {
           </div>
         </header>
 
-        {/* Filter row — name search + neighborhood pick, both as
-            sharp 2px-bordered toggles. The neighborhood filter lasers
-            the directory to one hood (other hoods drop). Day filter
-            sits in the top chrome above and applies independently. */}
-        <div className="mb-8 md:mb-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <FilterToggle
-              icon={<Search className="h-3.5 w-3.5" />}
-              labelShort="Search"
-              labelLong="Search by name"
-              open={nameOpen}
-              onToggle={() => setNameOpen((s) => !s)}
+        {/* Filter row — name search + neighborhood pills, both always
+            visible. Previously two collapsible toggles, but that
+            hid the filters behind an extra click for no real gain:
+            the chrome above already establishes the page's "all
+            bars" identity, and the filters are the point of this
+            row. Day filter sits in the top chrome above. */}
+        <div className="mb-8 md:mb-10 space-y-4">
+          <label className="relative block w-full">
+            <span className="sr-only">Search bars by name</span>
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
             />
-            <FilterToggle
-              icon={<MapPin className="h-3.5 w-3.5" />}
-              labelShort={activeNeighborhood || "Neighborhood"}
-              labelLong={activeNeighborhood ? `Neighborhood · ${activeNeighborhood}` : "Search by neighborhood"}
-              open={hoodOpen}
-              onToggle={() => setHoodOpen((s) => !s)}
-              active={!!activeNeighborhood}
+            <input
+              type="search"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.target.value)}
+              placeholder="Search bars by name…"
+              className="w-full h-11 pl-10 pr-10 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
-          </div>
-
-          <AnimatePresence initial={false}>
-            {nameOpen && (
-              <motion.div
-                key="name-panel"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden"
+            {nameQuery && (
+              <button
+                type="button"
+                onClick={() => setNameQuery("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
               >
-                <label className="relative block w-full md:max-w-sm mt-4">
-                  <span className="sr-only">Search bars by name</span>
-                  <Search
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-                  />
-                  <input
-                    type="search"
-                    autoFocus
-                    value={nameQuery}
-                    onChange={(e) => setNameQuery(e.target.value)}
-                    placeholder="Search bars by name…"
-                    className="w-full h-11 pl-10 pr-10 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
-                  />
-                  {nameQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setNameQuery("")}
-                      aria-label="Clear search"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted active:opacity-60 transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </label>
-              </motion.div>
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
-          </AnimatePresence>
+          </label>
 
-          {/* Neighborhood pill grid — wraps across multiple rows so
-              every hood is visible at once. Same shape system as the
-              category pills on Events/Map: sharp 2px-bordered on
-              desktop, round on mobile. Picking a hood writes to the
-              shared activeNeighborhood slot so the choice carries
-              across to Events/Map. */}
-          <AnimatePresence initial={false}>
-            {hoodOpen && neighborhoods.length > 0 && (
-              <motion.div
-                key="hood-panel"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-wrap items-center gap-2 mt-4">
-                  <HoodPill
-                    label="All"
-                    active={!activeNeighborhood}
-                    onClick={() => setActiveNeighborhood("")}
-                  />
-                  {neighborhoods.map((h) => (
-                    <HoodPill
-                      key={h.name}
-                      label={h.name}
-                      count={h.count}
-                      active={activeNeighborhood === h.name}
-                      disabled={!h.hasBars}
-                      onClick={() => setActiveNeighborhood(activeNeighborhood === h.name ? "" : h.name)}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Neighborhood pill grid — every hood visible at once, no
+              expand step. Same shape system as the category pills on
+              Events/Map: sharp 2px-bordered on desktop, round on
+              mobile. The count is bars-with-events on the selected
+              day; empty hoods (no bars under the current name search)
+              read disabled. */}
+          {neighborhoods.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <HoodPill
+                label="All"
+                active={!activeNeighborhood}
+                onClick={() => setActiveNeighborhood("")}
+              />
+              {neighborhoods.map((h) => (
+                <HoodPill
+                  key={h.name}
+                  label={h.name}
+                  count={h.count}
+                  active={activeNeighborhood === h.name}
+                  disabled={!h.hasBars}
+                  onClick={() => setActiveNeighborhood(activeNeighborhood === h.name ? "" : h.name)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {showNoDirectory && (
@@ -505,49 +460,6 @@ export default function BarsList() {
         )}
       </div>
     </div>
-  );
-}
-
-/* FilterToggle — sharp 2px-bordered button that expands/collapses its
- * filter panel. `active` flips the button to a filled state so the
- * neighborhood toggle can carry the selected hood name in its label
- * (e.g. "NEIGHBORHOOD · KREUZBERG") and read at a glance as "filtered". */
-function FilterToggle({
-  icon,
-  labelShort,
-  labelLong,
-  open,
-  onToggle,
-  active = false,
-}: {
-  icon: React.ReactNode;
-  labelShort: string;
-  labelLong: string;
-  open: boolean;
-  onToggle: () => void;
-  active?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={open}
-      className={`inline-flex h-11 items-center gap-2 border-2 border-foreground px-3.5 md:px-5 md:min-w-[240px] font-mono text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
-        active
-          ? "bg-foreground text-background"
-          : "bg-background text-foreground hover:bg-foreground hover:text-background"
-      }`}
-    >
-      {icon}
-      <span className="md:mr-auto truncate max-w-[140px] md:max-w-none">
-        <span className="md:hidden">{labelShort}</span>
-        <span className="hidden md:inline">{labelLong}</span>
-      </span>
-      <ChevronDown
-        aria-hidden
-        className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-      />
-    </button>
   );
 }
 
