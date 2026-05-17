@@ -76,7 +76,7 @@ export default function Contact() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.1 }}
             className="heading-display leading-[0.95]"
-            style={{ fontSize: "clamp(40px, 7.2vw, 84px)" }}
+            style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
           >
             Let's{" "}
             <span className="heading-editorial italic lowercase font-light tracking-tight">
