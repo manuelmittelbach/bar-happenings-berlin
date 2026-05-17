@@ -1,38 +1,121 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, Search, X } from "lucide-react";
-import { useVenues } from "@/hooks/useEvents";
+import { useVenues, useEvents } from "@/hooks/useEvents";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
+import { isEventStillOnline } from "@/lib/eventStatus";
+import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
+import { useFilterParams } from "@/lib/useFilterParams";
 import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
+import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import type { Venue } from "@/types/event";
+import type { Venue, BarlinEvent } from "@/types/event";
 
-/* BarsList — directory of every venue in the database. Two filters
- * sit between the masthead and the index: a fuzzy bar-name search and
- * a neighborhood pill row (only neighborhoods that actually have bars
- * appear, sorted by bar count). Both narrow the same grouped A-Z grid
- * below. Cards link straight through to /bar/:id — the same
- * destination as tapping the venue line on EventDetailView, so the
- * detail surface is shared.
+/* BarsList — directory of every venue, grouped by neighborhood.
+ *
+ * Day chrome (Tonight / Tomorrow / Later) sits at the top, mirroring
+ * Index and MapPage so the three primary surfaces share the same
+ * navigation. The selected day is shared via `useFilterParams`, so
+ * switching from "Tomorrow" on Events → Bars keeps the tomorrow lens.
+ *
+ * Hoods are ordered LIVE by how many of their bars have something
+ * happening on the selected day: busiest hood first, quiet hoods at
+ * the bottom. That turns the directory from a static phone book into
+ * a "where in Berlin is something on" lens that complements the map
+ * (spatial) and the events list (chronological).
+ *
+ * Each card carries a tiny mono signal line when the bar has at least
+ * one event on the selected day. That line is its own click target —
+ * exactly-one event jumps straight to the event page, multiple events
+ * deepen to the bar page where they're all listed. The rest of the
+ * card always links to bar detail.
  */
 export default function BarsList() {
-  const { data: venues = [], isLoading } = useVenues();
+  const { data: venues = [], isLoading: venuesLoading } = useVenues();
+  // All upcoming events. Same hook the Index page uses, so the shared
+  // cache means switching Events ↔ Bars doesn't refetch.
+  const { data: events = [], isLoading: eventsLoading } = useEvents();
   const [nameQuery, setNameQuery] = useState("");
-  const [activeHood, setActiveHood] = useState("");
-  // Two collapsible filter panels. Default closed so the masthead +
-  // A→Z directory read as the star of the page; filters open on intent.
-  // Independent toggles — both can be open simultaneously if the user
-  // wants to layer name + hood, but each fires on its own click.
+  // Two collapsible filter panels — name search and neighborhood pick.
+  // Both default closed so the masthead + hood-grouped directory get
+  // the visual weight; filters open on intent. Each toggles
+  // independently so the user can layer name + hood if they want.
   const [nameOpen, setNameOpen] = useState(false);
   const [hoodOpen, setHoodOpen] = useState(false);
 
+  // Day + neighborhood filters — shared with Index + MapPage via
+  // useFilterParams so the user's selection follows them across the
+  // three surfaces. Picking "Kreuzberg" on Bars and clicking through
+  // to Events keeps the Kreuzberg lens. Same "All" = tonight encoding
+  // Index/Map already use.
+  const {
+    activeDate, setActiveDate,
+    activeNeighborhood, setActiveNeighborhood,
+  } = useFilterParams();
+  const dayTab: DayTab =
+    activeDate === "Tomorrow" ? "tomorrow"
+    : activeDate === "Later" ? "later"
+    : "tonight";
+  const handleDayTabChange = useCallback((t: DayTab) => {
+    if (t === "tonight") setActiveDate("All");
+    else if (t === "tomorrow") setActiveDate("Tomorrow");
+    else setActiveDate("Later");
+  }, [setActiveDate]);
+
+  const today = berlinDateString();
+  const tomorrow = berlinDateStringOffset(1);
+  // Same Later window as Index — day-after-tomorrow through today+13.
+  const cutoffDate = berlinDateStringOffset(13);
+
+  // Test for "does this event fall inside the currently-selected day
+  // bucket?" Mirrors the same logic Index uses for its day-scoped
+  // filters so a bar's tonight-count matches what shows up under
+  // Tonight on the Events page.
+  const matchesDay = useCallback(
+    (e: BarlinEvent): boolean => {
+      if (dayTab === "tonight") return e.date === today;
+      if (dayTab === "tomorrow") return e.date === tomorrow;
+      return e.date > tomorrow && e.date <= cutoffDate;
+    },
+    [dayTab, today, tomorrow, cutoffDate],
+  );
+
+  // Events grouped by venueId, filtered to the selected day. Drives
+  // both the per-card signal line and the per-hood section-header
+  // counter. For Tonight/Tomorrow the list is sorted by start time;
+  // for Later we sort by date then time so the chronologically nearest
+  // event surfaces first when there's only one to display.
+  const eventsForDayByVenue = useMemo(() => {
+    const map = new Map<string, BarlinEvent[]>();
+    for (const e of events) {
+      if (!matchesDay(e)) continue;
+      if (e.status === "canceled") continue;
+      // Tonight bucket: drop events whose end-of-day cutoff has passed
+      // (matches Index/Map). For tomorrow + later, "still online" is
+      // implicit (the event hasn't happened yet).
+      if (dayTab === "tonight" && !isEventStillOnline(e)) continue;
+      if (!e.venueId) continue;
+      const list = map.get(e.venueId) || [];
+      list.push(e);
+      map.set(e.venueId, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => {
+        const dateCmp = a.date.localeCompare(b.date);
+        if (dateCmp !== 0) return dateCmp;
+        return (a.startTime || "99:99").localeCompare(b.startTime || "99:99");
+      });
+    }
+    return map;
+  }, [events, matchesDay, dayTab]);
+
   // Hood pill order is locked to the unfiltered dataset so the row
-  // doesn't reshuffle as the user types. Sort is one-time: by total
-  // bar count (busiest first), then alphabetical for ties; empty hoods
-  // sink to the bottom. Recomputes only when the underlying venues
-  // list changes.
+  // doesn't reshuffle as the user types in name search. One-time sort:
+  // by total bar count (busiest first), then alphabetical for ties;
+  // hoods with zero bars sink to the bottom. Recomputes only when
+  // venues changes.
   const hoodOrder = useMemo(() => {
     const totals = new Map<string, number>();
     for (const v of venues) {
@@ -50,72 +133,113 @@ export default function BarsList() {
       });
   }, [venues]);
 
-  // Live counts per hood reflect the current name-search (but NOT the
-  // active hood — otherwise picking a hood would zero out all sibling
-  // counts). Overlaid onto the locked `hoodOrder` so labels update
-  // live while positions stay stable.
-  const neighborhoods = useMemo(() => {
-    const pool = nameQuery.trim()
-      ? venues.filter((v) => fuzzyMatchAny([v.name], nameQuery))
-      : venues;
-    const liveCounts = new Map<string, number>();
-    for (const v of pool) {
-      const h = (v.neighborhood || "").trim();
-      if (!h) continue;
-      liveCounts.set(h, (liveCounts.get(h) || 0) + 1);
-    }
-    return hoodOrder.map(({ name }) => ({
-      name,
-      count: liveCounts.get(name) || 0,
-    }));
-  }, [hoodOrder, venues, nameQuery]);
-
-  // Filter pass — fuzzy match on name (same helper as Index/Map search
-  // so the "ä/ö/typo" behavior reads consistent across surfaces), then
-  // exact-match neighborhood. Empty filters are no-ops.
-  const filtered = useMemo(() => {
+  // Name + hood filter pass. Both filters compose, mirroring how
+  // Index/Map combine search + neighborhood. Hood reuses the same
+  // shared useFilterParams slot Events/Map already use.
+  const filteredVenues = useMemo(() => {
     let result = venues;
     if (nameQuery.trim()) {
       result = result.filter((v) => fuzzyMatchAny([v.name], nameQuery));
     }
-    if (activeHood) {
-      result = result.filter((v) => v.neighborhood === activeHood);
+    if (activeNeighborhood) {
+      result = result.filter((v) => v.neighborhood === activeNeighborhood);
     }
     return result;
-  }, [venues, nameQuery, activeHood]);
+  }, [venues, nameQuery, activeNeighborhood]);
 
-  // Group alphabetically. Letter dividers give the directory a magazine-
-  // index rhythm and make long lists scannable without adding more chrome.
-  const grouped = useMemo(() => {
-    const sorted = [...filtered].sort((a, b) =>
-      a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
-    );
-    const out: { letter: string; items: Venue[] }[] = [];
-    for (const v of sorted) {
-      const letter = (v.name[0] || "#").toUpperCase().match(/[A-Z]/)
-        ? (v.name[0] || "#").toUpperCase()
-        : "#";
-      const last = out[out.length - 1];
-      if (last && last.letter === letter) last.items.push(v);
-      else out.push({ letter, items: [v] });
+  // Live counts per hood for the pill row. The displayed count is
+  // the number of BARS WITH EVENTS on the selected day — matches
+  // both the hood ordering (which sorts by this same number) and the
+  // section-header counter ("12 bars · 3 tonight"), so the pill, the
+  // sort, and the header all speak the same vocabulary. Counts react
+  // to name-search but not to the active hood (otherwise picking a
+  // hood would zero out every sibling).
+  //
+  // `hasBars` is tracked separately so the disabled state reflects
+  // whether a hood has any bars at all under the current name search
+  // — picking a hood with 0 active bars on the selected day is still
+  // useful (browse the bars there, even when nothing's on).
+  const neighborhoods = useMemo(() => {
+    const pool = nameQuery.trim()
+      ? venues.filter((v) => fuzzyMatchAny([v.name], nameQuery))
+      : venues;
+    const barsWithEventsCounts = new Map<string, number>();
+    const barCounts = new Map<string, number>();
+    for (const v of pool) {
+      const h = (v.neighborhood || "").trim();
+      if (!h) continue;
+      barCounts.set(h, (barCounts.get(h) || 0) + 1);
+      const hasEvents = (eventsForDayByVenue.get(v.id)?.length || 0) > 0;
+      if (hasEvents) {
+        barsWithEventsCounts.set(h, (barsWithEventsCounts.get(h) || 0) + 1);
+      }
     }
-    return out;
-  }, [filtered]);
+    return hoodOrder.map(({ name }) => ({
+      name,
+      count: barsWithEventsCounts.get(name) || 0,
+      hasBars: (barCounts.get(name) || 0) > 0,
+    }));
+  }, [hoodOrder, venues, nameQuery, eventsForDayByVenue]);
 
-  const clearAll = () => {
-    setNameQuery("");
-    setActiveHood("");
-  };
+  // Group venues by neighborhood, then sort hoods by selected-day
+  // activity. Within each hood, bars with events on the selected day
+  // come first (sorted by event count), then alpha for the quiet rest.
+  // Venues without a hood land in an "Other" bucket pinned to the
+  // bottom so nothing disappears.
+  const hoods = useMemo(() => {
+    const groups = new Map<string, Venue[]>();
+    for (const v of filteredVenues) {
+      const h = (v.neighborhood || "").trim() || "Other";
+      const list = groups.get(h) || [];
+      list.push(v);
+      groups.set(h, list);
+    }
 
-  // Explicit view selector — three mutually exclusive screens. Using
-  // boolean flags + separate `&&` blocks (instead of a nested ternary)
-  // makes it impossible for the empty state and the cards grid to
-  // render side by side, even under HMR / partial-update edge cases.
+    return [...groups.entries()]
+      .map(([name, items]) => {
+        const sorted = [...items].sort((a, b) => {
+          const aDay = eventsForDayByVenue.get(a.id)?.length || 0;
+          const bDay = eventsForDayByVenue.get(b.id)?.length || 0;
+          if (aDay !== bDay) return bDay - aDay;
+          return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+        });
+        // dayBars = distinct bars with at least one event on the
+        // selected day. The hood header surfaces this number ("3
+        // tonight") because the directory's unit is bars, not events.
+        const dayBars = sorted.filter(
+          (v) => (eventsForDayByVenue.get(v.id)?.length || 0) > 0,
+        ).length;
+        return { name, items: sorted, dayBars };
+      })
+      .sort((a, b) => {
+        if (a.name === "Other") return 1;
+        if (b.name === "Other") return -1;
+        // Primary: hoods with selected-day activity first.
+        if (a.dayBars !== b.dayBars) return b.dayBars - a.dayBars;
+        // Secondary: by total bar count (denser hood breaks ties).
+        if (a.items.length !== b.items.length) return b.items.length - a.items.length;
+        return a.name.localeCompare(b.name);
+      });
+  }, [filteredVenues, eventsForDayByVenue]);
+
+  const totalDayBars = useMemo(() => {
+    let n = 0;
+    for (const v of filteredVenues) {
+      if ((eventsForDayByVenue.get(v.id)?.length || 0) > 0) n++;
+    }
+    return n;
+  }, [filteredVenues, eventsForDayByVenue]);
+
+  // Word used in counters / card lines for the selected day.
+  // "tonight" / "tomorrow" / "later" — matches the DaySwitcher labels
+  // so the page's vocabulary is consistent top-to-bottom.
+  const dayWord = dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "later";
+
   const showNoDirectory = venues.length === 0;
-  const showNoMatch = !showNoDirectory && filtered.length === 0;
+  const showNoMatch = !showNoDirectory && filteredVenues.length === 0;
   const showResults = !showNoDirectory && !showNoMatch;
 
-  if (isLoading) return <PageSpinner />;
+  if (venuesLoading || eventsLoading) return <PageSpinner />;
 
   return (
     <div className="relative isolate bg-background pb-24">
@@ -148,27 +272,76 @@ export default function BarsList() {
         />
       </div>
 
-      <div className="container max-w-[1100px] pt-10 md:pt-14">
-        {/* Masthead — mono eyebrow over serif display title, mirroring
-            EventDetail / BarDetail typography hierarchy. Count gives the
-            directory immediate scale without needing chrome. The "A→Z"
-            tag in the eyebrow doubles as a structural hint: the index
-            below is grouped alphabetically, not by recency or hood. */}
-        <header className="mb-8 md:mb-10">
-          <h1
-            className="heading-display leading-[0.95]"
-            style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
-          >
-            All the BARS<span className="text-accent">.</span>
-          </h1>
+      {/* Day chrome — Tonight / Tomorrow / Later. Mirrors Index + Map:
+          rounded rect buttons on mobile (compact density), full
+          DaySwitcher tab strip on desktop (editorial weight). Lives
+          OUTSIDE the inner container so it can carry full-width mobile
+          chrome bottom rule like the other surfaces. */}
+      <div className="bg-background border-b-2 border-foreground md:border-b-0">
+        <div className="md:hidden">
+          <div className="container flex items-center gap-2 py-2.5">
+            {([
+              { id: "tonight", label: "Tonight" },
+              { id: "tomorrow", label: "Tomorrow" },
+              { id: "later", label: "Later" },
+            ] as { id: DayTab; label: string }[]).map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleDayTabChange(d.id)}
+                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
+                  dayTab === d.id
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground hover:bg-foreground hover:text-background"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Day chrome at the standard `container` width — matches the
+            global Header and the Events/Map chrome, so the
+            Tonight/Tomorrow/Later tabs sit at the exact same
+            horizontal position across all three surfaces (no jump
+            when navigating between them). */}
+        <div className="hidden md:block container">
+          <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
+        </div>
+      </div>
+
+      <div className="container pt-4 md:pt-6">
+        {/* Masthead — heading-display 24/30px under a hairline rule
+            with a day-aware counter on the right. The counter pairs
+            "X listed" (total directory under the name search) with "Y
+            {dayWord}" (live count of bars with events on the selected
+            day) so the page's headline number is the live signal. */}
+        <header className="mb-6 md:mb-8">
+          <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
+            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">
+              All the bars
+            </h1>
+            <span className="flex-1" />
+            <span className="mono-label text-muted-foreground">
+              <span className="md:hidden">
+                {filteredVenues.length}
+                {totalDayBars > 0 && (
+                  <span className="text-accent"> · {totalDayBars} {dayWord}</span>
+                )}
+              </span>
+              <span className="hidden md:inline">
+                {filteredVenues.length} listed
+                {totalDayBars > 0 && (
+                  <span className="text-accent"> · {totalDayBars} {dayWord}</span>
+                )}
+              </span>
+            </span>
+          </div>
         </header>
 
-        {/* Filter row — two brutalist toggle buttons that expand into
-            their panels on click. Default collapsed so the masthead +
-            A→Z index get the visual weight; filters are utility that
-            shows up on intent. Active filter values surface inline in
-            the closed-button label (e.g. "Name · kreuzberg") so the
-            user always knows what's filtered without expanding. */}
+        {/* Filter row — name search + neighborhood pick, both as
+            sharp 2px-bordered toggles. The neighborhood filter lasers
+            the directory to one hood (other hoods drop). Day filter
+            sits in the top chrome above and applies independently. */}
         <div className="mb-8 md:mb-10">
           <div className="flex flex-wrap items-center gap-2">
             <FilterToggle
@@ -180,17 +353,14 @@ export default function BarsList() {
             />
             <FilterToggle
               icon={<MapPin className="h-3.5 w-3.5" />}
-              labelShort="Neighborhood"
-              labelLong="Filter by neighborhood"
+              labelShort={activeNeighborhood || "Neighborhood"}
+              labelLong={activeNeighborhood ? `Neighborhood · ${activeNeighborhood}` : "Search by neighborhood"}
               open={hoodOpen}
               onToggle={() => setHoodOpen((s) => !s)}
+              active={!!activeNeighborhood}
             />
           </div>
 
-          {/* Search input panel — slides + fades in below the buttons.
-              Auto-focuses the input once the panel mounts so the user
-              can start typing immediately after clicking "Search by
-              name". */}
           <AnimatePresence initial={false}>
             {nameOpen && (
               <motion.div
@@ -231,8 +401,11 @@ export default function BarsList() {
           </AnimatePresence>
 
           {/* Neighborhood pill grid — wraps across multiple rows so
-              every hood is visible at once. Same shape system as
-              before: sharp on desktop, round on mobile. */}
+              every hood is visible at once. Same shape system as the
+              category pills on Events/Map: sharp 2px-bordered on
+              desktop, round on mobile. Picking a hood writes to the
+              shared activeNeighborhood slot so the choice carries
+              across to Events/Map. */}
           <AnimatePresence initial={false}>
             {hoodOpen && neighborhoods.length > 0 && (
               <motion.div
@@ -246,17 +419,17 @@ export default function BarsList() {
                 <div className="flex flex-wrap items-center gap-2 mt-4">
                   <HoodPill
                     label="All"
-                    active={!activeHood}
-                    onClick={() => setActiveHood("")}
+                    active={!activeNeighborhood}
+                    onClick={() => setActiveNeighborhood("")}
                   />
                   {neighborhoods.map((h) => (
                     <HoodPill
                       key={h.name}
                       label={h.name}
                       count={h.count}
-                      active={activeHood === h.name}
-                      disabled={h.count === 0}
-                      onClick={() => setActiveHood(activeHood === h.name ? "" : h.name)}
+                      active={activeNeighborhood === h.name}
+                      disabled={!h.hasBars}
+                      onClick={() => setActiveNeighborhood(activeNeighborhood === h.name ? "" : h.name)}
                     />
                   ))}
                 </div>
@@ -272,48 +445,62 @@ export default function BarsList() {
         )}
 
         {showNoMatch && (
-          // Empty state — matches the Index "No Drag tonight." pattern
-          // (italic body line + mono-label accent CTA underlined) so
-          // every "filtered to nothing" surface across the site reads
-          // the same.
           <section className="py-12 md:py-16 text-center">
             <p className="font-body italic text-[18px] m-0">
-              No bars match
-              {nameQuery.trim() && <> "{nameQuery.trim()}"</>}
-              {activeHood && (
-                <>
-                  {nameQuery.trim() ? " in " : " in "}
-                  {activeHood}
-                </>
-              )}
-              .
+              No bars match "{nameQuery.trim()}".
             </p>
             <button
               type="button"
-              onClick={clearAll}
+              onClick={() => setNameQuery("")}
               className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
             >
-              Reset filters →
+              Reset search →
             </button>
           </section>
         )}
 
         {showResults && (
-          <div className="space-y-12 md:space-y-14">
-            {grouped.map((group) => (
-              <section key={group.letter}>
-                {/* Letter divider — full-width hairline + giant serif
-                    initial. Reads as a magazine index break, not a UI
-                    chip, and holds its own without competing with the
-                    masthead. */}
-                <div className="flex items-baseline gap-5 border-t-2 border-foreground pt-3 mb-5 md:mb-7">
-                  <span className="font-serif font-bold leading-none text-[40px] md:text-[52px]">
-                    {group.letter}
-                  </span>
+          <div className="space-y-8 md:space-y-10">
+            {hoods.map((hood) => (
+              <section key={hood.name}>
+                {/* Hood divider — same section-header pattern as
+                    FreeTonightStrip / DayList: heading-display 24/30px
+                    on a hairline rule with a mono counter on the right.
+                    Sticky pins it below the page Header as the user
+                    scrolls into a hood. */}
+                <div
+                  className="mb-3 md:mb-4 sticky bg-background z-30"
+                  style={{ top: "var(--header-h)" }}
+                >
+                  <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
+                    <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
+                      {hood.name}
+                    </h2>
+                    <span className="flex-1" />
+                    <span className="mono-label text-muted-foreground">
+                      <span className="md:hidden">
+                        {hood.items.length}
+                        {hood.dayBars > 0 && (
+                          <span className="text-accent"> · {hood.dayBars} {dayWord}</span>
+                        )}
+                      </span>
+                      <span className="hidden md:inline">
+                        {hood.items.length} bar{hood.items.length !== 1 ? "s" : ""}
+                        {hood.dayBars > 0 && (
+                          <span className="text-accent"> · {hood.dayBars} {dayWord}</span>
+                        )}
+                      </span>
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
-                  {group.items.map((v) => (
-                    <BarCard key={v.id} venue={v} />
+                  {hood.items.map((v) => (
+                    <BarCard
+                      key={v.id}
+                      venue={v}
+                      dayEvents={eventsForDayByVenue.get(v.id) || []}
+                      dayTab={dayTab}
+                    />
                   ))}
                 </div>
               </section>
@@ -325,37 +512,38 @@ export default function BarsList() {
   );
 }
 
-/* FilterToggle — brutalist 2px-bordered button that expands/collapses
- * its filter panel. Stays visually identical regardless of whether a
- * filter is active — clearing happens inside the panel (the input's
- * own × and the "All" pill), so the button doesn't double as a state
- * display. Just icon + label + chevron. Chevron flips on open.
- *
- * Two labels: short for mobile (compact chip feel — "Search" /
- * "Neighborhood"), long for desktop (declarative dropdown button —
- * "Search by name" / "Filter by neighborhood"). */
+/* FilterToggle — sharp 2px-bordered button that expands/collapses its
+ * filter panel. `active` flips the button to a filled state so the
+ * neighborhood toggle can carry the selected hood name in its label
+ * (e.g. "NEIGHBORHOOD · KREUZBERG") and read at a glance as "filtered". */
 function FilterToggle({
   icon,
   labelShort,
   labelLong,
   open,
   onToggle,
+  active = false,
 }: {
   icon: React.ReactNode;
   labelShort: string;
   labelLong: string;
   open: boolean;
   onToggle: () => void;
+  active?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-expanded={open}
-      className="inline-flex h-11 items-center gap-2 border-2 border-foreground bg-background px-3.5 md:px-5 md:min-w-[240px] font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
+      className={`inline-flex h-11 items-center gap-2 border-2 border-foreground px-3.5 md:px-5 md:min-w-[240px] font-mono text-[11px] font-bold uppercase tracking-[0.14em] transition-colors ${
+        active
+          ? "bg-foreground text-background"
+          : "bg-background text-foreground hover:bg-foreground hover:text-background"
+      }`}
     >
       {icon}
-      <span className="md:mr-auto">
+      <span className="md:mr-auto truncate max-w-[140px] md:max-w-none">
         <span className="md:hidden">{labelShort}</span>
         <span className="hidden md:inline">{labelLong}</span>
       </span>
@@ -367,11 +555,13 @@ function FilterToggle({
   );
 }
 
-/* HoodPill — neighborhood filter chip. Sharp 2px-bordered rectangle on
- * desktop (md:rounded-none) and a round pill on mobile (rounded-full)
- * to match the existing category-filter shape system across the app.
- * The bar count rides in mono inside the pill so the label reads as a
- * filter, not just a tag. */
+/* HoodPill — neighborhood filter chip. Sharp 2px-bordered rectangle
+ * on desktop and round pill on mobile, matching the category-filter
+ * shape system across the app. The bar count rides in mono inside
+ * the pill so the label reads as a filter, not just a tag. Empty
+ * hoods (no bars under current search) stay in the row but are
+ * de-emphasized and non-interactive so the row reads as a complete
+ * map of Berlin without lying about counts. */
 function HoodPill({
   label,
   count,
@@ -385,10 +575,6 @@ function HoodPill({
   disabled?: boolean;
   onClick: () => void;
 }) {
-  // Three states: active (filled), idle (outlined, hoverable), and
-  // empty (no bars in this hood yet) — empty pills stay in the row so
-  // the directory reads as a complete map of Berlin, but they're
-  // visually de-emphasized and non-interactive.
   const base =
     "shrink-0 inline-flex items-center gap-1.5 px-3.5 h-9 rounded-full md:rounded-none border-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors";
   const tone = disabled
@@ -425,76 +611,159 @@ function HoodPill({
   );
 }
 
-/* BarCard — sharp 2px-bordered editorial card. Image lede on top,
- * neighborhood eyebrow + serif name + address below. Hover lifts the
- * card with a warm orange shadow that matches the radial atmosphere of
- * the page. Whole card is the link target so the affordance reads at a
- * glance and the touch hit-area is generous on mobile. */
-function BarCard({ venue }: { venue: Venue }) {
+/* Format "Fri 22 May" — used by the Later card line when the bar has
+ * exactly one event in the next 12-day window. Surfaces the actual
+ * date instead of a vague "later", because in the Later view the user
+ * is comparing dates across bars and a specific weekday + DOM + month
+ * is the load-bearing signal. */
+function formatShortDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+/* BarCard — sharp 2px-bordered editorial card. Image lede on top, bar
+ * name below. When the bar has events on the selected day, a small
+ * mono signal line sits under the name as its own click target.
+ *
+ * Implementation: the outer wrapper is an <article>. A bare <Link>
+ * absolutely covers the whole card at z-0 (the default whole-card
+ * affordance). The signal line is a separately-stacked <Link> with
+ * `relative z-10` so its hit area sits ABOVE the cover link. Visual
+ * content sits between with pointer-events-none so clicks fall through
+ * to whichever link owns the pixel under the cursor. The article
+ * carries `group` so group-hover styles on the title still fire when
+ * the user hovers anywhere on the card. */
+function BarCard({
+  venue,
+  dayEvents,
+  dayTab,
+}: {
+  venue: Venue;
+  dayEvents: BarlinEvent[];
+  dayTab: DayTab;
+}) {
   const cleanAddress = venue.address?.replace(/,\s*(Germany|Deutschland)\s*$/i, "") ?? "";
-  const initials = venue.name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const hasDayEvents = dayEvents.length > 0;
+  // Single-event: deep-link to the event. Multi-event: deepen to the
+  // bar page (where all upcoming events sit at top), since there's no
+  // single event to jump to.
+  const signalHref =
+    dayEvents.length === 1
+      ? `/event/${dayEvents[0].id}`
+      : `/bar/${venue.id}`;
+  // Signal label — day-aware. For Tonight/Tomorrow + 1 event we show
+  // "Tonight · 21:00" / "Tomorrow · 21:00". For Later + 1 we surface
+  // the concrete date because the user is comparing across days
+  // ("Fri 22 May · 21:00"). Multi-event collapses to a count line in
+  // the matching tense.
+  let signalLabel: string;
+  if (dayEvents.length === 1) {
+    const e = dayEvents[0];
+    const time = e.startTime ? ` · ${e.startTime}` : "";
+    if (dayTab === "tonight") signalLabel = `Tonight${time}`;
+    else if (dayTab === "tomorrow") signalLabel = `Tomorrow${time}`;
+    else signalLabel = `${formatShortDate(e.date)}${time}`;
+  } else {
+    const word = dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "upcoming";
+    signalLabel = `${dayEvents.length} events ${word}`;
+  }
 
   return (
-    <Link
-      to={`/bar/${venue.id}`}
-      className="group block bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted border-b-2 border-foreground">
-        {venue.image ? (
-          <img
-            src={venue.image}
-            alt={venue.name}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          // No-image fallback — initials in serif on a warm tinted
-          // panel. Keeps the grid rhythm even when a bar has no photo
-          // yet, instead of an empty grey placeholder.
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background:
-                "radial-gradient(circle at 30% 30%, hsla(28, 85%, 55%, 0.18), hsla(18, 85%, 52%, 0.08) 70%)",
-            }}
+    <article className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]">
+      {/* Whole-card cover link → bar detail. Sits at z-0 behind the
+          signal line so the signal line wins on its own hit area. */}
+      <Link
+        to={`/bar/${venue.id}`}
+        aria-label={venue.name}
+        className="absolute inset-0 z-0"
+      />
+
+      {/* Visual content — pointer-events-none so clicks fall through. */}
+      <div className="relative pointer-events-none">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted border-b-2 border-foreground">
+          {venue.image ? (
+            <img
+              src={venue.image}
+              alt={venue.name}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            />
+          ) : (
+            // Quiet editorial placeholder for missing images: warm
+            // radial tint, hairline crosshairs, 8px accent dot, mono
+            // "Inside · Bars" caption in the corner.
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 28% 32%, hsla(28, 85%, 55%, 0.20), hsla(18, 85%, 52%, 0.06) 65%)",
+              }}
+            >
+              <span
+                className="absolute inset-x-0 top-1/2 h-px bg-foreground/10"
+                style={{ transform: "translateY(-0.5px)" }}
+              />
+              <span
+                className="absolute inset-y-0 left-1/2 w-px bg-foreground/10"
+                style={{ transform: "translateX(-0.5px)" }}
+              />
+              <span
+                className="absolute left-1/2 top-1/2 rounded-full bg-accent"
+                style={{ width: 8, height: 8, transform: "translate(-50%, -50%)" }}
+              />
+              <span className="absolute right-3 bottom-2.5 font-mono text-[9px] uppercase tracking-[0.18em] text-foreground/45">
+                Inside · Bars
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="p-4 md:p-5">
+          <h3
+            lang="de"
+            className="font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words hyphens-auto"
           >
-            <span className="font-serif font-bold text-[64px] leading-none text-foreground/40">
-              {initials || "·"}
-            </span>
-          </div>
-        )}
-        {venue.neighborhood && (
-          // Neighborhood badge — sits on top of the image, top-left.
-          // Dark foreground fill + primary-foreground text reads as a
-          // hand-applied stamp on the photo, gives the image something
-          // editorial to anchor without needing a caption row.
-          <span
-            className="absolute left-3 top-3 inline-flex items-center gap-1 bg-foreground text-primary-foreground px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
+            {addSoftHyphens(venue.name)}
+          </h3>
+          {cleanAddress && (
+            <p className="hidden md:block mt-1.5 font-body text-[13px] leading-[1.5] text-foreground/80 line-clamp-1 break-words">
+              {cleanAddress}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Day signal line — its own Link, stacked above the cover.
+          Pulsing accent dot mirrors the live "Now" indicator in
+          EventMeta, tying the directory back to the events page
+          vocabulary. The dot is muted slightly for Tomorrow/Later
+          since those events aren't happening RIGHT NOW. */}
+      {hasDayEvents && (
+        <div className="relative z-10 px-4 md:px-5 pb-4 md:pb-5 -mt-1 md:-mt-1.5">
+          <Link
+            to={signalHref}
+            className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] font-bold text-accent hover:text-foreground transition-colors"
+            aria-label={
+              dayEvents.length === 1
+                ? `${signalLabel} at ${venue.name}: ${dayEvents[0].title}`
+                : `${dayEvents.length} events ${dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "upcoming"} at ${venue.name}`
+            }
           >
-            <MapPin className="h-3 w-3" />
-            {venue.neighborhood}
-          </span>
-        )}
-      </div>
-      <div className="p-4 md:p-5">
-        <h3
-          lang="de"
-          className="font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words hyphens-auto"
-        >
-          {addSoftHyphens(venue.name)}
-        </h3>
-        {cleanAddress && (
-          <p className="hidden md:block mt-1.5 font-body text-[13px] leading-[1.5] text-foreground/80 line-clamp-1 break-words">
-            {cleanAddress}
-          </p>
-        )}
-      </div>
-    </Link>
+            <span
+              aria-hidden
+              className={`inline-block h-1.5 w-1.5 rounded-full bg-accent ${
+                dayTab === "tonight" ? "animate-pulse" : ""
+              }`}
+            />
+            {signalLabel}
+          </Link>
+        </div>
+      )}
+    </article>
   );
 }
