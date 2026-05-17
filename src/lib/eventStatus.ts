@@ -5,7 +5,12 @@ import type { BarlinEvent } from "@/types/event";
 //   when endTime < startTime, e.g. 22:00–02:00).
 // - endTime missing → cutoff is startTime + 90min (matches the "Now"
 //   indicator window in isLiveNow so a card never lingers past Now).
-// - Neither time parseable → fall back to end of event.date (midnight).
+// - Neither time parseable (unknown start time) → cutoff is 22:00 on
+//   event.date. Without a known start we can't tell whether the night
+//   is just starting or already over, so we fall off at the
+//   conventional "late evening" mark instead of lingering until
+//   midnight — a card with no time still showing at 23:30 reads as
+//   "stale data," not "happening right now."
 export function isEventStillOnline(
   event: Pick<BarlinEvent, "date" | "startTime" | "endTime">,
   now: Date = new Date(),
@@ -31,8 +36,8 @@ export function isEventStillOnline(
     }
   }
 
-  const endOfDay = new Date(y, mo - 1, d + 1, 0, 0, 0, 0);
-  return now.getTime() < endOfDay.getTime();
+  const cutoff = new Date(y, mo - 1, d, 22, 0, 0, 0);
+  return now.getTime() < cutoff.getTime();
 }
 
 // Currently live: now is between startTime and endTime (or startTime+90min
