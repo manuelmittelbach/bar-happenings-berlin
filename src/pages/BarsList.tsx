@@ -328,14 +328,21 @@ export default function BarsList() {
         <header className="mb-6 md:mb-8">
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              All the bars
+              All bars
             </h1>
             <span className="flex-1" />
-            {totalDayEvents > 0 && (
-              <span className="mono-label text-accent">
-                {totalDayEvents} event{totalDayEvents !== 1 ? "s" : ""} {dayWord}
-              </span>
-            )}
+            {/* Counter renders even at zero ("0 events tonight") so
+                the line reads as a present-tense status. Color switches
+                with activity: accent orange when something's on, muted
+                when nothing — orange on a zero would suggest action
+                where there is none. */}
+            <span
+              className={`mono-label ${
+                totalDayEvents > 0 ? "text-accent" : "text-muted-foreground"
+              }`}
+            >
+              {totalDayEvents} event{totalDayEvents !== 1 ? "s" : ""} {dayWord}
+            </span>
           </div>
         </header>
 
@@ -437,11 +444,13 @@ export default function BarsList() {
                       {hood.name}
                     </h2>
                     <span className="flex-1" />
-                    {hood.dayEvents > 0 && (
-                      <span className="mono-label text-accent">
-                        {hood.dayEvents} event{hood.dayEvents !== 1 ? "s" : ""} {dayWord}
-                      </span>
-                    )}
+                    <span
+                      className={`mono-label ${
+                        hood.dayEvents > 0 ? "text-accent" : "text-muted-foreground"
+                      }`}
+                    >
+                      {hood.dayEvents} event{hood.dayEvents !== 1 ? "s" : ""} {dayWord}
+                    </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
@@ -509,7 +518,9 @@ function HoodPill({
               ? "text-foreground/30"
               : active
                 ? "opacity-60"
-                : "text-muted-foreground"
+                : count > 0
+                  ? "text-accent"
+                  : "text-muted-foreground"
           }
         >
           {count}
