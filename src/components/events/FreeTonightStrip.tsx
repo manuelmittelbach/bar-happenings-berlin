@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
-import EventCard from "@/components/events/EventCard";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
@@ -89,23 +88,11 @@ export default function FreeTonightStrip({
           </div>
         </div>
 
-        {/* Mobile: flat list rows (identical chrome to "More tonight"
-            below) — cards on a narrow viewport read as extra weight when
-            every row is already one-per-line. Desktop: responsive grid of
-            FreeCards so the wide horizontal space isn't wasted on a
-            single-column list. */}
-        <div className="md:hidden">
-          {freeEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              layout="list"
-              onClick={onEventClick}
-              walkingMin={walkingMinByEventId?.get(event.id)}
-            />
-          ))}
-        </div>
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        {/* Responsive grid of FreeCards — single column on mobile, 2/3/4
+            columns from md upward. Previously mobile fell back to flat
+            list rows to match "More tonight", but the user wants Free
+            cards to keep their distinct card chrome on every viewport. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {freeEvents.map((event) => (
             <FreeCard
               key={event.id}
