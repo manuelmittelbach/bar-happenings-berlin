@@ -15,7 +15,12 @@ const corsHeaders = {
 // from. `Contact` label keeps the From distinct from the security
 // transactional sender so inbox rules can route separately.
 const FROM = "Inside Bars Contact <contact@send.insidebars.co>";
-const TO = "hello@insidebars.co";
+// Direct to the operator's inbox. We originally routed via
+// hello@insidebars.co → Cloudflare Email Routing → live.de, but
+// Cloudflare bounced/delayed mails that came in via Resend (likely
+// because send.insidebars.co has no SPF record and the chain looked
+// like a self-loop). Going direct skips the forwarding hop entirely.
+const TO = "manumittelbach@live.de";
 
 // Topic ids must mirror src/pages/Contact.tsx — keep these in sync.
 // We trust the id, not a free-text subject from the client.
@@ -68,7 +73,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  const resendKey = Deno.env.get("RESEND_API_KEY");
+  // Supabase project stores the Resend key under `RESEND_EDGE_FUNCTIONS`
+  // (named that way historically; not `RESEND_API_KEY` like Resend's own
+  // docs suggest). Keep this in sync with any new functions we add.
+  const resendKey = Deno.env.get("RESEND_EDGE_FUNCTIONS");
   if (!resendKey) {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
