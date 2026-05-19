@@ -14,7 +14,7 @@ export default function Layout() {
   // repaints under it. Footer is dropped here and re-rendered inside
   // Index's scroll container (so users still hit it at the end of the
   // list), the same way Map drops it altogether.
-  const isIndex = pathname === "/";
+  const isIndex = pathname === "/events";
   const lockedViewport = isMap || isIndex;
   const isNative = useIsNative();
 

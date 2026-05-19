@@ -1,15 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { User, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { EXPLORE_SCROLL_KEY, SCROLL_HOME_EVENT } from "@/pages/Index";
 
-/* Navigation items — Events + Map switcher + bar-owner pitch. Events
- * duplicates the Wordmark's destination on purpose: paired with Map
- * it reads as a clear surface switcher in the desktop header chrome
- * (instead of a floating FAB on either page). About moved to the
- * footer to keep the header focused on primary discovery surfaces. */
+/* Navigation items — Events + Map switcher + bar-owner pitch. About
+ * moved to the footer to keep the header focused on primary discovery
+ * surfaces. The Wordmark routes to `/` (Landing); Events is its own
+ * nav item pointing at the events list on `/events`. */
 const navItems: { label: string; path: string }[] = [
-  { label: "Events", path: "/" },
+  { label: "Events", path: "/events" },
   { label: "Map", path: "/map" },
   { label: "Bars", path: "/bars" },
 ];
@@ -63,18 +61,7 @@ export default function Header() {
   const visibleNavItems = navItems;
 
   const goHome = () => {
-    sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-    if (location.pathname === "/") {
-      // Index now scrolls inside its own container, not the window. Dispatch
-      // an event Index listens for and scrolls its scrollRef to the top.
-      window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT));
-    } else {
-      // Other-page → "/" transitions: navigate, then fire the scroll-home
-      // event on the next tick once Index has mounted and attached its
-      // listener. removeItem above prevents scroll-memory from competing.
-      navigate("/");
-      setTimeout(() => window.dispatchEvent(new CustomEvent(SCROLL_HOME_EVENT)), 50);
-    }
+    navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path;

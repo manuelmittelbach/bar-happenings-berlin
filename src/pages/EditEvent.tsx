@@ -155,7 +155,7 @@ export default function EditEvent() {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       toast.success(seriesId ? "Series deleted" : "Event deleted");
-      navigate("/");
+      navigate("/events");
     } catch {
       toast.error("Couldn't delete the event. Please try again.");
     }
