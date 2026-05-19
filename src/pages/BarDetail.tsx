@@ -79,43 +79,6 @@ export default function BarDetail() {
         </div>
       </div>
 
-      {/* Atmosphere — same orange/amber radial pair as EventDetail so the
-          bar page lives in the same warm color world. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute right-[-22%] top-[100px] h-[600px] w-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute left-[-15%] top-[180px] h-[420px] w-[420px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute left-[-22%] top-[1000px] h-[600px] w-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute right-[-15%] top-[1100px] h-[420px] w-[420px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-      </div>
-
       <article className="max-w-[880px] mx-auto px-6 pt-4 pb-16 md:px-8">
         {/* C. Display title — Syne 800, fluid masthead size, mixed case
             (was uppercase before; aligning to EventDetail's title style).
