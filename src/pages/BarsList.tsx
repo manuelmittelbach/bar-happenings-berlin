@@ -239,7 +239,10 @@ export default function BarsList() {
             </h1>
             <span className="flex-1" />
             <span className="mono-label text-muted-foreground">
-              {totalBars} bar{totalBars !== 1 ? "s" : ""}
+              <span className="md:hidden">{totalBars}</span>
+              <span className="hidden md:inline">
+                {totalBars} bar{totalBars !== 1 ? "s" : ""}
+              </span>
             </span>
           </div>
         </header>
@@ -343,7 +346,10 @@ export default function BarsList() {
                     </h2>
                     <span className="flex-1" />
                     <span className="mono-label text-muted-foreground">
-                      {hood.items.length} bar{hood.items.length !== 1 ? "s" : ""}
+                      <span className="md:hidden">{hood.items.length}</span>
+                      <span className="hidden md:inline">
+                        {hood.items.length} bar{hood.items.length !== 1 ? "s" : ""}
+                      </span>
                     </span>
                   </div>
                 </div>
