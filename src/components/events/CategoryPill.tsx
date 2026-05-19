@@ -170,6 +170,7 @@ export function CategoryRowPills({
         <Pill
           label="All"
           Icon={LayoutGrid}
+          color="#ED5B1C"
           active={!activeCategory}
           onClick={() => onSelect("")}
         />
@@ -283,9 +284,9 @@ export function CategoryIconBar({
           }`}
         >
           <div
-            style={!activeCategory ? activeDiskStyle("#ED5B1C") : { color: "#ED5B1C" }}
+            style={!activeCategory ? activeDiskStyle("#ED5B1C") : undefined}
             className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
-              !activeCategory ? "scale-105" : "bg-background border-border"
+              !activeCategory ? "scale-105" : "bg-muted border-border"
             }`}
           >
             <LayoutGrid className="h-5 w-5" />
@@ -309,9 +310,9 @@ export function CategoryIconBar({
             }`}
           >
             <div
-              style={isActive ? activeDiskStyle(catColor) : { color: catColor }}
+              style={isActive ? activeDiskStyle(catColor) : undefined}
               className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${
-                isActive ? "scale-105" : "bg-background border-border"
+                isActive ? "scale-105" : "bg-muted border-border"
               }`}
             >
               {Icon ? <Icon className="h-5 w-5" /> : <span className="text-xl leading-none">{info?.emoji ?? "✦"}</span>}
