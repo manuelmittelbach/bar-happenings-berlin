@@ -5,9 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 
 const benefits = [
-	{ num: "01", label: "Fill the room" },
-	{ num: "02", label: "Track interest" },
-	{ num: "03", label: "2-min setup" },
+	{
+		num: "01",
+		label: "2-min setup",
+		desc: "Sign up, claim your bar, publish your first event.",
+	},
+	{
+		num: "02",
+		label: "Fill the room",
+		desc: "Reach people scrolling for tonight's plans.",
+	},
 ];
 
 export default function ForBars() {
@@ -94,8 +101,8 @@ export default function ForBars() {
 					<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
 
 					{/* Hero / Create account */}
-					<section className="md:flex-1">
-						<div className="px-4 md:pl-0 md:pr-8 lg:pr-12 py-12 md:py-20 border-b-2 md:border-b-0 border-foreground">
+					<section className="md:flex-1 md:flex md:items-center">
+						<div className="w-full px-4 md:pl-0 md:pr-8 lg:pr-12 py-12 md:py-20 border-b-2 md:border-b-0 border-foreground">
 							<h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
 								Run a bar
 								<br />
@@ -105,7 +112,7 @@ export default function ForBars() {
 							</h1>
 
 							<p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-md">
-								Publish your events and reach locals looking for something to do tonight.
+								Publish your events and reach people looking for something to do tonight.
 							</p>
 
 							{user && !loading ? (
@@ -138,17 +145,20 @@ export default function ForBars() {
 								</button>
 							)}
 
-							<ul className="mt-12 grid grid-cols-3 gap-3 md:gap-6">
+							<ul className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-8 max-w-md">
 								{benefits.map((b) => (
 									<li
 										key={b.num}
-										className="border-t border-border pt-3 flex flex-col gap-1.5"
+										className="border-t-2 border-foreground pt-3 flex flex-col gap-2"
 									>
 										<span className="font-mono text-[10px] tracking-widest text-accent">
 											{b.num}
 										</span>
-										<span className="font-mono font-bold uppercase tracking-tight text-xs md:text-sm leading-tight">
+										<span className="font-mono font-bold uppercase tracking-tight text-sm md:text-base leading-tight">
 											{b.label}
+										</span>
+										<span className="font-body text-[13px] leading-[1.45] text-muted-foreground">
+											{b.desc}
 										</span>
 									</li>
 								))}
