@@ -197,36 +197,7 @@ export default function BarsList() {
   if (venuesLoading || eventsLoading) return <PageSpinner />;
 
   return (
-    <div className="relative isolate bg-background pb-24">
-      {/* Atmosphere — same orange/amber radial pair as BarDetail so the
-          index and detail surfaces share the same warm color world. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute right-[-22%] top-[80px] h-[600px] w-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute left-[-15%] top-[260px] h-[420px] w-[420px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute left-[-22%] top-[1100px] h-[600px] w-[600px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-            filter: "blur(40px)",
-          }}
-        />
-      </div>
-
+    <div className="bg-background pb-24">
       <div className="container pt-4 md:pt-6">
         {/* Masthead — heading-display 24/30px under a hairline rule
             with a bar-count on the right. Static count of bars under
