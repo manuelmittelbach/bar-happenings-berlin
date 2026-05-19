@@ -367,7 +367,7 @@ export default function Contact() {
               </button>
 
               <p className="pt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/45">
-                Sent straight to our inbox &nbsp;·&nbsp; we reply within a few days
+                Sent straight to our inbox &nbsp;·&nbsp; we'll get back to you
               </p>
             </form>
             )}
