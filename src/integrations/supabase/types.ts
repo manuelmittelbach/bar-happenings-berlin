@@ -583,6 +583,7 @@ export type Database = {
           facebook: string | null
           id: string
           image: string | null
+          image_position: string
           inserted_at: string | null
           inside_image_position: string
           inside_image_url: string | null
@@ -606,6 +607,7 @@ export type Database = {
           facebook?: string | null
           id?: string
           image?: string | null
+          image_position?: string
           inserted_at?: string | null
           inside_image_position?: string
           inside_image_url?: string | null
@@ -629,6 +631,7 @@ export type Database = {
           facebook?: string | null
           id?: string
           image?: string | null
+          image_position?: string
           inserted_at?: string | null
           inside_image_position?: string
           inside_image_url?: string | null
@@ -653,7 +656,9 @@ export type Database = {
     }
     Functions: {
       archive_past_events: { Args: never; Returns: number }
+      cleanup_past_staged_events: { Args: never; Returns: number }
       cleanup_unconfirmed_signups: { Args: never; Returns: number }
+      extend_recurring_series: { Args: never; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       truncate_staging: { Args: never; Returns: undefined }
     }

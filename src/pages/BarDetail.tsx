@@ -105,6 +105,7 @@ export default function BarDetail() {
             <img
               src={venue.image}
               alt={venue.name}
+              style={venue.imagePosition ? { objectPosition: venue.imagePosition } : undefined}
               className="absolute inset-0 w-full h-full object-cover"
             />
           </figure>

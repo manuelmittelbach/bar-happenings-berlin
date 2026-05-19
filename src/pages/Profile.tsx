@@ -20,7 +20,7 @@ const SUPPORT_EMAIL = "hello@insidebars.co";
 type BarIdentity = { name: string; address: string; neighborhood: string };
 
 const inputClass =
-  "w-full h-11 px-3 rounded-xl bg-background border-2 border-foreground text-sm font-body outline-none focus:bg-muted/40 transition-colors";
+  "w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -231,28 +231,27 @@ export default function Profile() {
     return <PageSpinner />;
   }
 
-  const roleLabel =
-    role === "admin" ? "Admin" : role === "organizer" ? "Bar Organizer" : "Member";
+  const showRoleChip = role === "organizer";
   const showApprovalBadge = role === "organizer" && approvalStatus !== "approved";
   const approvalColor =
     approvalStatus === "rejected"
-      ? "bg-red-500/10 text-red-600 border-red-500/40"
-      : "bg-yellow-500/10 text-yellow-700 border-yellow-500/40";
+      ? "border-red-600/60 bg-red-500/10 text-red-700"
+      : "border-yellow-600/60 bg-yellow-500/10 text-yellow-700";
 
   return (
     <div className="container max-w-2xl py-10 md:py-14">
       {emailJustChanged && (
-        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 text-green-600 text-sm font-medium">
-          <CheckCircle2 className="h-4 w-4" /> Email updated!
+        <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
+          <CheckCircle2 className="h-4 w-4" /> Email updated
         </div>
       )}
       {passwordJustReset && (
-        <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 text-green-600 text-sm font-medium">
-          <CheckCircle2 className="h-4 w-4" /> Password reset!
+        <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
+          <CheckCircle2 className="h-4 w-4" /> Password reset
         </div>
       )}
       {loadError && (
-        <div className="mb-6 flex items-start gap-2 px-3 py-2 rounded-xl bg-red-500/10 text-red-600 text-sm font-medium border border-red-500/40">
+        <div className="mb-6 flex items-start gap-2 border-2 border-foreground bg-red-500/10 px-3 py-2 text-sm font-medium text-red-700">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>Couldn't load your profile data. Please refresh the page to try again.</span>
         </div>
@@ -266,13 +265,15 @@ export default function Profile() {
       <section className="mb-10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="mono-label text-foreground">Identity</h2>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider border border-border bg-muted text-muted-foreground">
-            {roleLabel}
-          </span>
+          {showRoleChip && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-card text-foreground">
+              Organizer
+            </span>
+          )}
         </div>
 
         {showApprovalBadge && (
-          <div className={`mb-5 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border ${approvalColor}`}>
+          <div className={`mb-5 inline-flex items-center gap-2 border-2 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] ${approvalColor}`}>
             {approvalStatus === "rejected" ? "Application not approved" : "Awaiting admin approval"}
           </div>
         )}
@@ -321,7 +322,7 @@ export default function Profile() {
         >
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">Email</label>
-            <div className="flex items-center h-11 px-3 rounded-xl bg-muted/40 border-2 border-border text-sm font-mono text-muted-foreground select-all">
+            <div className="flex items-center h-11 px-3 bg-muted/40 border-2 border-foreground/40 text-sm font-mono text-muted-foreground select-all">
               {user.email}
             </div>
           </div>
@@ -341,8 +342,8 @@ export default function Profile() {
             </p>
           </div>
           {emailChangeRequested && (
-            <p className="text-xs text-green-700 bg-green-500/10 border border-green-500/40 px-3 py-2">
-              Confirmation link sent. Check your new inbox to finalize the change.
+            <p className="border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
+              Confirmation link sent — check your new inbox
             </p>
           )}
           <div className="pt-1">
@@ -361,7 +362,7 @@ export default function Profile() {
       {/* Bar identity block — only for approved organizers */}
       {barIdentity && (
         <section className="mb-10 border-t border-border pt-8">
-          <div className="border border-border p-5 bg-muted/30">
+          <div className="border-2 border-foreground p-5 bg-card">
             <p className="mono-label text-muted-foreground mb-3">Bar identity</p>
             <p className="text-lg font-serif font-bold leading-tight">
               {barIdentity.name}

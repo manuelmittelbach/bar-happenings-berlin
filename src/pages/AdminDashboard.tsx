@@ -404,6 +404,8 @@ export default function AdminDashboard() {
           website: organizer.pendingSubmission.website,
           instagram: organizer.pendingSubmission.instagram,
           phone: organizer.pendingSubmission.phone,
+          image: null,
+          image_position: "50% 50%",
           lat: result.lat,
           lng: result.lng,
         };
@@ -420,6 +422,8 @@ export default function AdminDashboard() {
           website: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite,
           instagram: organizer.pendingClaim.proposedInstagram ?? organizer.pendingClaim.venueInstagram,
           phone: organizer.pendingClaim.proposedPhone ?? organizer.pendingClaim.venuePhone,
+          image: null,
+          image_position: "50% 50%",
           lat: 0,
           lng: 0,
         };
