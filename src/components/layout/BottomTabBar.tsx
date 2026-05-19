@@ -15,7 +15,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   {
     key: "list",
-    to: "/",
+    to: "/events",
     label: "List",
     Icon: ListBullets,
     // Active strictly on the List surface. /event/* and /bar/* are
@@ -23,7 +23,7 @@ const TABS: TabDef[] = [
     // are" when reading a detail, so leaving both inactive avoids the
     // misleading List-stays-black hint after drilling in from either
     // surface.
-    isActive: (p) => p === "/",
+    isActive: (p) => p === "/events",
   },
   {
     key: "map",

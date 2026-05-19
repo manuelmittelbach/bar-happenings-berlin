@@ -196,8 +196,13 @@ const App = () => (
         <ScrollManager />
         <AuthCallbackGate>
         <Routes>
+          {/* Landing owns its own chrome (nav + footer) — rendered
+              outside Layout so the global Header doesn't stack on top
+              of the marketing nav. Sits at `/` so visitors land on the
+              marketing page; the events list moved to `/events`. */}
+          <Route path="/" element={<Landing />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
+            <Route path="/events" element={<Index />} />
             <Route path="/event/:id" element={<EventDetail />} />
             <Route path="/bar/:id" element={<BarDetail />} />
             <Route path="/bars" element={<BarsList />} />
@@ -219,9 +224,6 @@ const App = () => (
             <Route path="/instagram" element={<Instagram />} />
             <Route path="*" element={<NotFound />} />
           </Route>
-          {/* Landing owns its own chrome (nav + footer) — render outside Layout
-              so the global Header doesn't stack on top of the marketing nav. */}
-          <Route path="/landing" element={<Landing />} />
         </Routes>
         </AuthCallbackGate>
       </BrowserRouter>

@@ -13,7 +13,7 @@ import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
 
 /**
- * LandingDraft — marketing landing for /landing.
+ * LandingDraft — marketing landing rendered at `/`.
  *
  * Slim top nav · centered hero with floating preview card cluster on the
  * right · shared site Footer pinned below. Card cluster hides below lg —
@@ -24,7 +24,7 @@ export default function LandingDraft() {
 
   // ─── Live data — drives the hero card stack ───
   // useEvents / useVenues / useCategories all share the React-Query cache
-  // with the rest of the app, so navigating from /landing to / doesn't
+  // with the rest of the app, so navigating from `/` to `/events` doesn't
   // re-fetch. Falls back gracefully to empty arrays while loading.
   const { data: eventsData = [] } = useEvents();
   const { data: categoriesData = [] } = useCategories();
@@ -252,7 +252,7 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/events")}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
@@ -432,7 +432,7 @@ export default function LandingDraft() {
             {tonightCount > 0 && (
               <button
                 type="button"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/events")}
                 className="group absolute bottom-[1%] right-[3%] rotate-[8deg] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f] transition-all hover:-translate-y-0.5 hover:translate-x-0.5 hover:rotate-[8deg] hover:shadow-[4px_4px_0_0_#0f0f0f] active:translate-x-1 active:translate-y-1 active:rotate-[8deg] active:shadow-[2px_2px_0_0_#0f0f0f]"
                 style={{ zIndex: 10 }}
               >
