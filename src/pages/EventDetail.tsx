@@ -138,46 +138,6 @@ export default function EventDetail() {
 			{/* Inline Share in the action row is now redundant on every
 			    surface (top bar handles it everywhere) — flag pulled to
 			    false unconditionally below. */}
-			{/* Warm atmosphere — selbes Disk-Pattern wie auf Index, damit
-			    Detail- und Liste-Seite dieselbe Color-Sprache sprechen.
-			    Zwei Paare (Orange + Amber Disks mit Hero-Spec) reichen
-			    für die typische Artikellänge. */}
-			<div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-				{/* Pair 1 — orange right, amber left, sits at the lede figure */}
-				<div
-					className="absolute right-[-22%] top-[100px] h-[600px] w-[600px] rounded-full"
-					style={{
-						background:
-							"radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-						filter: "blur(40px)",
-					}}
-				/>
-				<div
-					className="absolute left-[-15%] top-[180px] h-[420px] w-[420px] rounded-full"
-					style={{
-						background:
-							"radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-						filter: "blur(40px)",
-					}}
-				/>
-				{/* Pair 2 — flips sides, sits around the venue card / footer */}
-				<div
-					className="absolute left-[-22%] top-[1000px] h-[600px] w-[600px] rounded-full"
-					style={{
-						background:
-							"radial-gradient(circle at center, hsla(18, 85%, 52%, 0.07), hsla(18, 85%, 52%, 0) 60%)",
-						filter: "blur(40px)",
-					}}
-				/>
-				<div
-					className="absolute right-[-15%] top-[1100px] h-[420px] w-[420px] rounded-full"
-					style={{
-						background:
-							"radial-gradient(circle at center, hsla(28, 85%, 55%, 0.05), hsla(28, 85%, 55%, 0) 60%)",
-						filter: "blur(40px)",
-					}}
-				/>
-			</div>
 			<EventDetailView
 				event={event}
 				recurrenceLabel={recurrenceLabel}
