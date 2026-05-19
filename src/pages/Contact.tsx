@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Mail, MessageSquareText, Sparkles, Store } from "lucide-react";
+import { ArrowRight, Check, Mail, MessageSquareText, Sparkles, Store } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const topics = [
   { id: "instagram", label: "Help run Instagram / TikTok",  subject: "Instagram / TikTok collab" },
@@ -14,6 +15,7 @@ const topics = [
 ] as const;
 
 type TopicId = (typeof topics)[number]["id"];
+type SubmitState = "idle" | "sending" | "sent" | "error";
 
 const EMAIL = "hello@insidebars.co";
 
@@ -22,35 +24,54 @@ export default function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  // Honeypot — real users never see or fill this. Bots scraping the
+  // form will fill every field; if hp is set the edge function silently
+  // 200s without sending.
+  const [hp, setHp] = useState("");
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const activeTopic = useMemo(
-    () => topics.find((t) => t.id === topicId) ?? null,
-    [topicId],
-  );
+  const canSubmit =
+    topicId !== "" &&
+    email.trim().length > 0 &&
+    message.trim().length > 0 &&
+    submitState !== "sending";
 
-  // Build a mailto: URL with subject + body pre-filled from form state.
-  // No backend wiring needed — opens the user's mail client with the
-  // payload ready to send. The page is still useful as a structured
-  // intake even if the user has no mail-client configured (the form
-  // fields collect the same info they'd otherwise have to remember).
-  const mailtoHref = useMemo(() => {
-    const subject = encodeURIComponent(
-      activeTopic ? `[Inside Bars] ${activeTopic.subject}` : "[Inside Bars] General",
-    );
-    const body = encodeURIComponent(
-      [
-        message ? message : "",
-        "",
-        "—",
-        name ? `From: ${name}` : "",
-        email ? `Reply-to: ${email}` : "",
-        activeTopic ? `Topic: ${activeTopic.label}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-    return `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-  }, [activeTopic, name, email, message]);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setSubmitState("sending");
+    setErrorMsg("");
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-contact-message",
+        {
+          body: {
+            name: name.trim(),
+            email: email.trim(),
+            message: message.trim(),
+            topic: topicId,
+            hp,
+          },
+        },
+      );
+      if (error) throw new Error(error.message);
+      if (data && typeof data === "object" && "error" in data) {
+        throw new Error(String((data as { error?: string }).error ?? "Send failed"));
+      }
+      setSubmitState("sent");
+      setName("");
+      setEmail("");
+      setMessage("");
+      setHp("");
+      setTopicId("");
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Couldn't send right now. Try again?",
+      );
+      setSubmitState("error");
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -207,16 +228,33 @@ export default function Contact() {
 
           {/* ── RIGHT — form ── */}
           <div className="md:pl-10 lg:pl-14">
+            {submitState === "sent" ? (
+              <div className="flex h-full flex-col items-start justify-center border-2 border-foreground bg-card p-8 shadow-[8px_8px_0_0_#0f0f0f]">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center border-2 border-foreground bg-accent text-background">
+                  <Check className="h-5 w-5" strokeWidth={3} />
+                </div>
+                <h3 className="heading-display text-3xl leading-tight">
+                  Message{" "}
+                  <span className="heading-editorial italic lowercase font-light">
+                    sent
+                  </span>
+                  <span className="text-accent">.</span>
+                </h3>
+                <p className="mt-4 max-w-md text-[15px] leading-[1.6] text-foreground/75">
+                  Thanks for reaching out — we'll come back to you within a
+                  few days at the email address you gave us.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSubmitState("idle")}
+                  className="mt-6 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/55 hover:text-foreground transition-colors"
+                >
+                  Send another <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            ) : (
             <form
-              onSubmit={(e) => {
-                // Prevent the default form GET — we don't have a backend.
-                // The Send button uses an <a href={mailtoHref}> so the
-                // mail client opens with the body pre-filled. This
-                // submit-handler is just a safety net for Enter-key
-                // submissions while the user is typing.
-                e.preventDefault();
-                window.location.href = mailtoHref;
-              }}
+              onSubmit={handleSubmit}
               className="space-y-5"
             >
               {/* Subject — mirrors the active chip. Editable so power
@@ -262,7 +300,7 @@ export default function Contact() {
 
               <div className="space-y-1.5">
                 <label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
-                  Email address
+                  Email
                 </label>
                 <input
                   type="email"
@@ -286,23 +324,53 @@ export default function Contact() {
                 />
               </div>
 
-              {/* Send — anchor styled as a brutalist primary button.
-                  Using <a href={mailtoHref}> lets browsers open the
-                  mail client natively (no JS-trigger popups blocked).
-                  active:scale tightens the press for tactility. */}
-              <a
-                href={mailtoHref}
-                className="group mt-2 inline-flex h-12 w-full items-center justify-center gap-2 border-2 border-foreground bg-foreground px-6 font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
+              {/* Honeypot — kept visually hidden + out of tab/AT order.
+                  Bots autofill every input; real users never see this. */}
+              <div aria-hidden="true" className="absolute h-0 w-0 overflow-hidden opacity-0" style={{ left: "-9999px" }}>
+                <label>
+                  Don't fill this in
+                  <input
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={hp}
+                    onChange={(e) => setHp(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              {submitState === "error" && errorMsg && (
+                <div
+                  role="alert"
+                  className="border-2 border-foreground bg-background px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground"
+                >
+                  <span className="text-accent">Error · </span>
+                  <span className="font-sans normal-case tracking-normal text-[13px] font-normal text-foreground/80">
+                    {errorMsg}
+                  </span>
+                </div>
+              )}
+
+              {/* Send — real submit button, hits the send-contact-message
+                  edge function. Disabled while sending or while required
+                  fields are empty. */}
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="group mt-2 inline-flex h-12 w-full items-center justify-center gap-2 border-2 border-foreground bg-foreground px-6 font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-foreground disabled:hover:text-background"
               >
                 <MessageSquareText className="h-4 w-4" />
-                Send message
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+                {submitState === "sending" ? "Sending…" : "Send message"}
+                {submitState !== "sending" && (
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                )}
+              </button>
 
               <p className="pt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/45">
-                Opens your mail client &nbsp;·&nbsp; we reply within a few days
+                Sent straight to our inbox &nbsp;·&nbsp; we reply within a few days
               </p>
             </form>
+            )}
           </div>
         </div>
       </section>
