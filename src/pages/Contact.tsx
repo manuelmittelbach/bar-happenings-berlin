@@ -241,8 +241,8 @@ export default function Contact() {
                   <span className="text-accent">.</span>
                 </h3>
                 <p className="mt-4 max-w-md text-[15px] leading-[1.6] text-foreground/75">
-                  Thanks for reaching out — we'll come back to you within a
-                  few days at the email address you gave us.
+                  Thanks for reaching out — we'll come back to you as
+                  quickly as possible at the email address you gave us.
                 </p>
                 <button
                   type="button"
