@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin, MessageSquareText } from "lucide-react";
+import { ArrowRight, MessageSquareText } from "lucide-react";
 
 const beliefs = [
   {
@@ -34,8 +34,6 @@ const beliefs = [
 ] as const;
 
 export default function About() {
-  const navigate = useNavigate();
-
   return (
     <div className="flex flex-1 flex-col bg-background">
       {/* ─── 1 · HERO ─────────────────────────────────────────────
@@ -117,15 +115,10 @@ export default function About() {
             </h2>
             <p className="mt-5 text-[15px] leading-[1.65] text-foreground/75 md:text-base">
               Berlin's bar scene is one of the most vibrant in the world.
-              Every night, dozens of small venues host live music, open
-              mics, comedy nights, DJ sets, quizzes, karaoke, drag shows,
-              screenings, and dating nights. But most of these events
-              are{" "}
-              <span className="text-foreground">
-                buried in Instagram stories
-              </span>
-              , shared by word of mouth, or announced on a chalkboard
-              outside the door.
+              Every night, dozens of venues host live music, open mics,
+              comedy nights, DJ sets, and other small happenings. But most
+              of these events are buried in Instagram stories, passed by
+              word of mouth, or scrawled on a chalkboard outside the door.
             </p>
           </article>
 
@@ -142,11 +135,7 @@ export default function About() {
               curated<span className="text-accent">.</span>
             </h2>
             <p className="mt-5 text-[15px] leading-[1.65] text-foreground/75 md:text-base">
-              We built Inside Bars to surface the small stuff —{" "}
-              <span className="text-foreground">
-                not another generic event marketplace
-              </span>
-              , but a platform that feels local, curated, and true to the
+              We built Inside Bars to surface the small stuff — not another generic event marketplace, but a platform that feels local, curated, and true to the
               spirit of Berlin's independent bar culture. One map. Tonight,
               tomorrow, and whatever's coming up. Made for going out, not
               scrolling.
@@ -211,8 +200,7 @@ export default function About() {
               Who's behind this
             </div>
             <p className="heading-display text-3xl leading-[1.1] md:text-5xl">
-              Built in{" "}
-              <span className="text-accent">Berlin</span>{" "}
+              Built{" "}
               <span className="heading-editorial italic lowercase font-light">
                 by
               </span>{" "}
@@ -226,19 +214,6 @@ export default function About() {
               visibility, and we think the people looking for a good
               Tuesday night deserve a better tool to find them.
             </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-accent" />
-                Kreuzberg
-              </span>
-              <span className="text-foreground/25">·</span>
-              <span>Neukölln</span>
-              <span className="text-foreground/25">·</span>
-              <span>Friedrichshain</span>
-              <span className="text-foreground/25">·</span>
-              <span>+ everywhere else</span>
-            </div>
           </div>
 
           {/* Contact card — sharp 2px border, hard offset shadow.
@@ -247,8 +222,7 @@ export default function About() {
               brutalist object collection. */}
           <aside className="relative">
             <div className="relative border-2 border-foreground bg-card p-6 shadow-[8px_8px_0_0_#0f0f0f] md:p-7">
-              <div className="mb-4 flex items-baseline gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+              <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
                 Reach out
               </div>
 
@@ -269,20 +243,6 @@ export default function About() {
                 Get in contact
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
-
-              <div className="mt-6 border-t border-border pt-5">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
-                  Run a bar in Berlin?
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate("/for-bars")}
-                  className="group mt-2 inline-flex items-center gap-1.5 font-serif text-base font-semibold text-foreground hover:text-accent transition-colors"
-                >
-                  Get your events listed
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </button>
-              </div>
             </div>
           </aside>
         </div>

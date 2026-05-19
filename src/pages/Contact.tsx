@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Mail, MessageSquareText, Sparkles } from "lucide-react";
+import { ArrowRight, Mail, MessageSquareText, Sparkles, Store } from "lucide-react";
 
 const topics = [
-  { id: "collab",   label: "Want to collaborate", subject: "Collaboration" },
-  { id: "claim",    label: "Claim your bar",      subject: "Claim my bar" },
-  { id: "press",    label: "Press / Media",       subject: "Press inquiry" },
-  { id: "bug",      label: "Report a bug",        subject: "Bug report" },
-  { id: "feedback", label: "General feedback",    subject: "Feedback" },
+  { id: "instagram", label: "Help run Instagram / TikTok",  subject: "Instagram / TikTok collab" },
+  { id: "host",      label: "Host an event",       subject: "Host an event" },
+  { id: "collab",    label: "Want to collaborate", subject: "Collaboration" },
+  { id: "bug",       label: "Report a bug",        subject: "Bug report" },
+  { id: "press",     label: "Press / Media",       subject: "Press inquiry" },
+  { id: "feedback",  label: "General feedback",    subject: "Feedback" },
+  { id: "other",     label: "Other",               subject: "Other" },
 ] as const;
 
 type TopicId = (typeof topics)[number]["id"];
@@ -16,13 +18,13 @@ type TopicId = (typeof topics)[number]["id"];
 const EMAIL = "hello@insidebars.co";
 
 export default function Contact() {
-  const [topicId, setTopicId] = useState<TopicId>("collab");
+  const [topicId, setTopicId] = useState<TopicId | "">("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
   const activeTopic = useMemo(
-    () => topics.find((t) => t.id === topicId) ?? topics[0],
+    () => topics.find((t) => t.id === topicId) ?? null,
     [topicId],
   );
 
@@ -32,7 +34,9 @@ export default function Contact() {
   // intake even if the user has no mail-client configured (the form
   // fields collect the same info they'd otherwise have to remember).
   const mailtoHref = useMemo(() => {
-    const subject = encodeURIComponent(`[Inside Bars] ${activeTopic.subject}`);
+    const subject = encodeURIComponent(
+      activeTopic ? `[Inside Bars] ${activeTopic.subject}` : "[Inside Bars] General",
+    );
     const body = encodeURIComponent(
       [
         message ? message : "",
@@ -40,7 +44,7 @@ export default function Contact() {
         "—",
         name ? `From: ${name}` : "",
         email ? `Reply-to: ${email}` : "",
-        `Topic: ${activeTopic.label}`,
+        activeTopic ? `Topic: ${activeTopic.label}` : "",
       ]
         .filter(Boolean)
         .join("\n"),
@@ -107,34 +111,35 @@ export default function Contact() {
             className="pointer-events-none absolute left-1/2 top-12 bottom-12 hidden w-[2px] -translate-x-1/2 bg-foreground md:block"
           />
 
-          {/* ── LEFT — intent (collab CTA → chips → email) ── */}
-          <div className="md:pr-10 lg:pr-14">
-            {/* Top-priority ask — Inside Bars is actively looking for
-                someone to run our Instagram, so the collab CTA sits at
-                the head of the left column. Hard shadow + accent
-                sparkle so it reads as the page's primary call. */}
-            <Link
-              to="/instagram"
-              className="group flex items-start gap-3 border-2 border-foreground bg-card p-5 shadow-[8px_8px_0_0_#0f0f0f] transition-all hover:bg-foreground hover:text-background hover:shadow-[6px_6px_0_0_hsl(var(--accent))]"
-            >
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />
-              <div className="flex-1">
-                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 group-hover:text-background/70">
-                  Photographers, writers, regulars
-                </div>
-                <p className="mt-1 font-serif text-lg font-semibold leading-tight">
-                  Help us run our Instagram{" "}
-                  <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
-                </p>
-              </div>
-            </Link>
-
-            <div className="mt-10 mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
+          {/* ── LEFT — intent (collab CTA → chips → email) ──
+              md:pt-2 nudges the eyebrow down so it sits on the same
+              baseline as the right column's "What's this about?" label. */}
+          <div className="md:pr-10 lg:pr-14 md:pt-2">
+            <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
               Reach out if you want to
             </div>
 
-            <ul className="flex flex-wrap gap-2">
-              {topics.map((t) => {
+            {/* Top-priority ask — Inside Bars is actively looking for
+                someone to run our Instagram. Seeds the "What's this
+                about?" select and scrolls the form into view so the
+                user lands in the right intake context instead of being
+                shipped off to a separate page. */}
+            <button
+              type="button"
+              onClick={() => setTopicId("instagram")}
+              className="group flex w-full items-start gap-3 border-2 border-foreground bg-card p-5 text-left shadow-[8px_8px_0_0_#0f0f0f] transition-all hover:bg-foreground hover:text-background hover:shadow-[6px_6px_0_0_hsl(var(--accent))]"
+            >
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />
+              <div className="flex-1">
+                <p className="font-serif text-lg font-semibold leading-tight">
+                  Help us run our Instagram / TikTok{" "}
+                  <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                </p>
+              </div>
+            </button>
+
+            <ul className="mt-10 flex flex-wrap gap-2">
+              {topics.filter((t) => t.id !== "instagram").map((t) => {
                 const active = t.id === topicId;
                 return (
                   <li key={t.id}>
@@ -162,22 +167,42 @@ export default function Contact() {
 
             {/* Email card — the brand-canon "I prefer email" path.
                 Plain bordered block (no hard shadow) so it sits
-                visually below the top collab CTA in the hierarchy. */}
-            <div className="mt-10 border-2 border-foreground bg-background p-5">
-              <div className="mb-2 flex items-baseline gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
-                <Mail className="h-3 w-3" />
-                Email us directly
+                visually below the top collab CTA in the hierarchy.
+                Icon-left layout mirrors the IG + bar-owner cards. */}
+            <div className="mt-16 flex items-start gap-3 border-2 border-foreground bg-background p-5">
+              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <div className="flex-1">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
+                  Email us directly
+                </div>
+                <a
+                  href={`mailto:${EMAIL}`}
+                  className="heading-display mt-1 block text-lg leading-tight transition-colors hover:text-accent"
+                >
+                  {EMAIL}
+                </a>
               </div>
-              <a
-                href={`mailto:${EMAIL}`}
-                className="heading-display block text-2xl leading-tight transition-colors hover:text-accent"
-              >
-                {EMAIL}
-              </a>
-              <p className="mt-2 text-[13px] leading-[1.5] text-foreground/65">
-                Prefer plain email? Skip the form — we read every message.
-              </p>
             </div>
+
+            {/* Bar-owner CTA — funnels venue claims to /for-bars so
+                they don't get lost in the generic form. Plain bordered
+                block (no shadow) so the IG ask stays the page's
+                top-priority visual. */}
+            <Link
+              to="/for-bars"
+              className="group mt-4 flex w-full items-start gap-3 border-2 border-foreground bg-background p-5 text-left transition-colors hover:bg-foreground hover:text-background"
+            >
+              <Store className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />
+              <div className="flex-1">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 group-hover:text-background/70">
+                  Run a bar in Berlin?
+                </div>
+                <p className="mt-1 font-serif text-lg font-semibold leading-tight">
+                  List your bar in 2 minutes{" "}
+                  <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
+                </p>
+              </div>
+            </Link>
           </div>
 
           {/* ── RIGHT — form ── */}
@@ -203,14 +228,22 @@ export default function Contact() {
                 </label>
                 <select
                   value={topicId}
-                  onChange={(e) => setTopicId(e.target.value as TopicId)}
-                  className="h-11 w-full border-2 border-foreground bg-background px-3 font-serif text-base text-foreground outline-none transition-colors focus:bg-card"
+                  onChange={(e) => setTopicId(e.target.value as TopicId | "")}
+                  className={`h-11 w-full border-2 border-foreground bg-background px-3 font-serif text-base outline-none transition-colors focus:bg-card ${
+                    topicId === "" ? "text-foreground/45" : "text-foreground"
+                  }`}
                 >
-                  {topics.map((t) => (
+                  <option value="" disabled>
+                    Select a topic
+                  </option>
+                  {topics.filter((t) => t.id !== "instagram").map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
                     </option>
                   ))}
+                  {topicId === "instagram" && (
+                    <option value="instagram">Help run Instagram / TikTok</option>
+                  )}
                 </select>
               </div>
 
@@ -274,35 +307,6 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* ─── 3 · BAR-OWNER CTA — funnels venue claims out of the
-          form and into the dedicated /for-bars onboarding so they
-          don't get lost in the general inbox. ──────────────────── */}
-      <section className="bg-muted/30">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between md:gap-8">
-            <div>
-              <div className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
-                Run a bar in Berlin?
-              </div>
-              <p className="heading-display text-2xl leading-tight md:text-3xl">
-                Skip the form —{" "}
-                <span className="heading-editorial italic lowercase font-light">
-                  list your bar
-                </span>{" "}
-                in 2 minutes
-                <span className="text-accent">.</span>
-              </p>
-            </div>
-            <Link
-              to="/for-bars"
-              className="group inline-flex h-12 shrink-0 items-center gap-2 border-2 border-foreground bg-background px-6 font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground transition-all hover:bg-foreground hover:text-background"
-            >
-              Get started
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
