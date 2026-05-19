@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Save, Upload, X } from "lucide-react";
+import { ChevronLeft, Eye, Globe, Instagram, Mail, Phone, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -9,6 +9,10 @@ import {
   uploadVenueImage,
   type MyVenuePatch,
 } from "@/lib/supabaseQueries";
+import { useEventsByVenue, useVenueById } from "@/hooks/useEvents";
+import { berlinDateString } from "@/lib/dateFormat";
+import { addSoftHyphens } from "@/lib/cleanTitle";
+import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { Spinner } from "@/components/ui/spinner";
 import { PageSpinner } from "@/components/ui/page-spinner";
 
@@ -51,6 +55,7 @@ export default function BarAccount() {
   const [imagePosition, setImagePosition] = useState<string>(DEFAULT_POSITION);
   const [isDragging, setIsDragging] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -271,21 +276,34 @@ export default function BarAccount() {
   }
 
   return (
-    <div className="container max-w-2xl py-10 md:py-14">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 mb-6 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors"
+    <div className="relative">
+      {/* Sticky Back row — mirrors EventDetail/BarDetail so the back
+          affordance sits at the same screen position across detail-style
+          pages, regardless of where the user came from. */}
+      <div
+        className="sticky z-40 bg-background"
+        style={{ top: "var(--header-h)" }}
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> Back
-      </button>
-
-      <div className="mb-10 border-b-2 border-foreground pb-6">
-        <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
-          Bar account
-        </h1>
-        <p className="mt-2 text-base md:text-lg text-muted-foreground">{venue.name}</p>
+        <div className="container flex items-center justify-between py-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+          </button>
+        </div>
       </div>
+
+      <div className="container max-w-2xl pt-4 pb-10 md:pb-14">
+        <div className="mb-10 border-b-2 border-foreground pb-6">
+          <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
+            Bar account
+          </h1>
+          <p className="mt-2 text-base md:text-lg text-muted-foreground">{venue.name}</p>
+        </div>
 
       <form onSubmit={handleSave} className="space-y-10">
         {/* Cover image */}
@@ -404,8 +422,8 @@ export default function BarAccount() {
           </div>
         </section>
 
-        {/* Save */}
-        <div>
+        {/* Save + Preview */}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
             disabled={saving}
@@ -420,6 +438,13 @@ export default function BarAccount() {
                 <Save className="h-3.5 w-3.5" /> Save changes
               </>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-2 h-12 px-6 border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
+          >
+            <Eye className="h-3.5 w-3.5" /> Preview
           </button>
         </div>
       </form>
@@ -450,6 +475,224 @@ export default function BarAccount() {
           </p>
         </div>
       </section>
+
+        {previewOpen && (
+          <BarAccountPreview
+            venueId={venue.id}
+            venueName={venue.name}
+            venueAddress={venue.address}
+            imageUrl={displayedImageUrl}
+            imagePosition={imagePosition}
+            website={website.trim()}
+            instagram={instagram.trim()}
+            phone={phone.trim()}
+            onClose={() => setPreviewOpen(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface PreviewProps {
+  venueId: string;
+  venueName: string;
+  venueAddress: string;
+  imageUrl: string | null;
+  imagePosition: string;
+  website: string;
+  instagram: string;
+  phone: string;
+  onClose: () => void;
+}
+
+function BarAccountPreview({
+  venueId,
+  venueName,
+  venueAddress,
+  imageUrl,
+  imagePosition,
+  website,
+  instagram,
+  phone,
+  onClose,
+}: PreviewProps) {
+  const { venue: liveVenue } = useVenueById(venueId);
+  const todayStr = berlinDateString();
+  const { data: venueEvents = [] } = useEventsByVenue(venueId, todayStr);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  const cleanAddress = venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
+  const websiteHref = website ? (/^https?:\/\//i.test(website) ? website : `https://${website}`) : "";
+  const instagramHref = instagram
+    ? /^https?:\/\//i.test(instagram)
+      ? instagram
+      : `https://instagram.com/${instagram.replace(/^@/, "")}`
+    : "";
+
+  const upcomingEvents = venueEvents
+    .filter((e) => e.status !== "canceled" && e.date >= todayStr)
+    .sort((a, b) => {
+      const dateCmp = a.date.localeCompare(b.date);
+      if (dateCmp !== 0) return dateCmp;
+      const tA = a.startTime || "99:99";
+      const tB = b.startTime || "99:99";
+      return tA.localeCompare(tB);
+    });
+
+  const handleOpenMaps = () => {
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        venueAddress || venueName,
+      )}`,
+      "_blank",
+    );
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Bar account preview"
+      className="fixed inset-0 z-50 bg-background overflow-y-auto"
+    >
+      {/* Preview chrome — sticky top bar with PREVIEW label + close */}
+      <div className="sticky top-0 z-20 border-b-2 border-foreground bg-background">
+        <div className="max-w-[880px] mx-auto px-6 md:px-8 py-3 flex items-center justify-between">
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <Eye className="h-3.5 w-3.5" /> Preview · how visitors see your bar
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center h-9 w-9 border-2 border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors"
+            aria-label="Close preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <article className="max-w-[880px] mx-auto px-6 pt-8 pb-16 md:px-8">
+        <h1
+          lang="de"
+          className="font-serif font-bold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
+          style={{ fontSize: "clamp(26px, 4.5vw, 40px)" }}
+        >
+          {addSoftHyphens(venueName)}
+        </h1>
+
+        {imageUrl ? (
+          <figure className="relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] md:aspect-[16/9] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)]">
+            <img
+              src={imageUrl}
+              alt={venueName}
+              style={{ objectPosition: imagePosition }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </figure>
+        ) : (
+          <div className="border-2 border-dashed border-foreground/40 mb-6 aspect-[3/2] md:aspect-[16/9] flex items-center justify-center">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              No cover image yet
+            </p>
+          </div>
+        )}
+
+        {(website || instagram || phone) && (
+          <div className="flex items-center gap-4 flex-wrap pb-3 border-b border-foreground/15 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            {website && (
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <Globe className="h-3.5 w-3.5 shrink-0" />
+                <span>Website</span>
+              </a>
+            )}
+            {instagram && (
+              <a
+                href={instagramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <Instagram className="h-3.5 w-3.5 shrink-0" />
+                <span>Instagram</span>
+              </a>
+            )}
+            {phone && (
+              <a
+                href={`tel:${phone.replace(/\s+/g, "")}`}
+                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors normal-case tracking-normal text-[12px]"
+              >
+                <Phone className="h-3.5 w-3.5 shrink-0" />
+                <span>{phone}</span>
+              </a>
+            )}
+          </div>
+        )}
+
+        <section className="mt-4">
+          {cleanAddress && (
+            <p lang="de" className="font-body text-[14px] text-muted-foreground leading-snug">
+              {cleanAddress}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleOpenMaps}
+            className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
+          >
+            Open in Maps <span aria-hidden="true">→</span>
+          </button>
+        </section>
+
+        {liveVenue?.description && (
+          <section className="mt-6 pt-4 border-t border-foreground/15">
+            <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
+              About the bar
+            </h2>
+            <div className="font-body text-[17px] md:text-[18px] leading-[1.6] space-y-5">
+              {liveVenue.description.split("\n\n").map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="mt-6 pt-4 border-t border-foreground/15">
+          <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
+            Upcoming events
+          </h2>
+          {upcomingEvents.length === 0 ? (
+            <p className="font-body italic text-[16px] text-muted-foreground py-4 m-0">
+              Nothing on the calendar yet. Check back soon.
+            </p>
+          ) : (
+            <UpcomingAgenda
+              events={upcomingEvents}
+              onEventClick={() => {
+                /* preview is read-only — clicks are no-ops */
+              }}
+            />
+          )}
+        </section>
+      </article>
     </div>
   );
 }

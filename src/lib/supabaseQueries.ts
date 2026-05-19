@@ -100,6 +100,7 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
     websiteEvents: row.website_events ?? undefined,
+    phone: row.phone ?? undefined,
     scrapeEnabled: row.scrape_enabled,
     lat: Number(row.lat),
     lng: Number(row.lng),
