@@ -209,7 +209,7 @@ export default function ForBars() {
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										placeholder="you@example.com"
-										className="w-full h-11 px-3 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
+										className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 									/>
 								</div>
 
@@ -237,7 +237,7 @@ export default function ForBars() {
 												value={password}
 												onChange={(e) => setPassword(e.target.value)}
 												placeholder="••••••••"
-												className="w-full h-10 px-3 pr-10 bg-background border-2 border-foreground font-body text-[14px] outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
+												className="w-full h-11 px-3 pr-10 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 											/>
 											<button
 												type="button"
