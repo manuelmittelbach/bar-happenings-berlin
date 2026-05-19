@@ -15,9 +15,9 @@ import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
 
 const STATUS_STYLE: Record<string, string> = {
-  approved: "bg-green-500/10 text-green-600",
-  pending: "bg-yellow-500/10 text-yellow-600",
-  rejected: "bg-red-500/10 text-red-600",
+  approved: "border-green-600/40 bg-green-500/10 text-green-700",
+  pending: "border-yellow-600/40 bg-yellow-500/10 text-yellow-700",
+  rejected: "border-red-600/40 bg-red-500/10 text-red-700",
 };
 
 export default function OrganizerDashboard() {
@@ -128,8 +128,8 @@ export default function OrganizerDashboard() {
       <div className="flex-1 flex items-center justify-center py-16">
         <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
           {justConfirmed && (
-              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
-                <CheckCircle2 className="h-4 w-4" /> Email confirmed!
+              <div className="inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
+                <CheckCircle2 className="h-4 w-4" /> Email confirmed
               </div>
             )}
             <div className="flex justify-center">
@@ -168,8 +168,8 @@ export default function OrganizerDashboard() {
   return (
     <div className="container py-8">
           {justConfirmed && (
-            <div className="mb-6 inline-flex items-center gap-2 px-3 py-2 rounded-sm bg-green-500/10 text-green-600 text-sm font-medium">
-              <CheckCircle2 className="h-4 w-4" /> Email confirmed!
+            <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
+              <CheckCircle2 className="h-4 w-4" /> Email confirmed
             </div>
           )}
           {venue && (
@@ -188,9 +188,9 @@ export default function OrganizerDashboard() {
               { label: "Total Events", value: String(myEvents.filter((e) => e.status !== "canceled").length), icon: CalendarDays },
               { label: "Upcoming", value: String(myEvents.filter((e) => e.status !== "canceled" && !isEventInPast(e)).length), icon: Clock },
             ].map((stat) => (
-              <div key={stat.label} className="border border-border rounded-sm p-5 space-y-2">
+              <div key={stat.label} className="border-2 border-foreground p-5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground font-medium">{stat.label}</span>
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{stat.label}</span>
                   <stat.icon className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <p className="font-serif text-3xl font-bold">{stat.value}</p>
@@ -198,13 +198,21 @@ export default function OrganizerDashboard() {
             ))}
           </div>
 
-          <div className="flex justify-start mb-8">
+          <div className="flex flex-wrap items-center gap-3 mb-8">
             <Link
               to="/publish"
-              className="inline-flex items-center gap-2 h-11 px-5 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
+              className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish Event in ${venue.name}` : "Publish Event"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish event in ${venue.name}` : "Publish event"}
             </Link>
+            {venue && (
+              <Link
+                to="/bar-account"
+                className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
+              >
+                <Pencil className="h-4 w-4" /> Edit bar account
+              </Link>
+            )}
           </div>
 
           {/* Tabs */}
@@ -250,11 +258,11 @@ export default function OrganizerDashboard() {
                 return (
                   <div
                     key={parent.id}
-                    className="border border-border rounded-sm p-5"
+                    className="border-2 border-foreground p-5"
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       {parent.image && (
-                        <div className="w-full sm:w-28 h-24 rounded-sm overflow-hidden flex-shrink-0 bg-muted">
+                        <div className="w-full sm:w-28 h-24 overflow-hidden flex-shrink-0 bg-muted border-2 border-foreground">
                           <img
                             src={parent.image}
                             alt={parent.title}
@@ -267,12 +275,12 @@ export default function OrganizerDashboard() {
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                           <span className="font-serif text-base font-semibold break-all min-w-0">{parent.title}</span>
                           {recurrenceLabel && (
-                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-sm font-medium bg-muted text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 border border-foreground/30 bg-muted px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                               <Repeat className="h-3 w-3" /> {recurrenceLabel}
                             </span>
                           )}
                           {isEventStillOnline(displayEvent) && (
-                            <span className={`text-sm px-2 py-0.5 rounded-sm font-medium capitalize ${STATUS_STYLE[displayEvent.status ?? "pending"] ?? ""}`}>
+                            <span className={`border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${STATUS_STYLE[displayEvent.status ?? "pending"] ?? ""}`}>
                               {displayEvent.status === "approved" ? "online" : (displayEvent.status ?? "pending")}
                             </span>
                           )}
@@ -349,7 +357,7 @@ export default function OrganizerDashboard() {
                           return (
                             <div
                               key={m.id}
-                              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm py-2 px-2 -mx-2 rounded-sm hover:bg-muted/50"
+                              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm py-2 px-2 -mx-2 hover:bg-muted/50"
                             >
                               <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                                 <span className="text-muted-foreground">

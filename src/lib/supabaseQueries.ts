@@ -96,6 +96,7 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     address: row.address,
     description: row.description ?? "",
     image: row.image ?? "",
+    imagePosition: row.image_position,
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
     websiteEvents: row.website_events ?? undefined,
@@ -179,6 +180,46 @@ export async function uploadEventImage(file: File, userId: string): Promise<stri
   if (error) throw error;
   const { data } = supabase.storage.from("event-images").getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function uploadVenueImage(file: File, userId: string): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("venue-images").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("venue-images").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export interface MyVenuePatch {
+  image?: string | null;
+  image_position?: string;
+  website?: string | null;
+  instagram?: string | null;
+  phone?: string | null;
+}
+
+export interface MyVenueUpdateResult {
+  id: string;
+  image: string | null;
+  image_position: string;
+  website: string | null;
+  instagram: string | null;
+  phone: string | null;
+}
+
+export async function updateMyVenue(patch: MyVenuePatch): Promise<MyVenueUpdateResult> {
+  const { data, error } = await supabase.functions.invoke("update-my-venue", {
+    body: patch,
+  });
+  if (error) throw error;
+  if (data && typeof data === "object" && "error" in data) {
+    throw new Error(String((data as { error?: string }).error ?? "Update failed"));
+  }
+  return (data as { venue: MyVenueUpdateResult }).venue;
 }
 
 interface EventWriteData {
@@ -461,6 +502,8 @@ export type OrganizerAccount = {
     website: string | null;
     instagram: string | null;
     phone: string | null;
+    image: string | null;
+    image_position: string;
     lat: number;
     lng: number;
   } | null;
@@ -513,7 +556,7 @@ async function hydrateOrganizers(profiles: OrganizerProfileRow[]): Promise<Organ
   const [ownersRes, submissionsRes, claimsRes] = await Promise.all([
     supabase
       .from("venue_owners")
-      .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone, lat, lng )")
+      .select("user_id, venues ( id, name, address, neighborhood, website, instagram, phone, image, image_position, lat, lng )")
       .in("user_id", ids),
     supabase
       .from("pending_bar_submissions")

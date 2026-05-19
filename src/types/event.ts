@@ -42,6 +42,7 @@ export interface Venue {
   address: string;
   description: string;
   image: string;
+  imagePosition?: string;
   instagram?: string;
   website?: string;
   websiteEvents?: string;
