@@ -198,7 +198,7 @@ export default function Contact() {
                   Run a bar in Berlin?
                 </div>
                 <p className="mt-1 font-serif text-lg font-semibold leading-tight">
-                  List your bar in 2 minutes{" "}
+                  List your bar and publish events{" "}
                   <span aria-hidden className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
                 </p>
               </div>
