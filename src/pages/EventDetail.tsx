@@ -124,7 +124,7 @@ export default function EventDetail() {
 					</button>
 					<button
 						onClick={handleShare}
-						className={`inline-flex items-center gap-1.5 h-8 px-3 border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all ${isNative ? "rounded-full" : ""}`}
+						className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
 						aria-label="Share"
 					>
 						<Share className="h-3.5 w-3.5" />
