@@ -1,35 +1,28 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { useVenues, useEvents } from "@/hooks/useEvents";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { isEventStillOnline } from "@/lib/eventStatus";
-import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
-import { useFilterParams } from "@/lib/useFilterParams";
+import { berlinDateString } from "@/lib/dateFormat";
 import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
-import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import type { Venue, BarlinEvent } from "@/types/event";
 
 /* BarsList — directory of every venue, grouped by neighborhood.
  *
- * Day chrome (Tonight / Tomorrow / Later) sits at the top, mirroring
- * Index and MapPage so the three primary surfaces share the same
- * navigation. The selected day is shared via `useFilterParams`, so
- * switching from "Tomorrow" on Events → Bars keeps the tomorrow lens.
- *
  * Hoods are ordered LIVE by how many of their bars have something
- * happening on the selected day: busiest hood first, quiet hoods at
- * the bottom. That turns the directory from a static phone book into
- * a "where in Berlin is something on" lens that complements the map
+ * happening tonight: busiest hood first, quiet hoods at the bottom.
+ * That turns the directory from a static phone book into a "where in
+ * Berlin is something on right now" lens that complements the map
  * (spatial) and the events list (chronological).
  *
  * Each card carries a tiny mono signal line when the bar has at least
- * one event on the selected day. That line is its own click target —
- * exactly-one event jumps straight to the event page, multiple events
- * deepen to the bar page where they're all listed. The rest of the
- * card always links to bar detail.
+ * one event tonight. That line is its own click target — exactly-one
+ * event jumps straight to the event page, multiple events deepen to
+ * the bar page where they're all listed. The rest of the card always
+ * links to bar detail.
  */
 export default function BarsList() {
   const { data: venues = [], isLoading: venuesLoading } = useVenues();
@@ -44,68 +37,29 @@ export default function BarsList() {
   const [nameQuery, setNameQuery] = useState("");
   const [activeNeighborhood, setActiveNeighborhood] = useState("");
 
-  // Day filter — shared with Index + MapPage via useFilterParams so
-  // the Tonight/Tomorrow/Later choice DOES follow the user across the
-  // three surfaces (intentional: the "what day am I looking at"
-  // mental model spans pages). Same "All" = tonight encoding
-  // Index/Map already use.
-  const { activeDate, setActiveDate } = useFilterParams();
-  const dayTab: DayTab =
-    activeDate === "Tomorrow" ? "tomorrow"
-    : activeDate === "Later" ? "later"
-    : "tonight";
-  const handleDayTabChange = useCallback((t: DayTab) => {
-    if (t === "tonight") setActiveDate("All");
-    else if (t === "tomorrow") setActiveDate("Tomorrow");
-    else setActiveDate("Later");
-  }, [setActiveDate]);
-
   const today = berlinDateString();
-  const tomorrow = berlinDateStringOffset(1);
-  // Same Later window as Index — day-after-tomorrow through today+13.
-  const cutoffDate = berlinDateStringOffset(13);
 
-  // Test for "does this event fall inside the currently-selected day
-  // bucket?" Mirrors the same logic Index uses for its day-scoped
-  // filters so a bar's tonight-count matches what shows up under
-  // Tonight on the Events page.
-  const matchesDay = useCallback(
-    (e: BarlinEvent): boolean => {
-      if (dayTab === "tonight") return e.date === today;
-      if (dayTab === "tomorrow") return e.date === tomorrow;
-      return e.date > tomorrow && e.date <= cutoffDate;
-    },
-    [dayTab, today, tomorrow, cutoffDate],
-  );
-
-  // Events grouped by venueId, filtered to the selected day. Drives
-  // both the per-card signal line and the per-hood section-header
-  // counter. For Tonight/Tomorrow the list is sorted by start time;
-  // for Later we sort by date then time so the chronologically nearest
-  // event surfaces first when there's only one to display.
-  const eventsForDayByVenue = useMemo(() => {
+  // Tonight's events grouped by venueId. Drives the per-card signal
+  // line and the live hood ordering. Sorted by start time so the
+  // earliest event surfaces first when there's only one to display.
+  const eventsTonightByVenue = useMemo(() => {
     const map = new Map<string, BarlinEvent[]>();
     for (const e of events) {
-      if (!matchesDay(e)) continue;
+      if (e.date !== today) continue;
       if (e.status === "canceled") continue;
-      // Tonight bucket: drop events whose end-of-day cutoff has passed
-      // (matches Index/Map). For tomorrow + later, "still online" is
-      // implicit (the event hasn't happened yet).
-      if (dayTab === "tonight" && !isEventStillOnline(e)) continue;
+      if (!isEventStillOnline(e)) continue;
       if (!e.venueId) continue;
       const list = map.get(e.venueId) || [];
       list.push(e);
       map.set(e.venueId, list);
     }
     for (const list of map.values()) {
-      list.sort((a, b) => {
-        const dateCmp = a.date.localeCompare(b.date);
-        if (dateCmp !== 0) return dateCmp;
-        return (a.startTime || "99:99").localeCompare(b.startTime || "99:99");
-      });
+      list.sort((a, b) =>
+        (a.startTime || "99:99").localeCompare(b.startTime || "99:99"),
+      );
     }
     return map;
-  }, [events, matchesDay, dayTab]);
+  }, [events, today]);
 
   // Hood pill order is locked to the unfiltered dataset so the row
   // doesn't reshuffle as the user types in name search. One-time sort:
@@ -143,43 +97,35 @@ export default function BarsList() {
     return result;
   }, [venues, nameQuery, activeNeighborhood]);
 
-  // Live counts per hood for the pill row. The displayed count is
-  // the number of BARS WITH EVENTS on the selected day — matches
-  // both the hood ordering (which sorts by this same number) and the
-  // section-header counter ("12 bars · 3 tonight"), so the pill, the
-  // sort, and the header all speak the same vocabulary. Counts react
-  // to name-search but not to the active hood (otherwise picking a
-  // hood would zero out every sibling).
-  //
-  // `hasBars` is tracked separately so the disabled state reflects
-  // whether a hood has any bars at all under the current name search
-  // — picking a hood with 0 active bars on the selected day is still
-  // useful (browse the bars there, even when nothing's on).
+  // Live counts per hood for the pill row. The displayed count is the
+  // TOTAL number of bars in the hood under the current name search,
+  // matching the per-hood section-header counter so pill and header
+  // speak the same vocabulary. Counts react to name-search but not to
+  // the active hood (otherwise picking a hood would zero out every
+  // sibling).
   const neighborhoods = useMemo(() => {
     const pool = nameQuery.trim()
       ? venues.filter((v) => fuzzyMatchAny([v.name], nameQuery))
       : venues;
-    const barsWithEventsCounts = new Map<string, number>();
     const barCounts = new Map<string, number>();
     for (const v of pool) {
       const h = (v.neighborhood || "").trim();
       if (!h) continue;
       barCounts.set(h, (barCounts.get(h) || 0) + 1);
-      const hasEvents = (eventsForDayByVenue.get(v.id)?.length || 0) > 0;
-      if (hasEvents) {
-        barsWithEventsCounts.set(h, (barsWithEventsCounts.get(h) || 0) + 1);
-      }
     }
     return hoodOrder.map(({ name }) => ({
       name,
-      count: barsWithEventsCounts.get(name) || 0,
+      count: barCounts.get(name) || 0,
       hasBars: (barCounts.get(name) || 0) > 0,
     }));
-  }, [hoodOrder, venues, nameQuery, eventsForDayByVenue]);
+  }, [hoodOrder, venues, nameQuery]);
 
-  // Group venues by neighborhood, then sort hoods by selected-day
-  // activity. Within each hood, bars with events on the selected day
-  // come first (sorted by event count), then alpha for the quiet rest.
+  // Group venues by neighborhood, then sort hoods by tonight-activity.
+  // Within each hood:
+  //   1. Bars with events tonight come first, sorted by earliest
+  //      start time ascending (bars without a known start time go to
+  //      the END of this tonight-active group).
+  //   2. The rest follow, alphabetical, case-insensitive.
   // Venues without a hood land in an "Other" bucket pinned to the
   // bottom so nothing disappears.
   const hoods = useMemo(() => {
@@ -191,59 +137,58 @@ export default function BarsList() {
       groups.set(h, list);
     }
 
+    const earliestStart = (id: string): string | null => {
+      const list = eventsTonightByVenue.get(id);
+      if (!list || list.length === 0) return null;
+      for (const e of list) {
+        if (e.startTime) return e.startTime;
+      }
+      return null;
+    };
+
     return [...groups.entries()]
       .map(([name, items]) => {
         const sorted = [...items].sort((a, b) => {
-          const aDay = eventsForDayByVenue.get(a.id)?.length || 0;
-          const bDay = eventsForDayByVenue.get(b.id)?.length || 0;
-          if (aDay !== bDay) return bDay - aDay;
+          const aHas = (eventsTonightByVenue.get(a.id)?.length || 0) > 0;
+          const bHas = (eventsTonightByVenue.get(b.id)?.length || 0) > 0;
+          if (aHas !== bHas) return aHas ? -1 : 1;
+          if (aHas && bHas) {
+            // Both have tonight events: earliest startTime first;
+            // unknown start times sink to the bottom of this group.
+            const aTime = earliestStart(a.id);
+            const bTime = earliestStart(b.id);
+            if (aTime !== null && bTime === null) return -1;
+            if (aTime === null && bTime !== null) return 1;
+            if (aTime !== null && bTime !== null && aTime !== bTime) {
+              return aTime.localeCompare(bTime);
+            }
+            // Same (or both unknown) → tiebreak by name.
+            return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+          }
+          // Neither has tonight events → alphabetical.
           return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
         });
-        // dayBars (used for hood ordering) and dayEvents (used for
-        // the section-header counter). Two different stats because
-        // the SORT favors hood diversity (many bars active = high
-        // dayBars) while the displayed COUNTER favors raw activity
-        // ("X events tonight" — what's literally on).
         const dayBars = sorted.filter(
-          (v) => (eventsForDayByVenue.get(v.id)?.length || 0) > 0,
+          (v) => (eventsTonightByVenue.get(v.id)?.length || 0) > 0,
         ).length;
-        const dayEvents = sorted.reduce(
-          (acc, v) => acc + (eventsForDayByVenue.get(v.id)?.length || 0),
-          0,
-        );
-        return { name, items: sorted, dayBars, dayEvents };
+        return { name, items: sorted, dayBars };
       })
       .sort((a, b) => {
         if (a.name === "Other") return 1;
         if (b.name === "Other") return -1;
-        // Primary: hoods with selected-day activity first.
+        // Primary: hoods with tonight activity first.
         if (a.dayBars !== b.dayBars) return b.dayBars - a.dayBars;
         // Secondary: by total bar count (denser hood breaks ties).
         if (a.items.length !== b.items.length) return b.items.length - a.items.length;
         return a.name.localeCompare(b.name);
       });
-  }, [filteredVenues, eventsForDayByVenue]);
+  }, [filteredVenues, eventsTonightByVenue]);
 
-  // Total event count across filtered venues for the selected day.
-  // Drives the masthead counter label ("X events tonight"). Counts
-  // events, not bars — a single bar with 3 events on the selected day
-  // contributes 3 to this number. Matches the natural reading of "X
-  // events tonight" as "X events are happening" rather than "X bars
-  // are active". Per-hood section-header counters still surface the
-  // bars-with-events number (more useful at the hood level because
-  // the user is choosing between bars there).
-  const totalDayEvents = useMemo(() => {
-    let n = 0;
-    for (const v of filteredVenues) {
-      n += eventsForDayByVenue.get(v.id)?.length || 0;
-    }
-    return n;
-  }, [filteredVenues, eventsForDayByVenue]);
-
-  // Word used in counters / card lines for the selected day.
-  // "tonight" / "tomorrow" / "later" — matches the DaySwitcher labels
-  // so the page's vocabulary is consistent top-to-bottom.
-  const dayWord = dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "later";
+  // Masthead counter — always the unfiltered total. The page header
+  // reads "All bars · N", a fixed total no matter what filters the
+  // user has dialled in; per-hood counters below reflect the filtered
+  // view.
+  const totalBars = venues.length;
 
   const showNoDirectory = venues.length === 0;
   const showNoMatch = !showNoDirectory && filteredVenues.length === 0;
@@ -282,66 +227,19 @@ export default function BarsList() {
         />
       </div>
 
-      {/* Day chrome — Tonight / Tomorrow / Later. Mirrors Index + Map:
-          rounded rect buttons on mobile (compact density), full
-          DaySwitcher tab strip on desktop (editorial weight). Lives
-          OUTSIDE the inner container so it can carry full-width mobile
-          chrome bottom rule like the other surfaces. */}
-      <div className="bg-background border-b-2 border-foreground md:border-b-0">
-        <div className="md:hidden">
-          <div className="container flex items-center gap-2 py-2.5">
-            {([
-              { id: "tonight", label: "Tonight" },
-              { id: "tomorrow", label: "Tomorrow" },
-              { id: "later", label: "Later" },
-            ] as { id: DayTab; label: string }[]).map((d) => (
-              <button
-                key={d.id}
-                onClick={() => handleDayTabChange(d.id)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
-                  dayTab === d.id
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Day chrome at the standard `container` width — matches the
-            global Header and the Events/Map chrome, so the
-            Tonight/Tomorrow/Later tabs sit at the exact same
-            horizontal position across all three surfaces (no jump
-            when navigating between them). */}
-        <div className="hidden md:block container">
-          <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
-        </div>
-      </div>
-
       <div className="container pt-4 md:pt-6">
         {/* Masthead — heading-display 24/30px under a hairline rule
-            with an event counter on the right. Just the live signal:
-            "{N} event{s} {dayWord}". Bar count is intentionally
-            omitted (the user reads it from the directory below), so
-            the page's headline number stays singular and live. */}
+            with a bar-count on the right. Static count of bars under
+            the current filters; no day signal here (per-card lines
+            carry tonight activity). */}
         <header className="mb-6 md:mb-8">
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">
               All bars
             </h1>
             <span className="flex-1" />
-            {/* Counter renders even at zero ("0 events tonight") so
-                the line reads as a present-tense status. Color switches
-                with activity: accent orange when something's on, muted
-                when nothing — orange on a zero would suggest action
-                where there is none. */}
-            <span
-              className={`mono-label ${
-                totalDayEvents > 0 ? "text-accent" : "text-muted-foreground"
-              }`}
-            >
-              {totalDayEvents} event{totalDayEvents !== 1 ? "s" : ""} {dayWord}
+            <span className="mono-label text-muted-foreground">
+              {totalBars} bar{totalBars !== 1 ? "s" : ""}
             </span>
           </div>
         </header>
@@ -444,12 +342,8 @@ export default function BarsList() {
                       {hood.name}
                     </h2>
                     <span className="flex-1" />
-                    <span
-                      className={`mono-label ${
-                        hood.dayEvents > 0 ? "text-accent" : "text-muted-foreground"
-                      }`}
-                    >
-                      {hood.dayEvents} event{hood.dayEvents !== 1 ? "s" : ""} {dayWord}
+                    <span className="mono-label text-muted-foreground">
+                      {hood.items.length} bar{hood.items.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 </div>
@@ -458,8 +352,7 @@ export default function BarsList() {
                     <BarCard
                       key={v.id}
                       venue={v}
-                      dayEvents={eventsForDayByVenue.get(v.id) || []}
-                      dayTab={dayTab}
+                      tonightEvents={eventsTonightByVenue.get(v.id) || []}
                     />
                   ))}
                 </div>
@@ -518,9 +411,7 @@ function HoodPill({
               ? "text-foreground/30"
               : active
                 ? "opacity-60"
-                : count > 0
-                  ? "text-accent"
-                  : "text-muted-foreground"
+                : "text-muted-foreground"
           }
         >
           {count}
@@ -530,23 +421,9 @@ function HoodPill({
   );
 }
 
-/* Format "Fri 22 May" — used by the Later card line when the bar has
- * exactly one event in the next 12-day window. Surfaces the actual
- * date instead of a vague "later", because in the Later view the user
- * is comparing dates across bars and a specific weekday + DOM + month
- * is the load-bearing signal. */
-function formatShortDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}
-
 /* BarCard — sharp 2px-bordered editorial card. Image lede on top, bar
- * name below. When the bar has events on the selected day, a small
- * mono signal line sits under the name as its own click target.
+ * name below. When the bar has events tonight, a small mono signal
+ * line sits under the name as its own click target.
  *
  * Implementation: the outer wrapper is an <article>. A bare <Link>
  * absolutely covers the whole card at z-0 (the default whole-card
@@ -558,38 +435,24 @@ function formatShortDate(iso: string): string {
  * the user hovers anywhere on the card. */
 function BarCard({
   venue,
-  dayEvents,
-  dayTab,
+  tonightEvents,
 }: {
   venue: Venue;
-  dayEvents: BarlinEvent[];
-  dayTab: DayTab;
+  tonightEvents: BarlinEvent[];
 }) {
   const cleanAddress = venue.address?.replace(/,\s*(Germany|Deutschland)\s*$/i, "") ?? "";
-  const hasDayEvents = dayEvents.length > 0;
+  const hasTonightEvents = tonightEvents.length > 0;
   // Single-event: deep-link to the event. Multi-event: deepen to the
   // bar page (where all upcoming events sit at top), since there's no
   // single event to jump to.
   const signalHref =
-    dayEvents.length === 1
-      ? `/event/${dayEvents[0].id}`
+    tonightEvents.length === 1
+      ? `/event/${tonightEvents[0].id}`
       : `/bar/${venue.id}`;
-  // Signal label — day-aware. For Tonight/Tomorrow + 1 event we show
-  // "Tonight · 21:00" / "Tomorrow · 21:00". For Later + 1 we surface
-  // the concrete date because the user is comparing across days
-  // ("Fri 22 May · 21:00"). Multi-event collapses to a count line in
-  // the matching tense.
-  let signalLabel: string;
-  if (dayEvents.length === 1) {
-    const e = dayEvents[0];
-    const time = e.startTime ? ` · ${e.startTime}` : "";
-    if (dayTab === "tonight") signalLabel = `Tonight${time}`;
-    else if (dayTab === "tomorrow") signalLabel = `Tomorrow${time}`;
-    else signalLabel = `${formatShortDate(e.date)}${time}`;
-  } else {
-    const word = dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "upcoming";
-    signalLabel = `${dayEvents.length} events ${word}`;
-  }
+  const signalLabel =
+    tonightEvents.length === 1
+      ? `Tonight${tonightEvents[0].startTime ? ` · ${tonightEvents[0].startTime}` : ""}`
+      : `${tonightEvents.length} events tonight`;
 
   return (
     <article className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]">
@@ -657,27 +520,24 @@ function BarCard({
         </div>
       </div>
 
-      {/* Day signal line — its own Link, stacked above the cover.
+      {/* Tonight signal line — its own Link, stacked above the cover.
           Pulsing accent dot mirrors the live "Now" indicator in
           EventMeta, tying the directory back to the events page
-          vocabulary. The dot is muted slightly for Tomorrow/Later
-          since those events aren't happening RIGHT NOW. */}
-      {hasDayEvents && (
+          vocabulary. */}
+      {hasTonightEvents && (
         <div className="relative z-10 px-4 md:px-5 pb-4 md:pb-5 -mt-1 md:-mt-1.5">
           <Link
             to={signalHref}
             className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] font-bold text-accent hover:text-foreground transition-colors"
             aria-label={
-              dayEvents.length === 1
-                ? `${signalLabel} at ${venue.name}: ${dayEvents[0].title}`
-                : `${dayEvents.length} events ${dayTab === "tonight" ? "tonight" : dayTab === "tomorrow" ? "tomorrow" : "upcoming"} at ${venue.name}`
+              tonightEvents.length === 1
+                ? `${signalLabel} at ${venue.name}: ${tonightEvents[0].title}`
+                : `${tonightEvents.length} events tonight at ${venue.name}`
             }
           >
             <span
               aria-hidden
-              className={`inline-block h-1.5 w-1.5 rounded-full bg-accent ${
-                dayTab === "tonight" ? "animate-pulse" : ""
-              }`}
+              className="inline-block h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
             />
             {signalLabel}
           </Link>
