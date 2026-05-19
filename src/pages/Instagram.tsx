@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Instagram() {
   return (
     <div className="container max-w-2xl py-16">
@@ -20,7 +22,14 @@ export default function Instagram() {
             className="text-foreground underline underline-offset-2 hover:text-accent transition-colors"
           >
             hello@insidebars.co
-          </a>
+          </a>{" "}
+          or through our{" "}
+          <Link
+            to="/contact"
+            className="text-foreground underline underline-offset-2 hover:text-accent transition-colors"
+          >
+            contact form
+          </Link>
           .
         </p>
       </div>
