@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Search, Shuffle, X } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { useVenues, useEvents } from "@/hooks/useEvents";
+import { setVenueActiveImage } from "@/lib/supabaseQueries";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import { isEventStillOnline } from "@/lib/eventStatus";
@@ -25,6 +29,12 @@ import type { Venue, BarlinEvent } from "@/types/event";
  * links to bar detail.
  */
 export default function BarsList() {
+  // useAuth is per-component state (NOT a context), so calling it inside
+  // every BarCard would mean 200 parallel role-fetches racing each
+  // other — and admin-bars appearing on whichever cards happen to
+  // resolve first. Call it ONCE at the page level, pass isAdmin down.
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
   const { data: venues = [], isLoading: venuesLoading } = useVenues();
   // All upcoming events. Same hook the Index page uses, so the shared
   // cache means switching Events ↔ Bars doesn't refetch.
@@ -348,6 +358,7 @@ export default function BarsList() {
                       venue={v}
                       tonightEvents={eventsTonightByVenue.get(v.id) || []}
                       priority={priorityVenueIds.has(v.id)}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
@@ -432,11 +443,51 @@ function BarCard({
   venue,
   tonightEvents,
   priority = false,
+  isAdmin = false,
 }: {
   venue: Venue;
   tonightEvents: BarlinEvent[];
   priority?: boolean;
+  isAdmin?: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [swapping, setSwapping] = useState(false);
+
+  // Identify which archived source the live `image` currently points to.
+  // "other" covers manual uploads or images set before the og/google
+  // columns existed — they're left alone unless the admin swaps.
+  const currentSource: "og" | "google" | "other" =
+    venue.image && venue.image === venue.imageOg
+      ? "og"
+      : venue.image && venue.image === venue.imageGoogle
+        ? "google"
+        : "other";
+  const targetSource: "og" | "google" =
+    currentSource === "og" ? "google" : "og";
+  const targetUrl =
+    targetSource === "google" ? venue.imageGoogle : venue.imageOg;
+  const canSwap = !!targetUrl && targetUrl !== venue.image;
+
+  const handleSwap = async (e: React.MouseEvent) => {
+    // Stop the click from bubbling to the card cover Link below.
+    e.preventDefault();
+    e.stopPropagation();
+    if (!targetUrl || swapping) return;
+    setSwapping(true);
+    try {
+      await setVenueActiveImage(venue.id, targetUrl);
+      await queryClient.invalidateQueries({ queryKey: ["venues"] });
+      toast.success(
+        `${venue.name}: switched to ${targetSource === "google" ? "Google" : "OG"}`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Swap failed";
+      toast.error(msg);
+    } finally {
+      setSwapping(false);
+    }
+  };
+
   const cleanAddress = venue.address?.replace(/,\s*(Germany|Deutschland)\s*$/i, "") ?? "";
   const hasTonightEvents = tonightEvents.length > 0;
   // Single-event: deep-link to the event. Multi-event: deepen to the
@@ -453,13 +504,35 @@ function BarCard({
 
   return (
     <article className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]">
-      {/* Whole-card cover link → bar detail. Sits at z-0 behind the
-          signal line so the signal line wins on its own hit area. */}
-      <Link
-        to={`/bar/${venue.id}`}
-        aria-label={venue.name}
-        className="absolute inset-0 z-0"
-      />
+      {/* Admin-only image-source toggle. Sits OUTSIDE the cover-link area
+          (the Link below only covers the visual block), so the button is
+          a normal in-flow interactive element with its own hit area. */}
+      {isAdmin && (venue.imageOg || venue.imageGoogle) && (
+        <div className="relative z-20 flex items-center justify-between gap-2 border-b-2 border-foreground bg-muted/60 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          <span className="truncate">
+            src · <span className="text-foreground">{currentSource === "other" ? "manual" : currentSource}</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleSwap}
+            disabled={!canSwap || swapping}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 border-2 border-foreground bg-background text-foreground hover:bg-foreground hover:text-background active:scale-95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-background disabled:hover:text-foreground"
+          >
+            <Shuffle className="h-3 w-3" />
+            {swapping ? "…" : `→ ${targetSource === "google" ? "Google" : "OG"}`}
+          </button>
+        </div>
+      )}
+
+      {/* Cover link + visual content wrapper. The Link is absolute inside
+          this wrapper, so it only covers the image + meta below — not the
+          admin bar above. */}
+      <div className="relative">
+        <Link
+          to={`/bar/${venue.id}`}
+          aria-label={venue.name}
+          className="absolute inset-0 z-0"
+        />
 
       {/* Visual content — pointer-events-none so clicks fall through. */}
       <div className="relative pointer-events-none">
@@ -542,6 +615,7 @@ function BarCard({
           </Link>
         </div>
       )}
+      </div>
     </article>
   );
 }

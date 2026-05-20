@@ -43,6 +43,11 @@ export interface Venue {
   description: string;
   image: string;
   imagePosition?: string;
+  // Per-source archives, populated by the og/google scrapers. Independent
+  // of `image` (which points to whichever source is currently active).
+  // Admin UI uses these for the source-swap toggle on BarDetail.
+  imageOg?: string;
+  imageGoogle?: string;
   instagram?: string;
   website?: string;
   websiteEvents?: string;

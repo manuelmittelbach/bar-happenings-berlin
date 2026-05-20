@@ -97,6 +97,8 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     description: row.description ?? "",
     image: row.image ?? "",
     imagePosition: row.image_position,
+    imageOg: row.image_og ?? undefined,
+    imageGoogle: row.image_google ?? undefined,
     instagram: row.instagram ?? undefined,
     website: row.website ?? undefined,
     websiteEvents: row.website_events ?? undefined,
@@ -105,6 +107,17 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     lat: Number(row.lat),
     lng: Number(row.lng),
   };
+}
+
+// Admin-only — RLS gates this to `is_admin()`. Promotes one of the
+// archived image sources (`image_og` / `image_google`) into the live
+// `image` column so visitors see it on /bars and /bar/:id renderers.
+export async function setVenueActiveImage(venueId: string, url: string): Promise<void> {
+  const { error } = await supabase
+    .from("venues")
+    .update({ image: url })
+    .eq("id", venueId);
+  if (error) throw error;
 }
 
 export async function setVenueScrapeEnabled(

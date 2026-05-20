@@ -223,7 +223,7 @@ export type Database = {
           neighborhood: string
           parent_id: string | null
           recurrence: string | null
-          start_time: string
+          start_time: string | null
           status: string
           title: string
           url: string | null
@@ -252,7 +252,7 @@ export type Database = {
           neighborhood: string
           parent_id?: string | null
           recurrence?: string | null
-          start_time: string
+          start_time?: string | null
           status?: string
           title: string
           url?: string | null
@@ -281,7 +281,7 @@ export type Database = {
           neighborhood?: string
           parent_id?: string | null
           recurrence?: string | null
-          start_time?: string
+          start_time?: string | null
           status?: string
           title?: string
           url?: string | null
@@ -583,6 +583,8 @@ export type Database = {
           facebook: string | null
           id: string
           image: string | null
+          image_google: string | null
+          image_og: string | null
           image_position: string
           inserted_at: string | null
           inside_image_position: string
@@ -607,6 +609,8 @@ export type Database = {
           facebook?: string | null
           id?: string
           image?: string | null
+          image_google?: string | null
+          image_og?: string | null
           image_position?: string
           inserted_at?: string | null
           inside_image_position?: string
@@ -631,6 +635,8 @@ export type Database = {
           facebook?: string | null
           id?: string
           image?: string | null
+          image_google?: string | null
+          image_og?: string | null
           image_position?: string
           inserted_at?: string | null
           inside_image_position?: string
