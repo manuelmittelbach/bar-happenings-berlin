@@ -184,6 +184,23 @@ export default function BarsList() {
       });
   }, [filteredVenues, eventsTonightByVenue]);
 
+  // Mark the first 6 cards (in document order across all hoods) as
+  // high-priority so the browser fetches them eagerly with elevated
+  // priority instead of waiting for lazy loading. Everything after that
+  // stays lazy. Mobile typically shows ~4 cards above the fold, desktop
+  // ~6, so 6 covers both with a small read-ahead buffer.
+  const priorityVenueIds = useMemo(() => {
+    const ids = new Set<string>();
+    let count = 0;
+    for (const hood of hoods) {
+      for (const v of hood.items) {
+        if (count < 6) ids.add(v.id);
+        count++;
+      }
+    }
+    return ids;
+  }, [hoods]);
+
   // Masthead counter — always the unfiltered total. The page header
   // reads "All bars · N", a fixed total no matter what filters the
   // user has dialled in; per-hood counters below reflect the filtered
@@ -330,6 +347,7 @@ export default function BarsList() {
                       key={v.id}
                       venue={v}
                       tonightEvents={eventsTonightByVenue.get(v.id) || []}
+                      priority={priorityVenueIds.has(v.id)}
                     />
                   ))}
                 </div>
@@ -413,9 +431,11 @@ function HoodPill({
 function BarCard({
   venue,
   tonightEvents,
+  priority = false,
 }: {
   venue: Venue;
   tonightEvents: BarlinEvent[];
+  priority?: boolean;
 }) {
   const cleanAddress = venue.address?.replace(/,\s*(Germany|Deutschland)\s*$/i, "") ?? "";
   const hasTonightEvents = tonightEvents.length > 0;
@@ -448,8 +468,9 @@ function BarCard({
             <img
               src={venue.image}
               alt={venue.name}
-              loading="lazy"
+              loading={priority ? "eager" : "lazy"}
               decoding="async"
+              fetchPriority={priority ? "high" : "auto"}
               style={venue.imagePosition ? { objectPosition: venue.imagePosition } : undefined}
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             />
