@@ -21,7 +21,7 @@ export default function BarDetail() {
   const navigate = useNavigate();
   const { venue, isLoading } = useVenueById(id || "");
   const todayStr = berlinDateString();
-  const { data: venueEvents = [] } = useEventsByVenue(id || "", todayStr);
+  const { data: venueEvents = [], isLoading: eventsLoading } = useEventsByVenue(id || "", todayStr);
 
   if (isLoading) return <PageSpinner />;
 
@@ -173,7 +173,14 @@ export default function BarDetail() {
           <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
             Upcoming events
           </h2>
-          {upcomingEvents.length === 0 ? (
+          {/* While the events fetch is still in flight render nothing —
+              showing the empty-state copy during initial load briefly
+              flashes "Nothing on the calendar yet" even for bars that
+              do have events. Only commit to the empty state after the
+              query resolves. */}
+          {eventsLoading ? (
+            <div className="py-4 h-12" aria-hidden />
+          ) : upcomingEvents.length === 0 ? (
             <p className="font-body italic text-[16px] text-muted-foreground py-4 m-0">
               Nothing on the calendar yet. Check back soon.
             </p>
