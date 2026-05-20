@@ -5,6 +5,7 @@ import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useEvents, useCategories } from "@/hooks/useEvents";
+import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString } from "@/lib/dateFormat";
 import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
@@ -29,6 +30,17 @@ export default function LandingDraft() {
   const { data: eventsData = [] } = useEvents();
   const { data: categoriesData = [] } = useCategories();
   const today = berlinDateString();
+
+  // Both landing CTAs that read "tonight" (the primary "Events tonight"
+  // button and the orange "{N} tonight" sticker) must actually land on the
+  // Tonight tab — but Index's day filter lives in sessionStorage, so if the
+  // user previously switched to Tomorrow/Upcoming and came back, the tab
+  // would still be on that stale value. Reset before navigate to honor the
+  // CTA's promise. "All" is the default that maps to the Tonight tab.
+  const goToEventsTonight = () => {
+    setFilter("activeDate", "All");
+    navigate("/events");
+  };
 
   // Hero card seed — stable across renders within a single visit, fresh
   // on each page load. Lets the landing show different events each visit
@@ -252,7 +264,7 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={() => navigate("/events")}
+                onClick={goToEventsTonight}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
@@ -432,7 +444,7 @@ export default function LandingDraft() {
             {tonightCount > 0 && (
               <button
                 type="button"
-                onClick={() => navigate("/events")}
+                onClick={goToEventsTonight}
                 className="group absolute bottom-[1%] right-[3%] rotate-[8deg] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f] transition-all hover:-translate-y-0.5 hover:translate-x-0.5 hover:rotate-[8deg] hover:shadow-[4px_4px_0_0_#0f0f0f] active:translate-x-1 active:translate-y-1 active:rotate-[8deg] active:shadow-[2px_2px_0_0_#0f0f0f]"
                 style={{ zIndex: 10 }}
               >
