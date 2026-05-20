@@ -80,6 +80,52 @@ export default function Impressum() {
               Betreiber der Seiten verantwortlich.
             </p>
           </section>
+
+          <section>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+              Urheberrecht & Bildnachweise
+            </h2>
+            <p className="mb-2">
+              Bilder zu einzelnen Bars stammen entweder direkt von der jeweiligen Bar (Upload durch
+              die vertretungsberechtigte Person über die Bar-Account-Funktion) oder werden
+              automatisiert aus den Vorschaubild-Metadaten (<code className="font-mono text-xs">og:image</code>) der
+              offiziellen Bar-Websites übernommen. In beiden Fällen gehen wir davon aus, dass die
+              Veröffentlichung im Sinne der Bar erfolgt und die jeweilige Bar die erforderlichen
+              Nutzungsrechte hält.
+            </p>
+            <p>
+              Bar-Betreiber:innen, die über die Plattform eigene Bilder hochladen, sichern uns mit
+              dem Upload zu, dass sie die hierfür erforderlichen Rechte besitzen und uns das Recht
+              einräumen, die Bilder zur Bewerbung der Bar auf Inside Bars öffentlich zugänglich zu
+              machen. Sie stellen uns insoweit von Ansprüchen Dritter frei.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+              Take-Down / Beschwerden zu Bildrechten
+            </h2>
+            <p className="mb-2">
+              Solltest du Rechteinhaber:in eines Bildes sein, das ohne deine Zustimmung auf Inside
+              Bars angezeigt wird, kontaktiere uns bitte formlos unter{" "}
+              <a
+                href="mailto:hello@insidebars.co"
+                className="text-foreground underline underline-offset-2 hover:text-accent transition-colors"
+              >
+                hello@insidebars.co
+              </a>{" "}
+              mit folgenden Angaben:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mb-2">
+              <li>URL des Bildes bzw. der Bar-Seite, auf der es erscheint</li>
+              <li>Nachweis der Inhaberschaft (z. B. Original-Datei, Veröffentlichungsquelle)</li>
+              <li>Kontaktdaten für Rückfragen</li>
+            </ul>
+            <p>
+              Wir prüfen jede Meldung zeitnah und entfernen das beanstandete Bild bei berechtigtem
+              Interesse in der Regel innerhalb von 48 Stunden ab Eingang der vollständigen Meldung.
+            </p>
+          </section>
         </div>
       </div>
     </div>

@@ -385,6 +385,20 @@ export default function BarAccount() {
               </p>
             </div>
           )}
+          <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+            By uploading, you confirm that you hold the rights to this image and
+            grant Inside Bars permission to display it on your bar's public
+            page. See our{" "}
+            <a
+              href="/impressum"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground underline underline-offset-2 hover:text-accent transition-colors"
+            >
+              image rights notice
+            </a>
+            .
+          </p>
         </section>
 
         {/* Contact + links */}
