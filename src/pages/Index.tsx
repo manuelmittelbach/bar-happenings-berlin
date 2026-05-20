@@ -39,7 +39,7 @@ export default function Index() {
 
   const dayTab: DayTab =
     activeDate === "Tomorrow" ? "tomorrow"
-    : activeDate === "Later" ? "later"
+    : activeDate === "Upcoming" ? "upcoming"
     : "tonight";
 
   // Resetting scroll on tab/category change targets the internal list
@@ -52,7 +52,7 @@ export default function Index() {
   const handleDayTabChange = useCallback((t: DayTab) => {
     if (t === "tonight") setActiveDate("All");
     else if (t === "tomorrow") setActiveDate("Tomorrow");
-    else setActiveDate("Later");
+    else setActiveDate("Upcoming");
     // Every tab switch resets to the top — scroll position from the
     // previous day's list isn't meaningful against the new day's content.
     resetScroll();
@@ -127,7 +127,7 @@ export default function Index() {
   // already shows them with line-through + "Canceled" pill, and filtering
   // them out hid free-tomorrow cancellations entirely (user expected to see
   // them so they know not to show up). `filtered` (used by More tonight /
-  // tomorrow and Later) still drops canceled events more than a day out.
+  // tomorrow and Upcoming) still drops canceled events more than a day out.
   const todayEvents = useMemo(
     () =>
       eventsData.filter(
@@ -182,7 +182,7 @@ export default function Index() {
   );
   // Walking-minutes by event id for every event whose venue is within the
   // 15-min cutoff — unrelated to whether that event made the top-6 Nearby
-  // strip. Used by the DayList / LaterAgenda so a walking-chip surfaces on
+  // strip. Used by the DayList / UpcomingAgenda so a walking-chip surfaces on
   // any walkable event in any list, including the category-filtered
   // single-flat-list view where the Nearby strip itself doesn't render.
   const walkingMinByEventId = useMemo(() => {
@@ -230,7 +230,7 @@ export default function Index() {
       result = result.filter((e) => e.date === today);
     } else if (activeDate === "Tomorrow") {
       result = result.filter((e) => e.date === tomorrow);
-    } else if (activeDate === "Later") {
+    } else if (activeDate === "Upcoming") {
       result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
     }
     // Chronological — over events are already filtered out by isEventStillOnline.
@@ -283,18 +283,18 @@ export default function Index() {
     <div className="flex flex-col flex-1 overflow-hidden overscroll-x-none">
       {/* Chrome — Day filter + Category filter at the top, no longer
           sticky/fixed (just sits at the top of the flex column). Mobile
-          shows rounded-full Tonight/Tomorrow/Later buttons; desktop
+          shows rounded-full Tonight/Tomorrow/Upcoming buttons; desktop
           shows the editorial DaySwitcher above the category pills. */}
       <div
         className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0"
       >
-        {/* Mobile — rounded-full Tonight/Tomorrow/Later buttons. */}
+        {/* Mobile — rounded-full Tonight/Tomorrow/Upcoming buttons. */}
         <div className="md:hidden">
           <div id="date-filter-bar" className="container flex items-center gap-2 py-2.5">
             {([
               { id: "tonight",  label: "Tonight"  },
               { id: "tomorrow", label: "Tomorrow" },
-              { id: "later",    label: "Later"    },
+              { id: "upcoming", label: "Upcoming" },
             ] as { id: DayTab; label: string }[]).map((d) => (
               <button
                 key={d.id}
@@ -502,15 +502,15 @@ export default function Index() {
                   )}
                   onEventClick={handleEventClick}
                   emptyMessage="That's it for tomorrow."
-                  onEmptyCta={{ label: "See what's on later →", onClick: () => setActiveDate("Later") }}
+                  onEmptyCta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               </>
             );
           })()}
 
-          {dayTab === "later" && (
-            <LaterAgenda
+          {dayTab === "upcoming" && (
+            <UpcomingAgenda
               events={filtered}
               onEventClick={handleEventClick}
               walkingMinByEventId={walkingMinByEventId}
@@ -598,7 +598,7 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
           style={{ top: 0 }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
-            {/* Same size as the weekday separators in the Later section so all
+            {/* Same size as the weekday separators in the Upcoming section so all
                 list headings ("More tonight", "Tomorrow", …) read at the
                 same typographic weight. */}
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
@@ -628,21 +628,21 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
   );
 }
 
-/* ─────────────────────────  Later  ─────────────────────────
+/* ─────────────────────────  Upcoming  ─────────────────────────
  * Day-grouped agenda — each date gets its own header (weekday + DOM Month +
- * count) over a 2px black rule, then a list of EventCards. Mirrors the
- * `LaterAgenda` component in the design prototype. */
+ * count) over a 2px black rule, then a list of EventCards. Renders inside
+ * the Upcoming tab (events from day+2 through the cutoff). */
 
-interface LaterAgendaProps {
+interface UpcomingAgendaProps {
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
-  // Same role as DayList's walkingMinByEventId — Later events that happen
-  // to be at a walkable venue still get the chip, so the walking signal
-  // stays consistent across the index.
+  // Same role as DayList's walkingMinByEventId — Upcoming events that
+  // happen to be at a walkable venue still get the chip, so the walking
+  // signal stays consistent across the index.
   walkingMinByEventId?: Map<string, number>;
 }
 
-function LaterAgenda({ events, onEventClick, walkingMinByEventId }: LaterAgendaProps) {
+function UpcomingAgenda({ events, onEventClick, walkingMinByEventId }: UpcomingAgendaProps) {
   const groups = useMemo(() => {
     const out: { date: string; events: BarlinEvent[] }[] = [];
     for (const e of events) {
