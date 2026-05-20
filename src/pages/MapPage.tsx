@@ -52,13 +52,13 @@ export default function MapPage() {
   // navigating Index → Map keeps the user on the same day view.
   const dayTab: DayTab =
     activeDate === "Tomorrow" ? "tomorrow"
-    : activeDate === "Later" ? "later"
+    : activeDate === "Upcoming" ? "upcoming"
     : "tonight";
 
   const handleDayTabChange = useCallback((t: DayTab) => {
     if (t === "tonight") setActiveDate("All");
     else if (t === "tomorrow") setActiveDate("Tomorrow");
-    else setActiveDate("Later");
+    else setActiveDate("Upcoming");
   }, [setActiveDate]);
 
   const filtered = useMemo(() => {
@@ -72,13 +72,13 @@ export default function MapPage() {
     if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
-    // Day scoping — same mapping as Index so Tonight/Tomorrow/Later
+    // Day scoping — same mapping as Index so Tonight/Tomorrow/Upcoming
     // means the same set across both pages.
     if (activeDate === "All" || activeDate === "Today") {
       result = result.filter((e) => e.date === today);
     } else if (activeDate === "Tomorrow") {
       result = result.filter((e) => e.date === tomorrow);
-    } else if (activeDate === "Later") {
+    } else if (activeDate === "Upcoming") {
       result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
     }
     return result;
@@ -100,7 +100,7 @@ export default function MapPage() {
             {([
               { id: "tonight",  label: "Tonight"  },
               { id: "tomorrow", label: "Tomorrow" },
-              { id: "later",    label: "Later"    },
+              { id: "upcoming", label: "Upcoming" },
             ] as { id: DayTab; label: string }[]).map((d) => (
               <button
                 key={d.id}

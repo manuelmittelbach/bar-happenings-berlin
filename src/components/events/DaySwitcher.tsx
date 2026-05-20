@@ -1,6 +1,6 @@
 import { berlinDateStringOffset } from "@/lib/dateFormat";
 
-export type DayTab = "tonight" | "tomorrow" | "later";
+export type DayTab = "tonight" | "tomorrow" | "upcoming";
 
 interface DaySwitcherProps {
   active: DayTab;
@@ -14,7 +14,7 @@ const formatWithWeekday = (offset: number): string => {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 };
 
-// "13 May" — day + month only, used for the Later range subline (desktop).
+// "13 May" — day + month only, used for the Upcoming range subline (desktop).
 const formatDayMonth = (offset: number): string => {
   const iso = berlinDateStringOffset(offset);
   const d = new Date(iso + "T00:00:00");
@@ -37,11 +37,11 @@ const formatRangeCompact = (startOffset: number, endOffset: number): string => {
     : `${startDay} ${startMonth}–${endDay} ${endMonth}`;
 };
 
-/* DaySwitcher — Tonight · Tomorrow · Later tabs sitting just above the
+/* DaySwitcher — Tonight · Tomorrow · Upcoming tabs sitting just above the
  * homepage section list. Active tab gets an accent underline; inactive
  * tabs read at 55% opacity so the eye lands on the current view first.
  *
- * Tonight/Tomorrow show the matching weekday + date. "Later" shows the
+ * Tonight/Tomorrow show the matching weekday + date. "Upcoming" shows the
  * concrete window it covers: day after tomorrow → cutoffDate in
  * Index.tsx (currently offset +2 → +14, i.e. the next ~12 days). Tabs
  * are recomputed each render so the dates stay correct if the page
@@ -62,8 +62,8 @@ export default function DaySwitcher({ active, onChange }: DaySwitcherProps) {
       subMobile: formatWithWeekday(1),
     },
     {
-      id: "later",
-      label: "Later",
+      id: "upcoming",
+      label: "Upcoming",
       sub: `${formatDayMonth(2)} – ${formatDayMonth(13)}`,
       subMobile: formatRangeCompact(2, 13),
     },
