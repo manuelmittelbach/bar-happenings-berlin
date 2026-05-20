@@ -69,7 +69,7 @@ export default function FreeTonightStrip({
               as part of the same list rhythm. */}
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              {freeEvents.length === 1 ? "Free event" : "Free events"}
+              Free events
             </h2>
             <span className="flex-1" />
             {/* Counter — auf Mobile nur die Zahl, auf Desktop „N Free"

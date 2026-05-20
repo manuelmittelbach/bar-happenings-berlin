@@ -39,7 +39,7 @@ export default function NearbyStrip({
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              {nearby.length === 1 ? "Nearby event" : "Nearby events"}
+              Nearby events
             </h2>
             <span className="flex-1" />
             <span className="mono-label text-muted-foreground">
