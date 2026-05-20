@@ -681,7 +681,7 @@ function BarAccountPreview({
             <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
               About the bar
             </h2>
-            <div className="font-body text-[17px] md:text-[18px] leading-[1.6] space-y-5">
+            <div className="font-body text-[17px] md:text-[18px] leading-[1.6] space-y-5 max-w-[65ch]">
               {liveVenue.description.split("\n\n").map((p, i) => (
                 <p key={i}>{p}</p>
               ))}

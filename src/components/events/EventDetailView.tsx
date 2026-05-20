@@ -385,7 +385,7 @@ function DescriptionBlock({
 
   if (!description) {
     return (
-      <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6]`}>
+      <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6] max-w-[65ch]`}>
         <p className="italic text-muted-foreground/70 text-sm">(no description)</p>
         {eventLinkEl && <div>{eventLinkEl}</div>}
       </div>
@@ -393,7 +393,7 @@ function DescriptionBlock({
   }
 
   return (
-    <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6]`}>
+    <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6] max-w-[65ch]`}>
       <div className="space-y-5">
         {description.split("\n\n").map((p, i) => (
           <p key={i}>{renderWithLinks(p)}</p>
