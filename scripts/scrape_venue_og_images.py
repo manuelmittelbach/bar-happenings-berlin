@@ -263,8 +263,12 @@ def process_venue(venue: dict, sb, *, dry_run: bool) -> Outcome:
     public_url = public_url.rstrip("?")
 
     try:
+        # Write to both `image` (the active/visible URL) AND `image_og`
+        # (the per-source archive). Admins can later swap between og and
+        # google versions by promoting `image_og` or `image_google` into
+        # `image` via the bar admin UI.
         sb.table("venues").update(
-            {"image": public_url, "updated_at": "now()"}
+            {"image": public_url, "image_og": public_url, "updated_at": "now()"}
         ).eq("id", vid).execute()
     except Exception as e:
         return Outcome(vid, name, "upload_error", f"db update failed: {e}")
