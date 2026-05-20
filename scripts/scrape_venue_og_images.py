@@ -46,8 +46,11 @@ IMG_TIMEOUT = 15
 MAX_HTML_BYTES = 1_000_000
 MAX_IMG_BYTES = 8_000_000
 MIN_W, MIN_H = 400, 250
-TARGET_LONG_SIDE = 1600
-JPEG_QUALITY = 85
+# Tuned for /bars card thumbnails (~300-400px display width). 900px + q=75
+# produces ~50-100 KB files vs ~200-500 KB at 1600/85, with no perceptible
+# quality drop at card sizes.
+TARGET_LONG_SIDE = 900
+JPEG_QUALITY = 75
 RATE_LIMIT_SECONDS = 1.0
 
 
