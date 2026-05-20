@@ -11,9 +11,9 @@ interface StillRunningStripProps {
 }
 
 /* StillRunningStrip — yesterday's events that are still happening past
- * midnight. Renders as flat hairline-separated list rows (same EventCard
- * "list" layout used in More tonight / Later) so the section reads as
- * a continuation of the main feed rather than a separate card block. */
+ * midnight. Same responsive card grid as FreeTonightStrip (1 col mobile,
+ * 2/3/4 columns from md upward), using EventCard's "grid" layout for
+ * the editorial highlight chrome. */
 export default function StillRunningStrip({
   events,
   onEventClick,
@@ -47,12 +47,12 @@ export default function StillRunningStrip({
           </div>
         </div>
 
-        <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {events.map((event) => (
             <EventCard
               key={event.id}
               event={event}
-              layout="list"
+              layout="grid"
               onClick={onEventClick}
             />
           ))}
