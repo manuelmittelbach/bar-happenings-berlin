@@ -1,22 +1,15 @@
 import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import EventCard from "@/components/events/EventCard";
 import EventMeta from "@/components/events/EventMeta";
 import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent } from "@/types/event";
 
 interface NearbyStripProps {
   // Pre-computed nearest-first list of {event, walking minutes}. Computed
-  // in Index.tsx (not here) so the same list can drive "More tonight"
+  // in Index.tsx (not here) so the same list can drive "More events"
   // dedupe — keeping it pure-input means no walking math is duplicated.
   nearby: { event: BarlinEvent; min: number }[];
   onEventClick: (eventId: string) => void;
-  // Default "Nearby tonight"; Tomorrow tab passes "Nearby tomorrow".
-  title?: string;
-  // Surfaced in the desktop counter copy ("N within 15 min"). Mirrored
-  // from the value Index passed to computeNearbyEvents so the chrome
-  // and the cutoff don't drift out of sync.
-  maxWalkingMin?: number;
 }
 
 /* NearbyStrip — events at walkable distance from the user's location.
@@ -30,8 +23,6 @@ interface NearbyStripProps {
 export default function NearbyStrip({
   nearby,
   onEventClick,
-  title = "Nearby tonight",
-  maxWalkingMin = 15,
 }: NearbyStripProps) {
   const { data: categories = [] } = useCategories();
 
@@ -48,37 +39,23 @@ export default function NearbyStrip({
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              {title}
+              {nearby.length === 1 ? "Nearby event" : "Nearby events"}
             </h2>
             <span className="flex-1" />
             <span className="mono-label text-muted-foreground">
               <span className="md:hidden">{nearby.length}</span>
               <span className="hidden md:inline">
-                {nearby.length} within {maxWalkingMin} min
+                {nearby.length} nearby
               </span>
             </span>
           </div>
         </div>
 
-        {/* Mobile: flat list rows — Nearby is sorted by distance, so a
-            single-column list reads cleanly "closest → farthest". */}
-        <div className="md:hidden">
-          {nearby.map(({ event, min }) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              layout="list"
-              onClick={onEventClick}
-              walkingMin={min}
-            />
-          ))}
-        </div>
-
-        {/* Desktop: bordered card grid mirroring Free tonight's treatment.
-            The wider viewport has room for a multi-column grid, and matching
-            FreeCard's chrome keeps the editorial rhythm consistent between
-            the two strips. */}
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        {/* Bordered card grid mirroring Free tonight's treatment — single
+            column on mobile, 2/3/4 columns from md upward. Matching FreeCard's
+            chrome keeps the editorial rhythm consistent between the two
+            strips on every viewport. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {nearby.map(({ event, min }) => (
             <NearbyCard
               key={event.id}

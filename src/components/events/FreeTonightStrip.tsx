@@ -11,9 +11,6 @@ interface FreeTonightStripProps {
   categories: CategoryRow[];
   onEventClick: (eventId: string) => void;
   limit?: number;
-  // Override the section title — defaults to "Free tonight" but the
-  // Tomorrow tab reuses this component with "Free tomorrow".
-  title?: string;
   // When an event id is in this map, its card renders a walking chip in
   // the meta row. Index passes a map covering every event whose venue is
   // ≤ 15 min from the user — so a free event that's ALSO nearby shows
@@ -31,7 +28,6 @@ export default function FreeTonightStrip({
   categories,
   onEventClick,
   limit = 10,
-  title = "Free tonight",
   walkingMinByEventId,
 }: FreeTonightStripProps) {
   const freeEvents = useMemo(() => {
@@ -73,7 +69,7 @@ export default function FreeTonightStrip({
               as part of the same list rhythm. */}
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              {title}
+              {freeEvents.length === 1 ? "Free event" : "Free events"}
             </h2>
             <span className="flex-1" />
             {/* Counter — auf Mobile nur die Zahl, auf Desktop „N Free"

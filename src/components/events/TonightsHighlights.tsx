@@ -46,7 +46,7 @@ export default function TonightsHighlights({
               "Editor's picks". */}
           <div className="flex items-baseline justify-between gap-4 flex-wrap">
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-              {sorted.length === 1 ? "Highlight tonight" : "Highlights tonight"}
+              {sorted.length === 1 ? "Highlight event" : "Highlights events"}
             </h2>
             <div className="mono-label text-muted-foreground">
               <span className="md:hidden">{sorted.length}</span>
