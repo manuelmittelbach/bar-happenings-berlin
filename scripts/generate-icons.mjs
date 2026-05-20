@@ -1,20 +1,21 @@
-/* One-shot: rasterize the IB monogram into PNG icons.
+/* One-shot: rasterize the IB monogram + OG card + favicon.ico.
  * Usage: node scripts/generate-icons.mjs */
 import sharp from "sharp";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import icoEndec from "ico-endec";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, "..", "public");
 
-// Master design — matches public/favicon.svg (white tile, black border, "IB" no dot).
+// Master design — matches public/favicon.svg (white tile, black border, Georgia bold "IB").
 const standardSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect x="1" y="1" width="62" height="62" rx="12" fill="#FFFFFF" stroke="#0F0F0F" stroke-width="2"/>
   <text x="32" y="44" text-anchor="middle"
-        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
-        font-weight="900" font-size="34" letter-spacing="-1.5" fill="#0F0F0F">IB</text>
+        font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="32" letter-spacing="-1" fill="#0F0F0F">IB</text>
 </svg>`;
 
 // Maskable: edge-to-edge black so Android adaptive crop keeps strong brand presence.
@@ -23,8 +24,42 @@ const maskableSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" fill="#0F0F0F"/>
   <text x="32" y="40" text-anchor="middle"
-        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
-        font-weight="900" font-size="24" letter-spacing="-1" fill="#FFFFFF">IB</text>
+        font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="22" letter-spacing="-0.5" fill="#FFFFFF">IB</text>
+</svg>`;
+
+// Social-share card 1200×630 — editorial cream bg, Georgia bold uppercase headline
+// with italic Georgia "tonight" accent, orange dot in wordmark + orange "?".
+const ogSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F5F1E8"/>
+
+  <!-- Top brand row: INSIDE · BARS wordmark left, URL right -->
+  <text x="80" y="68" font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="34" letter-spacing="-0.5" fill="#0F0F0F">INSIDE</text>
+  <circle cx="220" cy="56" r="6" fill="#EE6022"/>
+  <text x="240" y="68" font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="34" letter-spacing="-0.5" fill="#0F0F0F">BARS</text>
+
+  <text x="1120" y="68" font-family="'Courier New', monospace"
+        font-weight="400" font-size="16" letter-spacing="2" fill="#9CA3AF" text-anchor="end">INSIDEBARS.CO</text>
+
+  <!-- Eyebrow -->
+  <text x="80" y="140" font-family="'Courier New', monospace"
+        font-weight="700" font-size="16" letter-spacing="3" fill="#EE6022">BERLIN'S INDEPENDENT BAR GUIDE</text>
+
+  <!-- Headline: Georgia bold uppercase + italic "tonight" lowercase -->
+  <text x="80" y="270" font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="100" letter-spacing="-3" fill="#0F0F0F">WHAT'S ON</text>
+  <text x="80" y="370" font-family="Georgia, 'Times New Roman', Times, serif"
+        font-style="italic" font-weight="400" font-size="90" letter-spacing="-2" fill="#0F0F0F">tonight</text>
+  <text x="80" y="475" font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="100" letter-spacing="-3" fill="#0F0F0F">IN BERLIN BARS<tspan fill="#EE6022">?</tspan></text>
+
+  <!-- Hairline + tagline -->
+  <line x1="80" y1="540" x2="1120" y2="540" stroke="#0F0F0F" stroke-width="1"/>
+  <text x="80" y="585" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-weight="400" font-size="18" fill="#0F0F0F">Live music, quiz nights, open mics &amp; community events in small independent bars across Berlin.</text>
 </svg>`;
 
 const targets = [
@@ -44,3 +79,22 @@ for (const t of targets) {
   await writeFile(join(PUBLIC, t.file), buf);
   console.log(`wrote public/${t.file} (${t.size}x${t.size})`);
 }
+
+// og-image: 1200×630, not square — render at exact size, don't resize.
+const ogBuf = await sharp(Buffer.from(ogSvg), { density: 144 })
+  .resize(1200, 630)
+  .png()
+  .toBuffer();
+await writeFile(join(PUBLIC, "og-image.png"), ogBuf);
+console.log("wrote public/og-image.png (1200x630)");
+
+// favicon.ico: multi-resolution ICO with 16, 32, 48 px PNG embeds.
+const icoSizes = [16, 32, 48];
+const icoPngs = await Promise.all(
+  icoSizes.map((s) =>
+    sharp(Buffer.from(standardSvg)).resize(s, s).png().toBuffer()
+  )
+);
+const icoBuf = icoEndec.encode(icoPngs);
+await writeFile(join(PUBLIC, "favicon.ico"), icoBuf);
+console.log(`wrote public/favicon.ico (${icoSizes.join(", ")})`);
