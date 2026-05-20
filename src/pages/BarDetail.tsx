@@ -94,21 +94,6 @@ export default function BarDetail() {
           {addSoftHyphens(venue.name)}
         </motion.h1>
 
-        {/* A. Lede figure — sits between the bar name and the action chip
-            row. Acts as a visual signature for the venue without
-            dominating the masthead the way a hero image at the very top
-            would. Same border + shadow as EventDetail's lede. */}
-        {venue.image && (
-          <figure className="relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] md:aspect-[16/9] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)]">
-            <img
-              src={venue.image}
-              alt={venue.name}
-              style={venue.imagePosition ? { objectPosition: venue.imagePosition } : undefined}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </figure>
-        )}
-
         {/* D. Action chip row — Website / Instagram as inline mono caps
             chips matching EventDetail's price/language/recurrence row.
             Soft hairline below closes the row. */}

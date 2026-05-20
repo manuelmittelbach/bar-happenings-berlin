@@ -409,7 +409,6 @@ export default function Index() {
                 <NearbyStrip
                   nearby={nearbyTonight}
                   onEventClick={handleEventClick}
-                  title="Nearby tonight"
                 />
                 <FreeTonightStrip
                   events={todayEvents}
@@ -418,7 +417,16 @@ export default function Index() {
                   walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More tonight" : "All tonight"}
+                  title={(() => {
+                    const count = filtered.filter(
+                      (e) =>
+                        !e.isHighlight &&
+                        !isFreeOrDonation(e.entryInfo) &&
+                        !nearbyTonightIds.has(e.id),
+                    ).length;
+                    const noun = count === 1 ? "event" : "events";
+                    return hasEditorialAbove ? `More ${noun}` : `All ${noun}`;
+                  })()}
                   /* Dedup: drop events already shown above in Tonight's
                      Highlights (e.isHighlight), Nearby Tonight, and Free
                      Tonight (free or pay-what-you-want). The master list
@@ -467,20 +475,26 @@ export default function Index() {
                 <NearbyStrip
                   nearby={nearbyTomorrow}
                   onEventClick={handleEventClick}
-                  title="Nearby tomorrow"
                 />
                 <FreeTonightStrip
                   events={tomorrowEvents}
                   categories={categoriesData}
                   onEventClick={handleEventClick}
-                  title="Free tomorrow"
                   walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More tomorrow" : "All tomorrow"}
-                  /* Same dedup as More tonight — drop free/donation events
-                     and anything Nearby Tomorrow already surfaced, so the
-                     master list reads as "what else is on tomorrow". */
+                  title={(() => {
+                    const count = filtered.filter(
+                      (e) =>
+                        !isFreeOrDonation(e.entryInfo) &&
+                        !nearbyTomorrowIds.has(e.id),
+                    ).length;
+                    const noun = count === 1 ? "event" : "events";
+                    return hasEditorialAbove ? `More ${noun}` : `All ${noun}`;
+                  })()}
+                  /* Same dedup as More events tonight — drop free/donation
+                     events and anything Nearby Tomorrow already surfaced,
+                     so the master list reads as "what else is on tomorrow". */
                   events={filtered.filter(
                     (e) =>
                       !isFreeOrDonation(e.entryInfo) &&
