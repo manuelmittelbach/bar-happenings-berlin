@@ -378,12 +378,11 @@ export default function Index() {
             if (activeCategoryLabel) {
               return (
                 <DayList
-                  // Day suffix is dropped on filtered titles — the active
-                  // DaySwitcher tab above ("Tonight") already supplies that
-                  // context, and the longer "{Category} tonight" string
-                  // wraps on mobile widths and pushes the counter to a
-                  // second line.
-                  title={activeCategoryLabel}
+                  // No title/counter on filtered short-circuits — the
+                  // sticky CategoryIconBar above already shows which
+                  // category is active (highlighted pill), so repeating
+                  // it as a heading just doubles the same context. The
+                  // list speaks for itself.
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tonight.`}
@@ -463,9 +462,9 @@ export default function Index() {
             if (activeCategoryLabel) {
               return (
                 <DayList
-                  // Day suffix dropped — same reasoning as the tonight
-                  // short-circuit above.
-                  title={activeCategoryLabel}
+                  // No title/counter — same reasoning as the tonight
+                  // short-circuit above (sticky CategoryIconBar already
+                  // surfaces the active category).
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
