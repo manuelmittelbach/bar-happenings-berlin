@@ -580,7 +580,7 @@ function BarCard({
         <div className="p-4 md:p-5">
           <h3
             lang="de"
-            className="font-body text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words hyphens-auto"
+            className="font-body text-[17px] md:text-[22px] font-bold leading-[1.2] m-0 transition-colors group-hover:text-accent break-words hyphens-auto"
           >
             {addSoftHyphens(venue.name)}
           </h3>
