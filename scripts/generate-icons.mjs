@@ -8,6 +8,7 @@ import icoEndec from "ico-endec";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, "..", "public");
+const ASSETS = join(__dirname, "..", "assets");
 
 // Master design — matches public/favicon.svg (white tile, black border, Georgia bold "IB").
 const standardSvg = `
@@ -16,6 +17,19 @@ const standardSvg = `
   <text x="32" y="44" text-anchor="middle"
         font-family="Georgia, 'Times New Roman', Times, serif"
         font-weight="700" font-size="32" letter-spacing="-1" fill="#0F0F0F">IB</text>
+</svg>`;
+
+// Native app icon (Capacitor source) — full-bleed cream brand background
+// + black Georgia bold IB. No built-in rounded corners: iOS applies its
+// own squircle mask, and any pre-rounded PNG ends up with doubled or
+// uneven corners. Sized for the 1024×1024 source @capacitor/assets fans
+// out into every iOS AppIcon variant.
+const nativeSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#F5F1E8"/>
+  <text x="512" y="700" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', Times, serif"
+        font-weight="700" font-size="560" letter-spacing="-20" fill="#0F0F0F">IB</text>
 </svg>`;
 
 // Maskable: edge-to-edge black so Android adaptive crop keeps strong brand presence.
@@ -98,3 +112,13 @@ const icoPngs = await Promise.all(
 const icoBuf = icoEndec.encode(icoPngs);
 await writeFile(join(PUBLIC, "favicon.ico"), icoBuf);
 console.log(`wrote public/favicon.ico (${icoSizes.join(", ")})`);
+
+// Native app icon source — written once at 1024×1024 for @capacitor/assets
+// to consume via `npx capacitor-assets generate --ios`. Run that command
+// after this script to fan the source out into the full iOS AppIcon set.
+const nativeBuf = await sharp(Buffer.from(nativeSvg))
+  .resize(1024, 1024)
+  .png()
+  .toBuffer();
+await writeFile(join(ASSETS, "icon-only.png"), nativeBuf);
+console.log("wrote assets/icon-only.png (1024x1024) — run `npx capacitor-assets generate --ios` next");
