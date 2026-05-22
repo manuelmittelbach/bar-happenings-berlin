@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 
 interface UserLocation {
   lat: number;
@@ -98,7 +99,16 @@ export function useUserLocation(): {
     subscribers.add(setLocation);
     statusSubscribers.add(setStatus);
 
-    // For first-time visitors we never auto-trigger getCurrentPosition on
+    // Native (Capacitor) apps prompt for location on first mount — the
+    // iOS system permission dialog is the expected onboarding UX in a
+    // native app, and without an early ask Nearby Events would stay
+    // empty until the user happened to find the Map tab's locate button.
+    // The trigger is a no-op once permission resolves (granted/denied),
+    // so re-mounts after onboarding don't re-prompt.
+    if (Capacitor.isNativePlatform()) {
+      triggerLocationRequest();
+    }
+    // For first-time web visitors we never auto-trigger getCurrentPosition on
     // mount: iOS Safari would surface its "Would you like to allow access"
     // popup as soon as the page loads, which is confusing UX.
     //
@@ -106,7 +116,7 @@ export function useUserLocation(): {
     // refreshing the location silently on mount is safe — and necessary, since
     // a hard reload otherwise loses the in-memory cache and distances vanish
     // until the user clicks the banner or the map's locate button again.
-    if (navigator.permissions) {
+    else if (navigator.permissions) {
       navigator.permissions.query({ name: "geolocation" })
         .then((result) => {
           if (result.state === "denied") {
