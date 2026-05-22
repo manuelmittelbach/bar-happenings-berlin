@@ -378,7 +378,12 @@ export default function Index() {
             if (activeCategoryLabel) {
               return (
                 <DayList
-                  title={`${activeCategoryLabel} tonight`}
+                  // Day suffix is dropped on filtered titles — the active
+                  // DaySwitcher tab above ("Tonight") already supplies that
+                  // context, and the longer "{Category} tonight" string
+                  // wraps on mobile widths and pushes the counter to a
+                  // second line.
+                  title={activeCategoryLabel}
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tonight.`}
