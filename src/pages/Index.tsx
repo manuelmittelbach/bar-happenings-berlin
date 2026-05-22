@@ -339,7 +339,17 @@ export default function Index() {
       {/* Internal scroll container — the only scrollable surface in this
           page. Sticky section headers inside (`top: 0`) now pin to this
           container's top edge, which sits right under the chrome above. */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+        /* Native: BottomTabBar is fixed and floats over the viewport, so
+           without reserving its height here the last cards + closing block
+           hide behind it and are only revealed by bounce-scrolling. The
+           padding-bottom adds matching dead-space inside the scroller so
+           the final content can scroll fully above the bar. Web (no tab
+           bar) renders the Footer inline at the end instead. */
+        style={isNative ? { paddingBottom: "var(--tab-bar-h)" } : undefined}
+      >
         {/* Inner flex column with min-h-full so when the list is short
             (single event under a category filter), the Footer's mt-auto
             below still pushes it to the bottom of the scroll viewport
