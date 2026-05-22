@@ -1,12 +1,30 @@
+import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BottomTabBar from "@/components/layout/BottomTabBar";
 import { useIsNative } from "@/hooks/useIsNative";
+import { useVenues } from "@/hooks/useEvents";
+import { usePrefetchImages } from "@/hooks/usePrefetchImages";
 
 export default function Layout() {
   const { pathname } = useLocation();
   const isMap = pathname === "/map";
+
+  // Warm the browser image cache for bar cover photos from any Layout-
+  // wrapped surface (events, map, bars itself, detail pages) so the Bars
+  // tab renders covers instantly from cache. useVenues shares the React
+  // Query cache with /events so this adds no extra network for the venue
+  // list itself — only the cover images. requestIdleCallback gates the
+  // queue to genuine idle moments, so the map's tile fetches still win
+  // when the user is actively panning.
+  const { data: venuesData = [] } = useVenues();
+  const venueImageUrls = useMemo(
+    () => venuesData.map((v) => v.image).filter((u): u is string => !!u),
+    [venuesData],
+  );
+  usePrefetchImages(venueImageUrls);
+
   // Index uses the same locked-viewport architecture as Map: the page
   // doesn't scroll, only an internal list container does. Locks the day +
   // category chrome at the top of the viewport so it can't drift when the
