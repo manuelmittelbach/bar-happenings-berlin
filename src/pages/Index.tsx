@@ -458,7 +458,9 @@ export default function Index() {
             if (activeCategoryLabel) {
               return (
                 <DayList
-                  title={`${activeCategoryLabel} tomorrow`}
+                  // Day suffix dropped — same reasoning as the tonight
+                  // short-circuit above.
+                  title={activeCategoryLabel}
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
@@ -663,12 +665,14 @@ interface ClosingBlockProps {
 }
 
 function ClosingBlock({ message, cta, standalone }: ClosingBlockProps) {
-  // After a populated feed: hairline + generous top margin separates the
-  // closing beat from the last EventCard. Standalone empty state already
-  // sits in a centered, padded section — no extra chrome needed.
+  // After a populated feed: generous top margin separates the closing
+  // beat from the last EventCard, whose own bottom hairline already does
+  // the visual separation — an extra border-t on the block stacks two
+  // hairlines that read as a layout glitch. Standalone empty state sits
+  // in a centered, padded section, no chrome needed.
   const wrapperClass = standalone
     ? ""
-    : "mt-10 md:mt-14 pt-8 border-t-2 border-border text-center";
+    : "mt-10 md:mt-14 text-center";
 
   if (END_VARIANT === "display") {
     return (
