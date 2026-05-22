@@ -372,7 +372,7 @@ export default function Index() {
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tonight.`}
-                  onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
+                  onEmptyCta={{ label: "Clear filter →", onClick: () => handleCategoryChange("") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               );
@@ -430,8 +430,8 @@ export default function Index() {
                       !nearbyTonightIds.has(e.id),
                   )}
                   onEventClick={handleEventClick}
-                  emptyMessage="That's it for tonight."
-                  onEmptyCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
+                  endMessage="That's it for tonight."
+                  endCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               </>
@@ -452,7 +452,7 @@ export default function Index() {
                   events={filtered}
                   onEventClick={handleEventClick}
                   emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
-                  onEmptyCta={{ label: "Change category →", onClick: () => handleCategoryChange("") }}
+                  onEmptyCta={{ label: "Clear filter →", onClick: () => handleCategoryChange("") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               );
@@ -484,8 +484,8 @@ export default function Index() {
                       !nearbyTomorrowIds.has(e.id),
                   )}
                   onEventClick={handleEventClick}
-                  emptyMessage="That's it for tomorrow."
-                  onEmptyCta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
+                  endMessage="That's it for tomorrow."
+                  endCta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               </>
@@ -532,10 +532,20 @@ interface DayListProps {
   title?: string;
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
-  emptyMessage: string;
-  // Optional inline CTA shown under the empty-state message (Tonight uses
-  // it to send users to the Tomorrow tab; Tomorrow doesn't need one).
+  // Empty-state message + CTA — shown only when events.length === 0.
+  // Used by filtered short-circuits ("No Music tonight." / "Change
+  // category →") where the messaging only makes sense when the slice
+  // is empty.
+  emptyMessage?: string;
   onEmptyCta?: { label: string; onClick: () => void };
+  // Closing block — rendered at the end of a populated list AND alone
+  // when the list is empty. Gives long scrolls a clear terminus + next-
+  // step pointer ("That's it for tonight. See what's on tomorrow →").
+  // Used for unfiltered tonight/tomorrow where the same copy reads
+  // sensibly at 0 or N events; filtered tabs skip this in favor of the
+  // empty-state pair above.
+  endMessage?: string;
+  endCta?: { label: string; onClick: () => void };
   // When a card's event id appears in this map, the EventCard renders a
   // walking-distance chip in its meta row. Index passes a map covering all
   // events ≤ 15 min from the user — so a walkable event surfaces its chip
@@ -544,28 +554,38 @@ interface DayListProps {
   walkingMinByEventId?: Map<string, number>;
 }
 
-function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkingMinByEventId }: DayListProps) {
-  // Empty state — drop the "More tonight" / "More tomorrow" header + counter
-  // entirely. With a filter applied the list often collapses to zero, and
-  // pairing the bold header "More tonight" with the body line "Nothing more
-  // for tonight" reads as a contradiction. Showing only the italic empty
-  // message + CTA keeps the section honest and lets the eye fall straight
-  // to the redirect.
+function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, endMessage, endCta, walkingMinByEventId }: DayListProps) {
+  // Empty state — filtered short-circuits supply emptyMessage/onEmptyCta
+  // ("No Music tonight." / "Clear filter →") which only make sense
+  // when the slice has nothing in it. Unfiltered tonight/tomorrow skip
+  // these and fall back to the closing block (rendered standalone) so the
+  // same "That's it for tonight" terminus shows whether the day has 0
+  // or 20 events.
   if (events.length === 0) {
-    return (
-      <section className="container py-12 md:py-16 text-center">
-        <p className="font-body italic text-[18px] m-0">{emptyMessage}</p>
-        {onEmptyCta && (
-          <button
-            type="button"
-            onClick={onEmptyCta.onClick}
-            className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
-          >
-            {onEmptyCta.label}
-          </button>
-        )}
-      </section>
-    );
+    if (emptyMessage) {
+      return (
+        <section className="container py-12 md:py-16 text-center">
+          <p className="font-body italic text-[18px] m-0">{emptyMessage}</p>
+          {onEmptyCta && (
+            <button
+              type="button"
+              onClick={onEmptyCta.onClick}
+              className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
+            >
+              {onEmptyCta.label}
+            </button>
+          )}
+        </section>
+      );
+    }
+    if (endMessage) {
+      return (
+        <section className="container py-12 md:py-16 text-center">
+          <ClosingBlock message={endMessage} cta={endCta} standalone />
+        </section>
+      );
+    }
+    return null;
   }
 
   return (
@@ -607,7 +627,71 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
           />
         ))}
       </div>
+
+      {endMessage && <ClosingBlock message={endMessage} cta={endCta} standalone={false} />}
     </section>
+  );
+}
+
+// ──────────  Closing block variants  ──────────
+// END_VARIANT flips between two editorial treatments of the day-feed close:
+//   "soft"    → italic body line + small accent link; quiet section seam
+//   "display" → Georgia bold uppercase headline + small accent link;
+//               feels like the final beat of an editorial layout
+// Same component, same call sites — change this constant and rebuild to
+// compare side by side. Once the winner is picked, drop the loser and
+// inline the variant.
+const END_VARIANT: "soft" | "display" = "soft";
+
+interface ClosingBlockProps {
+  message: string;
+  cta?: { label: string; onClick: () => void };
+  // True when the parent <section> is the standalone empty-state wrapper:
+  // skips the top-margin + hairline that only make sense after a list of
+  // cards above. Centering and inner padding come from the parent.
+  standalone: boolean;
+}
+
+function ClosingBlock({ message, cta, standalone }: ClosingBlockProps) {
+  // After a populated feed: hairline + generous top margin separates the
+  // closing beat from the last EventCard. Standalone empty state already
+  // sits in a centered, padded section — no extra chrome needed.
+  const wrapperClass = standalone
+    ? ""
+    : "mt-10 md:mt-14 pt-8 border-t-2 border-border text-center";
+
+  if (END_VARIANT === "display") {
+    return (
+      <div className={wrapperClass}>
+        <p className="heading-display text-2xl md:text-[30px] leading-[1.05] m-0">
+          {message}
+        </p>
+        {cta && (
+          <button
+            type="button"
+            onClick={cta.onClick}
+            className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-4"
+          >
+            {cta.label}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={wrapperClass}>
+      <p className="font-body italic text-[18px] m-0 text-foreground/80">{message}</p>
+      {cta && (
+        <button
+          type="button"
+          onClick={cta.onClick}
+          className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-3"
+        >
+          {cta.label}
+        </button>
+      )}
+    </div>
   );
 }
 
