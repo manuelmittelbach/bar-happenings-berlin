@@ -1,8 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/hooks/useAuth";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
@@ -200,8 +201,13 @@ const App = () => (
           {/* Landing owns its own chrome (nav + footer) — rendered
               outside Layout so the global Header doesn't stack on top
               of the marketing nav. Sits at `/` so visitors land on the
-              marketing page; the events list moved to `/events`. */}
-          <Route path="/" element={<Landing />} />
+              marketing page; the events list moved to `/events`.
+              Native (Capacitor) skips marketing entirely and lands
+              straight on the events list. */}
+          <Route
+            path="/"
+            element={Capacitor.isNativePlatform() ? <Navigate to="/events" replace /> : <Landing />}
+          />
           <Route element={<Layout />}>
             <Route path="/events" element={<Index />} />
             <Route path="/event/:id" element={<EventDetail />} />
