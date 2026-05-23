@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { ListBullets, MapTrifold, Storefront } from "@phosphor-icons/react";
+import { ListBullets, MapTrifold, Storefront, UserCircle } from "@phosphor-icons/react";
 
-type TabKey = "list" | "map" | "bars";
+type TabKey = "list" | "map" | "bars" | "profile";
 
 interface TabDef {
   key: TabKey;
@@ -37,6 +37,17 @@ const TABS: TabDef[] = [
     label: "Bars",
     Icon: Storefront,
     isActive: (p) => p === "/bars",
+  },
+  {
+    // Profile tab is the only native surface that surfaces Impressum +
+    // Datenschutz (the web Footer is dropped on native), so it must stay
+    // reachable in every auth state — /for-bars already renders sensibly
+    // for guests, bar-owners, and admins without redirecting away.
+    key: "profile",
+    to: "/for-bars",
+    label: "Profile",
+    Icon: UserCircle,
+    isActive: (p) => p === "/for-bars",
   },
 ];
 
