@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchUserRole } from "@/lib/supabaseQueries";
@@ -96,7 +96,7 @@ export default function ForBars() {
 	};
 
 	return (
-		<div className="bg-muted/40 flex flex-1">
+		<div className="flex flex-1 flex-col">
 			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
 					<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
 
@@ -288,6 +288,17 @@ export default function ForBars() {
 						</div>
 					</section>
 			</div>
+			<nav
+				aria-label="Legal"
+				className="border-t-2 border-foreground/10 px-4 py-6 flex flex-wrap justify-center gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+			>
+				<Link to="/impressum" className="hover:text-foreground transition-colors">
+					Impressum
+				</Link>
+				<Link to="/datenschutz" className="hover:text-foreground transition-colors">
+					Datenschutz
+				</Link>
+			</nav>
 		</div>
 	);
 }
