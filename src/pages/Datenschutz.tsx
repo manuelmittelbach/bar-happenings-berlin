@@ -1,6 +1,6 @@
 export default function Datenschutz() {
   return (
-    <div className="bg-muted/40 flex-1">
+    <div className="flex-1">
       <div className="container max-w-2xl py-16">
         <h1 className="heading-display text-4xl md:text-5xl mb-8">Datenschutzerklärung</h1>
 
