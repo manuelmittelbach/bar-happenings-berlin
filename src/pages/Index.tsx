@@ -394,8 +394,9 @@ export default function Index() {
 
             // No category filter — full editorial structure. When every
             // strip collapses (e.g. nothing free + nothing highlighted),
-            // the list isn't "more than" anything — it's the entire
-            // tonight surface, so swap "More" → "All".
+            // the list isn't "more than" anything, so drop the section
+            // header entirely — the DaySwitcher chrome already supplies
+            // the "Tonight" context.
             const hasFreeTonight = todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
@@ -449,7 +450,7 @@ export default function Index() {
                   walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More events" : "All events"}
+                  title={hasEditorialAbove ? "More events" : undefined}
                   /* Dedup: drop events already shown above in Tonight's
                      Highlights (e.isHighlight), Nearby Tonight, and Free
                      Tonight (free or pay-what-you-want). The master list
@@ -518,7 +519,7 @@ export default function Index() {
                   walkingMinByEventId={walkingMinByEventId}
                 />
                 <DayList
-                  title={hasEditorialAbove ? "More events" : "All events"}
+                  title={hasEditorialAbove ? "More events" : undefined}
                   /* Same dedup as More events tonight — drop free/donation
                      events and anything Nearby Tomorrow already surfaced,
                      so the master list reads as "what else is on tomorrow". */
