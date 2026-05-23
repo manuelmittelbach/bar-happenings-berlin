@@ -31,6 +31,15 @@ if (Capacitor.isNativePlatform()) {
     StatusBar.setBackgroundColor({ color: "#f8f5ef" }).catch(() => {});
     StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
   }
+  // Tear down any service worker left over from a previous web visit —
+  // SW intercepts cross-origin tile requests in the Android WebView and
+  // breaks MapLibre. UpdatePrompt is already gated off on native, but
+  // an old SW from a prior session can linger until explicitly unregistered.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => regs.forEach((r) => r.unregister()))
+      .catch(() => {});
+  }
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

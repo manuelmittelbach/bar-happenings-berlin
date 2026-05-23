@@ -233,9 +233,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 			attributionControl: false,
 		});
 
-		// Watchdog: if MapLibre never fires "load" within 8s, the style or tiles
+		// Watchdog: if MapLibre never fires "load" in time, the style or tiles
 		// likely failed (carrier blocking openfreemap, dropped CDN, etc.).
 		// Tear the silent half-rendered map down and surface a retry UI.
+		// Native (Capacitor) gets a longer timeout — mobile connections plus
+		// a cold WebView cache can push first-tile-paint past 10s.
+		const watchdogMs = Capacitor.isNativePlatform() ? 20000 : 10000;
 		const watchdogId = window.setTimeout(() => {
 			if (mapRef.current === map) {
 				map.remove();
@@ -243,7 +246,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 				sourceReadyRef.current = false;
 			}
 			setLoadFailed(true);
-		}, 8000);
+		}, watchdogMs);
 
 		// requestAnimationFrame id for the pulse animation — closed over the
 		// useEffect cleanup so it gets cancelled on unmount / retry.
@@ -347,12 +350,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 				const animatePulse = (now: number) => {
 					const t = ((now - pulseStart) / 2200) % 1;
 					if (map.getLayer(LAYER_PULSE)) {
+						// Clamp opacity to [0, 1] — MapLibre's validator rejects
+						// near-zero values produced by floating-point edges of
+						// sin(t·π) at the cycle boundaries on Android WebView.
+						const opacity = Math.max(0, Math.min(1, 0.32 * Math.sin(t * Math.PI)));
 						map.setPaintProperty(LAYER_PULSE, "circle-radius", 18 + t * 28);
-						map.setPaintProperty(
-							LAYER_PULSE,
-							"circle-opacity",
-							0.32 * Math.sin(t * Math.PI),
-						);
+						map.setPaintProperty(LAYER_PULSE, "circle-opacity", opacity);
 					}
 					pulseRafId = requestAnimationFrame(animatePulse);
 				};

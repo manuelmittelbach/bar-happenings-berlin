@@ -193,7 +193,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <UpdatePrompt />
+      {!Capacitor.isNativePlatform() && <UpdatePrompt />}
       <BrowserRouter>
         <ScrollManager />
         <AuthCallbackGate>
