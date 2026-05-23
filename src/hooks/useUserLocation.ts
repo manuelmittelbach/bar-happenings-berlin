@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 
 interface UserLocation {
   lat: number;
@@ -49,6 +50,29 @@ function notifyStatus(s: LocationPermissionStatus) {
 
 export function triggerLocationRequest() {
   if (permissionStatus === "granted" || permissionStatus === "loading") return;
+
+  // Native (Capacitor) path — the @capacitor/geolocation plugin bridges
+  // to CoreLocation (iOS) and FusedLocationProviderClient (Android). On
+  // Android the WebView's navigator.geolocation does NOT auto-bridge, so
+  // calling it directly silently denies; we have to go through the plugin.
+  // The plugin's getCurrentPosition shows the OS-native permission dialog
+  // on first call and returns the cached decision afterwards.
+  if (Capacitor.isNativePlatform()) {
+    notifyStatus("loading");
+    Geolocation.getCurrentPosition({ timeout: 8000, maximumAge: 5 * 60 * 1000 })
+      .then((pos) => {
+        cached = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        writeStoredLocation(cached);
+        notifyStatus("granted");
+        subscribers.forEach((fn) => fn(cached));
+      })
+      .catch(() => {
+        notifyStatus("denied");
+        subscribers.forEach((fn) => fn(null));
+      });
+    return;
+  }
+
   if (!navigator.geolocation) {
     notifyStatus("denied");
     return;

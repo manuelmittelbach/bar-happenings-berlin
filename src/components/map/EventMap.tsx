@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { Capacitor } from "@capacitor/core";
 import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -762,19 +763,28 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 			map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 1200 });
 			return;
 		}
-		if (!navigator.geolocation) return;
+		// On native (Capacitor) the @capacitor/geolocation plugin handles
+		// its own availability check, so we skip the navigator-geolocation
+		// guard — the WebView has the API but it's a non-functional stub on
+		// Android until the plugin bridges it.
+		if (!Capacitor.isNativePlatform() && !navigator.geolocation) return;
 		setLocating(true);
 		const loc = await requestLocationOnce();
 		setLocating(false);
 		if (!loc) {
-			// Branch by platform — iOS sets permissions per-app via system
-			// Settings, desktop/Android via the browser's site-permission UI.
-			// Don't name a specific browser (the previous "Safari" reference
-			// confused users on Chrome/Firefox on Mac where Safari isn't even
-			// installed). Generic "your browser" works across vendors.
+			// Three recovery paths: native apps direct to OS app-settings,
+			// mobile Safari to iOS Settings → Safari, desktop/Android browsers
+			// to the URL bar lock icon. Generic "your browser" works across
+			// vendors so we don't mislead Chrome/Firefox users on macOS.
+			const isNative = Capacitor.isNativePlatform();
+			const nativePlatform = Capacitor.getPlatform();
 			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 			alert(
-				isIOS
+				isNative
+					? nativePlatform === "ios"
+						? "Location access was denied.\n\nOpen Settings → Privacy & Security → Location Services → Inside Bars, and allow access."
+						: "Location access was denied.\n\nOpen Settings → Apps → Inside Bars → Permissions → Location, and allow access."
+					: isIOS
 					? "Location access was denied.\n\nOpen Settings → Privacy & Security → Location Services, scroll to your browser, and set it to ‘While Using the App’."
 					: "Location access was denied.\n\nClick the location icon in your browser's address bar and allow location, or change it in your browser's site settings."
 			);
