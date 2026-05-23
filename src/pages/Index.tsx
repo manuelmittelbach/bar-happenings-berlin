@@ -396,11 +396,29 @@ export default function Index() {
             // strip collapses (e.g. nothing free + nothing highlighted),
             // the list isn't "more than" anything — it's the entire
             // tonight surface, so swap "More" → "All".
+            const hasFreeTonight = todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const hasEditorialAbove =
               stillRunningYesterday.length > 0 ||
               highlightedTonightEvents.length > 0 ||
               nearbyTonight.length > 0 ||
-              todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
+              hasFreeTonight;
+            const moreEventsTonight = filtered.filter(
+              (e) =>
+                !e.isHighlight &&
+                !isFreeOrDonation(e.entryInfo) &&
+                !nearbyTonightIds.has(e.id),
+            );
+            // Closing block fires once at page level only when every
+            // tonight surface a user can see is empty — highlights, nearby,
+            // free, and the master "more events" list. With even one event
+            // visible somewhere, "That's it for tonight" would contradict
+            // the screen.
+            const tonightAllEmpty =
+              stillRunningYesterday.length === 0 &&
+              highlightedTonightEvents.length === 0 &&
+              nearbyTonight.length === 0 &&
+              !hasFreeTonight &&
+              moreEventsTonight.length === 0;
             return (
               <>
                 {/* Carry-over from the previous calendar day — sits above
@@ -437,17 +455,18 @@ export default function Index() {
                      Tonight (free or pay-what-you-want). The master list
                      reads as "what else is on tonight" instead of repeating
                      cards across editorial lenses. */
-                  events={filtered.filter(
-                    (e) =>
-                      !e.isHighlight &&
-                      !isFreeOrDonation(e.entryInfo) &&
-                      !nearbyTonightIds.has(e.id),
-                  )}
+                  events={moreEventsTonight}
                   onEventClick={handleEventClick}
-                  endMessage="That's it for tonight."
-                  endCta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
+                {tonightAllEmpty && (
+                  <section className="container py-12 md:py-16 text-center">
+                    <ClosingBlock
+                      message="That's it for tonight."
+                      cta={{ label: "See what's on tomorrow →", onClick: () => setActiveDate("Tomorrow") }}
+                    />
+                  </section>
+                )}
               </>
             );
           })()}
@@ -474,9 +493,18 @@ export default function Index() {
               );
             }
 
+            const hasFreeTomorrow = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const hasEditorialAbove =
-              nearbyTomorrow.length > 0 ||
-              tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
+              nearbyTomorrow.length > 0 || hasFreeTomorrow;
+            const moreEventsTomorrow = filtered.filter(
+              (e) =>
+                !isFreeOrDonation(e.entryInfo) &&
+                !nearbyTomorrowIds.has(e.id),
+            );
+            const tomorrowAllEmpty =
+              nearbyTomorrow.length === 0 &&
+              !hasFreeTomorrow &&
+              moreEventsTomorrow.length === 0;
             return (
               <>
                 <NearbyStrip
@@ -494,16 +522,18 @@ export default function Index() {
                   /* Same dedup as More events tonight — drop free/donation
                      events and anything Nearby Tomorrow already surfaced,
                      so the master list reads as "what else is on tomorrow". */
-                  events={filtered.filter(
-                    (e) =>
-                      !isFreeOrDonation(e.entryInfo) &&
-                      !nearbyTomorrowIds.has(e.id),
-                  )}
+                  events={moreEventsTomorrow}
                   onEventClick={handleEventClick}
-                  endMessage="That's it for tomorrow."
-                  endCta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
+                {tomorrowAllEmpty && (
+                  <section className="container py-12 md:py-16 text-center">
+                    <ClosingBlock
+                      message="That's it for tomorrow."
+                      cta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
+                    />
+                  </section>
+                )}
               </>
             );
           })()}
@@ -549,19 +579,12 @@ interface DayListProps {
   events: BarlinEvent[];
   onEventClick: (id: string) => void;
   // Empty-state message + CTA — shown only when events.length === 0.
-  // Used by filtered short-circuits ("No Music tonight." / "Change
-  // category →") where the messaging only makes sense when the slice
-  // is empty.
+  // Used by filtered short-circuits ("No Music tonight." / "Clear filter →")
+  // where the messaging only makes sense when the slice is empty.
+  // Unfiltered tonight/tomorrow pass no emptyMessage; the page-level
+  // ClosingBlock above takes over when the whole day is empty.
   emptyMessage?: string;
   onEmptyCta?: { label: string; onClick: () => void };
-  // Closing block — rendered at the end of a populated list AND alone
-  // when the list is empty. Gives long scrolls a clear terminus + next-
-  // step pointer ("That's it for tonight. See what's on tomorrow →").
-  // Used for unfiltered tonight/tomorrow where the same copy reads
-  // sensibly at 0 or N events; filtered tabs skip this in favor of the
-  // empty-state pair above.
-  endMessage?: string;
-  endCta?: { label: string; onClick: () => void };
   // When a card's event id appears in this map, the EventCard renders a
   // walking-distance chip in its meta row. Index passes a map covering all
   // events ≤ 15 min from the user — so a walkable event surfaces its chip
@@ -570,13 +593,11 @@ interface DayListProps {
   walkingMinByEventId?: Map<string, number>;
 }
 
-function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, endMessage, endCta, walkingMinByEventId }: DayListProps) {
-  // Empty state — filtered short-circuits supply emptyMessage/onEmptyCta
-  // ("No Music tonight." / "Clear filter →") which only make sense
-  // when the slice has nothing in it. Unfiltered tonight/tomorrow skip
-  // these and fall back to the closing block (rendered standalone) so the
-  // same "That's it for tonight" terminus shows whether the day has 0
-  // or 20 events.
+function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkingMinByEventId }: DayListProps) {
+  // Empty state — only filtered short-circuits supply emptyMessage/onEmptyCta
+  // ("No Music tonight." / "Clear filter →"). Unfiltered tonight/tomorrow
+  // pass no emptyMessage and let the page-level ClosingBlock handle the
+  // empty case, so a list with nothing in it just renders nothing here.
   if (events.length === 0) {
     if (emptyMessage) {
       return (
@@ -591,13 +612,6 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, endMes
               {onEmptyCta.label}
             </button>
           )}
-        </section>
-      );
-    }
-    if (endMessage) {
-      return (
-        <section className="container py-12 md:py-16 text-center">
-          <ClosingBlock message={endMessage} cta={endCta} standalone />
         </section>
       );
     }
@@ -643,62 +657,18 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, endMes
           />
         ))}
       </div>
-
-      {endMessage && <ClosingBlock message={endMessage} cta={endCta} standalone={false} />}
     </section>
   );
 }
 
-// ──────────  Closing block variants  ──────────
-// END_VARIANT flips between two editorial treatments of the day-feed close:
-//   "soft"    → italic body line + small accent link; quiet section seam
-//   "display" → Georgia bold uppercase headline + small accent link;
-//               feels like the final beat of an editorial layout
-// Same component, same call sites — change this constant and rebuild to
-// compare side by side. Once the winner is picked, drop the loser and
-// inline the variant.
-const END_VARIANT: "soft" | "display" = "soft";
-
 interface ClosingBlockProps {
   message: string;
   cta?: { label: string; onClick: () => void };
-  // True when the parent <section> is the standalone empty-state wrapper:
-  // skips the top-margin + hairline that only make sense after a list of
-  // cards above. Centering and inner padding come from the parent.
-  standalone: boolean;
 }
 
-function ClosingBlock({ message, cta, standalone }: ClosingBlockProps) {
-  // After a populated feed: generous top margin separates the closing
-  // beat from the last EventCard, whose own bottom hairline already does
-  // the visual separation — an extra border-t on the block stacks two
-  // hairlines that read as a layout glitch. Standalone empty state sits
-  // in a centered, padded section, no chrome needed.
-  const wrapperClass = standalone
-    ? ""
-    : "mt-10 md:mt-14 text-center";
-
-  if (END_VARIANT === "display") {
-    return (
-      <div className={wrapperClass}>
-        <p className="heading-display text-2xl md:text-[30px] leading-[1.05] m-0">
-          {message}
-        </p>
-        {cta && (
-          <button
-            type="button"
-            onClick={cta.onClick}
-            className="mono-label text-accent border-b-2 border-accent pb-0.5 mt-4"
-          >
-            {cta.label}
-          </button>
-        )}
-      </div>
-    );
-  }
-
+function ClosingBlock({ message, cta }: ClosingBlockProps) {
   return (
-    <div className={wrapperClass}>
+    <>
       <p className="font-body italic text-[18px] m-0 text-foreground/80">{message}</p>
       {cta && (
         <button
@@ -709,7 +679,7 @@ function ClosingBlock({ message, cta, standalone }: ClosingBlockProps) {
           {cta.label}
         </button>
       )}
-    </div>
+    </>
   );
 }
 
