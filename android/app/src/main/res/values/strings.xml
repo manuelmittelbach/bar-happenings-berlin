@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Inside Bars</string>
+    <string name="title_activity_main">Inside Bars</string>
+    <string name="package_name">app.insidebars.berlin</string>
+    <string name="custom_url_scheme">app.insidebars.berlin</string>
+</resources>
