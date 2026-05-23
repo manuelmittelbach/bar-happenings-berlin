@@ -125,14 +125,14 @@ export default function EditBarAccount() {
 	const handleGeocode = async () => {
 		const address = form.barAddress.trim();
 		if (!address) {
-			toast.error("Bitte zuerst eine Adresse eingeben.");
+			toast.error("Please enter an address first.");
 			return;
 		}
 		setGeocoding(true);
 		try {
 			const result = await geocodeAddress(address);
 			if (!result) {
-				toast.error("Adresse nicht gefunden — bitte manuell eintragen.");
+				toast.error("Address not found — please enter manually.");
 				return;
 			}
 			setForm((prev) => ({
@@ -142,7 +142,7 @@ export default function EditBarAccount() {
 			}));
 			toast.success(`Gefunden: ${result.displayName}`, { duration: 6000 });
 		} catch {
-			toast.error("Geocoding fehlgeschlagen. Bitte später erneut versuchen.");
+			toast.error("Geocoding failed. Please try again later.");
 		} finally {
 			setGeocoding(false);
 		}
@@ -158,15 +158,15 @@ export default function EditBarAccount() {
 		const hasLatInput = form.barLat.trim() !== "";
 		const hasLngInput = form.barLng.trim() !== "";
 		if ((hasLatInput || hasLngInput) && (latParsed === null || lngParsed === null)) {
-			toast.error("Lat/Lng müssen gültige Zahlen sein (Lat -90..90, Lng -180..180).");
+			toast.error("Lat/Lng must be valid numbers (Lat -90..90, Lng -180..180).");
 			return;
 		}
 		if (mode === "venue" && (latParsed === null || lngParsed === null)) {
-			toast.error("Eine bestehende Bar braucht gültige Koordinaten.");
+			toast.error("An existing bar needs valid coordinates.");
 			return;
 		}
 		if (mode === "venue" && latParsed === 0 && lngParsed === 0) {
-			toast.error("Koordinaten dürfen nicht 0,0 sein.");
+			toast.error("Coordinates cannot be 0,0.");
 			return;
 		}
 
@@ -360,11 +360,11 @@ export default function EditBarAccount() {
 								<div className="space-y-2 pt-2 border-t border-border">
 									<div className="flex items-center justify-between gap-3">
 										<div>
-											<p className="text-sm font-medium">Koordinaten {mode === "venue" && <span className="text-accent">*</span>}</p>
+											<p className="text-sm font-medium">Coordinates {mode === "venue" && <span className="text-accent">*</span>}</p>
 											<p className="text-xs text-muted-foreground">
 												{mode === "pending"
-													? "Optional — werden beim Approve automatisch aus der Adresse geholt, falls leer."
-													: "Pflicht — werden auf der Map angezeigt."}
+													? "Optional — auto-fetched from the address on approve if left empty."
+													: "Required — shown on the map."}
 											</p>
 										</div>
 										<button
@@ -373,7 +373,7 @@ export default function EditBarAccount() {
 											disabled={geocoding || !form.barAddress.trim()}
 											className="h-9 px-3 border border-border text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50 whitespace-nowrap"
 										>
-											{geocoding ? "Suche…" : "Aus Adresse holen"}
+											{geocoding ? "Searching…" : "Get from address"}
 										</button>
 									</div>
 									<div className="flex gap-2">

@@ -2222,7 +2222,7 @@ function StagedEventCard({
                   type="button"
                   onClick={() => { setDoorsTime(""); setShowDoors(false); }}
                   disabled={!canEdit}
-                  title="Doors-Zeit entfernen"
+                  title="Remove doors time"
                   className="h-9 w-9 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <X className="h-3.5 w-3.5" />

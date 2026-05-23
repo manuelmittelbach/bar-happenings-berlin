@@ -926,7 +926,7 @@ export async function approveOrganizerWithNewBar(
     const geo = await geocodeAddress(sub.address);
     if (!geo) {
       throw new Error(
-        "Geocoding fehlgeschlagen für die angegebene Adresse. Bitte öffne die Bar-Bearbeitung, trage die Koordinaten manuell ein und versuche dann erneut zu approven.",
+        "Geocoding failed for the given address. Please open the bar editor, enter the coordinates manually, then try approving again.",
       );
     }
     lat = geo.lat;

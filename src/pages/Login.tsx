@@ -184,7 +184,7 @@ export default function Login() {
 								autoComplete="family-name"
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
-								placeholder="Müller"
+								placeholder="Smith"
 								className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 							/>
 						</div>
