@@ -798,21 +798,21 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 			<div ref={containerRef} style={{ height: "100%", width: "100%" }} />
 			{loadFailed && (
 				<div className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-					<p className="font-body font-bold text-base">Map konnte nicht geladen werden.</p>
+					<p className="font-body font-bold text-base">Map could not be loaded.</p>
 					<p className="text-sm text-muted-foreground max-w-xs">
-						Verbindung schwach oder Tile-Server nicht erreichbar.
+						Weak connection or server unreachable.
 					</p>
 					<button
 						onClick={() => setRetryNonce((n) => n + 1)}
 						className="inline-flex h-11 px-6 items-center bg-foreground text-background font-mono font-bold uppercase tracking-widest text-xs hover:bg-foreground/90 transition-colors"
 					>
-						Erneut versuchen
+						Try again
 					</button>
 				</div>
 			)}
 			<button
 				onClick={flyToUser}
-				title="Zu meinem Standort"
+				title="My location"
 				style={{
 					position: "absolute",
 					bottom: "var(--fab-bottom)",
