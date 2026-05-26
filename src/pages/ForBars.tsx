@@ -237,20 +237,7 @@ export default function ForBars() {
 
 								{!isForgotPassword && (
 									<div className="space-y-1.5">
-										<div className="flex items-center justify-between">
-											<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Password</label>
-											<button
-												type="button"
-												onClick={() => {
-													setIsForgotPassword(true);
-													setError("");
-													setSuccess("");
-												}}
-												className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-											>
-												Forgot password?
-											</button>
-										</div>
+										<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Password</label>
 
 										<div className="relative">
 											<input
@@ -272,6 +259,19 @@ export default function ForBars() {
 												) : (
 													<Eye className="h-4 w-4" />
 												)}
+											</button>
+										</div>
+										<div className="flex justify-end">
+											<button
+												type="button"
+												onClick={() => {
+													setIsForgotPassword(true);
+													setError("");
+													setSuccess("");
+												}}
+												className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+											>
+												Forgot password?
 											</button>
 										</div>
 									</div>
