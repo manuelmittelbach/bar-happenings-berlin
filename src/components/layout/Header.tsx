@@ -71,7 +71,10 @@ export default function Header() {
     navigate("/");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  // Compare against the pathname only — the Sign-in icon links to
+  // "/for-bars?view=signin", so the query string must be ignored for it to
+  // get the active underline like Events / Map.
+  const isActive = (path: string) => location.pathname === path.split("?")[0];
 
   /* Desktop nav link — flat mono caps 12px, 0.1em tracking (matches the
    * .mono-label utility used on the Landing nav), 2px bottom border on
@@ -83,17 +86,19 @@ export default function Header() {
     label,
     path,
     icon,
+    ariaLabel,
   }: {
     label?: string;
     path: string;
     icon?: React.ReactNode;
+    ariaLabel?: string;
   }) => {
     const active = isActive(path);
     return (
       <Link
         to={path}
-        title={!label ? path.replace("/", "") : undefined}
-        aria-label={!label ? path.replace("/", "") : undefined}
+        title={!label ? (ariaLabel ?? path.replace("/", "")) : undefined}
+        aria-label={!label ? (ariaLabel ?? path.replace("/", "")) : undefined}
         className="transition-colors py-2 inline-flex items-center gap-1.5"
         style={{
           fontFamily: "var(--font-mono)",
@@ -139,6 +144,10 @@ export default function Header() {
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
 
+          {!loading && !user && (
+            <NavLink path="/for-bars?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+          )}
+
           {!loading && user && (
             <>
               {role === "organizer" && (
@@ -162,6 +171,10 @@ export default function Header() {
           {visibleNavItems.map((item) => (
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
+
+          {!loading && !user && (
+            <NavLink path="/for-bars?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+          )}
 
           {!loading && user && (
             <>
