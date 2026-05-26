@@ -21,9 +21,9 @@ const VALID_TYPES: ReadonlySet<EmailOtpType> = new Set([
 
 function defaultTargetForRole(role: "user" | "organizer" | "admin"): string {
   if (role === "admin") return "/admin";
-  // Bar-owner-only: every confirmed account lands on /dashboard. Stray
-  // "user" accounts get guarded back to / by the dashboard itself.
-  return "/dashboard";
+  if (role === "organizer") return "/dashboard";
+  // Plain users have no dashboard — send them to the events list.
+  return "/events";
 }
 
 export default function ConfirmEmail() {

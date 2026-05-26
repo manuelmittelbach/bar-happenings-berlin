@@ -24,7 +24,7 @@ const inputClass =
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, role, roleResolved, approvalStatus, loading, signOut } = useAuth();
+  const { user, role, approvalStatus, loading, signOut } = useAuth();
   const [emailJustChanged, setEmailJustChanged] = useState<boolean>(consumeEmailJustChanged);
   const [passwordJustReset, setPasswordJustReset] = useState<boolean>(consumePasswordJustReset);
 
@@ -81,17 +81,12 @@ export default function Profile() {
 
   useEffect(() => {
     if (loading) return;
+    // Account page is open to every signed-in role (user, organizer, admin).
+    // Only unauthenticated visitors get redirected to the sign-in surface.
     if (!user) {
       navigate("/for-bars", { replace: true });
-      return;
     }
-    // Profile is bar-owner / admin only. Wait for roleResolved (not just
-    // !loading) before redirecting stray "user" accounts — otherwise admins
-    // who land here while their role is still being fetched bounce home.
-    if (roleResolved && role !== "organizer" && role !== "admin") {
-      navigate("/", { replace: true });
-    }
-  }, [user, loading, role, roleResolved, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -278,7 +273,7 @@ export default function Profile() {
           </div>
         )}
 
-        {role !== "user" && !loadError && (
+        {!loadError && (
           <form onSubmit={handleSave} className="space-y-5">
             {/* First + last name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -318,7 +313,7 @@ export default function Profile() {
         {/* Email — read-only display + change form */}
         <form
           onSubmit={handleChangeEmail}
-          className={`space-y-4 ${role !== "user" ? "mt-8 pt-6 border-t border-border" : "mt-2"}`}
+          className="space-y-4 mt-8 pt-6 border-t border-border"
         >
           <div className="space-y-1.5">
             <label className="mono-label text-muted-foreground">Email</label>
