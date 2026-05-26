@@ -103,10 +103,10 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
       navigate("/profile", { replace: true });
     } else {
       markEmailJustConfirmed();
-      // Bar-owner-only: confirmed accounts land on the role's home. Stray
-      // `"user"` accounts fall through to /dashboard which guards them out
-      // to /.
-      const destination = role === "admin" ? "/admin" : "/dashboard";
+      // Confirmed accounts land on their role's home: admins → /admin,
+      // organizers → /dashboard, plain users → the events list.
+      const destination =
+        role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/events";
       navigate(destination, { replace: true });
     }
     setPending(false);
