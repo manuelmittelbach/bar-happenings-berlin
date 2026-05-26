@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { useEvents, useCategories } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString } from "@/lib/dateFormat";
@@ -196,12 +194,7 @@ export default function LandingDraft() {
   );
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      {/* ─── TOP NAV ─── shared product Header, identical to / and /map */}
-      <div className="shrink-0">
-        <Header />
-      </div>
-
+    <div className="flex flex-1 min-h-0 flex-col bg-background text-foreground">
       {/* ─── HERO (fills remaining viewport) ─── */}
       {/* items-start on mobile pins the headline near the top of the
           viewport (the desktop card cluster is hidden there, so
@@ -455,7 +448,6 @@ export default function LandingDraft() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }
