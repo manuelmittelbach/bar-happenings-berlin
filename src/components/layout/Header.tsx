@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { User, Shield } from "lucide-react";
+import { User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 /* Navigation items — Events + Map switcher + bar-owner pitch. About
@@ -62,7 +62,7 @@ function WordmarkCompact({ onClick }: { onClick: () => void }) {
 
 export default function Header() {
   const location = useLocation();
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   const visibleNavItems = navItems;
@@ -71,7 +71,14 @@ export default function Header() {
     navigate("/");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  // Links without a query match on pathname (Events, Map, …). The Sign-in
+  // icon links to "/for-bars?view=signin" and should only be active on that
+  // exact view — not on the plain /for-bars "For organizers" page — so match
+  // the full path + query when the link carries one.
+  const isActive = (path: string) =>
+    path.includes("?")
+      ? location.pathname + location.search === path
+      : location.pathname === path;
 
   /* Desktop nav link — flat mono caps 12px, 0.1em tracking (matches the
    * .mono-label utility used on the Landing nav), 2px bottom border on
@@ -83,17 +90,19 @@ export default function Header() {
     label,
     path,
     icon,
+    ariaLabel,
   }: {
     label?: string;
     path: string;
     icon?: React.ReactNode;
+    ariaLabel?: string;
   }) => {
     const active = isActive(path);
     return (
       <Link
         to={path}
-        title={!label ? path.replace("/", "") : undefined}
-        aria-label={!label ? path.replace("/", "") : undefined}
+        title={!label ? (ariaLabel ?? path.replace("/", "")) : undefined}
+        aria-label={!label ? (ariaLabel ?? path.replace("/", "")) : undefined}
         className="transition-colors py-2 inline-flex items-center gap-1.5"
         style={{
           fontFamily: "var(--font-mono)",
@@ -114,9 +123,9 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b-2 border-foreground backdrop-blur-md"
+      className="sticky top-0 z-50 border-b-2 border-foreground"
       style={{
-        backgroundColor: "hsl(var(--background) / 0.95)",
+        backgroundColor: "hsl(var(--background))",
         paddingTop: "env(safe-area-inset-top)",
       }}
     >
@@ -139,16 +148,12 @@ export default function Header() {
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
 
+          {!loading && !user && (
+            <NavLink path="/for-bars?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+          )}
+
           {!loading && user && (
-            <>
-              {role === "organizer" && (
-                <NavLink label="Your Bar" path="/dashboard" />
-              )}
-              {role === "admin" && (
-                <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
-              )}
-              <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
-            </>
+            <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
           )}
         </nav>
 
@@ -163,16 +168,12 @@ export default function Header() {
             <NavLink key={item.path} label={item.label} path={item.path} />
           ))}
 
+          {!loading && !user && (
+            <NavLink path="/for-bars?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+          )}
+
           {!loading && user && (
-            <>
-              {role === "organizer" && (
-                <NavLink label="Your Bar" path="/dashboard" />
-              )}
-              {role === "admin" && (
-                <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
-              )}
-              <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
-            </>
+            <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
           )}
         </nav>
       </div>

@@ -1,19 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { Spinner } from "@/components/ui/spinner";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
-
-type Role = "user" | "organizer" | "admin" | null;
-
-function defaultTargetForRole(role: Role): string {
-	if (role === "admin") return "/admin";
-	return "/dashboard";
-}
 
 type VenueOption = { id: string; name: string };
 
@@ -26,8 +19,9 @@ export default function Login() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const from = (location.state as { from?: string })?.from ?? null;
-	const { user, role, loading: authLoading, roleResolved, signUp } = useAuth();
+	const { user, loading: authLoading, signUp } = useAuth();
 
+	const [isBarOwner, setIsBarOwner] = useState(false);
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [venueOptions, setVenueOptions] = useState<VenueOption[]>([]);
@@ -48,13 +42,14 @@ export default function Login() {
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		if (authLoading || !user || !roleResolved) return;
+		if (authLoading || !user) return;
 		if (from && from.startsWith("/") && from !== "/login" && from !== "/for-bars") {
 			navigate(from, { replace: true });
 			return;
 		}
-		navigate(defaultTargetForRole(role), { replace: true });
-	}, [user, role, roleResolved, authLoading, from, navigate]);
+		// After auth everyone lands on the account hub, regardless of role.
+		navigate("/profile", { replace: true });
+	}, [user, authLoading, from, navigate]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -114,7 +109,7 @@ export default function Login() {
 					instagram: barInstagram,
 					phone: barPhone,
 				};
-			await signUp(email, password, firstName, lastName, true, venuePayload);
+			await signUp(email, password, firstName, lastName, isBarOwner, isBarOwner ? venuePayload : undefined);
 			setSuccess(true);
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Something went wrong";
@@ -140,9 +135,11 @@ export default function Login() {
 					<p className="text-sm text-muted-foreground">
 						We sent a confirmation link to <strong>{email}</strong>. Please confirm your email address before signing in.
 					</p>
-					<p className="text-sm text-muted-foreground">
-						After confirming your email, an admin will review your bar details. You'll be able to publish events once your account is approved.
-					</p>
+					{isBarOwner && (
+						<p className="text-sm text-muted-foreground">
+							After confirming your email, an admin will review your bar details. You'll be able to publish events once your account is approved.
+						</p>
+					)}
 					<button
 						onClick={() => navigate("/for-bars", { state: { scrollToSignIn: true } })}
 						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
@@ -155,17 +152,45 @@ export default function Login() {
 	}
 
 	return (
-		<div className="flex-1 flex items-center justify-center py-16">
-			<div className="w-full max-w-sm mx-auto px-4">
+		<div className="flex flex-1 flex-col">
+			<div className="container relative flex-1 flex flex-col md:justify-center md:py-8">
+			{/* Back — overlaid top-left so it doesn't push the form down, keeping
+			    "Create account" level with "Welcome back!" on the sign-in page */}
+			<button
+				onClick={() => navigate(-1)}
+				className="absolute left-4 top-3 inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+				aria-label="Back"
+			>
+				<ChevronLeft className="h-5 w-5" />
+				<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+			</button>
+			<div className="w-full max-w-sm mx-auto px-4 py-12 md:py-20">
 				<div className="text-center mb-8">
 					<h1 className="heading-display text-2xl">Create account</h1>
-					<p className="text-sm text-muted-foreground mt-1">Sign up to publish events</p>
+					<p className="text-sm text-muted-foreground mt-1">Create your account</p>
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
+					{/* Bar-owner toggle — off = plain user account; on = organizer
+					    (bar fields unlock, account goes through admin approval) */}
+					<div className="flex items-center gap-2">
+						<input
+							id="isBarOwner"
+							type="checkbox"
+							checked={isBarOwner}
+							onChange={(e) => setIsBarOwner(e.target.checked)}
+							className="h-4 w-4"
+						/>
+						<label htmlFor="isBarOwner" className="text-sm font-medium cursor-pointer">
+							I own or run a bar
+						</label>
+					</div>
+
+					{isBarOwner && (
+					<div className="border-l-2 border-foreground/30 pl-4 space-y-4">
 					<div className="flex gap-2">
 						<div className="flex-1 space-y-1.5">
-							<label className="text-sm font-medium">First name <span className="text-accent">*</span></label>
+							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">First name <span className="text-accent">*</span></label>
 							<input
 								type="text"
 								required
@@ -177,7 +202,7 @@ export default function Login() {
 							/>
 						</div>
 						<div className="flex-1 space-y-1.5">
-							<label className="text-sm font-medium">Last name <span className="text-accent">*</span></label>
+							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Last name <span className="text-accent">*</span></label>
 							<input
 								type="text"
 								required
@@ -189,10 +214,9 @@ export default function Login() {
 							/>
 						</div>
 					</div>
-
 					{!barNotInList && (
 						<div className="space-y-1.5">
-							<label className="text-sm font-medium">Bar name <span className="text-accent">*</span></label>
+							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar name <span className="text-accent">*</span></label>
 							<select
 								required
 								value={selectedVenueId}
@@ -226,7 +250,7 @@ export default function Login() {
 					{barNotInList && (
 						<>
 							<div className="space-y-1.5">
-								<label className="text-sm font-medium">Bar name <span className="text-accent">*</span></label>
+								<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar name <span className="text-accent">*</span></label>
 								<input
 									type="text"
 									required
@@ -237,7 +261,7 @@ export default function Login() {
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<label className="text-sm font-medium">Street and house number <span className="text-accent">*</span></label>
+								<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Street and house number <span className="text-accent">*</span></label>
 								<input
 									type="text"
 									required
@@ -248,7 +272,7 @@ export default function Login() {
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<label className="text-sm font-medium">Postal code <span className="text-accent">*</span></label>
+								<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Postal code <span className="text-accent">*</span></label>
 								<input
 									type="text"
 									required
@@ -264,7 +288,7 @@ export default function Login() {
 								)}
 							</div>
 							<div className="space-y-1.5">
-								<label className="text-sm font-medium">City <span className="text-accent">*</span></label>
+								<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">City <span className="text-accent">*</span></label>
 								<input
 									type="text"
 									required
@@ -277,7 +301,7 @@ export default function Login() {
 						</>
 					)}
 					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Website</label>
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar website</label>
 						<input
 							type="url"
 							value={barWebsite}
@@ -287,7 +311,7 @@ export default function Login() {
 						/>
 					</div>
 					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Instagram</label>
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar Instagram</label>
 						<input
 							type="text"
 							value={barInstagram}
@@ -297,7 +321,7 @@ export default function Login() {
 						/>
 					</div>
 					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Phone</label>
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar phone</label>
 						<input
 							type="tel"
 							value={barPhone}
@@ -306,9 +330,11 @@ export default function Login() {
 							className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 						/>
 					</div>
+					</div>
+					)}
 
 					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Email <span className="text-accent">*</span></label>
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Email <span className="text-accent">*</span></label>
 						<input
 							type="email"
 							required
@@ -321,7 +347,7 @@ export default function Login() {
 					</div>
 
 					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Password <span className="text-accent">*</span></label>
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Password <span className="text-accent">*</span></label>
 						<div className="relative">
 							<input
 								type={showPass ? "text" : "password"}
@@ -351,21 +377,12 @@ export default function Login() {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
+						className="w-full h-11 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors disabled:opacity-60"
 					>
 						{loading ? "..." : "Create account"}
 					</button>
 				</form>
-
-				<p className="text-center text-sm text-muted-foreground mt-6">
-					Already have an account?{" "}
-					<button
-						onClick={() => navigate("/for-bars", { state: { scrollToSignIn: true } })}
-						className="text-foreground font-medium hover:text-accent transition-colors"
-					>
-						Sign in
-					</button>
-				</p>
+			</div>
 			</div>
 		</div>
 	);
