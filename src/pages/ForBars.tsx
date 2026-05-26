@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsNative } from "@/hooks/useIsNative";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 
 const benefits = [
@@ -23,6 +24,7 @@ export default function ForBars() {
 	const location = useLocation();
 	const signInRef = useRef<HTMLElement>(null);
 	const { user, signIn, signOut, resetPassword } = useAuth();
+	const isNative = useIsNative();
 	const [signingOut, setSigningOut] = useState(false);
 
 	const handleSignOut = async () => {
@@ -101,7 +103,8 @@ export default function ForBars() {
 			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
 					<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
 
-					{/* Hero / Create account */}
+					{/* Hero / Create account — web/desktop only; native shows the bare sign-in screen */}
+					{!isNative && (
 					<section className="md:flex-1 md:flex md:items-center">
 						<div className="w-full px-4 md:pl-0 md:pr-8 lg:pr-12 py-12 md:py-20 border-b-2 md:border-b-0 border-foreground">
 							<motion.h1
@@ -177,6 +180,7 @@ export default function ForBars() {
 							</ul>
 						</div>
 					</section>
+					)}
 
 					{/* Sign in */}
 					<section ref={signInRef} className="md:flex-1 md:flex md:items-center">
@@ -277,6 +281,21 @@ export default function ForBars() {
 								>
 									{loading ? "..." : isForgotPassword ? "Send reset link" : "Sign in"}
 								</button>
+
+								{isNative && !isForgotPassword && (
+									<p className="text-center text-sm text-muted-foreground pt-2">
+										New here?{" "}
+										<button
+											type="button"
+											onClick={() =>
+												navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
+											}
+											className="text-foreground font-medium hover:text-accent transition-colors"
+										>
+											Create a bar account
+										</button>
+									</p>
+								)}
 
 								{isForgotPassword && (
 									<p className="text-center text-sm text-muted-foreground pt-2">
