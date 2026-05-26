@@ -236,6 +236,18 @@ export async function updateMyVenue(patch: MyVenuePatch): Promise<MyVenueUpdateR
   return (data as { venue: MyVenueUpdateResult }).venue;
 }
 
+/** Permanently delete the signed-in user's own account. The edge function
+ * verifies the caller from their JWT and deletes the auth user; DB cascades
+ * remove their profile, events, interests, ownership link and pending rows.
+ * The venue (bar) is kept (unowned). */
+export async function deleteAccount(): Promise<void> {
+  const { data, error } = await supabase.functions.invoke("delete-account");
+  if (error) throw new Error(error.message);
+  if (data && typeof data === "object" && "error" in data) {
+    throw new Error(String((data as { error?: string }).error ?? "Delete failed"));
+  }
+}
+
 interface EventWriteData {
   title: string; venue: string; venueId?: string; address: string; neighborhood: string;
   date: string; startTime: string; endTime: string; doorsTime: string; category: string;
