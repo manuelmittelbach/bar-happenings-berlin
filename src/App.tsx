@@ -198,17 +198,16 @@ const App = () => (
         <ScrollManager />
         <AuthCallbackGate>
         <Routes>
-          {/* Landing owns its own chrome (nav + footer) — rendered
-              outside Layout so the global Header doesn't stack on top
-              of the marketing nav. Sits at `/` so visitors land on the
-              marketing page; the events list moved to `/events`.
-              Native (Capacitor) skips marketing entirely and lands
-              straight on the events list. */}
-          <Route
-            path="/"
-            element={Capacitor.isNativePlatform() ? <Navigate to="/events" replace /> : <Landing />}
-          />
           <Route element={<Layout />}>
+            {/* Landing sits inside the shared Layout so the global Header
+                stays mounted across navigations (no remount, no flash).
+                Layout provides the Header + Footer; LandingDraft renders
+                only the hero. Native (Capacitor) skips marketing and lands
+                straight on the events list. */}
+            <Route
+              path="/"
+              element={Capacitor.isNativePlatform() ? <Navigate to="/events" replace /> : <Landing />}
+            />
             <Route path="/events" element={<Index />} />
             <Route path="/event/:id" element={<EventDetail />} />
             <Route path="/bar/:id" element={<BarDetail />} />
