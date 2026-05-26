@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { User, Shield } from "lucide-react";
+import { User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 /* Navigation items — Events + Map switcher + bar-owner pitch. About
@@ -62,7 +62,7 @@ function WordmarkCompact({ onClick }: { onClick: () => void }) {
 
 export default function Header() {
   const location = useLocation();
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   const visibleNavItems = navItems;
@@ -153,15 +153,7 @@ export default function Header() {
           )}
 
           {!loading && user && (
-            <>
-              {role === "organizer" && (
-                <NavLink label="Your Bar" path="/dashboard" />
-              )}
-              {role === "admin" && (
-                <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
-              )}
-              <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
-            </>
+            <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
           )}
         </nav>
 
@@ -181,15 +173,7 @@ export default function Header() {
           )}
 
           {!loading && user && (
-            <>
-              {role === "organizer" && (
-                <NavLink label="Your Bar" path="/dashboard" />
-              )}
-              {role === "admin" && (
-                <NavLink label="Admin" path="/admin" icon={<Shield className="h-3 w-3" />} />
-              )}
-              <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
-            </>
+            <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
           )}
         </nav>
       </div>

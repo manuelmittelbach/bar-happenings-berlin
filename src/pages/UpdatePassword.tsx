@@ -49,7 +49,7 @@ export default function UpdatePassword() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       markPasswordJustReset();
-      navigate("/profile", { replace: true });
+      navigate("/profile/details", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
