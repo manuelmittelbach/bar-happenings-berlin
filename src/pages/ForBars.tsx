@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsNative } from "@/hooks/useIsNative";
-import { fetchUserRole } from "@/lib/supabaseQueries";
 
 const benefits = [
 	{
@@ -86,12 +85,9 @@ export default function ForBars() {
 				await resetPassword(email);
 				setSuccess("Reset link sent — check your inbox.");
 			} else {
-				const { user: signedInUser } = await signIn(email, password);
-				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
-				// admins → /admin, organizers → /dashboard, plain users → events list.
-				const target =
-					userRole === "admin" ? "/admin" : userRole === "organizer" ? "/dashboard" : "/events";
-				navigate(target);
+				await signIn(email, password);
+				// After login everyone lands on the account hub, regardless of role.
+				navigate("/profile");
 			}
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Something went wrong";
