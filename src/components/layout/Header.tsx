@@ -123,9 +123,9 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b-2 border-foreground backdrop-blur-md"
+      className="sticky top-0 z-50 border-b-2 border-foreground"
       style={{
-        backgroundColor: "hsl(var(--background) / 0.95)",
+        backgroundColor: "hsl(var(--background))",
         paddingTop: "env(safe-area-inset-top)",
       }}
     >
