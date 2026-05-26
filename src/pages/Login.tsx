@@ -8,14 +8,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
-type Role = "user" | "organizer" | "admin" | null;
-
-function defaultTargetForRole(role: Role): string {
-	if (role === "admin") return "/admin";
-	if (role === "organizer") return "/dashboard";
-	return "/events";
-}
-
 type VenueOption = { id: string; name: string };
 
 /* Bar-owner signup. Reached from /for-bars → "Create account". This page is
@@ -27,7 +19,7 @@ export default function Login() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const from = (location.state as { from?: string })?.from ?? null;
-	const { user, role, loading: authLoading, roleResolved, signUp } = useAuth();
+	const { user, loading: authLoading, signUp } = useAuth();
 
 	const [isBarOwner, setIsBarOwner] = useState(false);
 	const [firstName, setFirstName] = useState("");
@@ -50,13 +42,14 @@ export default function Login() {
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		if (authLoading || !user || !roleResolved) return;
+		if (authLoading || !user) return;
 		if (from && from.startsWith("/") && from !== "/login" && from !== "/for-bars") {
 			navigate(from, { replace: true });
 			return;
 		}
-		navigate(defaultTargetForRole(role), { replace: true });
-	}, [user, role, roleResolved, authLoading, from, navigate]);
+		// After auth everyone lands on the account hub, regardless of role.
+		navigate("/profile", { replace: true });
+	}, [user, authLoading, from, navigate]);
 
 	useEffect(() => {
 		let cancelled = false;
