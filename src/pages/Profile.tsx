@@ -36,7 +36,7 @@ export default function Profile() {
   if (role === "admin") {
     links.push({ label: "Admin", to: "/admin" });
   }
-  links.push({ label: "Profile details", to: "/profile/details" });
+  links.push({ label: "Your profile", to: "/profile/details" });
 
   return (
     <div className="container max-w-2xl py-10 md:py-14">
