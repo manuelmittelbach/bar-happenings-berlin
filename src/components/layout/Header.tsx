@@ -71,10 +71,14 @@ export default function Header() {
     navigate("/");
   };
 
-  // Compare against the pathname only — the Sign-in icon links to
-  // "/for-bars?view=signin", so the query string must be ignored for it to
-  // get the active underline like Events / Map.
-  const isActive = (path: string) => location.pathname === path.split("?")[0];
+  // Links without a query match on pathname (Events, Map, …). The Sign-in
+  // icon links to "/for-bars?view=signin" and should only be active on that
+  // exact view — not on the plain /for-bars "For organizers" page — so match
+  // the full path + query when the link carries one.
+  const isActive = (path: string) =>
+    path.includes("?")
+      ? location.pathname + location.search === path
+      : location.pathname === path;
 
   /* Desktop nav link — flat mono caps 12px, 0.1em tracking (matches the
    * .mono-label utility used on the Landing nav), 2px bottom border on
