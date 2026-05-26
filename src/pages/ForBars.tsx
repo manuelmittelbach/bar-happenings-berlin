@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchUserRole } from "@/lib/supabaseQueries";
@@ -103,17 +104,28 @@ export default function ForBars() {
 					{/* Hero / Create account */}
 					<section className="md:flex-1 md:flex md:items-center">
 						<div className="w-full px-4 md:pl-0 md:pr-8 lg:pr-12 py-12 md:py-20 border-b-2 md:border-b-0 border-foreground">
-							<h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
+							<motion.h1
+								initial={{ opacity: 0, y: 14 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.55, delay: 0.1 }}
+								className="heading-display leading-[0.95]"
+								style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
+							>
 								Run a bar
 								<br />
 								<span className="heading-editorial italic lowercase font-light">in</span>{" "}
 								Berlin
 								<span className="text-accent">?</span>
-							</h1>
+							</motion.h1>
 
-							<p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-md">
+							<motion.p
+								initial={{ opacity: 0, y: 12 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.5, delay: 0.25 }}
+								className="mt-6 max-w-md text-balance text-lg leading-[1.5] text-foreground/75 md:text-xl"
+							>
 								Publish your events and reach people looking for something to do tonight.
-							</p>
+							</motion.p>
 
 							{user && !loading ? (
 								<div className="mt-8 max-w-md border-l-2 border-foreground pl-4 py-2 space-y-2">
@@ -138,7 +150,7 @@ export default function ForBars() {
 									onClick={() =>
 										navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
 									}
-									className="group mt-8 inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-body font-semibold text-sm hover:bg-foreground/90 transition-colors"
+									className="group mt-8 inline-flex items-center gap-2 h-11 px-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors"
 								>
 									Create account
 									<ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
