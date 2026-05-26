@@ -229,7 +229,7 @@ export default function BarAccount() {
       setImageFile(null);
       setImageRemoved(false);
       setImagePosition(updated.image_position);
-      toast.success("Bar account updated.");
+      toast.success("Your bar updated.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Couldn't save changes.";
       toast.error(msg);
@@ -247,7 +247,7 @@ export default function BarAccount() {
     const rejected = approvalStatus === "rejected";
     return (
       <div className="container max-w-2xl py-10 md:py-14">
-        <h1 className="heading-display text-3xl md:text-4xl mb-4">Bar account</h1>
+        <h1 className="heading-display text-3xl md:text-4xl mb-4">Your bar</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
           {rejected
             ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
@@ -260,7 +260,7 @@ export default function BarAccount() {
   if (!venue) {
     return (
       <div className="container max-w-2xl py-10 md:py-14">
-        <h1 className="heading-display text-3xl md:text-4xl mb-4">Bar account</h1>
+        <h1 className="heading-display text-3xl md:text-4xl mb-4">Your bar</h1>
         <p className="text-sm text-muted-foreground leading-relaxed">
           No bar is linked to your account yet. Please contact us at{" "}
           <a
@@ -300,7 +300,7 @@ export default function BarAccount() {
       <div className="container max-w-2xl pt-4 pb-10 md:pb-14">
         <div className="mb-10 border-b-2 border-foreground pb-6">
           <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
-            Bar account
+            Your bar
           </h1>
           <p className="mt-2 text-base md:text-lg text-muted-foreground">{venue.name}</p>
         </div>
@@ -579,7 +579,7 @@ function BarAccountPreview({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Bar account preview"
+      aria-label="Your bar preview"
       className="fixed inset-0 z-50 bg-background overflow-y-auto"
     >
       {/* Preview chrome — sticky top bar with PREVIEW label + close */}
