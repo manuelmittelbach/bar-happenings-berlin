@@ -188,16 +188,9 @@ export default function OrganizerDashboard() {
               <CheckCircle2 className="h-4 w-4" /> Email confirmed
             </div>
           )}
-          {venue && (
-            <div className="mb-6 text-center">
-              <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">{venue.name}</h1>
-              {venue.address && (
-                <p className="mt-1 text-base md:text-lg text-muted-foreground leading-relaxed">
-                  {venue.address.replace(/,\s*Germany\s*$/i, "")}
-                </p>
-              )}
-            </div>
-          )}
+          <div className="mb-6">
+            <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Your events</h1>
+          </div>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
@@ -219,7 +212,7 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish event in ${venue.name}` : "Publish event"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in your bar ${venue.name}` : "Publish events"}
             </Link>
           </div>
 
