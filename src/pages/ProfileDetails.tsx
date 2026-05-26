@@ -450,9 +450,7 @@ export default function ProfileDetails() {
           <section className="mt-10 border-t-2 border-red-600/40 pt-8">
             <h2 className="mono-label text-red-700 mb-2">Danger zone</h2>
             <p className="text-sm text-muted-foreground mb-4 max-w-prose">
-              {role === "organizer"
-                ? "Deleting your account is permanent. Your events are removed; your bar stays in the app but is no longer linked to you."
-                : "Deleting your account is permanent. Your profile and saved events are removed."}
+              Deleting your account is permanent and irreversible.
             </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -470,9 +468,6 @@ export default function ProfileDetails() {
                   <AlertDialogTitle className="heading-display text-2xl">Delete account?</AlertDialogTitle>
                   <AlertDialogDescription className="text-sm text-muted-foreground">
                     This permanently deletes your account and cannot be undone.
-                    {role === "organizer"
-                      ? " Your events will be removed; your bar stays in the app but will no longer be linked to you."
-                      : " Your profile and saved events will be removed."}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

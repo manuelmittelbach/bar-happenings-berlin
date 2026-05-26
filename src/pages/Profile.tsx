@@ -21,7 +21,9 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/");
+    // Land back on the sign-in surface (the account entry), not the
+    // marketing landing page.
+    navigate("/for-bars?view=signin");
   };
 
   if (loading || !user) {
