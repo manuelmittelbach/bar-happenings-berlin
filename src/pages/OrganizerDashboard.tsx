@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { formatDateWithDay } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown } from "lucide-react";
+import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries";
@@ -166,22 +166,31 @@ export default function OrganizerDashboard() {
   }
 
   return (
-    <div className="container py-8">
+    <>
+      {/* Sticky Back row — mirrors BarAccount/detail pages so the back
+          affordance sits at the same screen position. */}
+      <div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+        <div className="container flex items-center py-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+          </button>
+        </div>
+      </div>
+    <div className="container max-w-2xl pt-4 pb-8">
           {justConfirmed && (
             <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
               <CheckCircle2 className="h-4 w-4" /> Email confirmed
             </div>
           )}
-          {venue && (
-            <div className="mb-6 text-center">
-              <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">{venue.name}</h1>
-              {venue.address && (
-                <p className="mt-1 text-base md:text-lg text-muted-foreground leading-relaxed">
-                  {venue.address.replace(/,\s*Germany\s*$/i, "")}
-                </p>
-              )}
-            </div>
-          )}
+          <div className="mb-6">
+            <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Your events</h1>
+          </div>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
@@ -203,16 +212,8 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish event in ${venue.name}` : "Publish event"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in your bar ${venue.name}` : "Publish events"}
             </Link>
-            {venue && (
-              <Link
-                to="/bar-account"
-                className="inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
-              >
-                <Pencil className="h-4 w-4" /> Edit bar account
-              </Link>
-            )}
           </div>
 
           {/* Tabs */}
@@ -402,5 +403,6 @@ export default function OrganizerDashboard() {
             </div>
           )}
     </div>
+    </>
   );
 }

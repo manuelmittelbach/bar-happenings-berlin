@@ -100,13 +100,13 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
 
     if (emailChange) {
       markEmailJustChanged();
-      navigate("/profile", { replace: true });
+      navigate("/profile/details", { replace: true });
     } else {
       markEmailJustConfirmed();
-      // Bar-owner-only: confirmed accounts land on the role's home. Stray
-      // `"user"` accounts fall through to /dashboard which guards them out
-      // to /.
-      const destination = role === "admin" ? "/admin" : "/dashboard";
+      // Confirmed accounts land on their role's home: admins → /admin,
+      // organizers → /dashboard, plain users → the events list.
+      const destination =
+        role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/events";
       navigate(destination, { replace: true });
     }
     setPending(false);
@@ -143,6 +143,7 @@ import BarAccount from "./pages/BarAccount";
 import BarDetail from "./pages/BarDetail";
 import BarsList from "./pages/BarsList";
 import Profile from "./pages/Profile";
+import ProfileDetails from "./pages/ProfileDetails";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import Instagram from "./pages/Instagram";
@@ -198,17 +199,16 @@ const App = () => (
         <ScrollManager />
         <AuthCallbackGate>
         <Routes>
-          {/* Landing owns its own chrome (nav + footer) — rendered
-              outside Layout so the global Header doesn't stack on top
-              of the marketing nav. Sits at `/` so visitors land on the
-              marketing page; the events list moved to `/events`.
-              Native (Capacitor) skips marketing entirely and lands
-              straight on the events list. */}
-          <Route
-            path="/"
-            element={Capacitor.isNativePlatform() ? <Navigate to="/events" replace /> : <Landing />}
-          />
           <Route element={<Layout />}>
+            {/* Landing sits inside the shared Layout so the global Header
+                stays mounted across navigations (no remount, no flash).
+                Layout provides the Header + Footer; LandingDraft renders
+                only the hero. Native (Capacitor) skips marketing and lands
+                straight on the events list. */}
+            <Route
+              path="/"
+              element={Capacitor.isNativePlatform() ? <Navigate to="/events" replace /> : <Landing />}
+            />
             <Route path="/events" element={<Index />} />
             <Route path="/event/:id" element={<EventDetail />} />
             <Route path="/bar/:id" element={<BarDetail />} />
@@ -227,6 +227,7 @@ const App = () => (
             <Route path="/reset-password" element={<UpdatePassword />} />
             <Route path="/confirm" element={<ConfirmEmail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/details" element={<ProfileDetails />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/instagram" element={<Instagram />} />
