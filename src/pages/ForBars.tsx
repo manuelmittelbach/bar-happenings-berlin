@@ -25,6 +25,9 @@ export default function ForBars() {
 	const signInRef = useRef<HTMLElement>(null);
 	const { user, signIn, signOut, resetPassword } = useAuth();
 	const isNative = useIsNative();
+	// Bare sign-in (no "Run a bar" marketing) on the native apps, and on web
+	// when reached via the header "Sign in" entry (/for-bars?view=signin).
+	const bareSignIn = isNative || new URLSearchParams(location.search).get("view") === "signin";
 	const [signingOut, setSigningOut] = useState(false);
 
 	const handleSignOut = async () => {
@@ -85,9 +88,9 @@ export default function ForBars() {
 			} else {
 				const { user: signedInUser } = await signIn(email, password);
 				const userRole = signedInUser ? await fetchUserRole(signedInUser.id) : "user";
-				// Bar-owner-only: admins → /admin, everyone else → /dashboard
-				// (the dashboard itself guards non-organizers back home).
-				const target = userRole === "admin" ? "/admin" : "/dashboard";
+				// admins → /admin, organizers → /dashboard, plain users → events list.
+				const target =
+					userRole === "admin" ? "/admin" : userRole === "organizer" ? "/dashboard" : "/events";
 				navigate(target);
 			}
 		} catch (err: unknown) {
@@ -101,10 +104,13 @@ export default function ForBars() {
 	return (
 		<div className="flex flex-1 flex-col">
 			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
-					<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
+					{!bareSignIn && (
+						<div className="hidden md:block pointer-events-none absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-[2px] bg-foreground" />
+					)}
 
-					{/* Hero / Create account — web/desktop only; native shows the bare sign-in screen */}
-					{!isNative && (
+					{/* Hero / Create account — hidden in bare sign-in mode (native apps,
+					    or web via /for-bars?view=signin) so only the form shows */}
+					{!bareSignIn && (
 					<section className="md:flex-1 md:flex md:items-center">
 						<div className="w-full px-4 md:pl-0 md:pr-8 lg:pr-12 py-12 md:py-20 border-b-2 md:border-b-0 border-foreground">
 							<motion.h1
@@ -184,7 +190,7 @@ export default function ForBars() {
 
 					{/* Sign in */}
 					<section ref={signInRef} className="md:flex-1 md:flex md:items-center">
-						<div className="w-full px-4 md:pl-8 md:pr-0 lg:pl-12 py-12 md:py-20">
+						<div className={`w-full py-12 md:py-20 ${bareSignIn ? "px-4" : "px-4 md:pl-8 md:pr-0 lg:pl-12"}`}>
 							{user && !loading ? (
 								<div className="max-w-sm mx-auto space-y-5">
 									<div className="text-center">
@@ -282,7 +288,7 @@ export default function ForBars() {
 									{loading ? "..." : isForgotPassword ? "Send reset link" : "Sign in"}
 								</button>
 
-								{isNative && !isForgotPassword && (
+								{bareSignIn && !isForgotPassword && (
 									<p className="text-center text-sm text-muted-foreground pt-2">
 										New here?{" "}
 										<button
@@ -292,7 +298,7 @@ export default function ForBars() {
 											}
 											className="text-foreground font-medium hover:text-accent transition-colors"
 										>
-											Create a bar account
+											Create account
 										</button>
 									</p>
 								)}
