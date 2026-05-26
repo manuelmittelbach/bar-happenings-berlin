@@ -182,7 +182,7 @@ export default function OrganizerDashboard() {
           </button>
         </div>
       </div>
-    <div className="container pt-4 pb-8">
+    <div className="container max-w-2xl pt-4 pb-8">
           {justConfirmed && (
             <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
               <CheckCircle2 className="h-4 w-4" /> Email confirmed
