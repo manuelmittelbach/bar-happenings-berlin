@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { KeyRound, Save, AtSign, CheckCircle2, Eye, EyeOff, AlertCircle, ChevronLeft } from "lucide-react";
+import { KeyRound, Save, AtSign, CheckCircle2, Eye, EyeOff, AlertCircle, ChevronLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchProfile, updateProfile } from "@/lib/supabaseQueries";
+import { fetchProfile, updateProfile, deleteAccount } from "@/lib/supabaseQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { PageSpinner } from "@/components/ui/page-spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   consumeEmailJustChanged,
   clearEmailJustChangedSoon,
@@ -20,7 +31,8 @@ const inputClass =
 
 export default function ProfileDetails() {
   const navigate = useNavigate();
-  const { user, role, approvalStatus, loading } = useAuth();
+  const { user, role, approvalStatus, loading, signOut } = useAuth();
+  const [deleting, setDeleting] = useState(false);
   const [emailJustChanged, setEmailJustChanged] = useState<boolean>(consumeEmailJustChanged);
   const [passwordJustReset, setPasswordJustReset] = useState<boolean>(consumePasswordJustReset);
 
@@ -189,6 +201,21 @@ export default function ProfileDetails() {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      // The session is invalid once the user is gone — clear it locally and
+      // ignore any sign-out error, then leave.
+      await signOut().catch(() => {});
+      toast.success("Your account has been deleted.");
+      navigate("/", { replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't delete your account. Please try again.");
+      setDeleting(false);
+    }
+  };
+
   if (loading || !user || !initialized) {
     return <PageSpinner />;
   }
@@ -235,7 +262,7 @@ export default function ProfileDetails() {
         )}
         {/* Header */}
         <div className="mb-10 md:mb-14 border-b-2 border-foreground pb-6">
-          <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Profile details</h1>
+          <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Your profile</h1>
         </div>
 
         {/* Identity block */}
@@ -418,6 +445,51 @@ export default function ProfileDetails() {
             </div>
           </form>
         </section>
+
+        {role !== "admin" && (
+          <section className="mt-10 border-t-2 border-red-600/40 pt-8">
+            <h2 className="mono-label text-red-700 mb-2">Danger zone</h2>
+            <p className="text-sm text-muted-foreground mb-4 max-w-prose">
+              {role === "organizer"
+                ? "Deleting your account is permanent. Your events are removed; your bar stays in the app but is no longer linked to you."
+                : "Deleting your account is permanent. Your profile and saved events are removed."}
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-none border-2 border-red-600 text-red-700 font-mono text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {deleting ? "Deleting…" : "Delete account"}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-none border-2 border-foreground">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="heading-display text-2xl">Delete account?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-muted-foreground">
+                    This permanently deletes your account and cannot be undone.
+                    {role === "organizer"
+                      ? " Your events will be removed; your bar stays in the app but will no longer be linked to you."
+                      : " Your profile and saved events will be removed."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-none border-2 border-foreground font-mono text-xs font-bold uppercase tracking-widest">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="rounded-none border-2 border-red-600 bg-red-600 text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-red-700"
+                  >
+                    Delete account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </section>
+        )}
       </div>
     </div>
   );
