@@ -100,7 +100,7 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
 
     if (emailChange) {
       markEmailJustChanged();
-      navigate("/profile", { replace: true });
+      navigate("/profile/details", { replace: true });
     } else {
       markEmailJustConfirmed();
       // Confirmed accounts land on their role's home: admins → /admin,
@@ -143,6 +143,7 @@ import BarAccount from "./pages/BarAccount";
 import BarDetail from "./pages/BarDetail";
 import BarsList from "./pages/BarsList";
 import Profile from "./pages/Profile";
+import ProfileDetails from "./pages/ProfileDetails";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import Instagram from "./pages/Instagram";
@@ -226,6 +227,7 @@ const App = () => (
             <Route path="/reset-password" element={<UpdatePassword />} />
             <Route path="/confirm" element={<ConfirmEmail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/details" element={<ProfileDetails />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/instagram" element={<Instagram />} />
