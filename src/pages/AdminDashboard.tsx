@@ -50,8 +50,12 @@ import {
   type OrganizerAccount,
   type LiveEventInfo,
   type ApprovedEventListItem,
+  type SubmissionVenueData,
 } from "@/lib/supabaseQueries";
 import { findVenueMatches, type VenueMatch } from "@/lib/venueMatch";
+import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
+import VenueAddressFields from "@/components/events/VenueAddressFields";
+import { buildVenueAddress, parseVenueAddress } from "@/lib/venueAddress";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 import EventDiffModal from "@/components/admin/EventDiffModal";
 
@@ -92,17 +96,17 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
   };
 }
 
-type BarTab = "pending" | "overview" | "all-bars" | "scraped" | "manual" | "recurring";
+type BarTab = "pending" | "overview" | "all-bars" | "user" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
 
 const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
-const EVENT_TABS: BarTab[] = ["scraped", "manual", "recurring"];
+const EVENT_TABS: BarTab[] = ["user", "scraped", "manual", "recurring"];
 
 const sectionOf = (tab: BarTab): AdminSection =>
-  tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
+  tab === "user" || tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
 
 const defaultTabFor = (section: AdminSection): BarTab =>
-  section === "events" ? "scraped" : "pending";
+  section === "events" ? "user" : "pending";
 
 function openSourceWindow(url: string) {
   // Protocol-less URLs ("example.com/events") would be treated as relative
@@ -160,6 +164,7 @@ export default function AdminDashboard() {
   const activeBarTab: BarTab =
     tabParam === "overview" ? "overview"
     : tabParam === "all-bars" ? "all-bars"
+    : tabParam === "user" ? "user"
     : tabParam === "scraped" ? "scraped"
     : tabParam === "manual" ? "manual"
     : tabParam === "recurring" ? "recurring"
@@ -204,6 +209,12 @@ export default function AdminDashboard() {
   // Series currently being approved — guards against double-clicks creating a
   // duplicate venue while the async insert is in flight.
   const [submittingSeriesId, setSubmittingSeriesId] = useState<string | null>(null);
+  // Inline editor for a manual-venue submission's new-bar details, before the
+  // admin creates it — same split fields the user sees. Null = no editor open
+  // (one at a time, keyed by series).
+  const [editVenue, setEditVenue] = useState<
+    { seriesId: string; name: string; street: string; plz: string; city: string } | null
+  >(null);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
   const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
@@ -589,6 +600,7 @@ export default function AdminDashboard() {
     if (venuesChanged) queryClient.invalidateQueries({ queryKey: ["venues"] });
     toast.success(`"${title}" approved`);
     setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+    setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
     loadLiveEvents();
     if (venuesChanged) loadVenues();
   };
@@ -609,18 +621,22 @@ export default function AdminDashboard() {
     }
   };
 
-  // Manual-venue submission → create a brand-new bar from the typed details,
-  // then link + approve the series. Surfaces the geocoding-failure message.
-  const handleApproveNewVenue = async (head: BarlinEvent, seriesId: string) => {
+  // Manual-venue submission → create a brand-new bar from the (possibly admin-
+  // edited) details, then link + approve the series. Surfaces geocoding errors.
+  const handleApproveNewVenue = async (seriesId: string, title: string, submission: SubmissionVenueData) => {
     if (!user || submittingSeriesId) return;
+    if (!submission.name.trim() || !submission.address.trim()) {
+      toast.error("Bar name and address are required.");
+      return;
+    }
     setSubmittingSeriesId(seriesId);
     try {
       await approveSubmissionWithNewVenue(seriesId, user.id, {
-        name: head.venue,
-        address: head.address,
-        neighborhood: head.neighborhood,
+        name: submission.name.trim(),
+        address: submission.address.trim(),
+        neighborhood: submission.neighborhood,
       });
-      finishSubmissionApproval(seriesId, head.title, true);
+      finishSubmissionApproval(seriesId, title, true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create the bar. Please try again.");
     } finally {
@@ -649,6 +665,7 @@ export default function AdminDashboard() {
       await rejectEvent(seriesId);
       toast.error(`"${title}" rejected`);
       setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+      setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
     } catch {
       toast.error("Couldn't reject the event. Please try again.");
     }
@@ -1064,17 +1081,19 @@ export default function AdminDashboard() {
                   ? scrapedLoading ? "Scraped Events" : `Scraped Events (${scrapedEvents.length})`
                   : tab === "manual"
                   ? manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`
+                  : tab === "user"
+                  ? submissionsLoading ? "User events" : `User events (${submissionSeries.length})`
                   : recurringLoading ? "Recurring Events" : `Recurring Events (${recurringEvents.length})`}
               </button>
             ))}
           </div>
 
-          {/* User submissions — events published by plain users (status
-              "pending"), shown above the staging tabs in the Events section. */}
-          {sectionOf(activeBarTab) === "events" && (
+          {/* User events — events published by plain users (status "pending"),
+              awaiting moderation. Its own tab in the Events section. */}
+          {activeBarTab === "user" && (
             <div className="mb-8">
               <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
-                User submissions{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
+                User events{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
               </h2>
               {submissionsLoading ? (
                 <div className="flex justify-center py-4"><Spinner /></div>
@@ -1088,6 +1107,16 @@ export default function AdminDashboard() {
                     const needsVenueDecision = !head.venueId && !!head.venue.trim();
                     const matches = submissionVenueMatches.get(seriesId) ?? [];
                     const busy = submittingSeriesId === seriesId;
+                    // Narrowed editor for THIS series (null when not editing it).
+                    const editing = editVenue && editVenue.seriesId === seriesId ? editVenue : null;
+                    // The venue we'd create: admin edits if open, else the typed values.
+                    const newVenue: SubmissionVenueData = editing
+                      ? {
+                          name: editing.name,
+                          address: buildVenueAddress(editing),
+                          neighborhood: deriveNeighborhood(editing.street, editing.plz),
+                        }
+                      : { name: head.venue, address: head.address, neighborhood: head.neighborhood };
                     return (
                     <div key={seriesId} className="border-2 border-foreground p-4">
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
@@ -1113,6 +1142,15 @@ export default function AdminDashboard() {
                           {head.address && (
                             <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
                           )}
+                          {/* Preview the live detail page exactly as it'll look
+                              once approved (admins can read pending rows via RLS). */}
+                          <button
+                            type="button"
+                            onClick={() => window.open(`/event/${head.id}`, "_blank", "noopener")}
+                            className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline"
+                          >
+                            Preview ↗
+                          </button>
                         </div>
                         {!needsVenueDecision && (
                           <div className="flex sm:flex-col gap-2 flex-shrink-0">
@@ -1146,23 +1184,56 @@ export default function AdminDashboard() {
                             This event has a manually-entered venue. Choose how to publish its bar.
                           </p>
 
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-2 border-foreground/20 p-3">
-                            <div className="min-w-0">
+                          <div className="border-2 border-foreground/20 p-3 space-y-3">
+                            <div className="flex items-center justify-between gap-2">
                               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">Create new bar</p>
-                              <p className="font-serif text-sm break-words">{head.venue}</p>
-                              <p className="text-xs text-muted-foreground break-words">
-                                {head.address || "No address"}
-                                {head.neighborhood ? ` · ${head.neighborhood}` : " · neighborhood unknown"}
-                              </p>
+                              {!editing && (
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => setEditVenue({ seriesId, ...parseVenueAddress(head.address, head.venue) })}
+                                  className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                              )}
                             </div>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleApproveNewVenue(head, seriesId)}
-                              className="inline-flex items-center justify-center h-9 px-3 flex-shrink-0 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Create &amp; approve
-                            </button>
+
+                            {editing ? (
+                              <VenueAddressFields
+                                value={{ name: editing.name, street: editing.street, plz: editing.plz, city: editing.city }}
+                                onChange={(v) => setEditVenue((p) => (p ? { ...p, ...v } : p))}
+                              />
+                            ) : (
+                              <div className="min-w-0">
+                                <p className="font-serif text-sm break-words">{head.venue}</p>
+                                <p className="text-xs text-muted-foreground break-words">
+                                  {head.address || "No address"}
+                                  {head.neighborhood ? ` · ${head.neighborhood}` : " · neighborhood unknown"}
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => handleApproveNewVenue(seriesId, head.title, newVenue)}
+                                className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Create &amp; approve
+                              </button>
+                              {editing && (
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => setEditVenue(null)}
+                                  className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {matches.length > 0 && (
