@@ -33,6 +33,15 @@ export interface BarlinEvent {
   // "Just added" badge on cards added in the last ~48h. Optional because
   // events_archive doesn't always carry it through cleanly.
   createdAt?: string;
+  // Who submitted this event, resolved from profiles via created_by. Only
+  // populated for the admin moderation queue (fetchPendingEvents) so admins
+  // can see the plain user behind a pending submission. Email always present
+  // for a real account; name parts may be empty if the user never set them.
+  submitter?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface Venue {
