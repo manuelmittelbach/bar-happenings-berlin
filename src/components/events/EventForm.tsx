@@ -392,6 +392,10 @@ export default function EventForm({
               />
               <button
                 type="button"
+                // Stop the pointerdown from reaching the container's drag handler —
+                // otherwise the container captures the pointer and the click lands
+                // on it instead of this button, so removal never fires.
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={handleRemoveImage}
                 className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center bg-black/70 text-white rounded-full hover:bg-black/90 transition-colors"
                 aria-label="Remove image"
