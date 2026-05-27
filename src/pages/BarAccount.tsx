@@ -285,6 +285,20 @@ export default function BarAccount() {
 
   return (
     <div className="relative">
+      {previewOpen ? (
+        <BarAccountPreview
+          venueId={venue.id}
+          venueName={venue.name}
+          venueAddress={venue.address}
+          imageUrl={displayedImageUrl}
+          imagePosition={imagePosition}
+          website={website.trim()}
+          instagram={instagram.trim()}
+          phone={phone.trim()}
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : (
+        <>
       {/* Sticky Back row — mirrors EventDetail/BarDetail so the back
           affordance sits at the same screen position across detail-style
           pages, regardless of where the user came from. */}
@@ -500,21 +514,9 @@ export default function BarAccount() {
           </p>
         </div>
       </section>
-
-        {previewOpen && (
-          <BarAccountPreview
-            venueId={venue.id}
-            venueName={venue.name}
-            venueAddress={venue.address}
-            imageUrl={displayedImageUrl}
-            imagePosition={imagePosition}
-            website={website.trim()}
-            instagram={instagram.trim()}
-            phone={phone.trim()}
-            onClose={() => setPreviewOpen(false)}
-          />
-        )}
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -547,16 +549,13 @@ function BarAccountPreview({
   const { data: venueEvents = [] } = useEventsByVenue(venueId, todayStr);
 
   useEffect(() => {
+    // In-flow page (not a modal): scroll to top on open and let Escape close.
+    window.scrollTo(0, 0);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const cleanAddress = venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
@@ -587,26 +586,27 @@ function BarAccountPreview({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Your bar preview"
-      className="fixed inset-0 z-50 bg-background overflow-y-auto"
-    >
-      {/* Preview chrome — sticky top bar with PREVIEW label + close */}
-      <div className="sticky top-0 z-20 border-b-2 border-foreground bg-background">
-        <div className="max-w-[880px] mx-auto px-6 md:px-8 py-3 flex items-center justify-between">
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            <Eye className="h-3.5 w-3.5" /> Preview · how visitors see your bar
-          </span>
+    <div aria-label="Your bar preview" className="bg-background">
+      {/* Preview chrome — renders in-flow so the global Header/Footer stay
+          visible; Back (matching the app's sticky back rows) replaces the old
+          modal close X, with the PREVIEW label on the right. */}
+      <div
+        className="sticky z-40 bg-background"
+        style={{ top: "var(--header-h)" }}
+      >
+        <div className="container flex items-center justify-between py-2">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center h-9 w-9 border-2 border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors"
-            aria-label="Close preview"
+            className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+            aria-label="Back"
           >
-            <X className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
           </button>
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <Eye className="h-3.5 w-3.5" /> Preview · how visitors see your bar
+          </span>
         </div>
       </div>
 

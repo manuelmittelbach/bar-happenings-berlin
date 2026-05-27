@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,9 +24,30 @@ export default function EditEvent() {
   const scopeParam = searchParams.get("scope");
   const fromParam = searchParams.get("from");
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user, role, loading: authLoading, roleResolved } = useAuth();
   const isAdmin = role === "admin";
+
+  // Where Cancel lands when there's no in-app history to pop (deep link /
+  // fresh load). Mirrors the entry points the editor is reached from.
+  const cancelFallback =
+    fromParam === "admin"
+      ? "/admin?tab=recurring&filter=approved"
+      : fromParam === "admin-all-bars"
+      ? "/admin?tab=all-bars"
+      : isAdmin
+      ? `/event/${id}`
+      : "/dashboard";
+
+  // Cancel = step back to where they came from. Going back (rather than
+  // pushing/replacing the dashboard URL) avoids stranding a duplicate entry
+  // that makes the first browser-back press a no-op. `location.key === "default"`
+  // means this was the first page loaded, so there's nothing to pop — fall back.
+  const handleCancel = () => {
+    if (location.key !== "default") navigate(-1);
+    else navigate(cancelFallback, { replace: true });
+  };
 
   const [notFound, setNotFound] = useState(false);
   const [initialValues, setInitialValues] = useState<Partial<EventFormData> | null>(null);
@@ -184,7 +206,26 @@ export default function EditEvent() {
     : "Changes are saved directly.";
 
   return (
-    <EventForm
+    <>
+      {/* Sticky Back row for user/organizer (same affordance as View / Publish)
+          so they have a clear way back to their account. Admins navigate via
+          the admin dashboard, so they don't get it here. */}
+      {!isAdmin && (
+        <div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+          <div className="container flex items-center py-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+              aria-label="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+            </button>
+          </div>
+        </div>
+      )}
+      <EventForm
       title={applyToSeries ? "Edit Series" : "Edit Event"}
       subtitle={subtitle}
       initialValues={initialValues}
@@ -197,20 +238,13 @@ export default function EditEvent() {
       optionalEndTime={isAdmin}
       optionalDescription={isAdmin}
       secondaryActions={
-        <Link
-          to={
-            fromParam === "admin"
-              ? "/admin?tab=recurring&filter=approved"
-              : fromParam === "admin-all-bars"
-              ? "/admin?tab=all-bars"
-              : isAdmin
-              ? `/event/${id}`
-              : "/dashboard"
-          }
+        <button
+          type="button"
+          onClick={handleCancel}
           className="h-12 px-6 flex items-center border border-border text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel
-        </Link>
+        </button>
       }
       footer={
         <div className="relative z-10 pt-6 border-t border-border flex flex-col gap-3">
@@ -234,6 +268,7 @@ export default function EditEvent() {
           )}
         </div>
       }
-    />
+      />
+    </>
   );
 }
