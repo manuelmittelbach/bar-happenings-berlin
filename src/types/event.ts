@@ -105,9 +105,17 @@ export interface StagedEvent {
   // creating a new one. Null for normal new-event staging rows.
   replacesEventId: string | null;
   // Submitter (auth uid) for plain-user submissions; null for scraper/admin
-  // rows. Preserved into events.created_by on approve so the "User events
-  // accepted" tab can still resolve the original submitter.
+  // rows. Preserved into events.created_by on approve so the approved view can
+  // still resolve the original submitter.
   createdBy: string | null;
+  // Resolved submitter contact (from profiles via createdBy), shown on the
+  // admin "User events" card so the moderator sees who to follow up with. Only
+  // populated for user submissions; undefined for scraper/admin rows.
+  submitter?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
   // User-supplied cover image + framing, carried into the events row on
   // approve. Null/undefined for scraper rows (admins add covers post-approve).
   image?: string | null;
