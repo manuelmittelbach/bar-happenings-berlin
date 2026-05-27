@@ -390,7 +390,26 @@ export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
     .eq("status", "pending")
     .order("date", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(mapEventRow);
+  const events = (data ?? []).map(mapEventRow);
+
+  // Resolve the submitter behind each pending row so admins see who to contact.
+  // There's no FK on events.created_by, so a PostgREST embed can't auto-join;
+  // we batch-fetch the profiles instead (admins may read any via RLS). A failed
+  // lookup must not hide the queue, so we swallow the error and leave names off.
+  const creatorIds = [...new Set(events.map((e) => e.createdBy).filter((id): id is string => !!id))];
+  if (creatorIds.length === 0) return events;
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, email, first_name, last_name")
+    .in("id", creatorIds);
+  if (profilesError) return events;
+  const byId = new Map(profiles?.map((p) => [p.id, p]) ?? []);
+  return events.map((e) => {
+    const p = e.createdBy ? byId.get(e.createdBy) : undefined;
+    return p
+      ? { ...e, submitter: { email: p.email ?? "", firstName: p.first_name ?? "", lastName: p.last_name ?? "" } }
+      : e;
+  });
 }
 
 export async function approveEvent(seriesId: string, adminId: string): Promise<void> {

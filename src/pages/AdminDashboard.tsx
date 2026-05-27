@@ -206,6 +206,8 @@ export default function AdminDashboard() {
   // moderation — distinct from the staging-table scraped/manual/recurring flow.
   const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
+  // Which recurring submission has its full date list expanded (one at a time).
+  const [expandedSubmission, setExpandedSubmission] = useState<string | null>(null);
   // Series currently being approved — guards against double-clicks creating a
   // duplicate venue while the async insert is in flight.
   const [submittingSeriesId, setSubmittingSeriesId] = useState<string | null>(null);
@@ -683,10 +685,16 @@ export default function AdminDashboard() {
     }
     return [...byParent.entries()]
       .map(([seriesId, members]) => {
-        const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date));
-        return { seriesId, head: sorted[0], count: sorted.length };
+        const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+        // Parent row carries the series-level fields (recurrence, venue, image);
+        // normally the earliest, but match by id to be safe.
+        const head = sorted.find((m) => m.id === seriesId) ?? sorted[0];
+        // Next upcoming occurrence drives the headline date (like the organizer
+        // dashboard); fall back to the earliest if the whole series is past.
+        const next = sorted.find((m) => !isEventInPast(m)) ?? sorted[0];
+        return { seriesId, head, members: sorted, count: sorted.length, next };
       })
-      .sort((a, b) => a.head.date.localeCompare(b.head.date));
+      .sort((a, b) => a.next.date.localeCompare(b.next.date));
   }, [pendingSubmissions]);
 
   // For submissions whose venue was typed manually (no venue_id), pre-compute
@@ -1101,12 +1109,18 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">No user-submitted events awaiting review.</p>
               ) : (
                 <div className="space-y-3">
-                  {submissionSeries.map(({ seriesId, head, count }) => {
+                  {submissionSeries.map(({ seriesId, head, members, count, next }) => {
                     // Manual-venue submissions (no venue_id) need an admin
                     // decision: create a new bar or link an existing one.
                     const needsVenueDecision = !head.venueId && !!head.venue.trim();
                     const matches = submissionVenueMatches.get(seriesId) ?? [];
                     const busy = submittingSeriesId === seriesId;
+                    // Recurring submission: show a recurrence badge + an
+                    // expandable list of every occurrence date (mirrors the
+                    // organizer dashboard so admins see the full series).
+                    const recurrenceLabel = formatRecurrenceLabel(head.recurrence);
+                    const canExpand = count > 1;
+                    const isExpanded = expandedSubmission === seriesId;
                     // Narrowed editor for THIS series (null when not editing it).
                     const editing = editVenue && editVenue.seriesId === seriesId ? editVenue : null;
                     // The venue we'd create: admin edits if open, else the typed values.
@@ -1131,26 +1145,60 @@ export default function AdminDashboard() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-serif text-base font-bold leading-tight break-words">{head.title}</p>
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <p className="font-serif text-base font-bold leading-tight break-words min-w-0">{head.title}</p>
+                            {recurrenceLabel && (
+                              <span className="inline-flex items-center gap-1 border border-foreground/30 bg-muted px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                <Repeat className="h-3 w-3" /> {recurrenceLabel}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground mt-0.5">
                             {head.venue || "—"}{head.neighborhood ? ` · ${head.neighborhood}` : ""}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {formatDateWithDay(head.date)}{head.startTime ? ` · ${head.startTime}` : ""}
-                            {count > 1 ? ` · +${count - 1} more date${count - 1 !== 1 ? "s" : ""}` : ""}
+                            {recurrenceLabel ? "Next: " : ""}{formatDateWithDay(next.date)}{next.startTime ? ` · ${next.startTime}` : ""}
                           </p>
                           {head.address && (
                             <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
                           )}
+                          {/* Who submitted it — so admins can identify / contact
+                              the plain user behind a pending event. */}
+                          {head.submitter && (
+                            <p className="text-xs text-muted-foreground mt-1.5 break-words">
+                              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/55">Submitted by</span>{" "}
+                              {[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ") &&
+                                `${[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ")} · `}
+                              {head.submitter.email ? (
+                                <a href={`mailto:${head.submitter.email}`} className="underline hover:text-foreground">
+                                  {head.submitter.email}
+                                </a>
+                              ) : "—"}
+                            </p>
+                          )}
                           {/* Preview the live detail page exactly as it'll look
-                              once approved (admins can read pending rows via RLS). */}
-                          <button
-                            type="button"
-                            onClick={() => window.open(`/event/${head.id}`, "_blank", "noopener")}
-                            className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline"
-                          >
-                            Preview ↗
-                          </button>
+                              once approved (admins can read pending rows via RLS).
+                              Points at the next occurrence to match the headline. */}
+                          <div className="mt-2 flex items-center gap-4 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => window.open(`/event/${next.id}`, "_blank", "noopener")}
+                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline"
+                            >
+                              Preview ↗
+                            </button>
+                            {canExpand && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedSubmission((prev) => (prev === seriesId ? null : seriesId))}
+                                aria-expanded={isExpanded}
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                                {isExpanded ? "Hide dates" : `All ${count} dates`}
+                              </button>
+                            )}
+                          </div>
                         </div>
                         {!needsVenueDecision && (
                           <div className="flex sm:flex-col gap-2 flex-shrink-0">
@@ -1173,6 +1221,31 @@ export default function AdminDashboard() {
                           </div>
                         )}
                       </div>
+
+                      {/* Every occurrence of a recurring submission, so the admin
+                          can review the full series before approving it as a whole.
+                          Each date links to its own pending detail page. */}
+                      {canExpand && isExpanded && (
+                        <div className="mt-3 pt-2 border-t border-foreground/15 divide-y divide-foreground/10">
+                          {members.map((m) => (
+                            <div
+                              key={m.id}
+                              className="flex items-center justify-between gap-3 py-1.5 text-sm"
+                            >
+                              <span className={`text-muted-foreground ${isEventInPast(m) ? "line-through opacity-60" : ""}`}>
+                                {formatDateWithDay(m.date)}{m.startTime ? ` · ${m.startTime}` : ""}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => window.open(`/event/${m.id}`, "_blank", "noopener")}
+                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline flex-shrink-0"
+                              >
+                                Preview ↗
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Manual venue → admin chooses: create a new bar from the
                           typed details, or link an existing one (warned about
