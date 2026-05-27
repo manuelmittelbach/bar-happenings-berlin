@@ -247,7 +247,11 @@ export default function BarAccount() {
     const rejected = approvalStatus === "rejected";
     return (
       <div className="container max-w-2xl py-10 md:py-14">
-        <h1 className="heading-display text-3xl md:text-4xl mb-4">Your bar</h1>
+        <header className="mb-6 md:mb-8">
+          <div className="pt-2.5 pb-2.5 flex items-baseline border-b-2 border-border">
+            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your bar</h1>
+          </div>
+        </header>
         <p className="text-sm text-muted-foreground leading-relaxed">
           {rejected
             ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
@@ -260,7 +264,11 @@ export default function BarAccount() {
   if (!venue) {
     return (
       <div className="container max-w-2xl py-10 md:py-14">
-        <h1 className="heading-display text-3xl md:text-4xl mb-4">Your bar</h1>
+        <header className="mb-6 md:mb-8">
+          <div className="pt-2.5 pb-2.5 flex items-baseline border-b-2 border-border">
+            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your bar</h1>
+          </div>
+        </header>
         <p className="text-sm text-muted-foreground leading-relaxed">
           No bar is linked to your account yet. Please contact us at{" "}
           <a
@@ -298,12 +306,15 @@ export default function BarAccount() {
       </div>
 
       <div className="container max-w-2xl pt-4 pb-10 md:pb-14">
-        <div className="mb-10 border-b-2 border-foreground pb-6">
-          <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">
-            Your bar
-          </h1>
-          <p className="mt-2 text-base md:text-lg text-muted-foreground">{venue.name}</p>
-        </div>
+        {/* Masthead — Bars-directory pattern: compact heading-display on
+            a hairline rule, the bar's name reading below like a directory
+            card. */}
+        <header className="mb-8 md:mb-10">
+          <div className="pt-2.5 pb-2.5 border-b-2 border-border">
+            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your bar</h1>
+          </div>
+          <p className="mt-3 font-body text-[17px] md:text-[19px] font-bold leading-tight">{venue.name}</p>
+        </header>
 
       <form onSubmit={handleSave} className="space-y-10">
         {/* Cover image */}
@@ -466,7 +477,7 @@ export default function BarAccount() {
       {/* Read-only details */}
       <section className="mt-12 border-t border-border pt-8">
         <h2 className="mono-label text-foreground mb-4">Bar details</h2>
-        <div className="border-2 border-foreground p-5 bg-card">
+        <div className="border-2 border-foreground p-5 bg-card shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]">
           <p className="text-lg font-serif font-bold leading-tight">{venue.name}</p>
           <p className="text-sm text-muted-foreground mt-1">
             {venue.address.replace(/,\s*Germany\s*$/i, "")}

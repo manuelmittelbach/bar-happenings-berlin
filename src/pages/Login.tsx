@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,9 +153,14 @@ export default function Login() {
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="container relative flex-1 flex flex-col md:justify-center md:py-8">
-			{/* Back — overlaid top-left so it doesn't push the form down, keeping
-			    "Create account" level with "Welcome back!" on the sign-in page */}
+			{/* Layout mirrors the /for-bars sign-in surface exactly — same
+			    container, single centered section, and legal footer — so
+			    "Create account" lands at the same height as "Welcome back!".
+			    (The earlier absolute-back-button fix wasn't enough on its own:
+			    without the footer below, this page centered in a taller box
+			    and the heading sat lower.) */}
+			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
+			{/* Back — overlaid top-left so it doesn't push the form down. */}
 			<button
 				onClick={() => navigate(-1)}
 				className="absolute left-4 top-3 inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
@@ -164,13 +169,14 @@ export default function Login() {
 				<ChevronLeft className="h-5 w-5" />
 				<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
 			</button>
-			<div className="w-full max-w-sm mx-auto px-4 py-12 md:py-20">
-				<div className="text-center mb-8">
+			<section className="md:flex-1 md:flex md:items-center">
+			<div className="w-full py-12 md:py-20 px-4">
+				<div className="max-w-sm mx-auto text-center mb-8">
 					<h1 className="heading-display text-2xl">Create account</h1>
 					<p className="text-sm text-muted-foreground mt-1">Create your account</p>
 				</div>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
+				<form onSubmit={handleSubmit} className="max-w-sm mx-auto space-y-4">
 					{/* Bar-owner toggle — off = plain user account; on = organizer
 					    (bar fields unlock, account goes through admin approval) */}
 					<div className="flex items-center gap-2">
@@ -383,7 +389,19 @@ export default function Login() {
 					</button>
 				</form>
 			</div>
+			</section>
 			</div>
+			<nav
+				aria-label="Legal"
+				className="border-t-2 border-foreground/10 px-4 py-6 flex flex-wrap justify-center gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+			>
+				<Link to="/impressum" className="hover:text-foreground transition-colors">
+					Impressum
+				</Link>
+				<Link to="/datenschutz" className="hover:text-foreground transition-colors">
+					Datenschutz
+				</Link>
+			</nav>
 		</div>
 	);
 }
