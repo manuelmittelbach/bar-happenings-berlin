@@ -213,7 +213,7 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in ${venue.name}` : "Publish an event"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish event in ${venue.name}` : "Publish an event"}
             </Link>
           </div>
 
