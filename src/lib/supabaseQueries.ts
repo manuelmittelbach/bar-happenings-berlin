@@ -254,6 +254,10 @@ interface EventWriteData {
   description: string; entryInfo: string; language: string; website: string;
   imagePosition: string;
   recurrence: string; recurrenceUntil: string;
+  // Moderation status of the created row. Approved bar owners + admins publish
+  // straight to "approved" (live); plain users come in as "pending" for admin
+  // review. RLS enforces this server-side regardless of what the caller sends.
+  status?: "approved" | "pending";
 }
 
 function buildEventRow(
@@ -284,7 +288,7 @@ function buildEventRow(
     image: imageUrl || null,
     image_position: formData.imagePosition,
     created_by: userId,
-    status: "approved",
+    status: formData.status ?? "approved",
     is_manual: true,
   };
 }
@@ -371,6 +375,37 @@ export async function updateEventSeries(
     .update(update)
     .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
     .gte("date", fromDate);
+  if (error) throw error;
+}
+
+// --- User-submitted events awaiting moderation (status = "pending") --------
+// Plain users publish into "pending"; an admin approves the whole series
+// (→ live) or rejects it (→ hard delete). Bar owners / admins skip this and
+// publish straight to "approved".
+
+export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("status", "pending")
+    .order("date", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapEventRow);
+}
+
+export async function approveEvent(seriesId: string, adminId: string): Promise<void> {
+  const { error } = await supabase
+    .from("events")
+    .update({ status: "approved", approved_by: adminId, approved_at: new Date().toISOString() })
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
+  if (error) throw error;
+}
+
+export async function rejectEvent(seriesId: string): Promise<void> {
+  const { error } = await supabase
+    .from("events")
+    .delete()
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
   if (error) throw error;
 }
 

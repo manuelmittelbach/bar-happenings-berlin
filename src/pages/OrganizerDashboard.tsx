@@ -8,6 +8,7 @@ import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries"
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
 import type { BarlinEvent } from "@/types/event";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
@@ -29,7 +30,10 @@ export default function OrganizerDashboard() {
   const [venue, setVenue] = useState<OrganizerVenue>(null);
   const [venueLoading, setVenueLoading] = useState(true);
 
-  const isApprovedAccess = role === "admin" || (role === "organizer" && approvalStatus === "approved");
+  // Who may load + see the "Your events" content: admins, approved bar
+  // owners, and now plain users (who see their own submitted events).
+  const isApprovedAccess =
+    role === "admin" || role === "user" || (role === "organizer" && approvalStatus === "approved");
 
   const [justConfirmed] = useState(consumeJustConfirmed);
 
@@ -39,7 +43,7 @@ export default function OrganizerDashboard() {
   }, [justConfirmed]);
 
   useEffect(() => {
-    if (!loading && roleResolved && role !== "organizer" && role !== "admin") {
+    if (!loading && roleResolved && role !== "user" && role !== "organizer" && role !== "admin") {
       navigate("/", { replace: true });
     }
   }, [user, role, roleResolved, loading, navigate]);
@@ -115,11 +119,7 @@ export default function OrganizerDashboard() {
   const hasMore = displayed.length > INITIAL_COUNT;
 
   if (loading || !roleResolved) {
-    return (
-      <div className="flex-1 flex items-center justify-center py-16">
-        <Spinner />
-      </div>
-    );
+    return <PageSpinner />;
   }
   if (!user) return null;
 
@@ -159,11 +159,7 @@ export default function OrganizerDashboard() {
   }
 
   if (eventsLoading || venueLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center py-16">
-        <Spinner />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
@@ -217,7 +213,7 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in ${venue.name}` : "Publish events"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in ${venue.name}` : "Publish an event"}
             </Link>
           </div>
 

@@ -10,6 +10,7 @@ import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDay
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks/useEvents";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
@@ -41,6 +42,9 @@ import {
   cancelEvent,
   fetchEventsByCreator,
   fetchEventById,
+  fetchPendingEvents,
+  approveEvent,
+  rejectEvent,
   type OrganizerAccount,
   type LiveEventInfo,
   type ApprovedEventListItem,
@@ -190,6 +194,10 @@ export default function AdminDashboard() {
   );
   const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
+  // Events submitted by plain users (events table, status="pending") awaiting
+  // moderation — distinct from the staging-table scraped/manual/recurring flow.
+  const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(true);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
   const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
@@ -304,6 +312,17 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadPendingSubmissions = useCallback(async () => {
+    setSubmissionsLoading(true);
+    try {
+      setPendingSubmissions(await fetchPendingEvents());
+    } catch {
+      // Silent — moderation list is best-effort.
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  }, []);
+
   const loadPendingEventCounts = useCallback(async () => {
     try {
       const [scraped, manual, recurring] = await Promise.all([
@@ -325,7 +344,8 @@ export default function AdminDashboard() {
     loadAllBars();
     loadVenues();
     loadPendingEventCounts();
-  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts]);
+    loadPendingSubmissions();
+  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts, loadPendingSubmissions]);
 
   useEffect(() => {
     loadScrapedEvents();
@@ -553,6 +573,49 @@ export default function AdminDashboard() {
       toast.error("Failed to reject event.");
     }
   };
+
+  // User-submitted events (status="pending" in the events table). Approve sets
+  // the whole series live; reject hard-deletes it.
+  const handleApproveSubmission = async (seriesId: string, title: string) => {
+    if (!user) return;
+    try {
+      await approveEvent(seriesId, user.id);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success(`"${title}" approved`);
+      setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+      loadLiveEvents();
+    } catch {
+      toast.error("Couldn't approve the event. Please try again.");
+    }
+  };
+
+  const handleRejectSubmission = async (seriesId: string, title: string) => {
+    try {
+      await rejectEvent(seriesId);
+      toast.error(`"${title}" rejected`);
+      setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+    } catch {
+      toast.error("Couldn't reject the event. Please try again.");
+    }
+  };
+
+  // Group pending submissions into series (one card per series; recurring
+  // children collapse under their parent) for the moderation list.
+  const submissionSeries = useMemo(() => {
+    const byParent = new Map<string, BarlinEvent[]>();
+    for (const e of pendingSubmissions) {
+      const key = e.parentId || e.id;
+      const arr = byParent.get(key) ?? [];
+      arr.push(e);
+      byParent.set(key, arr);
+    }
+    return [...byParent.entries()]
+      .map(([seriesId, members]) => {
+        const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date));
+        return { seriesId, head: sorted[0], count: sorted.length };
+      })
+      .sort((a, b) => a.head.date.localeCompare(b.head.date));
+  }, [pendingSubmissions]);
 
   // Reclassify a scraped staging row as recurring. Optimistically remove from
   // scraped list, then DB update — the realtime listener on
@@ -853,11 +916,7 @@ export default function AdminDashboard() {
   };
 
   if (loading || !roleResolved) {
-    return (
-      <div className="flex-1 flex items-center justify-center py-16">
-        <Spinner />
-      </div>
-    );
+    return <PageSpinner />;
   }
   if (role !== "admin") return null;
 
@@ -941,6 +1000,69 @@ export default function AdminDashboard() {
               </button>
             ))}
           </div>
+
+          {/* User submissions — events published by plain users (status
+              "pending"), shown above the staging tabs in the Events section. */}
+          {sectionOf(activeBarTab) === "events" && (
+            <div className="mb-8">
+              <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
+                User submissions{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
+              </h2>
+              {submissionsLoading ? (
+                <div className="flex justify-center py-4"><Spinner /></div>
+              ) : submissionSeries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No user-submitted events awaiting review.</p>
+              ) : (
+                <div className="space-y-3">
+                  {submissionSeries.map(({ seriesId, head, count }) => (
+                    <div key={seriesId} className="border-2 border-foreground p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                        {head.image && (
+                          <div className="w-full sm:w-24 h-20 flex-shrink-0 overflow-hidden bg-muted border-2 border-foreground">
+                            <img
+                              src={head.image}
+                              alt={head.title}
+                              style={{ objectPosition: head.imagePosition }}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-serif text-base font-bold leading-tight break-words">{head.title}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {head.venue || "—"}{head.neighborhood ? ` · ${head.neighborhood}` : ""}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDateWithDay(head.date)}{head.startTime ? ` · ${head.startTime}` : ""}
+                            {count > 1 ? ` · +${count - 1} more date${count - 1 !== 1 ? "s" : ""}` : ""}
+                          </p>
+                          {head.address && (
+                            <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
+                          )}
+                        </div>
+                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveSubmission(seriesId, head.title)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectSubmission(seriesId, head.title)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {activeBarTab === "pending" && (
             <div className="space-y-3">

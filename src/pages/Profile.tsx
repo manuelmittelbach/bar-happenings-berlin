@@ -31,6 +31,9 @@ export default function Profile() {
   }
 
   const links: { label: string; to: string }[] = [];
+  if (role === "user") {
+    links.push({ label: "Your events", to: "/dashboard" });
+  }
   if (role === "organizer") {
     links.push({ label: "Your events", to: "/dashboard" });
     links.push({ label: "Your bar", to: "/bar-account" });

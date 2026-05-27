@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Clock3, XCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, Clock3, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { createEvent, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
-import EventForm, { type EventFormData, type EventFormImageState } from "@/components/events/EventForm";
+import EventForm, { type EventFormData, type EventFormImageState, type VenueOption } from "@/components/events/EventForm";
+import { useVenues } from "@/hooks/useEvents";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
-import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 
 export default function PublishEvent() {
 	const navigate = useNavigate();
@@ -16,6 +17,23 @@ export default function PublishEvent() {
 	const [venuePrefill, setVenuePrefill] = useState<Partial<EventFormData>>({});
 	const [venueId, setVenueId] = useState<string | null>(null);
 
+	// Plain users have no bar of their own: they publish into moderation
+	// (pending) and pick the location from the directory or type it in.
+	const isPlainUser = role === "user";
+	const { data: allVenues = [] } = useVenues();
+	const venueOptions: VenueOption[] = useMemo(
+		() =>
+			allVenues
+				.map((v) => ({
+					id: v.id,
+					name: v.name,
+					address: v.address ?? "",
+					neighborhood: v.neighborhood ?? "",
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[allVenues],
+	);
+
 	useEffect(() => {
 		if (loading) return;
 		if (!user) {
@@ -23,13 +41,16 @@ export default function PublishEvent() {
 			return;
 		}
 		if (!roleResolved) return;
-		if (role !== "organizer" && role !== "admin") {
+		// Any signed-in role may publish now (user / organizer / admin).
+		if (role !== "user" && role !== "organizer" && role !== "admin") {
 			navigate("/", { replace: true });
 		}
 	}, [loading, user, role, roleResolved, navigate]);
 
 	useEffect(() => {
-		if (!user) return;
+		// Only bar owners / admins prefill from their own venue; plain users
+		// choose a location in the form instead.
+		if (!user || isPlainUser) return;
 		fetchOrganizerById(user.id).then((organizer) => {
 			const v = organizer?.venue;
 			if (!v) return;
@@ -40,17 +61,28 @@ export default function PublishEvent() {
 			});
 			setVenueId(v.id ?? null);
 		});
-	}, [user]);
+	}, [user, isPlainUser]);
 
 	const handleSubmit = useMemo(
 		() => async (data: EventFormData, image: EventFormImageState) => {
 			if (!user) return;
 			try {
 				const imageUrl = image.file ? await uploadEventImage(image.file, user.id) : undefined;
-				await createEvent({ ...data, venueId: venueId ?? undefined }, user.id, imageUrl);
+				// Plain users land in moderation; bar owners / admins publish live.
+				const status = isPlainUser ? "pending" : "approved";
+				// Picker (users) wins; otherwise the bar owner's own venue.
+				const resolvedVenueId = data.venueId || venueId || undefined;
+				await createEvent({ ...data, venueId: resolvedVenueId, status }, user.id, imageUrl);
 				queryClient.invalidateQueries({ queryKey: ["events"] });
-				if (data.recurrence && data.recurrenceUntil) {
-					const count = generateOccurrences(data.date, data.recurrence as RecurrenceFreq, data.recurrenceUntil).length;
+				const isSeries = !!(data.recurrence && data.recurrenceUntil);
+				const count = isSeries
+					? generateOccurrences(data.date, data.recurrence as RecurrenceFreq, data.recurrenceUntil).length
+					: 1;
+				if (status === "pending") {
+					toast.success(isSeries ? "Series submitted!" : "Event submitted!", {
+						description: "An admin will review it before it goes live.",
+					});
+				} else if (isSeries) {
 					toast.success("Series published!", { description: `${count} events are now live on Inside Bars.` });
 				} else {
 					toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
@@ -60,17 +92,13 @@ export default function PublishEvent() {
 				toast.error("Something went wrong. Please try again.");
 			}
 		},
-		[user, navigate, queryClient, venueId]
+		[user, navigate, queryClient, venueId, isPlainUser]
 	);
 
 	if (loading || !roleResolved) {
-		return (
-			<div className="flex-1 flex items-center justify-center py-16">
-				<Spinner />
-			</div>
-		);
+		return <PageSpinner />;
 	}
-	if (!user || (role !== "organizer" && role !== "admin")) return null;
+	if (!user || (role !== "user" && role !== "organizer" && role !== "admin")) return null;
 
 	if (role === "organizer" && approvalStatus !== "approved") {
 		const rejected = approvalStatus === "rejected";
@@ -98,20 +126,45 @@ export default function PublishEvent() {
 	}
 
 	return (
-		<EventForm
-			title="Publish an Event"
-			subtitle="Once published, it appears directly on the front page."
-			initialValues={venuePrefill}
-			submitLabel="Publish Event"
-			onSubmit={handleSubmit}
-			secondaryActions={
-				<Link
-					to="/dashboard"
-					className="h-12 px-6 flex items-center border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
-				>
-					Cancel
-				</Link>
-			}
-		/>
+		<>
+			{/* Sticky Back row — same affordance as the dashboard / detail pages. */}
+			<div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+				<div className="container flex items-center py-2">
+					<button
+						type="button"
+						onClick={() => navigate(-1)}
+						className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+						aria-label="Back"
+					>
+						<ChevronLeft className="h-5 w-5" />
+						<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+					</button>
+				</div>
+			</div>
+			<EventForm
+				title="Publish an Event"
+				subtitle={
+					isPlainUser
+						? "An admin reviews your event before it goes live."
+						: "Once published, it appears directly on the front page."
+				}
+				initialValues={venuePrefill}
+				venueOptions={isPlainUser ? venueOptions : undefined}
+				submitLabel={isPlainUser ? "Submit for review" : "Publish Event"}
+				onSubmit={handleSubmit}
+				secondaryActions={
+					// Go back rather than pushing a new /dashboard entry — otherwise
+					// the stack becomes dashboard → publish → dashboard, and pressing
+					// Back on "Your events" would return to the publish form.
+					<button
+						type="button"
+						onClick={() => navigate(-1)}
+						className="h-12 px-6 flex items-center border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
+					>
+						Cancel
+					</button>
+				}
+			/>
+		</>
 	);
 }
