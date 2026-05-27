@@ -102,7 +102,7 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
 type BarTab = "pending" | "overview" | "all-bars" | "user" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
 
-const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
+const BAR_TABS: BarTab[] = ["pending", "overview", "all-bars"];
 const EVENT_TABS: BarTab[] = ["user", "scraped", "manual", "recurring"];
 
 const sectionOf = (tab: BarTab): AdminSection =>
@@ -1787,6 +1787,7 @@ function StagedEventCard({
   onUpdateApplied,
   onCreateVenue,
   allowOneTime,
+  scope,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
@@ -1811,6 +1812,9 @@ function StagedEventCard({
   // Allow a "— One-time —" choice in the recurrence editor (user events mix
   // single + recurring submissions); the recurring tab keeps it off.
   allowOneTime?: boolean;
+  // Which moderation list this card lives in. User submissions must stay
+  // time-bounded, so the "No end date" toggle is hidden for scope === "user".
+  scope: "scraped" | "manual" | "recurring" | "user";
 }) {
   const { data: categoriesData = [] } = useCategories();
   // Form holds the slug-id (categories.id) as the value; we display the label.
@@ -2517,25 +2521,29 @@ function StagedEventCard({
               {describeRule(date || staged.date, staged.recurrence as RecurrenceFreq)}
             </p>
           )}
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={staged.recurrenceUntil == null}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onRecurrenceChange({ recurrenceUntil: null });
-                } else {
-                  const startStr = date || staged.date;
-                  const start = startStr ? parse(startStr, "yyyy-MM-dd", new Date()) : new Date();
-                  const fallback = isNaN(start.getTime()) ? addMonths(new Date(), 6) : addMonths(start, 6);
-                  onRecurrenceChange({ recurrenceUntil: format(fallback, "yyyy-MM-dd") });
-                }
-              }}
-              disabled={!isPending}
-              className="h-3.5 w-3.5"
-            />
-            No end date — series runs until you delete it
-          </label>
+          {/* User submissions must stay time-bounded (the public form caps them
+              at 6 months), so admins don't get the indefinite toggle here. */}
+          {scope !== "user" && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={staged.recurrenceUntil == null}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    onRecurrenceChange({ recurrenceUntil: null });
+                  } else {
+                    const startStr = date || staged.date;
+                    const start = startStr ? parse(startStr, "yyyy-MM-dd", new Date()) : new Date();
+                    const fallback = isNaN(start.getTime()) ? addMonths(new Date(), 6) : addMonths(start, 6);
+                    onRecurrenceChange({ recurrenceUntil: format(fallback, "yyyy-MM-dd") });
+                  }
+                }}
+                disabled={!isPending}
+                className="h-3.5 w-3.5"
+              />
+              No end date — series runs until you delete it
+            </label>
+          )}
         </div>
       )}
 
@@ -2922,6 +2930,7 @@ function StagedEventsList({
               onUpdateApplied={onUpdateApplied}
               onCreateVenue={onCreateVenue ? (submission) => onCreateVenue(staged, submission) : undefined}
               allowOneTime={allowOneTime}
+              scope={scope}
             />
           );
           return <div key={staged.id}>{card}</div>;
