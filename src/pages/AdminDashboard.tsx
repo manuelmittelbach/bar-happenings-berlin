@@ -43,23 +43,16 @@ import {
   fetchEventsByCreator,
   fetchEventById,
   fetchPendingUserSubmissions,
-  fetchAcceptedUserEvents,
-  approveUserSubmission,
-  approveUserSubmissionWithNewVenue,
-  approveUserSubmissionWithExistingVenue,
-  rejectEvent,
+  fetchApprovedUserEvents,
+  fetchPendingUserSubmissionCount,
+  createVenueForStagedSubmission,
   type OrganizerAccount,
   type LiveEventInfo,
   type ApprovedEventListItem,
   type SubmissionVenueData,
 } from "@/lib/supabaseQueries";
-import { findVenueMatches, type VenueMatch } from "@/lib/venueMatch";
-import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
-import VenueAddressFields from "@/components/events/VenueAddressFields";
-import { buildVenueAddress, parseVenueAddress } from "@/lib/venueAddress";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 import EventDiffModal from "@/components/admin/EventDiffModal";
-import UserEventSeriesCard from "@/components/admin/UserEventSeriesCard";
 
 // Approved events live in the `events` table. To keep the existing card UI
 // working, adapt them to the StagedEvent shape used by StagedEventCard.
@@ -96,44 +89,23 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     createdBy: event.createdBy ?? null,
     image: event.image ?? null,
     imagePosition: event.imagePosition,
+    submitter: event.submitter,
     interestedCount: event.interestedCount,
     approvedSiblings: siblings,
   };
 }
 
-type BarTab = "pending" | "overview" | "all-bars" | "user" | "user-accepted" | "scraped" | "manual" | "recurring";
+type BarTab = "pending" | "overview" | "all-bars" | "user" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
 
 const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
-const EVENT_TABS: BarTab[] = ["user", "user-accepted", "scraped", "manual", "recurring"];
+const EVENT_TABS: BarTab[] = ["user", "scraped", "manual", "recurring"];
 
 const sectionOf = (tab: BarTab): AdminSection =>
-  tab === "user" || tab === "user-accepted" || tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
+  tab === "user" || tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
 
 const defaultTabFor = (section: AdminSection): BarTab =>
   section === "events" ? "user" : "pending";
-
-// Group flat user-submitted events into one entry per series (recurring
-// children collapse under their parent). Shared by the pending + accepted tabs.
-function groupSeries(events: BarlinEvent[]) {
-  const byParent = new Map<string, BarlinEvent[]>();
-  for (const e of events) {
-    const key = e.parentId || e.id;
-    const arr = byParent.get(key) ?? [];
-    arr.push(e);
-    byParent.set(key, arr);
-  }
-  return [...byParent.entries()]
-    .map(([seriesId, members]) => {
-      const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-      // Parent row carries the series-level fields; normally earliest, but
-      // match by id to be safe. Next upcoming occurrence drives the headline.
-      const head = sorted.find((m) => m.id === seriesId) ?? sorted[0];
-      const next = sorted.find((m) => !isEventInPast(m)) ?? sorted[0];
-      return { seriesId, head, members: sorted, count: sorted.length, next };
-    })
-    .sort((a, b) => a.next.date.localeCompare(b.next.date));
-}
 
 function openSourceWindow(url: string) {
   // Protocol-less URLs ("example.com/events") would be treated as relative
@@ -192,7 +164,6 @@ export default function AdminDashboard() {
     tabParam === "overview" ? "overview"
     : tabParam === "all-bars" ? "all-bars"
     : tabParam === "user" ? "user"
-    : tabParam === "user-accepted" ? "user-accepted"
     : tabParam === "scraped" ? "scraped"
     : tabParam === "manual" ? "manual"
     : tabParam === "recurring" ? "recurring"
@@ -230,34 +201,21 @@ export default function AdminDashboard() {
   );
   const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
-  // Events submitted by plain users — now staged in venue_events_staging
-  // (created_by set), display-expanded into BarlinEvents so the series card
-  // works unchanged. Distinct from the scraper's created_by-null staging rows.
-  const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
-  const [submissionsLoading, setSubmissionsLoading] = useState(true);
-  // Approved user submissions (status="approved", creator role "user"), shown
-  // in the "User events accepted" tab.
-  const [acceptedSubmissions, setAcceptedSubmissions] = useState<BarlinEvent[]>([]);
-  const [acceptedLoading, setAcceptedLoading] = useState(true);
-  // Which recurring submission has its full date list expanded (one at a time,
-  // tracked per tab so the two lists don't fight over the same id).
-  const [expandedSubmission, setExpandedSubmission] = useState<string | null>(null);
-  const [expandedAccepted, setExpandedAccepted] = useState<string | null>(null);
-  // Series currently being approved — guards against double-clicks creating a
-  // duplicate venue while the async insert is in flight.
-  const [submittingSeriesId, setSubmittingSeriesId] = useState<string | null>(null);
-  // Series currently being deleted from the accepted tab.
-  const [deletingSeriesId, setDeletingSeriesId] = useState<string | null>(null);
-  // Inline editor for a manual-venue submission's new-bar details, before the
-  // admin creates it — same split fields the user sees. Null = no editor open
-  // (one at a time, keyed by series).
-  const [editVenue, setEditVenue] = useState<
-    { seriesId: string; name: string; street: string; plz: string; city: string } | null
-  >(null);
+  // Plain-user submissions — staged in venue_events_staging (created_by set),
+  // rendered with the same StagedEventCard/StagedEventsList as scraped events.
+  // The pending filter reads staging rows; approved reads `events` (creator
+  // role 'user'), adapted to StagedEvent like the scraped/manual/recurring tabs.
+  const [userEvents, setUserEvents] = useState<StagedEvent[]>([]);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userFilter, setUserFilter] = useState<StagedEventStatusFilter>(
+    () => (searchParams.get("filter") === "approved" ? "approved" : "pending"),
+  );
+  const [userQuery, setUserQuery] = useState("");
   const [venues, setVenues] = useState<Venue[]>([]);
   const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
   const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
   const [recurringPendingCount, setRecurringPendingCount] = useState<number | null>(null);
+  const [userPendingCount, setUserPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "admin") navigate("/", { replace: true });
@@ -368,38 +326,38 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const loadPendingSubmissions = useCallback(async () => {
-    setSubmissionsLoading(true);
+  // User-events tab: pending reads staging rows; approved reads `events`
+  // (creator role 'user') adapted to the StagedEvent shape — same split the
+  // scraped/manual/recurring loaders use. silent skips the loading flag so a
+  // realtime refresh doesn't unmount cards.
+  const loadUserEvents = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setUserLoading(true);
     try {
-      setPendingSubmissions(await fetchPendingUserSubmissions());
+      if (userFilter === "approved") {
+        const items = await fetchApprovedUserEvents();
+        setUserEvents(items.map(approvedItemToAdminStaged));
+      } else {
+        setUserEvents(await fetchPendingUserSubmissions());
+      }
     } catch {
-      // Silent — moderation list is best-effort.
+      toast.error("Failed to load user events.");
     } finally {
-      setSubmissionsLoading(false);
+      if (!silent) setUserLoading(false);
     }
-  }, []);
-
-  const loadAcceptedSubmissions = useCallback(async () => {
-    setAcceptedLoading(true);
-    try {
-      setAcceptedSubmissions(await fetchAcceptedUserEvents());
-    } catch {
-      // Silent — informational list is best-effort.
-    } finally {
-      setAcceptedLoading(false);
-    }
-  }, []);
+  }, [userFilter]);
 
   const loadPendingEventCounts = useCallback(async () => {
     try {
-      const [scraped, manual, recurring] = await Promise.all([
+      const [scraped, manual, recurring, userPending] = await Promise.all([
         fetchStagedEventCount("scraped"),
         fetchStagedEventCount("manual"),
         fetchStagedEventCount("recurring"),
+        fetchPendingUserSubmissionCount(),
       ]);
       setScrapedPendingCount(scraped);
       setManualPendingCount(manual);
       setRecurringPendingCount(recurring);
+      setUserPendingCount(userPending);
     } catch {
       // Silent — count is informational, not critical.
     }
@@ -411,9 +369,11 @@ export default function AdminDashboard() {
     loadAllBars();
     loadVenues();
     loadPendingEventCounts();
-    loadPendingSubmissions();
-    loadAcceptedSubmissions();
-  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts, loadPendingSubmissions, loadAcceptedSubmissions]);
+  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts]);
+
+  useEffect(() => {
+    loadUserEvents();
+  }, [loadUserEvents]);
 
   useEffect(() => {
     loadScrapedEvents();
@@ -451,9 +411,9 @@ export default function AdminDashboard() {
             loadManualEvents({ silent: true });
             loadRecurringEvents({ silent: true });
             loadPendingEventCounts();
-            // User submissions now also live in this table, so refresh the
-            // "User events" pending list when a new one lands.
-            loadPendingSubmissions();
+            // User submissions live in this table too — refresh the User
+            // events list (pending filter) when one lands.
+            loadUserEvents({ silent: true });
           }, 500);
         },
       )
@@ -462,7 +422,7 @@ export default function AdminDashboard() {
       if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [loadScrapedEvents, loadManualEvents, loadRecurringEvents, loadPendingEventCounts, loadPendingSubmissions]);
+  }, [loadScrapedEvents, loadManualEvents, loadRecurringEvents, loadPendingEventCounts, loadUserEvents]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -623,6 +583,7 @@ export default function AdminDashboard() {
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
       setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
+      setUserEvents(prev => prev.filter(s => s.id !== staged.id));
       loadPendingEventCounts();
       loadLiveEvents();
     } catch (err) {
@@ -639,134 +600,35 @@ export default function AdminDashboard() {
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
       setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
+      setUserEvents(prev => prev.filter(s => s.id !== staged.id));
       loadPendingEventCounts();
     } catch {
       toast.error("Failed to reject event.");
     }
   };
 
-  // User-submitted events (pending rows in venue_events_staging). Approve moves
-  // the whole series into `events` (live); reject hard-deletes the staging row.
-  // Shared success tail: drop the series from the list, refresh live events,
-  // and — when a venue was created/linked — also refresh the venues used by
-  // /bars and the picker.
-  const finishSubmissionApproval = (seriesId: string, title: string, venuesChanged: boolean) => {
-    queryClient.invalidateQueries({ queryKey: ["events"] });
-    if (venuesChanged) queryClient.invalidateQueries({ queryKey: ["venues"] });
-    toast.success(`"${title}" approved`);
-    setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
-    setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
-    loadLiveEvents();
-    loadAcceptedSubmissions();
-    if (venuesChanged) loadVenues();
-  };
-
-  // Plain approve — used when the submission already carries a venue_id (user
-  // picked a bar from the directory). Manual-venue submissions go through the
-  // decision panel instead (handleApproveNewVenue / handleApproveLinkVenue).
-  // seriesId is the staging row id (= the series key after display-expansion).
-  const handleApproveSubmission = async (seriesId: string, title: string) => {
-    if (!user || submittingSeriesId) return;
-    setSubmittingSeriesId(seriesId);
-    try {
-      await approveUserSubmission(seriesId, user.id);
-      finishSubmissionApproval(seriesId, title, false);
-    } catch {
-      toast.error("Couldn't approve the event. Please try again.");
-    } finally {
-      setSubmittingSeriesId(null);
-    }
-  };
-
-  // Manual-venue submission → create a brand-new bar from the (possibly admin-
-  // edited) details, then link + approve the series. Surfaces geocoding errors.
-  const handleApproveNewVenue = async (seriesId: string, title: string, submission: SubmissionVenueData) => {
-    if (!user || submittingSeriesId) return;
+  // User-events tab: turn a typed-venue submission into a real bar and link it
+  // to the staging row (no approve yet — the admin reviews, then approves like
+  // any staged card). Refreshes venues (/bars + picker) and the user list.
+  const handleCreateVenueForSubmission = async (staged: StagedEvent, submission: SubmissionVenueData) => {
     if (!submission.name.trim() || !submission.address.trim()) {
       toast.error("Bar name and address are required.");
       return;
     }
-    setSubmittingSeriesId(seriesId);
     try {
-      await approveUserSubmissionWithNewVenue(seriesId, user.id, {
+      await createVenueForStagedSubmission(staged.id, {
         name: submission.name.trim(),
         address: submission.address.trim(),
         neighborhood: submission.neighborhood,
       });
-      finishSubmissionApproval(seriesId, title, true);
+      toast.success(`Bar "${submission.name.trim()}" created and linked`);
+      queryClient.invalidateQueries({ queryKey: ["venues"] });
+      loadVenues();
+      loadUserEvents({ silent: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create the bar. Please try again.");
-    } finally {
-      setSubmittingSeriesId(null);
     }
   };
-
-  // Manual-venue submission → link it to an existing bar instead of creating a
-  // duplicate, then approve the series.
-  const handleApproveLinkVenue = async (head: BarlinEvent, seriesId: string, venueId: string) => {
-    if (!user || submittingSeriesId) return;
-    setSubmittingSeriesId(seriesId);
-    try {
-      await approveUserSubmissionWithExistingVenue(seriesId, user.id, venueId);
-      finishSubmissionApproval(seriesId, head.title, true);
-    } catch {
-      toast.error("Couldn't link the event to that bar. Please try again.");
-    } finally {
-      setSubmittingSeriesId(null);
-    }
-  };
-
-  const handleRejectSubmission = async (seriesId: string, title: string) => {
-    if (submittingSeriesId) return;
-    try {
-      // seriesId is the staging row id — reject hard-deletes the staging row.
-      await rejectStagedEvent(seriesId);
-      toast.error(`"${title}" rejected`);
-      setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
-      setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
-    } catch {
-      toast.error("Couldn't reject the event. Please try again.");
-    }
-  };
-
-  // Permanently delete an approved user event (whole series) from the accepted
-  // tab — same hard delete as rejecting a pending submission.
-  const handleDeleteAcceptedSubmission = async (seriesId: string, title: string, count: number) => {
-    if (deletingSeriesId) return;
-    const scope = count > 1 ? ` and its ${count} dates` : "";
-    if (!window.confirm(`Delete "${title}"${scope}? This permanently removes it from the site and can't be undone.`)) return;
-    setDeletingSeriesId(seriesId);
-    try {
-      await rejectEvent(seriesId);
-      toast.success(`"${title}" deleted`);
-      setAcceptedSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
-      setExpandedAccepted(prev => (prev === seriesId ? null : prev));
-      loadLiveEvents();
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-    } catch {
-      toast.error("Couldn't delete the event. Please try again.");
-    } finally {
-      setDeletingSeriesId(null);
-    }
-  };
-
-  // One card per series (recurring children collapse under their parent) for
-  // each moderation list.
-  const submissionSeries = useMemo(() => groupSeries(pendingSubmissions), [pendingSubmissions]);
-  const acceptedSeries = useMemo(() => groupSeries(acceptedSubmissions), [acceptedSubmissions]);
-
-  // For submissions whose venue was typed manually (no venue_id), pre-compute
-  // likely existing-venue matches so the admin can link instead of creating a
-  // duplicate. Keyed by seriesId; only manual-venue series get an entry.
-  const submissionVenueMatches = useMemo(() => {
-    const map = new Map<string, VenueMatch[]>();
-    for (const { seriesId, head } of submissionSeries) {
-      if (!head.venueId && head.venue.trim()) {
-        map.set(seriesId, findVenueMatches(head.venue, head.address, venues));
-      }
-    }
-    return map;
-  }, [submissionSeries, venues]);
 
   // Reclassify a scraped staging row as recurring. Optimistically remove from
   // scraped list, then DB update — the realtime listener on
@@ -885,6 +747,7 @@ export default function AdminDashboard() {
       setScrapedEvents(apply);
       setManualEvents(apply);
       setRecurringEvents(apply);
+      setUserEvents(apply);
     } catch {
       toast.error("Failed to update venue.");
     }
@@ -899,6 +762,7 @@ export default function AdminDashboard() {
       setScrapedEvents(apply);
       setManualEvents(apply);
       setRecurringEvents(apply);
+      setUserEvents(apply);
     } catch {
       toast.error("Failed to update URL.");
     }
@@ -910,7 +774,9 @@ export default function AdminDashboard() {
   ) => {
     try {
       await updateStagedEventManualFields(stagedId, patch);
-      setRecurringEvents(prev =>
+      // The recurrence editor shows on the Recurring tab and (with allowOneTime)
+      // the User events tab, so reflect the change in both lists.
+      const apply = (prev: StagedEvent[]) =>
         prev.map(s =>
           s.id === stagedId
             ? {
@@ -920,8 +786,9 @@ export default function AdminDashboard() {
                   patch.recurrenceUntil !== undefined ? patch.recurrenceUntil : s.recurrenceUntil,
               }
             : s,
-        ),
-      );
+        );
+      setRecurringEvents(apply);
+      setUserEvents(apply);
     } catch {
       toast.error("Failed to update recurrence.");
     }
@@ -963,6 +830,7 @@ export default function AdminDashboard() {
       setScrapedEvents(apply);
       setManualEvents(apply);
       setRecurringEvents(apply);
+      setUserEvents(apply);
       loadLiveEvents();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
@@ -989,6 +857,7 @@ export default function AdminDashboard() {
       setScrapedEvents(prev => prev.filter(s => s.id !== staged.id));
       setManualEvents(prev => prev.filter(s => s.id !== staged.id));
       setRecurringEvents(prev => prev.filter(s => s.id !== staged.id));
+      setUserEvents(prev => prev.filter(s => s.id !== staged.id));
       loadLiveEvents();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to delete event.";
@@ -1096,13 +965,13 @@ export default function AdminDashboard() {
                 <span className="text-xs text-muted-foreground font-medium">Pending Events</span>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </div>
-              {scrapedPendingCount === null || manualPendingCount === null || recurringPendingCount === null ? (
+              {scrapedPendingCount === null || manualPendingCount === null || recurringPendingCount === null || userPendingCount === null ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
                 <>
-                  <p className="font-serif text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount)}</p>
+                  <p className="font-serif text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount + userPendingCount)}</p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {scrapedPendingCount} scraped · {manualPendingCount} manual · {recurringPendingCount} recurring
+                    {scrapedPendingCount} scraped · {manualPendingCount} manual · {recurringPendingCount} recurring · {userPendingCount} user
                   </p>
                 </>
               )}
@@ -1140,7 +1009,7 @@ export default function AdminDashboard() {
                 {tab === "pending"
                   ? pendingOrganizersLoading ? "Pending" : `Pending (${pendingOrganizers.length})`
                   : tab === "overview"
-                  ? decidedOrganizersLoading ? "Overview" : `Overview (${decidedOrganizers.length})`
+                  ? decidedOrganizersLoading ? "Approved" : `Approved (${decidedOrganizers.length})`
                   : tab === "all-bars"
                   ? allBarsLoading ? "All Bars" : `All Bars (${allBars.length})`
                   : tab === "scraped"
@@ -1148,241 +1017,40 @@ export default function AdminDashboard() {
                   : tab === "manual"
                   ? manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`
                   : tab === "user"
-                  ? submissionsLoading ? "User events pending" : `User events pending (${submissionSeries.length})`
-                  : tab === "user-accepted"
-                  ? acceptedLoading ? "User events accepted" : `User events accepted (${acceptedSeries.length})`
+                  ? userPendingCount === null ? "User Events" : `User Events (${userPendingCount})`
                   : recurringLoading ? "Recurring Events" : `Recurring Events (${recurringEvents.length})`}
               </button>
             ))}
           </div>
 
-          {/* User events — submissions by plain users (pending rows in
-              venue_events_staging), awaiting moderation. Own tab in Events. */}
+          {/* User events — plain-user submissions, rendered with the same
+              StagedEventCard UI as scraped/recurring. Pending reads staging rows
+              (created_by set); Approved reads `events` (creator role 'user').
+              Typed-venue rows get the "Create bar & link" affordance in-card. */}
           {activeBarTab === "user" && (
-            <div className="mb-8">
-              <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
-                User events pending{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
-              </h2>
-              {submissionsLoading ? (
-                <div className="flex justify-center py-4"><Spinner /></div>
-              ) : submissionSeries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No user-submitted events awaiting review.</p>
-              ) : (
-                <div className="space-y-3">
-                  {submissionSeries.map(({ seriesId, head, members, count, next }) => {
-                    // Manual-venue submissions (no venue_id) need an admin
-                    // decision: create a new bar or link an existing one.
-                    const needsVenueDecision = !head.venueId && !!head.venue.trim();
-                    const matches = submissionVenueMatches.get(seriesId) ?? [];
-                    const busy = submittingSeriesId === seriesId;
-                    // Narrowed editor for THIS series (null when not editing it).
-                    const editing = editVenue && editVenue.seriesId === seriesId ? editVenue : null;
-                    // The venue we'd create: admin edits if open, else the typed values.
-                    const newVenue: SubmissionVenueData = editing
-                      ? {
-                          name: editing.name,
-                          address: buildVenueAddress(editing),
-                          neighborhood: deriveNeighborhood(editing.street, editing.plz),
-                        }
-                      : { name: head.venue, address: head.address, neighborhood: head.neighborhood };
-                    return (
-                    <UserEventSeriesCard
-                      key={seriesId}
-                      head={head}
-                      members={members}
-                      count={count}
-                      next={next}
-                      isExpanded={expandedSubmission === seriesId}
-                      onToggleExpand={() => setExpandedSubmission((prev) => (prev === seriesId ? null : seriesId))}
-                      actions={!needsVenueDecision && (
-                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleApproveSubmission(seriesId, head.title)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleRejectSubmission(seriesId, head.title)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    >
-
-                      {/* Manual venue → admin chooses: create a new bar from the
-                          typed details, or link an existing one (warned about
-                          possible duplicates). Bar is created here because RLS
-                          only lets admins write venues. */}
-                      {needsVenueDecision && (
-                        <div className="mt-3 pt-3 border-t-2 border-foreground/15 space-y-3">
-                          <p className="text-xs text-muted-foreground">
-                            This event has a manually-entered venue. Choose how to publish its bar.
-                          </p>
-
-                          <div className="border-2 border-foreground/20 p-3 space-y-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">Create new bar</p>
-                              {!editing && (
-                                <button
-                                  type="button"
-                                  disabled={busy}
-                                  onClick={() => setEditVenue({ seriesId, ...parseVenueAddress(head.address, head.venue) })}
-                                  className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                            </div>
-
-                            {editing ? (
-                              <VenueAddressFields
-                                value={{ name: editing.name, street: editing.street, plz: editing.plz, city: editing.city }}
-                                onChange={(v) => setEditVenue((p) => (p ? { ...p, ...v } : p))}
-                              />
-                            ) : (
-                              <div className="min-w-0">
-                                <p className="font-serif text-sm break-words">{head.venue}</p>
-                                <p className="text-xs text-muted-foreground break-words">
-                                  {head.address || "No address"}
-                                  {head.neighborhood ? ` · ${head.neighborhood}` : " · neighborhood unknown"}
-                                </p>
-                              </div>
-                            )}
-
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => handleApproveNewVenue(seriesId, head.title, newVenue)}
-                                className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Create &amp; approve
-                              </button>
-                              {editing && (
-                                <button
-                                  type="button"
-                                  disabled={busy}
-                                  onClick={() => setEditVenue(null)}
-                                  className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {matches.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">
-                                Possible existing matches
-                              </p>
-                              {matches.map((m) => (
-                                <div
-                                  key={m.venue.id}
-                                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-2 border-foreground/20 p-3"
-                                >
-                                  <div className="min-w-0">
-                                    <p className="font-serif text-sm break-words">
-                                      {m.venue.name}
-                                      <span className="ml-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                                        {m.reason === "both" ? "name + address" : m.reason === "name" ? "name match" : "address match"}
-                                      </span>
-                                    </p>
-                                    <p className="text-xs text-muted-foreground break-words">
-                                      {m.venue.address || "No address"}
-                                      {m.venue.neighborhood ? ` · ${m.venue.neighborhood}` : ""}
-                                    </p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => handleApproveLinkVenue(head, seriesId, m.venue.id)}
-                                    className="inline-flex items-center justify-center h-9 px-3 flex-shrink-0 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Link &amp; approve
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleRejectSubmission(seriesId, head.title)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    </UserEventSeriesCard>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* User events accepted — plain-user submissions an admin has approved
-              (status "approved"). Review + edit, plus a hard delete of the whole
-              series. */}
-          {activeBarTab === "user-accepted" && (
-            <div className="mb-8">
-              <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
-                User events accepted{acceptedSeries.length > 0 ? ` (${acceptedSeries.length})` : ""}
-              </h2>
-              {acceptedLoading ? (
-                <div className="flex justify-center py-4"><Spinner /></div>
-              ) : acceptedSeries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No approved user events yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {acceptedSeries.map(({ seriesId, head, members, count, next }) => {
-                    const busy = deletingSeriesId === seriesId;
-                    return (
-                    <UserEventSeriesCard
-                      key={seriesId}
-                      head={head}
-                      members={members}
-                      count={count}
-                      next={next}
-                      isExpanded={expandedAccepted === seriesId}
-                      onToggleExpand={() => setExpandedAccepted((prev) => (prev === seriesId ? null : seriesId))}
-                      actions={
-                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
-                          {/* Edit targets the next occurrence — the parent may be
-                              in the past, which the editor refuses to open. */}
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/edit-event/${next.id}`)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleDeleteAcceptedSubmission(seriesId, head.title, count)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      }
-                    />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <StagedEventsList
+              events={userEvents}
+              loading={userLoading}
+              filter={userFilter}
+              onFilterChange={setUserFilter}
+              query={userQuery}
+              onQueryChange={setUserQuery}
+              venues={venues}
+              scope="user"
+              liveEventsByVenue={liveEventsByVenue}
+              showRecurrenceEditor
+              allowOneTime
+              onRecurrenceChange={handleRecurrenceChange}
+              onApprove={handleApproveStaged}
+              onReject={handleRejectStaged}
+              onVenueChange={handleManualVenueChange}
+              onSourceUrlChange={handleManualSourceUrlChange}
+              onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onSaveApproved={handleSaveApprovedStaged}
+              onDeleteApproved={handleDeleteApproved}
+              onCreateVenue={handleCreateVenueForSubmission}
+              emptyLabel="user"
+            />
           )}
 
           {activeBarTab === "pending" && (
@@ -2113,6 +1781,8 @@ function StagedEventCard({
   onDeleteApproved,
   onCancelOccurrence,
   onUpdateApplied,
+  onCreateVenue,
+  allowOneTime,
 }: {
   staged: StagedEvent;
   liveEvents: LiveEventInfo[];
@@ -2122,7 +1792,7 @@ function StagedEventCard({
   onApprove: (edits: StagedEventEdits) => Promise<void>;
   onReject: () => void;
   onCancel?: () => void;
-  onDuplicate: (edits: StagedEventEdits) => Promise<void>;
+  onDuplicate?: (edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (venueId: string) => Promise<void>;
   onSourceUrlChange: (url: string) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
@@ -2131,6 +1801,12 @@ function StagedEventCard({
   onDeleteApproved?: () => Promise<void>;
   onCancelOccurrence?: (sibling?: { id: string; date: string }) => Promise<void>;
   onUpdateApplied?: () => void;
+  // User-events tab only: turn a typed-venue submission (no venue_id) into a
+  // real bar + link it. Absent for the scraped/manual/recurring scopes.
+  onCreateVenue?: (submission: SubmissionVenueData) => Promise<void>;
+  // Allow a "— One-time —" choice in the recurrence editor (user events mix
+  // single + recurring submissions); the recurring tab keeps it off.
+  allowOneTime?: boolean;
 }) {
   const { data: categoriesData = [] } = useCategories();
   // Form holds the slug-id (categories.id) as the value; we display the label.
@@ -2329,6 +2005,12 @@ function StagedEventCard({
       toast.error(`Missing required field${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`);
       return;
     }
+    // A typed-venue submission must get a bar (create or link) before approve —
+    // scraped/manual/recurring rows always have one, so this only hits user rows.
+    if (!staged.venueId) {
+      toast.error("This submission has a typed venue — create a bar or pick one above first.");
+      return;
+    }
     // 2. Show all applicable warnings together in a single confirmation step
     if (!isConfirming) {
       const needsStartTimeWarning = !startTime;
@@ -2425,6 +2107,11 @@ function StagedEventCard({
               }}
               className="h-8 px-2 bg-muted/50 border border-border rounded-sm text-sm font-serif font-semibold outline-none focus:border-foreground transition-colors"
             >
+              {/* Typed-venue submission has no bar yet — show a placeholder so
+                  the dropdown doesn't silently default to the first bar. */}
+              {!(isApproved ? venueIdLocal : staged.venueId) && (
+                <option value="">— No bar yet —</option>
+              )}
               {venues.map(v => (
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
@@ -2466,7 +2153,7 @@ function StagedEventCard({
             </span>
           )}
         </div>
-        {isPending && (
+        {isPending && onDuplicate && (
           <button
             onClick={handleDuplicateClick}
             disabled={submitting}
@@ -2477,6 +2164,65 @@ function StagedEventCard({
           </button>
         )}
       </div>
+
+      {/* Who submitted this (User events tab) — shown so the moderator can
+          follow up. Only user submissions carry a submitter. */}
+      {staged.submitter && (
+        <p className="text-xs text-muted-foreground">
+          Submitted by{" "}
+          {(`${staged.submitter.firstName} ${staged.submitter.lastName}`).trim() && (
+            <span className="text-foreground font-medium">
+              {(`${staged.submitter.firstName} ${staged.submitter.lastName}`).trim()}
+              {" · "}
+            </span>
+          )}
+          {staged.submitter.email ? (
+            <a href={`mailto:${staged.submitter.email}`} className="text-blue-600 hover:underline">
+              {staged.submitter.email}
+            </a>
+          ) : (
+            <span className="italic">no email on file</span>
+          )}
+        </p>
+      )}
+
+      {/* Typed-venue submission (User events tab): the submitter entered a
+          venue that isn't a bar yet. Create it from their details + link, or
+          pick an existing bar in the dropdown above. Approve is blocked until
+          one of those sets a venue_id. */}
+      {onCreateVenue && isPending && !staged.venueId && (
+        <div className="border border-dashed border-border rounded-sm p-2 space-y-2 bg-muted/20">
+          <p className="text-xs text-muted-foreground">
+            Typed venue (no bar yet):{" "}
+            <span className="font-medium text-foreground">{staged.venueName}</span>
+            {staged.venueAddress
+              ? ` · ${staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}`
+              : staged.venueNeighborhood ? ` · ${staged.venueNeighborhood}` : ""}
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              disabled={submitting || !staged.venueName.trim() || !staged.venueAddress.trim()}
+              onClick={async () => {
+                setSubmitting(true);
+                try {
+                  await onCreateVenue({
+                    name: staged.venueName,
+                    address: staged.venueAddress,
+                    neighborhood: staged.venueNeighborhood,
+                  });
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+            >
+              <Plus className="h-3 w-3" /> Create bar &amp; link
+            </button>
+            <span className="text-xs text-muted-foreground">or pick an existing bar above</span>
+          </div>
+        </div>
+      )}
 
       {eventsUrlOpen && (
         <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-sm">
@@ -2743,6 +2489,9 @@ function StagedEventCard({
               disabled={!isPending}
               className="h-9 px-2 bg-muted/50 border border-border rounded-sm text-sm outline-none focus:border-foreground transition-colors disabled:opacity-60"
             >
+              {/* User events mix single + recurring submissions; let the admin
+                  mark one as non-repeating. Other scopes keep this off. */}
+              {allowOneTime && <option value="">— One-time (no repeat) —</option>}
               <option value="weekly">Weekly — every week</option>
               <option value="biweekly">Biweekly — 1st+3rd or 2nd+4th weekday</option>
               <option value="monthly_by_weekday">Monthly — same weekday of month</option>
@@ -3047,6 +2796,8 @@ function StagedEventsList({
   onDeleteApproved,
   onCancelOccurrence,
   onUpdateApplied,
+  onCreateVenue,
+  allowOneTime,
   emptyLabel,
 }: {
   events: StagedEvent[];
@@ -3060,11 +2811,11 @@ function StagedEventsList({
   onRecurrenceChange?: (id: string, patch: { recurrence?: string; recurrenceUntil?: string | null }) => Promise<void>;
   liveEventsByVenue: Record<string, LiveEventInfo[]>;
   venues: Venue[];
-  scope: "scraped" | "manual" | "recurring";
+  scope: "scraped" | "manual" | "recurring" | "user";
   onApprove: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onReject: (s: StagedEvent) => Promise<void>;
   onCancel?: (s: StagedEvent) => Promise<void>;
-  onDuplicate: (s: StagedEvent, edits: StagedEventEdits, scope: "scraped" | "manual" | "recurring") => Promise<void>;
+  onDuplicate?: (s: StagedEvent, edits: StagedEventEdits, scope: "scraped" | "manual" | "recurring") => Promise<void>;
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
@@ -3073,6 +2824,8 @@ function StagedEventsList({
   onDeleteApproved?: (s: StagedEvent) => Promise<void>;
   onCancelOccurrence?: (s: StagedEvent) => Promise<void>;
   onUpdateApplied?: () => void;
+  onCreateVenue?: (s: StagedEvent, submission: SubmissionVenueData) => Promise<void>;
+  allowOneTime?: boolean;
   emptyLabel: string;
 }) {
   const pills: StagedEventStatusFilter[] = ["pending", "approved"];
@@ -3145,7 +2898,7 @@ function StagedEventsList({
               onApprove={(edits) => onApprove(staged, edits)}
               onReject={() => onReject(staged)}
               onCancel={onCancel ? () => onCancel(staged) : undefined}
-              onDuplicate={(edits) => onDuplicate(staged, edits, scope)}
+              onDuplicate={onDuplicate && scope !== "user" ? (edits) => onDuplicate(staged, edits, scope) : undefined}
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
               onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
@@ -3163,6 +2916,8 @@ function StagedEventsList({
                   : undefined
               }
               onUpdateApplied={onUpdateApplied}
+              onCreateVenue={onCreateVenue ? (submission) => onCreateVenue(staged, submission) : undefined}
+              allowOneTime={allowOneTime}
             />
           );
           return <div key={staged.id}>{card}</div>;
