@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
-import { generateOccurrences, formatRecurrenceLabel, describeRule, type RecurrenceFreq } from "@/lib/recurrence";
+import { generateOccurrences, formatRecurrenceLabel, describeRule, parseRule, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -62,6 +62,10 @@ import EventDiffModal from "@/components/admin/EventDiffModal";
 // post-approval.
 function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
   const { event, siblings } = item;
+  // The parent row stores the rule as a single string ("freq;until=date").
+  // The editor expects freq and until split apart, so parse them back out —
+  // otherwise the <select> can't match an option and describeRule mislabels.
+  const parsedRule = parseRule(event.recurrence);
   return {
     id: event.id,
     parentId: event.parentId,
@@ -83,8 +87,8 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     scrapedAt: "",
     isManual: event.isManual,
     createdByAdmin: false,
-    recurrence: event.recurrence,
-    recurrenceUntil: null,
+    recurrence: parsedRule?.freq ?? "",
+    recurrenceUntil: parsedRule?.until ?? null,
     replacesEventId: null,
     createdBy: event.createdBy ?? null,
     image: event.image ?? null,
