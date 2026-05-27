@@ -378,6 +378,16 @@ export async function updateEventSeries(
   if (error) throw error;
 }
 
+// Owner-triggered "Extend series": materializes more occurrences up to 6 months
+// from today via the extend_my_series RPC (SECURITY DEFINER + ownership check),
+// so plain-user series go live immediately just like the auto-extend cron does
+// for indefinite ones. Returns how many new occurrences were created.
+export async function extendEventSeries(seriesId: string): Promise<number> {
+  const { data, error } = await supabase.rpc("extend_my_series", { p_series_id: seriesId });
+  if (error) throw error;
+  return data ?? 0;
+}
+
 // Venue details an admin turns into a brand-new bar (or links to an existing
 // one) when approving a typed-venue submission. Consumed by the admin
 // "Create bar & link" action and createVenueForStagedSubmission.

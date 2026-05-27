@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
-import { formatDateWithDay } from "@/lib/dateFormat";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { formatDateWithDay, berlinDateString } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
+import { Eye, Pencil, Plus, Users, CalendarDays, CalendarPlus, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchEventsByCreator, fetchMyStagedSubmissions, fetchOrganizerById } from "@/lib/supabaseQueries";
+import { fetchEventsByCreator, fetchMyStagedSubmissions, fetchOrganizerById, extendEventSeries } from "@/lib/supabaseQueries";
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
-import { formatRecurrenceLabel } from "@/lib/recurrence";
+import { formatRecurrenceLabel, parseRule, generateOccurrences, defaultUntil } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
@@ -48,18 +48,26 @@ export default function OrganizerDashboard() {
     }
   }, [user, role, roleResolved, loading, navigate]);
 
-  useEffect(() => {
+  // Plain users' pending submissions now live in venue_events_staging, not
+  // `events`, so merge their own staging rows (pending) with their approved
+  // events. Organizers/admins publish straight to `events` and have none.
+  const loadMyEvents = useCallback(async () => {
     if (!user || !isApprovedAccess) return;
-    // Plain users' pending submissions now live in venue_events_staging, not
-    // `events`, so merge their own staging rows (pending) with their approved
-    // events. Organizers/admins publish straight to `events` and have none.
     const approved = fetchEventsByCreator(user.id);
     const pending = role === "user" ? fetchMyStagedSubmissions(user.id) : Promise.resolve<BarlinEvent[]>([]);
-    Promise.all([approved, pending])
-      .then(([approvedEvents, pendingSubmissions]) => setMyEvents([...pendingSubmissions, ...approvedEvents]))
-      .catch(() => toast.error("Failed to load your events."))
-      .finally(() => setEventsLoading(false));
+    try {
+      const [approvedEvents, pendingSubmissions] = await Promise.all([approved, pending]);
+      setMyEvents([...pendingSubmissions, ...approvedEvents]);
+    } catch {
+      toast.error("Failed to load your events.");
+    } finally {
+      setEventsLoading(false);
+    }
   }, [user, isApprovedAccess, role]);
+
+  useEffect(() => {
+    void loadMyEvents();
+  }, [loadMyEvents]);
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
@@ -119,9 +127,41 @@ export default function OrganizerDashboard() {
   const INITIAL_COUNT = 5;
   const [showAll, setShowAll] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [extendingId, setExtendingId] = useState<string | null>(null);
   useEffect(() => { setShowAll(false); setExpandedId(null); }, [activeTab]);
   const visible = showAll ? displayed : displayed.slice(0, INITIAL_COUNT);
   const hasMore = displayed.length > INITIAL_COUNT;
+
+  // Whether a series can gain at least one more occurrence inside the rolling
+  // 6-months-from-today window. Anchored on the series' last existing date
+  // (itself a valid occurrence, so it carries the same weekday/nth/parity),
+  // which sidesteps the generateOccurrences 200-date cap. The RPC is the
+  // authority on what actually gets inserted; this only gates the button.
+  const canExtendSeries = (parent: BarlinEvent): boolean => {
+    const freq = parseRule(parent.recurrence)?.freq;
+    if (!freq) return false;
+    const dates = (membersBySeries.get(parent.id) ?? [parent]).map((m) => m.date);
+    const lastDate = dates.sort().at(-1);
+    if (!lastDate) return false;
+    return generateOccurrences(lastDate, freq, defaultUntil(berlinDateString())).length > 1;
+  };
+
+  const handleExtendSeries = async (parent: BarlinEvent) => {
+    setExtendingId(parent.id);
+    try {
+      const added = await extendEventSeries(parent.id);
+      if (added > 0) {
+        toast.success(`${added} neue${added === 1 ? "r Termin" : " Termine"} hinzugefügt.`);
+        await loadMyEvents();
+      } else {
+        toast("Bereits bis zum Maximum (6 Monate) verlängert.");
+      }
+    } catch {
+      toast.error("Serie konnte nicht verlängert werden.");
+    } finally {
+      setExtendingId(null);
+    }
+  };
 
   if (loading || !roleResolved) {
     return <PageSpinner />;
@@ -261,6 +301,8 @@ export default function OrganizerDashboard() {
                   .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
                 const expandedMembers = activeTab === "upcoming" ? upcomingMembers : pastMembers;
                 const canExpand = expandedMembers.length > 1;
+                const isSeries = !!parseRule(parent.recurrence)?.freq;
+                const canExtend = isSeries && canExtendSeries(parent);
                 const isExpanded = expandedId === parent.id;
                 // A pending submission lives in venue_events_staging, not
                 // `events`, so it has no /event/:id or /edit-event/:id route —
@@ -351,6 +393,25 @@ export default function OrganizerDashboard() {
                               <Eye className="h-4 w-4" /> View
                             </Link>
                           )
+                        )}
+                        {/* Extend a live recurring series with more dates, up to
+                            6 months out. Shown for any series with an upcoming
+                            occurrence (independent of canExpand, since a nearly
+                            exhausted series is exactly when this matters most). */}
+                        {activeTab === "upcoming" && isSeries && !isPendingSubmission
+                          && displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
+                          <button
+                            type="button"
+                            onClick={() => handleExtendSeries(parent)}
+                            disabled={!canExtend || extendingId === parent.id}
+                            title={canExtend
+                              ? "Add more dates, up to 6 months from today"
+                              : "Already extended to the maximum (6 months)"}
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
+                          >
+                            <CalendarPlus className="h-4 w-4" />
+                            {extendingId === parent.id ? "Extending…" : "Extend series"}
+                          </button>
                         )}
                         {canExpand && (
                           <button
