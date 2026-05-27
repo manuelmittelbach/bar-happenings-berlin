@@ -471,6 +471,7 @@ export type Database = {
       venue_events_staging: {
         Row: {
           category: string | null
+          created_by: string | null
           created_by_admin: boolean
           date: string | null
           description: string | null
@@ -478,8 +479,13 @@ export type Database = {
           end_time: string | null
           entry_info: string | null
           id: string
+          image: string | null
+          image_position: string | null
           is_manual: boolean
           language: string | null
+          manual_venue_address: string | null
+          manual_venue_name: string | null
+          manual_venue_neighborhood: string | null
           recurrence: string
           recurrence_until: string | null
           replaces_event_id: string | null
@@ -487,10 +493,11 @@ export type Database = {
           source_url: string | null
           start_time: string | null
           title: string | null
-          venue_id: string
+          venue_id: string | null
         }
         Insert: {
           category?: string | null
+          created_by?: string | null
           created_by_admin?: boolean
           date?: string | null
           description?: string | null
@@ -498,8 +505,13 @@ export type Database = {
           end_time?: string | null
           entry_info?: string | null
           id?: string
+          image?: string | null
+          image_position?: string | null
           is_manual?: boolean
           language?: string | null
+          manual_venue_address?: string | null
+          manual_venue_name?: string | null
+          manual_venue_neighborhood?: string | null
           recurrence?: string
           recurrence_until?: string | null
           replaces_event_id?: string | null
@@ -507,10 +519,11 @@ export type Database = {
           source_url?: string | null
           start_time?: string | null
           title?: string | null
-          venue_id: string
+          venue_id?: string | null
         }
         Update: {
           category?: string | null
+          created_by?: string | null
           created_by_admin?: boolean
           date?: string | null
           description?: string | null
@@ -518,8 +531,13 @@ export type Database = {
           end_time?: string | null
           entry_info?: string | null
           id?: string
+          image?: string | null
+          image_position?: string | null
           is_manual?: boolean
           language?: string | null
+          manual_venue_address?: string | null
+          manual_venue_name?: string | null
+          manual_venue_neighborhood?: string | null
           recurrence?: string
           recurrence_until?: string | null
           replaces_event_id?: string | null
@@ -527,7 +545,7 @@ export type Database = {
           source_url?: string | null
           start_time?: string | null
           title?: string | null
-          venue_id?: string
+          venue_id?: string | null
         }
         Relationships: [
           {

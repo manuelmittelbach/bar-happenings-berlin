@@ -42,11 +42,11 @@ import {
   cancelEvent,
   fetchEventsByCreator,
   fetchEventById,
-  fetchPendingEvents,
+  fetchPendingUserSubmissions,
   fetchAcceptedUserEvents,
-  approveEvent,
-  approveSubmissionWithNewVenue,
-  approveSubmissionWithExistingVenue,
+  approveUserSubmission,
+  approveUserSubmissionWithNewVenue,
+  approveUserSubmissionWithExistingVenue,
   rejectEvent,
   type OrganizerAccount,
   type LiveEventInfo,
@@ -93,6 +93,9 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     recurrence: event.recurrence,
     recurrenceUntil: null,
     replacesEventId: null,
+    createdBy: event.createdBy ?? null,
+    image: event.image ?? null,
+    imagePosition: event.imagePosition,
     interestedCount: event.interestedCount,
     approvedSiblings: siblings,
   };
@@ -227,8 +230,9 @@ export default function AdminDashboard() {
   );
   const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
-  // Events submitted by plain users (events table, status="pending") awaiting
-  // moderation — distinct from the staging-table scraped/manual/recurring flow.
+  // Events submitted by plain users — now staged in venue_events_staging
+  // (created_by set), display-expanded into BarlinEvents so the series card
+  // works unchanged. Distinct from the scraper's created_by-null staging rows.
   const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
   // Approved user submissions (status="approved", creator role "user"), shown
@@ -367,7 +371,7 @@ export default function AdminDashboard() {
   const loadPendingSubmissions = useCallback(async () => {
     setSubmissionsLoading(true);
     try {
-      setPendingSubmissions(await fetchPendingEvents());
+      setPendingSubmissions(await fetchPendingUserSubmissions());
     } catch {
       // Silent — moderation list is best-effort.
     } finally {
@@ -447,6 +451,9 @@ export default function AdminDashboard() {
             loadManualEvents({ silent: true });
             loadRecurringEvents({ silent: true });
             loadPendingEventCounts();
+            // User submissions now also live in this table, so refresh the
+            // "User events" pending list when a new one lands.
+            loadPendingSubmissions();
           }, 500);
         },
       )
@@ -455,7 +462,7 @@ export default function AdminDashboard() {
       if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [loadScrapedEvents, loadManualEvents, loadRecurringEvents, loadPendingEventCounts]);
+  }, [loadScrapedEvents, loadManualEvents, loadRecurringEvents, loadPendingEventCounts, loadPendingSubmissions]);
 
   const handleApproveOrganizer = async (organizer: OrganizerAccount) => {
     if (!user) return;
@@ -638,10 +645,11 @@ export default function AdminDashboard() {
     }
   };
 
-  // User-submitted events (status="pending" in the events table). Approve sets
-  // the whole series live; reject hard-deletes it. Shared success tail: drop
-  // the series from the list, refresh live events, and — when a venue was
-  // created/linked — also refresh the venues used by /bars and the picker.
+  // User-submitted events (pending rows in venue_events_staging). Approve moves
+  // the whole series into `events` (live); reject hard-deletes the staging row.
+  // Shared success tail: drop the series from the list, refresh live events,
+  // and — when a venue was created/linked — also refresh the venues used by
+  // /bars and the picker.
   const finishSubmissionApproval = (seriesId: string, title: string, venuesChanged: boolean) => {
     queryClient.invalidateQueries({ queryKey: ["events"] });
     if (venuesChanged) queryClient.invalidateQueries({ queryKey: ["venues"] });
@@ -656,11 +664,12 @@ export default function AdminDashboard() {
   // Plain approve — used when the submission already carries a venue_id (user
   // picked a bar from the directory). Manual-venue submissions go through the
   // decision panel instead (handleApproveNewVenue / handleApproveLinkVenue).
+  // seriesId is the staging row id (= the series key after display-expansion).
   const handleApproveSubmission = async (seriesId: string, title: string) => {
     if (!user || submittingSeriesId) return;
     setSubmittingSeriesId(seriesId);
     try {
-      await approveEvent(seriesId, user.id);
+      await approveUserSubmission(seriesId, user.id);
       finishSubmissionApproval(seriesId, title, false);
     } catch {
       toast.error("Couldn't approve the event. Please try again.");
@@ -679,7 +688,7 @@ export default function AdminDashboard() {
     }
     setSubmittingSeriesId(seriesId);
     try {
-      await approveSubmissionWithNewVenue(seriesId, user.id, {
+      await approveUserSubmissionWithNewVenue(seriesId, user.id, {
         name: submission.name.trim(),
         address: submission.address.trim(),
         neighborhood: submission.neighborhood,
@@ -698,7 +707,7 @@ export default function AdminDashboard() {
     if (!user || submittingSeriesId) return;
     setSubmittingSeriesId(seriesId);
     try {
-      await approveSubmissionWithExistingVenue(seriesId, user.id, venueId);
+      await approveUserSubmissionWithExistingVenue(seriesId, user.id, venueId);
       finishSubmissionApproval(seriesId, head.title, true);
     } catch {
       toast.error("Couldn't link the event to that bar. Please try again.");
@@ -710,7 +719,8 @@ export default function AdminDashboard() {
   const handleRejectSubmission = async (seriesId: string, title: string) => {
     if (submittingSeriesId) return;
     try {
-      await rejectEvent(seriesId);
+      // seriesId is the staging row id — reject hard-deletes the staging row.
+      await rejectStagedEvent(seriesId);
       toast.error(`"${title}" rejected`);
       setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
       setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
@@ -1146,8 +1156,8 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          {/* User events — events published by plain users (status "pending"),
-              awaiting moderation. Its own tab in the Events section. */}
+          {/* User events — submissions by plain users (pending rows in
+              venue_events_staging), awaiting moderation. Own tab in Events. */}
           {activeBarTab === "user" && (
             <div className="mb-8">
               <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">

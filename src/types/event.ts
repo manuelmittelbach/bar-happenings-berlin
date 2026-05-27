@@ -34,8 +34,8 @@ export interface BarlinEvent {
   // events_archive doesn't always carry it through cleanly.
   createdAt?: string;
   // Who submitted this event, resolved from profiles via created_by. Only
-  // populated for the admin moderation queue (fetchPendingEvents) so admins
-  // can see the plain user behind a pending submission. Email always present
+  // populated for the admin moderation queue (fetchPendingUserSubmissions) so
+  // admins see the plain user behind a pending submission. Email always present
   // for a real account; name parts may be empty if the user never set them.
   submitter?: {
     email: string;
@@ -104,6 +104,14 @@ export interface StagedEvent {
   // approving applies selected fields to the live event row instead of
   // creating a new one. Null for normal new-event staging rows.
   replacesEventId: string | null;
+  // Submitter (auth uid) for plain-user submissions; null for scraper/admin
+  // rows. Preserved into events.created_by on approve so the "User events
+  // accepted" tab can still resolve the original submitter.
+  createdBy: string | null;
+  // User-supplied cover image + framing, carried into the events row on
+  // approve. Null/undefined for scraper rows (admins add covers post-approve).
+  image?: string | null;
+  imagePosition?: string;
   // Only set on rows wrapped from `events` (filter='approved' in admin) via
   // eventToAdminStaged. Real staging rows don't track interest, so this is 0.
   interestedCount?: number;
