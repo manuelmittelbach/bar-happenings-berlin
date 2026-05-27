@@ -6,8 +6,16 @@ const corsHeaders = {
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "BarHappeningsBerlin/1.0 (manumittelbach@live.de)";
+// Nominatim viewbox: left lon, top lat, right lon, bottom lat.
 const BERLIN_VIEWBOX = "13.0,52.75,13.8,52.3";
-const MIN_IMPORTANCE = 0.3;
+const BERLIN_BOUNDS = { latMin: 52.3, latMax: 52.75, lngMin: 13.0, lngMax: 13.8 };
+// Gate on `place_rank` (how SPECIFIC the match is), NOT `importance`. Nominatim's
+// `importance` scores notability (Wikipedia links etc.), so a precise house
+// number scores ~0 and a strict importance gate wrongly rejects real addresses.
+// place_rank ≈ 30 = house/building/POI, ≈ 26-27 = street, < 26 = suburb/city/
+// postcode only. Requiring ≥ 26 keeps the pin on the address rather than a
+// neighbourhood centroid, while accepting exact house numbers.
+const MIN_PLACE_RANK = 26;
 const THROTTLE_MS = 1100;
 
 let lastCallAt = 0;
@@ -22,7 +30,7 @@ type NominatimResult = {
   lat: string;
   lon: string;
   display_name: string;
-  importance?: number;
+  place_rank?: number;
 };
 
 Deno.serve(async (req) => {
@@ -60,7 +68,8 @@ Deno.serve(async (req) => {
   url.searchParams.set("countrycodes", "de");
   url.searchParams.set("viewbox", BERLIN_VIEWBOX);
   url.searchParams.set("bounded", "1");
-  url.searchParams.set("addressdetails", "0");
+  // addressdetails=1 ensures `place_rank` is present in the result (used below).
+  url.searchParams.set("addressdetails", "1");
   url.searchParams.set("q", query);
 
   await throttle();
@@ -91,13 +100,6 @@ Deno.serve(async (req) => {
   }
 
   const top = results[0];
-  const importance = typeof top.importance === "number" ? top.importance : 0;
-  if (importance < MIN_IMPORTANCE) {
-    return new Response(JSON.stringify({ error: "low_confidence" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   const lat = Number(top.lat);
   const lng = Number(top.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -106,8 +108,22 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Defense-in-depth: bounded=1 should already restrict to Berlin, but don't
+  // trust upstream blindly — reject anything that landed outside the box.
+  const inBerlin =
+    lat >= BERLIN_BOUNDS.latMin && lat <= BERLIN_BOUNDS.latMax &&
+    lng >= BERLIN_BOUNDS.lngMin && lng <= BERLIN_BOUNDS.lngMax;
+  // Require a street-level-or-better match. If place_rank is somehow absent,
+  // fall back to the in-Berlin check alone rather than wrongly rejecting.
+  const placeRank = typeof top.place_rank === "number" ? top.place_rank : MIN_PLACE_RANK;
+  if (!inBerlin || placeRank < MIN_PLACE_RANK) {
+    return new Response(JSON.stringify({ error: "low_confidence" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   return new Response(
-    JSON.stringify({ lat, lng, displayName: top.display_name, importance }),
+    JSON.stringify({ lat, lng, displayName: top.display_name, placeRank }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
