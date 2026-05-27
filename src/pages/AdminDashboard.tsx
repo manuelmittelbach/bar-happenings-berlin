@@ -43,6 +43,7 @@ import {
   fetchEventsByCreator,
   fetchEventById,
   fetchPendingEvents,
+  fetchAcceptedUserEvents,
   approveEvent,
   approveSubmissionWithNewVenue,
   approveSubmissionWithExistingVenue,
@@ -58,6 +59,7 @@ import VenueAddressFields from "@/components/events/VenueAddressFields";
 import { buildVenueAddress, parseVenueAddress } from "@/lib/venueAddress";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 import EventDiffModal from "@/components/admin/EventDiffModal";
+import UserEventSeriesCard from "@/components/admin/UserEventSeriesCard";
 
 // Approved events live in the `events` table. To keep the existing card UI
 // working, adapt them to the StagedEvent shape used by StagedEventCard.
@@ -96,17 +98,39 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
   };
 }
 
-type BarTab = "pending" | "overview" | "all-bars" | "user" | "scraped" | "manual" | "recurring";
+type BarTab = "pending" | "overview" | "all-bars" | "user" | "user-accepted" | "scraped" | "manual" | "recurring";
 type AdminSection = "bars" | "events";
 
 const BAR_TABS: BarTab[] = ["overview", "pending", "all-bars"];
-const EVENT_TABS: BarTab[] = ["user", "scraped", "manual", "recurring"];
+const EVENT_TABS: BarTab[] = ["user", "user-accepted", "scraped", "manual", "recurring"];
 
 const sectionOf = (tab: BarTab): AdminSection =>
-  tab === "user" || tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
+  tab === "user" || tab === "user-accepted" || tab === "scraped" || tab === "manual" || tab === "recurring" ? "events" : "bars";
 
 const defaultTabFor = (section: AdminSection): BarTab =>
   section === "events" ? "user" : "pending";
+
+// Group flat user-submitted events into one entry per series (recurring
+// children collapse under their parent). Shared by the pending + accepted tabs.
+function groupSeries(events: BarlinEvent[]) {
+  const byParent = new Map<string, BarlinEvent[]>();
+  for (const e of events) {
+    const key = e.parentId || e.id;
+    const arr = byParent.get(key) ?? [];
+    arr.push(e);
+    byParent.set(key, arr);
+  }
+  return [...byParent.entries()]
+    .map(([seriesId, members]) => {
+      const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+      // Parent row carries the series-level fields; normally earliest, but
+      // match by id to be safe. Next upcoming occurrence drives the headline.
+      const head = sorted.find((m) => m.id === seriesId) ?? sorted[0];
+      const next = sorted.find((m) => !isEventInPast(m)) ?? sorted[0];
+      return { seriesId, head, members: sorted, count: sorted.length, next };
+    })
+    .sort((a, b) => a.next.date.localeCompare(b.next.date));
+}
 
 function openSourceWindow(url: string) {
   // Protocol-less URLs ("example.com/events") would be treated as relative
@@ -165,6 +189,7 @@ export default function AdminDashboard() {
     tabParam === "overview" ? "overview"
     : tabParam === "all-bars" ? "all-bars"
     : tabParam === "user" ? "user"
+    : tabParam === "user-accepted" ? "user-accepted"
     : tabParam === "scraped" ? "scraped"
     : tabParam === "manual" ? "manual"
     : tabParam === "recurring" ? "recurring"
@@ -206,11 +231,19 @@ export default function AdminDashboard() {
   // moderation — distinct from the staging-table scraped/manual/recurring flow.
   const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
-  // Which recurring submission has its full date list expanded (one at a time).
+  // Approved user submissions (status="approved", creator role "user"), shown
+  // in the "User events accepted" tab.
+  const [acceptedSubmissions, setAcceptedSubmissions] = useState<BarlinEvent[]>([]);
+  const [acceptedLoading, setAcceptedLoading] = useState(true);
+  // Which recurring submission has its full date list expanded (one at a time,
+  // tracked per tab so the two lists don't fight over the same id).
   const [expandedSubmission, setExpandedSubmission] = useState<string | null>(null);
+  const [expandedAccepted, setExpandedAccepted] = useState<string | null>(null);
   // Series currently being approved — guards against double-clicks creating a
   // duplicate venue while the async insert is in flight.
   const [submittingSeriesId, setSubmittingSeriesId] = useState<string | null>(null);
+  // Series currently being deleted from the accepted tab.
+  const [deletingSeriesId, setDeletingSeriesId] = useState<string | null>(null);
   // Inline editor for a manual-venue submission's new-bar details, before the
   // admin creates it — same split fields the user sees. Null = no editor open
   // (one at a time, keyed by series).
@@ -342,6 +375,17 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadAcceptedSubmissions = useCallback(async () => {
+    setAcceptedLoading(true);
+    try {
+      setAcceptedSubmissions(await fetchAcceptedUserEvents());
+    } catch {
+      // Silent — informational list is best-effort.
+    } finally {
+      setAcceptedLoading(false);
+    }
+  }, []);
+
   const loadPendingEventCounts = useCallback(async () => {
     try {
       const [scraped, manual, recurring] = await Promise.all([
@@ -364,7 +408,8 @@ export default function AdminDashboard() {
     loadVenues();
     loadPendingEventCounts();
     loadPendingSubmissions();
-  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts, loadPendingSubmissions]);
+    loadAcceptedSubmissions();
+  }, [loadPendingOrganizers, loadDecidedOrganizers, loadAllBars, loadVenues, loadPendingEventCounts, loadPendingSubmissions, loadAcceptedSubmissions]);
 
   useEffect(() => {
     loadScrapedEvents();
@@ -604,6 +649,7 @@ export default function AdminDashboard() {
     setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
     setEditVenue(prev => (prev?.seriesId === seriesId ? null : prev));
     loadLiveEvents();
+    loadAcceptedSubmissions();
     if (venuesChanged) loadVenues();
   };
 
@@ -673,29 +719,31 @@ export default function AdminDashboard() {
     }
   };
 
-  // Group pending submissions into series (one card per series; recurring
-  // children collapse under their parent) for the moderation list.
-  const submissionSeries = useMemo(() => {
-    const byParent = new Map<string, BarlinEvent[]>();
-    for (const e of pendingSubmissions) {
-      const key = e.parentId || e.id;
-      const arr = byParent.get(key) ?? [];
-      arr.push(e);
-      byParent.set(key, arr);
+  // Permanently delete an approved user event (whole series) from the accepted
+  // tab — same hard delete as rejecting a pending submission.
+  const handleDeleteAcceptedSubmission = async (seriesId: string, title: string, count: number) => {
+    if (deletingSeriesId) return;
+    const scope = count > 1 ? ` and its ${count} dates` : "";
+    if (!window.confirm(`Delete "${title}"${scope}? This permanently removes it from the site and can't be undone.`)) return;
+    setDeletingSeriesId(seriesId);
+    try {
+      await rejectEvent(seriesId);
+      toast.success(`"${title}" deleted`);
+      setAcceptedSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+      setExpandedAccepted(prev => (prev === seriesId ? null : prev));
+      loadLiveEvents();
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    } catch {
+      toast.error("Couldn't delete the event. Please try again.");
+    } finally {
+      setDeletingSeriesId(null);
     }
-    return [...byParent.entries()]
-      .map(([seriesId, members]) => {
-        const sorted = [...members].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-        // Parent row carries the series-level fields (recurrence, venue, image);
-        // normally the earliest, but match by id to be safe.
-        const head = sorted.find((m) => m.id === seriesId) ?? sorted[0];
-        // Next upcoming occurrence drives the headline date (like the organizer
-        // dashboard); fall back to the earliest if the whole series is past.
-        const next = sorted.find((m) => !isEventInPast(m)) ?? sorted[0];
-        return { seriesId, head, members: sorted, count: sorted.length, next };
-      })
-      .sort((a, b) => a.next.date.localeCompare(b.next.date));
-  }, [pendingSubmissions]);
+  };
+
+  // One card per series (recurring children collapse under their parent) for
+  // each moderation list.
+  const submissionSeries = useMemo(() => groupSeries(pendingSubmissions), [pendingSubmissions]);
+  const acceptedSeries = useMemo(() => groupSeries(acceptedSubmissions), [acceptedSubmissions]);
 
   // For submissions whose venue was typed manually (no venue_id), pre-compute
   // likely existing-venue matches so the admin can link instead of creating a
@@ -1090,7 +1138,9 @@ export default function AdminDashboard() {
                   : tab === "manual"
                   ? manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`
                   : tab === "user"
-                  ? submissionsLoading ? "User events" : `User events (${submissionSeries.length})`
+                  ? submissionsLoading ? "User events pending" : `User events pending (${submissionSeries.length})`
+                  : tab === "user-accepted"
+                  ? acceptedLoading ? "User events accepted" : `User events accepted (${acceptedSeries.length})`
                   : recurringLoading ? "Recurring Events" : `Recurring Events (${recurringEvents.length})`}
               </button>
             ))}
@@ -1101,7 +1151,7 @@ export default function AdminDashboard() {
           {activeBarTab === "user" && (
             <div className="mb-8">
               <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
-                User events{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
+                User events pending{submissionSeries.length > 0 ? ` (${submissionSeries.length})` : ""}
               </h2>
               {submissionsLoading ? (
                 <div className="flex justify-center py-4"><Spinner /></div>
@@ -1115,12 +1165,6 @@ export default function AdminDashboard() {
                     const needsVenueDecision = !head.venueId && !!head.venue.trim();
                     const matches = submissionVenueMatches.get(seriesId) ?? [];
                     const busy = submittingSeriesId === seriesId;
-                    // Recurring submission: show a recurrence badge + an
-                    // expandable list of every occurrence date (mirrors the
-                    // organizer dashboard so admins see the full series).
-                    const recurrenceLabel = formatRecurrenceLabel(head.recurrence);
-                    const canExpand = count > 1;
-                    const isExpanded = expandedSubmission === seriesId;
                     // Narrowed editor for THIS series (null when not editing it).
                     const editing = editVenue && editVenue.seriesId === seriesId ? editVenue : null;
                     // The venue we'd create: admin edits if open, else the typed values.
@@ -1132,120 +1176,35 @@ export default function AdminDashboard() {
                         }
                       : { name: head.venue, address: head.address, neighborhood: head.neighborhood };
                     return (
-                    <div key={seriesId} className="border-2 border-foreground p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                        {head.image && (
-                          <div className="w-full sm:w-24 h-20 flex-shrink-0 overflow-hidden bg-muted border-2 border-foreground">
-                            <img
-                              src={head.image}
-                              alt={head.title}
-                              style={{ objectPosition: head.imagePosition }}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap min-w-0">
-                            <p className="font-serif text-base font-bold leading-tight break-words min-w-0">{head.title}</p>
-                            {recurrenceLabel && (
-                              <span className="inline-flex items-center gap-1 border border-foreground/30 bg-muted px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                <Repeat className="h-3 w-3" /> {recurrenceLabel}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {head.venue || "—"}{head.neighborhood ? ` · ${head.neighborhood}` : ""}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {recurrenceLabel ? "Next: " : ""}{formatDateWithDay(next.date)}{next.startTime ? ` · ${next.startTime}` : ""}
-                          </p>
-                          {head.address && (
-                            <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
-                          )}
-                          {/* Who submitted it — so admins can identify / contact
-                              the plain user behind a pending event. */}
-                          {head.submitter && (
-                            <p className="text-xs text-muted-foreground mt-1.5 break-words">
-                              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/55">Submitted by</span>{" "}
-                              {[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ") &&
-                                `${[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ")} · `}
-                              {head.submitter.email ? (
-                                <a href={`mailto:${head.submitter.email}`} className="underline hover:text-foreground">
-                                  {head.submitter.email}
-                                </a>
-                              ) : "—"}
-                            </p>
-                          )}
-                          {/* Preview the live detail page exactly as it'll look
-                              once approved (admins can read pending rows via RLS).
-                              Points at the next occurrence to match the headline. */}
-                          <div className="mt-2 flex items-center gap-4 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => window.open(`/event/${next.id}`, "_blank", "noopener")}
-                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline"
-                            >
-                              Preview ↗
-                            </button>
-                            {canExpand && (
-                              <button
-                                type="button"
-                                onClick={() => setExpandedSubmission((prev) => (prev === seriesId ? null : seriesId))}
-                                aria-expanded={isExpanded}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                                {isExpanded ? "Hide dates" : `All ${count} dates`}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {!needsVenueDecision && (
-                          <div className="flex sm:flex-col gap-2 flex-shrink-0">
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleApproveSubmission(seriesId, head.title)}
-                              className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleRejectSubmission(seriesId, head.title)}
-                              className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Every occurrence of a recurring submission, so the admin
-                          can review the full series before approving it as a whole.
-                          Each date links to its own pending detail page. */}
-                      {canExpand && isExpanded && (
-                        <div className="mt-3 pt-2 border-t border-foreground/15 divide-y divide-foreground/10">
-                          {members.map((m) => (
-                            <div
-                              key={m.id}
-                              className="flex items-center justify-between gap-3 py-1.5 text-sm"
-                            >
-                              <span className={`text-muted-foreground ${isEventInPast(m) ? "line-through opacity-60" : ""}`}>
-                                {formatDateWithDay(m.date)}{m.startTime ? ` · ${m.startTime}` : ""}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => window.open(`/event/${m.id}`, "_blank", "noopener")}
-                                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-accent hover:underline flex-shrink-0"
-                              >
-                                Preview ↗
-                              </button>
-                            </div>
-                          ))}
+                    <UserEventSeriesCard
+                      key={seriesId}
+                      head={head}
+                      members={members}
+                      count={count}
+                      next={next}
+                      isExpanded={expandedSubmission === seriesId}
+                      onToggleExpand={() => setExpandedSubmission((prev) => (prev === seriesId ? null : seriesId))}
+                      actions={!needsVenueDecision && (
+                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleApproveSubmission(seriesId, head.title)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleRejectSubmission(seriesId, head.title)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Reject
+                          </button>
                         </div>
                       )}
+                    >
 
                       {/* Manual venue → admin chooses: create a new bar from the
                           typed details, or link an existing one (warned about
@@ -1354,7 +1313,61 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                       )}
-                    </div>
+                    </UserEventSeriesCard>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* User events accepted — plain-user submissions an admin has approved
+              (status "approved"). Review + edit, plus a hard delete of the whole
+              series. */}
+          {activeBarTab === "user-accepted" && (
+            <div className="mb-8">
+              <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground mb-3">
+                User events accepted{acceptedSeries.length > 0 ? ` (${acceptedSeries.length})` : ""}
+              </h2>
+              {acceptedLoading ? (
+                <div className="flex justify-center py-4"><Spinner /></div>
+              ) : acceptedSeries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No approved user events yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {acceptedSeries.map(({ seriesId, head, members, count, next }) => {
+                    const busy = deletingSeriesId === seriesId;
+                    return (
+                    <UserEventSeriesCard
+                      key={seriesId}
+                      head={head}
+                      members={members}
+                      count={count}
+                      next={next}
+                      isExpanded={expandedAccepted === seriesId}
+                      onToggleExpand={() => setExpandedAccepted((prev) => (prev === seriesId ? null : seriesId))}
+                      actions={
+                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                          {/* Edit targets the next occurrence — the parent may be
+                              in the past, which the editor refuses to open. */}
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/edit-event/${next.id}`)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleDeleteAcceptedSubmission(seriesId, head.title, count)}
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      }
+                    />
                     );
                   })}
                 </div>

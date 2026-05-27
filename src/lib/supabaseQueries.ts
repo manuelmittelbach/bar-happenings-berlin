@@ -383,6 +383,22 @@ export async function updateEventSeries(
 // (→ live) or rejects it (→ hard delete). Bar owners / admins skip this and
 // publish straight to "approved".
 
+// Stamp each event with its submitter (name + email) from a list of creator
+// profiles. There's no FK on events.created_by, so a PostgREST embed can't
+// auto-join; callers batch-fetch the profiles and pass them here. Events whose
+// creator isn't in the list keep no submitter rather than blocking the list.
+type CreatorProfile = { id: string; email: string | null; first_name: string | null; last_name: string | null };
+
+function attachSubmitters(events: BarlinEvent[], profiles: CreatorProfile[] | null): BarlinEvent[] {
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+  return events.map((e) => {
+    const p = e.createdBy ? byId.get(e.createdBy) : undefined;
+    return p
+      ? { ...e, submitter: { email: p.email ?? "", firstName: p.first_name ?? "", lastName: p.last_name ?? "" } }
+      : e;
+  });
+}
+
 export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
   const { data, error } = await supabase
     .from("events")
@@ -393,9 +409,7 @@ export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
   const events = (data ?? []).map(mapEventRow);
 
   // Resolve the submitter behind each pending row so admins see who to contact.
-  // There's no FK on events.created_by, so a PostgREST embed can't auto-join;
-  // we batch-fetch the profiles instead (admins may read any via RLS). A failed
-  // lookup must not hide the queue, so we swallow the error and leave names off.
+  // A failed lookup must not hide the queue, so we swallow the error.
   const creatorIds = [...new Set(events.map((e) => e.createdBy).filter((id): id is string => !!id))];
   if (creatorIds.length === 0) return events;
   const { data: profiles, error: profilesError } = await supabase
@@ -403,13 +417,30 @@ export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
     .select("id, email, first_name, last_name")
     .in("id", creatorIds);
   if (profilesError) return events;
-  const byId = new Map(profiles?.map((p) => [p.id, p]) ?? []);
-  return events.map((e) => {
-    const p = e.createdBy ? byId.get(e.createdBy) : undefined;
-    return p
-      ? { ...e, submitter: { email: p.email ?? "", firstName: p.first_name ?? "", lastName: p.last_name ?? "" } }
-      : e;
-  });
+  return attachSubmitters(events, profiles);
+}
+
+// Events submitted by plain users (role 'user') that an admin has approved —
+// they now live in `events` with status 'approved'. Organizer/admin/scraped
+// events are excluded by gating on the creator's role. No FK on created_by, so
+// we pull the plain-user profiles first (which also hands us submitter info for
+// free) and fetch their approved events by id.
+export async function fetchAcceptedUserEvents(): Promise<BarlinEvent[]> {
+  const { data: users, error: usersError } = await supabase
+    .from("profiles")
+    .select("id, email, first_name, last_name")
+    .eq("role", "user");
+  if (usersError) throw usersError;
+  const ids = (users ?? []).map((u) => u.id);
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("status", "approved")
+    .in("created_by", ids)
+    .order("date", { ascending: true });
+  if (error) throw error;
+  return attachSubmitters((data ?? []).map(mapEventRow), users);
 }
 
 export async function approveEvent(seriesId: string, adminId: string): Promise<void> {
@@ -523,6 +554,8 @@ export async function approveSubmissionWithExistingVenue(
   if (eventError) throw eventError;
 }
 
+// Hard-delete an entire series. Used both to reject a pending submission and to
+// delete an already-approved user event from the accepted tab.
 export async function rejectEvent(seriesId: string): Promise<void> {
   const { error } = await supabase
     .from("events")
