@@ -4,7 +4,7 @@ import { ChevronLeft, Clock3, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { createEvent, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
+import { createEvent, createUserStagedSubmission, fetchOrganizerById, uploadEventImage } from "@/lib/supabaseQueries";
 import EventForm, { type EventFormData, type EventFormImageState, type VenueOption } from "@/components/events/EventForm";
 import { useVenues } from "@/hooks/useEvents";
 import { generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
@@ -70,9 +70,16 @@ export default function PublishEvent() {
 				const imageUrl = image.file ? await uploadEventImage(image.file, user.id) : undefined;
 				// Plain users land in moderation; bar owners / admins publish live.
 				const status = isPlainUser ? "pending" : "approved";
-				// Picker (users) wins; otherwise the bar owner's own venue.
-				const resolvedVenueId = data.venueId || venueId || undefined;
-				await createEvent({ ...data, venueId: resolvedVenueId, status }, user.id, imageUrl);
+				if (isPlainUser) {
+					// Plain users submit into venue_events_staging (one template row,
+					// even for a series) — same moderation pipeline as everything else.
+					await createUserStagedSubmission({ ...data, venueId: data.venueId || undefined }, user.id, imageUrl);
+				} else {
+					// Bar owners / admins publish straight to `events`. Picker (if shown)
+					// wins; otherwise the bar owner's own venue.
+					const resolvedVenueId = data.venueId || venueId || undefined;
+					await createEvent({ ...data, venueId: resolvedVenueId, status: "approved" }, user.id, imageUrl);
+				}
 				queryClient.invalidateQueries({ queryKey: ["events"] });
 				const isSeries = !!(data.recurrence && data.recurrenceUntil);
 				const count = isSeries
