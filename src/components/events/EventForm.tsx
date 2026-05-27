@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Upload, Calendar, Clock, MapPin, Repeat, Tag, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { LANGUAGES } from "@/data/languages";
-import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
+import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { useCategories } from "@/hooks/useEvents";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -103,6 +103,10 @@ const EMPTY_FORM: EventFormData = {
 const inputClass =
   "w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30";
 
+// Mono-uppercase eyebrow label — matches the Create-account / sign-in forms.
+const labelClass =
+  "font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55";
+
 export default function EventForm({
   title,
   subtitle,
@@ -168,6 +172,23 @@ export default function EventForm({
 
   // Location picker (only rendered when `venueOptions` is provided).
   const [venueMode, setVenueMode] = useState<"existing" | "manual">("existing");
+  // Manual-location sub-fields — same shape as the bar-signup address form
+  // (street + house no., postal code, city). They feed formData.address and an
+  // auto-derived neighborhood; only used in the "Enter manually" branch.
+  const [manualStreet, setManualStreet] = useState("");
+  const [manualPlz, setManualPlz] = useState("");
+  const [manualCity, setManualCity] = useState("");
+
+  // Rebuild the combined address + derived neighborhood whenever a sub-field
+  // changes (mirrors Login.tsx: `${street}, ${plz} ${city}`).
+  const setManualAddress = (street: string, plz: string, city: string) => {
+    setManualStreet(street);
+    setManualPlz(plz);
+    setManualCity(city);
+    const tail = [plz.trim(), city.trim()].filter(Boolean).join(" ");
+    const address = [street.trim(), tail].filter(Boolean).join(", ");
+    setFormData((prev) => ({ ...prev, address, neighborhood: deriveNeighborhood(street, plz) }));
+  };
 
   const selectVenue = (id: string) => {
     const v = venueOptions?.find((o) => o.id === id);
@@ -182,12 +203,17 @@ export default function EventForm({
 
   const changeVenueMode = (mode: "existing" | "manual") => {
     setVenueMode(mode);
-    // Clear the fields the other mode owns so a stale selection can't leak
-    // through on submit.
+    // Reset the manual sub-fields and clear address/neighborhood so a stale
+    // selection (or a previously picked bar) can't leak through on submit.
+    setManualStreet("");
+    setManualPlz("");
+    setManualCity("");
     setFormData((prev) => ({
       ...prev,
       venueId: "",
-      ...(mode === "existing" ? { venue: "", address: "", neighborhood: "" } : {}),
+      address: "",
+      neighborhood: "",
+      ...(mode === "existing" ? { venue: "" } : {}),
     }));
   };
 
@@ -274,8 +300,11 @@ export default function EventForm({
         toast.error("Please choose a bar, or switch to entering a location manually.");
         return;
       }
-      if (venueMode === "manual" && (!formData.venue.trim() || !formData.address.trim())) {
-        toast.error("Please enter the venue name and address.");
+      if (
+        venueMode === "manual" &&
+        (!formData.venue.trim() || !manualStreet.trim() || !manualPlz.trim() || !manualCity.trim())
+      ) {
+        toast.error("Please enter the venue name, street, postal code and city.");
         return;
       }
     }
@@ -389,7 +418,7 @@ export default function EventForm({
 
         {/* Title */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Event title *</label>
+          <label className={labelClass}>Event title <span className="text-accent">*</span></label>
           <input
             type="text" required value={formData.title}
             onChange={(e) => update("title", e.target.value)}
@@ -401,9 +430,7 @@ export default function EventForm({
             users without a bar). Bar owners keep the prefilled venue. */}
         {venueOptions && (
           <div className="space-y-3">
-            <label className="text-sm font-medium flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> Location *
-            </label>
+            <label className={labelClass}>Location <span className="text-accent">*</span></label>
             <div className="flex gap-2">
               {(["existing", "manual"] as const).map((mode) => (
                 <button
@@ -433,30 +460,51 @@ export default function EventForm({
               </select>
             ) : (
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={formData.venue}
-                  onChange={(e) => update("venue", e.target.value)}
-                  placeholder="Venue / location name"
-                  className={inputClass}
-                />
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => update("address", e.target.value)}
-                  placeholder="Address"
-                  className={inputClass}
-                />
-                <select
-                  value={formData.neighborhood}
-                  onChange={(e) => update("neighborhood", e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Neighborhood (optional)</option>
-                  {ALL_NEIGHBORHOODS.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Venue name <span className="text-accent">*</span></label>
+                  <input
+                    type="text"
+                    value={formData.venue}
+                    onChange={(e) => update("venue", e.target.value)}
+                    placeholder="Zum Goldenen Hahn"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Street and house number <span className="text-accent">*</span></label>
+                  <input
+                    type="text"
+                    value={manualStreet}
+                    onChange={(e) => setManualAddress(e.target.value, manualPlz, manualCity)}
+                    placeholder="Schönhauser Allee 12"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Postal code <span className="text-accent">*</span></label>
+                  <input
+                    type="text"
+                    value={manualPlz}
+                    onChange={(e) => setManualAddress(manualStreet, e.target.value, manualCity)}
+                    placeholder="10435"
+                    className={inputClass}
+                  />
+                  {manualPlz.trim().length === 5 && (
+                    <p className="text-xs text-muted-foreground">
+                      Neighborhood: {formData.neighborhood || "Unknown — we'll confirm on review"}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>City <span className="text-accent">*</span></label>
+                  <input
+                    type="text"
+                    value={manualCity}
+                    onChange={(e) => setManualAddress(manualStreet, manualPlz, e.target.value)}
+                    placeholder="Berlin"
+                    className={inputClass}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -465,7 +513,7 @@ export default function EventForm({
         {/* Date & Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1.5 min-w-0">
-            <label className="text-sm font-medium flex items-center gap-1"><Calendar className="h-3 w-3" /> Date *</label>
+            <label className={labelClass}>Date <span className="text-accent">*</span></label>
             <input
               type="date"
               required
@@ -476,8 +524,8 @@ export default function EventForm({
             />
           </div>
           <div className="space-y-1.5 min-w-0">
-            <label className="text-sm font-medium flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Start{optionalStartTime ? "" : " *"}
+            <label className={labelClass}>
+              Start{optionalStartTime ? "" : <span className="text-accent"> *</span>}
             </label>
             <input
               type="time"
@@ -488,8 +536,8 @@ export default function EventForm({
             />
           </div>
           <div className="space-y-1.5 min-w-0">
-            <label className="text-sm font-medium flex items-center gap-1">
-              <Clock className="h-3 w-3" /> End{optionalEndTime ? "" : " *"}
+            <label className={labelClass}>
+              End{optionalEndTime ? "" : <span className="text-accent"> *</span>}
             </label>
             <input
               type="time"
@@ -506,7 +554,7 @@ export default function EventForm({
             )}
           </div>
           <div className="space-y-1.5 min-w-0">
-            <label className="text-sm font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> Doors</label>
+            <label className={labelClass}>Doors</label>
             <input
               type="time" value={formData.doorsTime}
               onChange={(e) => update("doorsTime", e.target.value)}
@@ -521,9 +569,7 @@ export default function EventForm({
         {/* Recurrence */}
         {!recurrenceLocked && (
           <div className="space-y-1.5">
-            <label className="text-sm font-medium flex items-center gap-1">
-              <Repeat className="h-3 w-3" /> Repeats
-            </label>
+            <label className={labelClass}>Repeats</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <select
                 value={formData.recurrence}
@@ -586,7 +632,7 @@ export default function EventForm({
         {/* Category & Entry */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium flex items-center gap-1"><Tag className="h-3 w-3" /> Category *</label>
+            <label className={labelClass}>Category <span className="text-accent">*</span></label>
             <select
               required value={formData.category}
               onChange={(e) => update("category", e.target.value)}
@@ -597,7 +643,7 @@ export default function EventForm({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Entry info *</label>
+            <label className={labelClass}>Entry info <span className="text-accent">*</span></label>
             <select
               required
               value={entryCustomMode ? CUSTOM_ENTRY_SENTINEL : formData.entryInfo}
@@ -636,7 +682,7 @@ export default function EventForm({
 
         {/* Description */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Description{optionalDescription ? "" : " *"}</label>
+          <label className={labelClass}>Description{optionalDescription ? "" : <span className="text-accent"> *</span>}</label>
           <textarea
             required={!optionalDescription}
             value={formData.description}
@@ -650,7 +696,7 @@ export default function EventForm({
         {/* Language & Website/Instagram */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Language of the event</label>
+            <label className={labelClass}>Language of the event</label>
             <select
               value={formData.language}
               onChange={(e) => update("language", e.target.value)}
@@ -663,7 +709,7 @@ export default function EventForm({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Link to event</label>
+            <label className={labelClass}>Link to event</label>
             <input
               type="url" value={formData.website}
               onChange={(e) => update("website", e.target.value)}

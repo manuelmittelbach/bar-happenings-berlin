@@ -44,11 +44,14 @@ import {
   fetchEventById,
   fetchPendingEvents,
   approveEvent,
+  approveSubmissionWithNewVenue,
+  approveSubmissionWithExistingVenue,
   rejectEvent,
   type OrganizerAccount,
   type LiveEventInfo,
   type ApprovedEventListItem,
 } from "@/lib/supabaseQueries";
+import { findVenueMatches, type VenueMatch } from "@/lib/venueMatch";
 import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventStatusFilter, Venue } from "@/types/event";
 import EventDiffModal from "@/components/admin/EventDiffModal";
 
@@ -198,6 +201,9 @@ export default function AdminDashboard() {
   // moderation — distinct from the staging-table scraped/manual/recurring flow.
   const [pendingSubmissions, setPendingSubmissions] = useState<BarlinEvent[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
+  // Series currently being approved — guards against double-clicks creating a
+  // duplicate venue while the async insert is in flight.
+  const [submittingSeriesId, setSubmittingSeriesId] = useState<string | null>(null);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
   const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
@@ -575,21 +581,70 @@ export default function AdminDashboard() {
   };
 
   // User-submitted events (status="pending" in the events table). Approve sets
-  // the whole series live; reject hard-deletes it.
+  // the whole series live; reject hard-deletes it. Shared success tail: drop
+  // the series from the list, refresh live events, and — when a venue was
+  // created/linked — also refresh the venues used by /bars and the picker.
+  const finishSubmissionApproval = (seriesId: string, title: string, venuesChanged: boolean) => {
+    queryClient.invalidateQueries({ queryKey: ["events"] });
+    if (venuesChanged) queryClient.invalidateQueries({ queryKey: ["venues"] });
+    toast.success(`"${title}" approved`);
+    setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
+    loadLiveEvents();
+    if (venuesChanged) loadVenues();
+  };
+
+  // Plain approve — used when the submission already carries a venue_id (user
+  // picked a bar from the directory). Manual-venue submissions go through the
+  // decision panel instead (handleApproveNewVenue / handleApproveLinkVenue).
   const handleApproveSubmission = async (seriesId: string, title: string) => {
-    if (!user) return;
+    if (!user || submittingSeriesId) return;
+    setSubmittingSeriesId(seriesId);
     try {
       await approveEvent(seriesId, user.id);
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast.success(`"${title}" approved`);
-      setPendingSubmissions(prev => prev.filter(e => (e.parentId || e.id) !== seriesId));
-      loadLiveEvents();
+      finishSubmissionApproval(seriesId, title, false);
     } catch {
       toast.error("Couldn't approve the event. Please try again.");
+    } finally {
+      setSubmittingSeriesId(null);
+    }
+  };
+
+  // Manual-venue submission → create a brand-new bar from the typed details,
+  // then link + approve the series. Surfaces the geocoding-failure message.
+  const handleApproveNewVenue = async (head: BarlinEvent, seriesId: string) => {
+    if (!user || submittingSeriesId) return;
+    setSubmittingSeriesId(seriesId);
+    try {
+      await approveSubmissionWithNewVenue(seriesId, user.id, {
+        name: head.venue,
+        address: head.address,
+        neighborhood: head.neighborhood,
+      });
+      finishSubmissionApproval(seriesId, head.title, true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't create the bar. Please try again.");
+    } finally {
+      setSubmittingSeriesId(null);
+    }
+  };
+
+  // Manual-venue submission → link it to an existing bar instead of creating a
+  // duplicate, then approve the series.
+  const handleApproveLinkVenue = async (head: BarlinEvent, seriesId: string, venueId: string) => {
+    if (!user || submittingSeriesId) return;
+    setSubmittingSeriesId(seriesId);
+    try {
+      await approveSubmissionWithExistingVenue(seriesId, user.id, venueId);
+      finishSubmissionApproval(seriesId, head.title, true);
+    } catch {
+      toast.error("Couldn't link the event to that bar. Please try again.");
+    } finally {
+      setSubmittingSeriesId(null);
     }
   };
 
   const handleRejectSubmission = async (seriesId: string, title: string) => {
+    if (submittingSeriesId) return;
     try {
       await rejectEvent(seriesId);
       toast.error(`"${title}" rejected`);
@@ -616,6 +671,19 @@ export default function AdminDashboard() {
       })
       .sort((a, b) => a.head.date.localeCompare(b.head.date));
   }, [pendingSubmissions]);
+
+  // For submissions whose venue was typed manually (no venue_id), pre-compute
+  // likely existing-venue matches so the admin can link instead of creating a
+  // duplicate. Keyed by seriesId; only manual-venue series get an entry.
+  const submissionVenueMatches = useMemo(() => {
+    const map = new Map<string, VenueMatch[]>();
+    for (const { seriesId, head } of submissionSeries) {
+      if (!head.venueId && head.venue.trim()) {
+        map.set(seriesId, findVenueMatches(head.venue, head.address, venues));
+      }
+    }
+    return map;
+  }, [submissionSeries, venues]);
 
   // Reclassify a scraped staging row as recurring. Optimistically remove from
   // scraped list, then DB update — the realtime listener on
@@ -1014,7 +1082,13 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">No user-submitted events awaiting review.</p>
               ) : (
                 <div className="space-y-3">
-                  {submissionSeries.map(({ seriesId, head, count }) => (
+                  {submissionSeries.map(({ seriesId, head, count }) => {
+                    // Manual-venue submissions (no venue_id) need an admin
+                    // decision: create a new bar or link an existing one.
+                    const needsVenueDecision = !head.venueId && !!head.venue.trim();
+                    const matches = submissionVenueMatches.get(seriesId) ?? [];
+                    const busy = submittingSeriesId === seriesId;
+                    return (
                     <div key={seriesId} className="border-2 border-foreground p-4">
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                         {head.image && (
@@ -1040,25 +1114,105 @@ export default function AdminDashboard() {
                             <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
                           )}
                         </div>
-                        <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                        {!needsVenueDecision && (
+                          <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handleApproveSubmission(seriesId, head.title)}
+                              className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handleRejectSubmission(seriesId, head.title)}
+                              className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Manual venue → admin chooses: create a new bar from the
+                          typed details, or link an existing one (warned about
+                          possible duplicates). Bar is created here because RLS
+                          only lets admins write venues. */}
+                      {needsVenueDecision && (
+                        <div className="mt-3 pt-3 border-t-2 border-foreground/15 space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            This event has a manually-entered venue. Choose how to publish its bar.
+                          </p>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-2 border-foreground/20 p-3">
+                            <div className="min-w-0">
+                              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">Create new bar</p>
+                              <p className="font-serif text-sm break-words">{head.venue}</p>
+                              <p className="text-xs text-muted-foreground break-words">
+                                {head.address || "No address"}
+                                {head.neighborhood ? ` · ${head.neighborhood}` : " · neighborhood unknown"}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handleApproveNewVenue(head, seriesId)}
+                              className="inline-flex items-center justify-center h-9 px-3 flex-shrink-0 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Create &amp; approve
+                            </button>
+                          </div>
+
+                          {matches.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">
+                                Possible existing matches
+                              </p>
+                              {matches.map((m) => (
+                                <div
+                                  key={m.venue.id}
+                                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-2 border-foreground/20 p-3"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="font-serif text-sm break-words">
+                                      {m.venue.name}
+                                      <span className="ml-2 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                        {m.reason === "both" ? "name + address" : m.reason === "name" ? "name match" : "address match"}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground break-words">
+                                      {m.venue.address || "No address"}
+                                      {m.venue.neighborhood ? ` · ${m.venue.neighborhood}` : ""}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    disabled={busy}
+                                    onClick={() => handleApproveLinkVenue(head, seriesId, m.venue.id)}
+                                    className="inline-flex items-center justify-center h-9 px-3 flex-shrink-0 border-2 border-foreground font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Link &amp; approve
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <button
                             type="button"
-                            onClick={() => handleApproveSubmission(seriesId, head.title)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-foreground bg-foreground text-background font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-background hover:text-foreground transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
+                            disabled={busy}
                             onClick={() => handleRejectSubmission(seriesId, head.title)}
-                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors"
+                            className="inline-flex items-center justify-center h-9 px-3 border-2 border-red-600 text-red-700 font-mono text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Reject
                           </button>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
