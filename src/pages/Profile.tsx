@@ -41,12 +41,16 @@ export default function Profile() {
   links.push({ label: "Your profile", to: "/profile/details" });
 
   return (
-    <div className="container max-w-2xl py-10 md:py-14">
-      <div className="mb-10 md:mb-14 border-b-2 border-foreground pb-6">
-        <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Account</h1>
-      </div>
+    <div className="container max-w-2xl pt-6 md:pt-8 pb-24">
+      {/* Masthead — same compact pattern as the Bars directory: a
+          heading-display 24/30px on a hairline rule. */}
+      <header className="mb-6 md:mb-8">
+        <div className="pt-2.5 pb-2.5 border-b-2 border-border">
+          <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Account</h1>
+        </div>
+      </header>
 
-      <nav className="border-2 border-foreground divide-y-2 divide-foreground">
+      <nav className="border-2 border-foreground divide-y-2 divide-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]">
         {links.map((l) => (
           <Link
             key={l.to}

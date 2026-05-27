@@ -220,7 +220,6 @@ export default function ProfileDetails() {
     return <PageSpinner />;
   }
 
-  const showRoleChip = role === "organizer";
   const showApprovalBadge = role === "organizer" && approvalStatus !== "approved";
   const approvalColor =
     approvalStatus === "rejected"
@@ -260,20 +259,18 @@ export default function ProfileDetails() {
             <span>Couldn't load your profile data. Please refresh the page to try again.</span>
           </div>
         )}
-        {/* Header */}
-        <div className="mb-10 md:mb-14 border-b-2 border-foreground pb-6">
-          <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Your profile</h1>
-        </div>
+        {/* Masthead — Bars-directory pattern: compact heading-display on
+            a hairline rule. */}
+        <header className="mb-8 md:mb-10">
+          <div className="pt-2.5 pb-2.5 border-b-2 border-border">
+            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your profile</h1>
+          </div>
+        </header>
 
         {/* Identity block */}
-        <section className="mb-10">
+        <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="mono-label text-foreground">Identity</h2>
-            {showRoleChip && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-foreground bg-card text-foreground">
-                Organizer
-              </span>
-            )}
           </div>
 
           {showApprovalBadge && (
@@ -318,12 +315,12 @@ export default function ProfileDetails() {
               </div>
             </form>
           )}
+        </section>
 
-          {/* Email — read-only display + change form */}
-          <form
-            onSubmit={handleChangeEmail}
-            className="space-y-4 mt-8 pt-6 border-t border-border"
-          >
+        {/* Change email */}
+        <section className="mt-10 border-t border-border pt-8">
+          <h2 className="mono-label text-foreground mb-4">Change email</h2>
+          <form onSubmit={handleChangeEmail} className="space-y-4">
             <div className="space-y-1.5">
               <label className="mono-label text-muted-foreground">Email</label>
               <div className="flex items-center h-11 px-3 bg-muted/40 border-2 border-foreground/40 text-sm font-mono text-muted-foreground select-all">
@@ -363,8 +360,8 @@ export default function ProfileDetails() {
           </form>
         </section>
 
-        {/* Security block */}
-        <section className="border-t border-border pt-8">
+        {/* Change password */}
+        <section className="mt-10 border-t border-border pt-8">
           <h2 className="mono-label text-foreground mb-4">Change password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-1.5">

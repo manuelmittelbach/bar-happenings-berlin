@@ -89,6 +89,7 @@ export default function OrganizerDashboard() {
     return past[0] ?? null;
   };
 
+  const totalEvents = myEvents.filter((e) => e.status !== "canceled").length;
   const parents = myEvents.filter((e) => !e.parentId);
   const upcoming = parents
     .filter((p) => getNextUpcoming(p) !== null)
@@ -188,16 +189,20 @@ export default function OrganizerDashboard() {
               <CheckCircle2 className="h-4 w-4" /> Email confirmed
             </div>
           )}
-          <div className="mb-6">
-            <h1 className="heading-display text-4xl md:text-5xl leading-[0.95]">Your events</h1>
-          </div>
+          {/* Masthead — Bars-directory pattern: compact heading-display on
+              a hairline rule. */}
+          <header className="mb-6 md:mb-8">
+            <div className="pt-2.5 pb-2.5 border-b-2 border-border">
+              <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your events</h1>
+            </div>
+          </header>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
-              { label: "Total Events", value: String(myEvents.filter((e) => e.status !== "canceled").length), icon: CalendarDays },
+              { label: "Total Events", value: String(totalEvents), icon: CalendarDays },
               { label: "Upcoming", value: String(myEvents.filter((e) => e.status !== "canceled" && !isEventInPast(e)).length), icon: Clock },
             ].map((stat) => (
-              <div key={stat.label} className="border-2 border-foreground p-5 space-y-2">
+              <div key={stat.label} className="border-2 border-foreground p-5 space-y-2 shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{stat.label}</span>
                   <stat.icon className="h-5 w-5 text-muted-foreground" />
@@ -212,7 +217,7 @@ export default function OrganizerDashboard() {
               to="/publish"
               className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
             >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in your bar ${venue.name}` : "Publish events"}
+              <Plus className="h-4 w-4" /> {venue?.name ? `Publish events in ${venue.name}` : "Publish events"}
             </Link>
           </div>
 
@@ -259,7 +264,7 @@ export default function OrganizerDashboard() {
                 return (
                   <div
                     key={parent.id}
-                    className="border-2 border-foreground p-5"
+                    className="border-2 border-foreground p-5 shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]"
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       {parent.image && (
