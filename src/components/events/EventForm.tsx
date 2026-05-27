@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { LANGUAGES } from "@/data/languages";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
+import VenueAddressFields from "@/components/events/VenueAddressFields";
+import { buildVenueAddress, type VenueFields } from "@/lib/venueAddress";
 import { useCategories } from "@/hooks/useEvents";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -181,13 +183,16 @@ export default function EventForm({
 
   // Rebuild the combined address + derived neighborhood whenever a sub-field
   // changes (mirrors Login.tsx: `${street}, ${plz} ${city}`).
-  const setManualAddress = (street: string, plz: string, city: string) => {
-    setManualStreet(street);
-    setManualPlz(plz);
-    setManualCity(city);
-    const tail = [plz.trim(), city.trim()].filter(Boolean).join(" ");
-    const address = [street.trim(), tail].filter(Boolean).join(", ");
-    setFormData((prev) => ({ ...prev, address, neighborhood: deriveNeighborhood(street, plz) }));
+  const setManualVenue = (v: VenueFields) => {
+    setManualStreet(v.street);
+    setManualPlz(v.plz);
+    setManualCity(v.city);
+    setFormData((prev) => ({
+      ...prev,
+      venue: v.name,
+      address: buildVenueAddress(v),
+      neighborhood: deriveNeighborhood(v.street, v.plz),
+    }));
   };
 
   const selectVenue = (id: string) => {
@@ -459,53 +464,10 @@ export default function EventForm({
                 ))}
               </select>
             ) : (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className={labelClass}>Venue name <span className="text-accent">*</span></label>
-                  <input
-                    type="text"
-                    value={formData.venue}
-                    onChange={(e) => update("venue", e.target.value)}
-                    placeholder="Zum Goldenen Hahn"
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelClass}>Street and house number <span className="text-accent">*</span></label>
-                  <input
-                    type="text"
-                    value={manualStreet}
-                    onChange={(e) => setManualAddress(e.target.value, manualPlz, manualCity)}
-                    placeholder="Schönhauser Allee 12"
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelClass}>Postal code <span className="text-accent">*</span></label>
-                  <input
-                    type="text"
-                    value={manualPlz}
-                    onChange={(e) => setManualAddress(manualStreet, e.target.value, manualCity)}
-                    placeholder="10435"
-                    className={inputClass}
-                  />
-                  {manualPlz.trim().length === 5 && (
-                    <p className="text-xs text-muted-foreground">
-                      Neighborhood: {formData.neighborhood || "Unknown — we'll confirm on review"}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelClass}>City <span className="text-accent">*</span></label>
-                  <input
-                    type="text"
-                    value={manualCity}
-                    onChange={(e) => setManualAddress(manualStreet, manualPlz, e.target.value)}
-                    placeholder="Berlin"
-                    className={inputClass}
-                  />
-                </div>
-              </div>
+              <VenueAddressFields
+                value={{ name: formData.venue, street: manualStreet, plz: manualPlz, city: manualCity }}
+                onChange={setManualVenue}
+              />
             )}
           </div>
         )}
