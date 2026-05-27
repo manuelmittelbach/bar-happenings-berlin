@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, Pencil, Plus, Users, CalendarDays, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchEventsByCreator, fetchOrganizerById } from "@/lib/supabaseQueries";
+import { fetchEventsByCreator, fetchMyStagedSubmissions, fetchOrganizerById } from "@/lib/supabaseQueries";
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
@@ -50,11 +50,16 @@ export default function OrganizerDashboard() {
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
-    fetchEventsByCreator(user.id)
-      .then(setMyEvents)
+    // Plain users' pending submissions now live in venue_events_staging, not
+    // `events`, so merge their own staging rows (pending) with their approved
+    // events. Organizers/admins publish straight to `events` and have none.
+    const approved = fetchEventsByCreator(user.id);
+    const pending = role === "user" ? fetchMyStagedSubmissions(user.id) : Promise.resolve<BarlinEvent[]>([]);
+    Promise.all([approved, pending])
+      .then(([approvedEvents, pendingSubmissions]) => setMyEvents([...pendingSubmissions, ...approvedEvents]))
       .catch(() => toast.error("Failed to load your events."))
       .finally(() => setEventsLoading(false));
-  }, [user, isApprovedAccess]);
+  }, [user, isApprovedAccess, role]);
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
@@ -257,6 +262,10 @@ export default function OrganizerDashboard() {
                 const expandedMembers = activeTab === "upcoming" ? upcomingMembers : pastMembers;
                 const canExpand = expandedMembers.length > 1;
                 const isExpanded = expandedId === parent.id;
+                // A pending submission lives in venue_events_staging, not
+                // `events`, so it has no /event/:id or /edit-event/:id route —
+                // suppress its View/Edit links. The "pending" badge says it all.
+                const isPendingSubmission = displayEvent.status === "pending";
                 return (
                   <div
                     key={parent.id}
@@ -310,7 +319,7 @@ export default function OrganizerDashboard() {
                             )
                           ) : (
                             <>
-                              {displayEvent.status !== "canceled" && (
+                              {!isPendingSubmission && displayEvent.status !== "canceled" && (
                                 <Link
                                   to={`/event/${displayEvent.id}`}
                                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -318,7 +327,7 @@ export default function OrganizerDashboard() {
                                   <Eye className="h-4 w-4" /> View
                                 </Link>
                               )}
-                              {displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
+                              {!isPendingSubmission && displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
                                 <Link
                                   to={`/edit-event/${displayEvent.id}`}
                                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -326,10 +335,15 @@ export default function OrganizerDashboard() {
                                   <Pencil className="h-4 w-4" /> Edit
                                 </Link>
                               )}
+                              {isPendingSubmission && (
+                                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Clock3 className="h-4 w-4" /> Awaiting review
+                                </span>
+                              )}
                             </>
                           )
                         ) : (
-                          !canExpand && displayEvent.status !== "canceled" && (
+                          !canExpand && !isPendingSubmission && displayEvent.status !== "canceled" && (
                             <Link
                               to={`/event/${displayEvent.id}`}
                               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"

@@ -378,10 +378,11 @@ export async function updateEventSeries(
   if (error) throw error;
 }
 
-// --- User-submitted events awaiting moderation (status = "pending") --------
-// Plain users publish into "pending"; an admin approves the whole series
-// (→ live) or rejects it (→ hard delete). Bar owners / admins skip this and
-// publish straight to "approved".
+// --- Approved user submissions ---------------------------------------------
+// Plain users now submit into venue_events_staging (see the user-submission
+// block below); the admin moderation queue reads from there. Once approved a
+// submission lands in `events` (status 'approved', created_by = the original
+// submitter), which is what fetchAcceptedUserEvents surfaces.
 
 // Stamp each event with its submitter (name + email) from a list of creator
 // profiles. There's no FK on events.created_by, so a PostgREST embed can't
@@ -397,27 +398,6 @@ function attachSubmitters(events: BarlinEvent[], profiles: CreatorProfile[] | nu
       ? { ...e, submitter: { email: p.email ?? "", firstName: p.first_name ?? "", lastName: p.last_name ?? "" } }
       : e;
   });
-}
-
-export async function fetchPendingEvents(): Promise<BarlinEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("status", "pending")
-    .order("date", { ascending: true });
-  if (error) throw error;
-  const events = (data ?? []).map(mapEventRow);
-
-  // Resolve the submitter behind each pending row so admins see who to contact.
-  // A failed lookup must not hide the queue, so we swallow the error.
-  const creatorIds = [...new Set(events.map((e) => e.createdBy).filter((id): id is string => !!id))];
-  if (creatorIds.length === 0) return events;
-  const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id, email, first_name, last_name")
-    .in("id", creatorIds);
-  if (profilesError) return events;
-  return attachSubmitters(events, profiles);
 }
 
 // Events submitted by plain users (role 'user') that an admin has approved —
@@ -443,119 +423,18 @@ export async function fetchAcceptedUserEvents(): Promise<BarlinEvent[]> {
   return attachSubmitters((data ?? []).map(mapEventRow), users);
 }
 
-export async function approveEvent(seriesId: string, adminId: string): Promise<void> {
-  const { error } = await supabase
-    .from("events")
-    .update({ status: "approved", approved_by: adminId, approved_at: new Date().toISOString() })
-    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
-  if (error) throw error;
-}
-
-// --- Approving submissions whose venue was typed in manually -----------------
-// When a plain user picks a bar from the directory the submission already has a
-// venue_id and plain approveEvent() is enough. When they typed a location by
-// hand, venue_id is null and an admin decides at approve time whether to create
-// a brand-new venue or link the event(s) to one that already exists. Both paths
-// mirror the organizer flow (approveOrganizerWithNewBar / updateApprovedEvent):
-// venue writes are admin-only per RLS, so this is the first point the bar can
-// legally be created.
-
+// Venue details an admin turns into a brand-new bar (or links to an existing
+// one) when approving a typed-venue submission. Consumed by the admin decision
+// panel and approveUserSubmissionWithNewVenue (see the user-submission block).
 export interface SubmissionVenueData {
   name: string;
   address: string;
   neighborhood: string;
 }
 
-/** Create a brand-new venue from a manually-entered submission, then link and
- * approve the whole series. Coordinates are resolved BEFORE any write — a
- * geocoding miss throws and leaves the submission untouched (still pending)
- * rather than producing a venue that never shows on the map. */
-export async function approveSubmissionWithNewVenue(
-  seriesId: string,
-  adminId: string,
-  submission: SubmissionVenueData,
-  coords?: { lat: number; lng: number },
-): Promise<{ venueId: string }> {
-  let lat = coords?.lat;
-  let lng = coords?.lng;
-  if (lat == null || lng == null) {
-    const geo = await geocodeAddress(submission.address);
-    if (!geo) {
-      throw new Error(
-        "Couldn't locate that address on the map, so the bar can't be created. Link the event to an existing bar, or reject it and ask the submitter for a more precise address.",
-      );
-    }
-    lat = geo.lat;
-    lng = geo.lng;
-  }
-
-  const { data: venueRow, error: venueError } = await supabase
-    .from("venues")
-    .insert({
-      name: submission.name,
-      address: submission.address,
-      neighborhood: submission.neighborhood,
-      website: null,
-      instagram: null,
-      phone: null,
-      lat,
-      lng,
-    })
-    .select("id")
-    .single();
-  if (venueError) throw venueError;
-  const venueId = venueRow.id;
-
-  const { error: eventError } = await supabase
-    .from("events")
-    .update({
-      venue_id: venueId,
-      venue: submission.name,
-      address: submission.address,
-      neighborhood: submission.neighborhood,
-      status: "approved",
-      approved_by: adminId,
-      approved_at: new Date().toISOString(),
-    })
-    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
-  if (eventError) throw eventError;
-
-  return { venueId };
-}
-
-/** Approve a manual-venue submission by LINKING it to an existing venue instead
- * of creating a duplicate. Fetches the canonical venue from the DB (local
- * copies may be stale) and overwrites the events' denormalized
- * venue/address/neighborhood to match — same as updateApprovedEvent. */
-export async function approveSubmissionWithExistingVenue(
-  seriesId: string,
-  adminId: string,
-  venueId: string,
-): Promise<void> {
-  const { data: venue, error: venueErr } = await supabase
-    .from("venues")
-    .select("id, name, address, neighborhood")
-    .eq("id", venueId)
-    .maybeSingle();
-  if (venueErr || !venue) throw new Error("Venue not found");
-
-  const { error: eventError } = await supabase
-    .from("events")
-    .update({
-      venue_id: venue.id,
-      venue: venue.name,
-      address: venue.address,
-      neighborhood: venue.neighborhood,
-      status: "approved",
-      approved_by: adminId,
-      approved_at: new Date().toISOString(),
-    })
-    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
-  if (eventError) throw eventError;
-}
-
-// Hard-delete an entire series. Used both to reject a pending submission and to
-// delete an already-approved user event from the accepted tab.
+// Hard-delete an entire series from `events`. Used to delete an already-
+// approved user event (whole series) from the accepted tab. Rejecting a
+// still-pending submission instead deletes its staging row (rejectStagedEvent).
 export async function rejectEvent(seriesId: string): Promise<void> {
   const { error } = await supabase
     .from("events")
@@ -1211,10 +1090,14 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
   return {
     id: row.id,
     parentId: "",
-    venueId: row.venue_id,
-    venueName: row.venues?.name ?? "(unknown venue)",
-    venueAddress: row.venues?.address ?? "",
-    venueNeighborhood: row.venues?.neighborhood ?? "",
+    // Empty string (not null) keeps parity with BarlinEvent.venueId, so the
+    // `!venueId` "needs a venue decision" checks read the same everywhere.
+    venueId: row.venue_id ?? "",
+    // A user submission with a typed (not-yet-created) venue has no `venues`
+    // join row; fall back to the manual_venue_* the submitter entered.
+    venueName: row.venues?.name ?? row.manual_venue_name ?? "(unknown venue)",
+    venueAddress: row.venues?.address ?? row.manual_venue_address ?? "",
+    venueNeighborhood: row.venues?.neighborhood ?? row.manual_venue_neighborhood ?? "",
     title: row.title ?? "",
     date: row.date ?? "",
     startTime: trimTime(row.start_time) || null,
@@ -1233,6 +1116,9 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
     replacesEventId: row.replaces_event_id ?? null,
+    createdBy: row.created_by ?? null,
+    image: row.image ?? null,
+    imagePosition: row.image_position ?? "50% 50%",
   };
 }
 
@@ -1277,7 +1163,10 @@ export async function fetchStagedEventCount(
 ): Promise<number> {
   let query = supabase
     .from("venue_events_staging")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    // User submissions (created_by set) belong to the "User events" tab, not
+    // the scraped/manual/recurring pipeline.
+    .is("created_by", null);
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
   } else if (scope === "scraped") {
@@ -1409,7 +1298,10 @@ export async function fetchStagedEvents(
 ): Promise<StagedEvent[]> {
   let query = supabase
     .from("venue_events_staging")
-    .select("*, venues!inner(name, address, neighborhood)");
+    .select("*, venues!inner(name, address, neighborhood)")
+    // User submissions (created_by set) belong to the "User events" tab, not
+    // the scraped/manual/recurring pipeline.
+    .is("created_by", null);
 
   if (scope === "manual") {
     query = query.eq("is_manual", true).eq("recurrence", "");
@@ -1554,10 +1446,21 @@ export async function moveStagedEventToRecurring(stagedId: string): Promise<void
   if (error) throw error;
 }
 
+// When a staging row has no venue_id (a user typed a venue), the caller passes
+// a venueOverride: the venue it just created or linked, plus the denormalized
+// name/address/neighborhood to stamp onto the events row.
+export interface ApproveVenueOverride {
+  venueId: string;
+  name: string;
+  address: string;
+  neighborhood: string;
+}
+
 export async function approveStagedEvent(
   staged: StagedEvent,
   adminUserId: string,
   edits?: StagedEventEdits,
+  venueOverride?: ApproveVenueOverride,
 ): Promise<void> {
   const merged = {
     title: edits?.title ?? staged.title,
@@ -1577,16 +1480,25 @@ export async function approveStagedEvent(
   if (!merged.date) throw new Error("Date is required");
   if (!merged.category) throw new Error("Category is required");
 
+  // Resolve the venue: an override (just-created/linked bar for a typed venue)
+  // wins; otherwise use the row's own venue. An approved event must map to a
+  // real bar, so a missing venue is a programming error the callers prevent.
+  const venueId = venueOverride?.venueId || staged.venueId;
+  if (!venueId) throw new Error("A venue is required to approve this event.");
+  const venueName = venueOverride?.name ?? staged.venueName;
+  const venueAddress = venueOverride?.address ?? staged.venueAddress;
+  const venueNeighborhood = venueOverride?.neighborhood ?? staged.venueNeighborhood;
+
   const approveTimes = normalizeStartDoors(merged.startTime, merged.doorsTime);
   const baseRow = (overrides: { id: string; date: string; parent_id: string; recurrence: string }): TablesInsert<"events"> => ({
     id: overrides.id,
     parent_id: overrides.parent_id,
     recurrence: overrides.recurrence,
     title: merged.title,
-    venue: staged.venueName,
-    venue_id: staged.venueId,
-    address: staged.venueAddress,
-    neighborhood: staged.venueNeighborhood,
+    venue: venueName,
+    venue_id: venueId,
+    address: venueAddress,
+    neighborhood: venueNeighborhood,
     date: overrides.date,
     start_time: approveTimes.start,
     end_time: merged.endTime ? trimTime(merged.endTime) : null,
@@ -1596,9 +1508,14 @@ export async function approveStagedEvent(
     description: merged.description || null,
     url: cleanUrl(staged.sourceUrl) || null,
     entry_info: merged.entryInfo || null,
-    image: null,
-    image_position: "50% 50%",
-    created_by: adminUserId,
+    // User submissions carry a cover image; scraper/admin rows don't (admins
+    // add covers post-approve), so this stays null for them.
+    image: staged.image ?? null,
+    image_position: staged.imagePosition ?? "50% 50%",
+    // Preserve the original submitter on user rows so the "User events
+    // accepted" tab still resolves them by creator role; scraper/admin rows
+    // (createdBy null) are attributed to the approving admin as before.
+    created_by: staged.createdBy ?? adminUserId,
     status: "approved",
     approved_by: adminUserId,
     approved_at: new Date().toISOString(),
@@ -1665,6 +1582,270 @@ export async function deleteStagedEvent(stagedId: string): Promise<void> {
     .delete()
     .eq("id", stagedId);
   if (error) throw error;
+}
+
+// --- Plain-user event submissions (routed through venue_events_staging) -------
+// Plain users no longer write to `events`; their submissions land in
+// venue_events_staging (created_by = their uid) and flow through the SAME
+// moderation pipeline as scraped/manual/recurring rows. On approve they move
+// into `events` like any other staging row. Bar owners / admins are unchanged
+// — they still publish straight to `events`.
+
+// A staging row joined with its venue via a LEFT join (vs. the `!inner` used
+// for the scraped pipeline) — a typed-venue submission has no venue row yet.
+async function fetchStagedEventById(id: string): Promise<StagedEvent> {
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues(name, address, neighborhood)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return mapStagedEventRow(data as StagedEventRow);
+}
+
+// Build a BarlinEvent from a staging submission so the existing admin/user
+// "your events" cards (which speak BarlinEvent) can render it unchanged.
+function stagedSubmissionToEvent(
+  s: StagedEvent,
+  overrides: { id: string; parentId: string; date: string; recurrence: string },
+  submitter?: BarlinEvent["submitter"],
+): BarlinEvent {
+  return {
+    id: overrides.id,
+    parentId: overrides.parentId,
+    title: s.title,
+    venue: s.venueName,
+    venueId: s.venueId,
+    neighborhood: s.venueNeighborhood,
+    address: s.venueAddress,
+    date: overrides.date,
+    startTime: s.startTime ?? "",
+    endTime: s.endTime ?? undefined,
+    doorsTime: s.doorsTime ?? undefined,
+    category: s.category ?? "",
+    description: s.description,
+    entryInfo: s.entryInfo,
+    language: s.language,
+    recurrence: overrides.recurrence,
+    url: s.sourceUrl ?? "",
+    image: s.image ?? undefined,
+    imagePosition: s.imagePosition ?? "50% 50%",
+    interestedCount: 0,
+    status: "pending",
+    createdBy: s.createdBy ?? undefined,
+    isManual: s.isManual,
+    canceledBy: null,
+    isHighlight: false,
+    highlightPriority: 0,
+    submitter,
+  };
+}
+
+// A recurring submission is stored as a single template (one row + rule).
+// Expand it into one BarlinEvent per occurrence — parent (id = staging id) plus
+// synthetic children (parent_id = staging id) — so groupSeries collapses them
+// into one card keyed by the staging id, with the full date list. A singleton
+// yields a single row.
+function expandStagedSubmission(s: StagedEvent, submitter?: BarlinEvent["submitter"]): BarlinEvent[] {
+  if (!s.recurrence || !s.date) {
+    return [stagedSubmissionToEvent(s, { id: s.id, parentId: "", date: s.date, recurrence: "" }, submitter)];
+  }
+  const freq = s.recurrence as RecurrenceFreq;
+  // Indefinite (no end date) → materialize the same 8-week preview window the
+  // approve path uses; the parent rule still records that it's open-ended.
+  const effectiveUntil = s.recurrenceUntil ?? berlinDateStringOffset(56);
+  const dates = generateOccurrences(s.date, freq, effectiveUntil);
+  const parentRule = formatRule(freq, s.recurrenceUntil);
+  if (dates.length === 0) {
+    return [stagedSubmissionToEvent(s, { id: s.id, parentId: "", date: s.date, recurrence: parentRule }, submitter)];
+  }
+  return dates.map((date, idx) =>
+    stagedSubmissionToEvent(
+      s,
+      {
+        id: idx === 0 ? s.id : `${s.id}::${idx}`,
+        parentId: idx === 0 ? "" : s.id,
+        date,
+        recurrence: idx === 0 ? parentRule : "",
+      },
+      submitter,
+    ),
+  );
+}
+
+// Create a user's submission as a single staging template row. Recurring is
+// stored as rule + recurrence_until (NOT expanded) — approve expands it, same
+// as every other staging row. RLS enforces created_by = auth.uid(),
+// created_by_admin = false and replaces_event_id IS NULL server-side.
+export async function createUserStagedSubmission(
+  formData: EventWriteData,
+  userId: string,
+  imageUrl?: string,
+): Promise<void> {
+  const times = normalizeStartDoors(formData.startTime, formData.doorsTime);
+  const hasVenue = !!formData.venueId;
+  const row: TablesInsert<"venue_events_staging"> = {
+    id: crypto.randomUUID(),
+    // Existing public venue (directory picker) → venue_id; typed venue →
+    // manual_venue_* for the admin to turn into a bar (or link) at approve.
+    venue_id: formData.venueId || null,
+    manual_venue_name: hasVenue ? null : (formData.venue || null),
+    manual_venue_address: hasVenue ? null : (formData.address || null),
+    manual_venue_neighborhood: hasVenue ? null : (formData.neighborhood || null),
+    title: formData.title,
+    date: formData.date,
+    start_time: times.start,
+    end_time: formData.endTime ? trimTime(formData.endTime) : null,
+    doors_time: times.doors,
+    category: formData.category,
+    description: formData.description || null,
+    entry_info: formData.entryInfo || null,
+    language: formData.language || null,
+    source_url: cleanUrl(formData.website) || null,
+    image: imageUrl || null,
+    image_position: formData.imagePosition,
+    recurrence: formData.recurrence || "",
+    recurrence_until: formData.recurrenceUntil || null,
+    // Plain-user submissions mirror the old events behavior (is_manual=true).
+    is_manual: true,
+    created_by_admin: false,
+    created_by: userId,
+  };
+  const { error } = await supabase.from("venue_events_staging").insert(row);
+  if (error) throw error;
+}
+
+// The signed-in user's own pending submissions (RLS scopes to created_by =
+// auth.uid()). One BarlinEvent per submission — recurring stays a single card
+// (the rule drives the badge); we don't expand into synthetic child rows here
+// because the dashboard's per-occurrence links would 404 (staging rows aren't
+// routable until approved).
+export async function fetchMyStagedSubmissions(userId: string): Promise<BarlinEvent[]> {
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues(name, address, neighborhood)")
+    .eq("created_by", userId);
+  if (error) throw error;
+  return (data as StagedEventRow[]).map(mapStagedEventRow).map((s) =>
+    stagedSubmissionToEvent(
+      s,
+      {
+        id: s.id,
+        parentId: "",
+        date: s.date,
+        recurrence: s.recurrence ? formatRule(s.recurrence as RecurrenceFreq, s.recurrenceUntil) : "",
+      },
+    ),
+  );
+}
+
+// All pending user submissions for the admin "User events" tab. Recurring rows
+// are display-expanded so groupSeries shows the full date list + count, exactly
+// like the old events-pending path did. Submitter (name + email) is resolved
+// from profiles (no FK on created_by → batch fetch).
+export async function fetchPendingUserSubmissions(): Promise<BarlinEvent[]> {
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues(name, address, neighborhood)")
+    .not("created_by", "is", null);
+  if (error) throw error;
+  const rows = (data as StagedEventRow[]).map(mapStagedEventRow);
+
+  const creatorIds = [...new Set(rows.map((r) => r.createdBy).filter((id): id is string => !!id))];
+  const submitterById = new Map<string, BarlinEvent["submitter"]>();
+  if (creatorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, first_name, last_name")
+      .in("id", creatorIds);
+    for (const p of profiles ?? []) {
+      submitterById.set(p.id, { email: p.email ?? "", firstName: p.first_name ?? "", lastName: p.last_name ?? "" });
+    }
+  }
+
+  return rows.flatMap((s) => expandStagedSubmission(s, s.createdBy ? submitterById.get(s.createdBy) : undefined));
+}
+
+// Approve a submission that already carries a venue_id (user picked an existing
+// bar). Moves the staging row into `events` (expanding recurrence), preserving
+// the submitter as created_by.
+export async function approveUserSubmission(stagingId: string, adminUserId: string): Promise<void> {
+  const staged = await fetchStagedEventById(stagingId);
+  await approveStagedEvent(staged, adminUserId);
+}
+
+// Approve a typed-venue submission by creating a brand-new bar from the
+// (possibly admin-edited) details first, then approving the row against it.
+// Coordinates are resolved BEFORE any write so a geocoding miss leaves the
+// submission untouched. Mirrors approveOrganizerWithNewBar's geocode-first rule.
+export async function approveUserSubmissionWithNewVenue(
+  stagingId: string,
+  adminUserId: string,
+  submission: SubmissionVenueData,
+  coords?: { lat: number; lng: number },
+): Promise<{ venueId: string }> {
+  const staged = await fetchStagedEventById(stagingId);
+
+  let lat = coords?.lat;
+  let lng = coords?.lng;
+  if (lat == null || lng == null) {
+    const geo = await geocodeAddress(submission.address);
+    if (!geo) {
+      throw new Error(
+        "Couldn't locate that address on the map, so the bar can't be created. Link the event to an existing bar, or reject it and ask the submitter for a more precise address.",
+      );
+    }
+    lat = geo.lat;
+    lng = geo.lng;
+  }
+
+  const { data: venueRow, error: venueError } = await supabase
+    .from("venues")
+    .insert({
+      name: submission.name,
+      address: submission.address,
+      neighborhood: submission.neighborhood,
+      website: null,
+      instagram: null,
+      phone: null,
+      lat,
+      lng,
+    })
+    .select("id")
+    .single();
+  if (venueError) throw venueError;
+
+  await approveStagedEvent(staged, adminUserId, undefined, {
+    venueId: venueRow.id,
+    name: submission.name,
+    address: submission.address,
+    neighborhood: submission.neighborhood,
+  });
+  return { venueId: venueRow.id };
+}
+
+// Approve a typed-venue submission by LINKING it to an existing bar instead of
+// creating a duplicate. The canonical venue is re-read from the DB (local
+// copies may be stale) and its details stamped onto the events row.
+export async function approveUserSubmissionWithExistingVenue(
+  stagingId: string,
+  adminUserId: string,
+  venueId: string,
+): Promise<void> {
+  const staged = await fetchStagedEventById(stagingId);
+  const { data: venue, error: venueErr } = await supabase
+    .from("venues")
+    .select("id, name, address, neighborhood")
+    .eq("id", venueId)
+    .maybeSingle();
+  if (venueErr || !venue) throw new Error("Venue not found");
+
+  await approveStagedEvent(staged, adminUserId, undefined, {
+    venueId: venue.id,
+    name: venue.name,
+    address: venue.address,
+    neighborhood: venue.neighborhood,
+  });
 }
 
 // Field set the diff modal can apply from a staging update onto a live event.

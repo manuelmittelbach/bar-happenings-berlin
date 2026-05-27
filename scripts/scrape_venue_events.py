@@ -453,31 +453,38 @@ def log_scrape(client, venue_id: str, status: str, error_message: str | None = N
 def clear_staging(client) -> int:
     """Delete scraped + manual rows from venue_events_staging, keeping recurring ones.
     Recurring rows are admin-curated (is_manual=true with a non-empty recurrence)
-    and must survive a --clear so the recurring tab stays intact between scrapes."""
+    and must survive a --clear so the recurring tab stays intact between scrapes.
+    Plain-user submissions (created_by set) are pending moderation and are never
+    touched — they live in this table too but belong to the "User events" tab."""
     # "Not recurring" = is_manual=false OR recurrence=''. PostgREST `or` filter.
+    # `is_(created_by, null)` ANDs on top: only scraper/admin rows, never users.
     not_recurring = "is_manual.eq.false,recurrence.eq."
     count_res = (
         client.table("venue_events_staging")
         .select("id", count="exact")
+        .is_("created_by", "null")
         .or_(not_recurring)
         .execute()
     )
     count = count_res.count or 0
     if count == 0:
         return 0
-    client.table("venue_events_staging").delete().or_(not_recurring).execute()
+    client.table("venue_events_staging").delete().is_("created_by", "null").or_(not_recurring).execute()
     return count
 
 
 def purge_past_staging(client) -> int:
-    """Delete non-recurring staging rows whose date is already in the past.
-    Recurring rows (is_manual=true with non-empty recurrence) are preserved —
-    their `date` is the series anchor, not a single occurrence, and may legitimately
-    sit in the past while the series stays active."""
+    """Delete non-recurring scraper/admin staging rows whose date is already in
+    the past. Recurring rows (is_manual=true with non-empty recurrence) are
+    preserved — their `date` is the series anchor, not a single occurrence, and
+    may legitimately sit in the past while the series stays active. Plain-user
+    submissions (created_by set) are left to the DB's cleanup_past_staged_events
+    cron, so the scraper never prunes user data."""
     not_recurring = "is_manual.eq.false,recurrence.eq."
     count_res = (
         client.table("venue_events_staging")
         .select("id", count="exact")
+        .is_("created_by", "null")
         .lt("date", TODAY_ISO)
         .or_(not_recurring)
         .execute()
@@ -488,6 +495,7 @@ def purge_past_staging(client) -> int:
     (
         client.table("venue_events_staging")
         .delete()
+        .is_("created_by", "null")
         .lt("date", TODAY_ISO)
         .or_(not_recurring)
         .execute()
