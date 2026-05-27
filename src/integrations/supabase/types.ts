@@ -683,6 +683,7 @@ export type Database = {
       cleanup_past_staged_events: { Args: never; Returns: number }
       cleanup_unconfirmed_signups: { Args: never; Returns: number }
       extend_recurring_series: { Args: never; Returns: number }
+      extend_my_series: { Args: { p_series_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       truncate_staging: { Args: never; Returns: undefined }
     }
