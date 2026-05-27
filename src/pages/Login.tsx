@@ -188,8 +188,7 @@ export default function Login() {
 						</label>
 					</div>
 
-					{isBarOwner && (
-					<div className="border-l-2 border-foreground/30 pl-4 space-y-4">
+					{/* Name — required for every account, bar owner or not. */}
 					<div className="flex gap-2">
 						<div className="flex-1 space-y-1.5">
 							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">First name <span className="text-accent">*</span></label>
@@ -216,6 +215,9 @@ export default function Login() {
 							/>
 						</div>
 					</div>
+
+					{isBarOwner && (
+					<div className="border-l-2 border-foreground/30 pl-4 space-y-4">
 					{!barNotInList && (
 						<div className="space-y-1.5">
 							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar name <span className="text-accent">*</span></label>
