@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Upload, Calendar, Clock, Repeat, Tag, X } from "lucide-react";
+import { Upload, Calendar, Clock, MapPin, Repeat, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { LANGUAGES } from "@/data/languages";
+import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
 import { useCategories } from "@/hooks/useEvents";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
 import {
@@ -17,6 +18,7 @@ import { formatDateShort } from "@/lib/dateFormat";
 export interface EventFormData {
   title: string;
   venue: string;
+  venueId?: string;
   address: string;
   neighborhood: string;
   date: string;
@@ -56,6 +58,16 @@ export interface EventFormImageState {
   changed: boolean;
 }
 
+/* A bar the submitter can attach the event to. When `venueOptions` is passed
+ * the form shows a Location picker (used for plain users who have no bar of
+ * their own); bar owners keep the prefilled-from-their-bar behaviour. */
+export interface VenueOption {
+  id: string;
+  name: string;
+  address: string;
+  neighborhood: string;
+}
+
 interface EventFormProps {
   title: string;
   subtitle?: string;
@@ -70,6 +82,9 @@ interface EventFormProps {
   optionalStartTime?: boolean;
   optionalEndTime?: boolean;
   optionalDescription?: boolean;
+  /* When provided, render the Location picker (choose an existing bar OR enter
+   * a free-text venue). Omit it to keep the venue prefilled/read-only. */
+  venueOptions?: VenueOption[];
 }
 
 const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -78,7 +93,7 @@ const MAX_SIZE_MB = 5;
 const DEFAULT_IMAGE_POSITION = "50% 50%";
 
 const EMPTY_FORM: EventFormData = {
-  title: "", venue: "", address: "", neighborhood: "", date: "",
+  title: "", venue: "", venueId: "", address: "", neighborhood: "", date: "",
   startTime: "", endTime: "", doorsTime: "", category: "", description: "",
   entryInfo: "", language: "", website: "",
   imagePosition: DEFAULT_IMAGE_POSITION,
@@ -102,6 +117,7 @@ export default function EventForm({
   optionalStartTime = false,
   optionalEndTime = false,
   optionalDescription = false,
+  venueOptions,
 }: EventFormProps) {
   const { data: categoriesData = [] } = useCategories();
   // Form holds the slug-id (categories.id) as the value; we display the label.
@@ -149,6 +165,31 @@ export default function EventForm({
 
   const update = (field: keyof EventFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+  // Location picker (only rendered when `venueOptions` is provided).
+  const [venueMode, setVenueMode] = useState<"existing" | "manual">("existing");
+
+  const selectVenue = (id: string) => {
+    const v = venueOptions?.find((o) => o.id === id);
+    setFormData((prev) => ({
+      ...prev,
+      venueId: id,
+      venue: v?.name ?? "",
+      address: v?.address ?? "",
+      neighborhood: v?.neighborhood ?? "",
+    }));
+  };
+
+  const changeVenueMode = (mode: "existing" | "manual") => {
+    setVenueMode(mode);
+    // Clear the fields the other mode owns so a stale selection can't leak
+    // through on submit.
+    setFormData((prev) => ({
+      ...prev,
+      venueId: "",
+      ...(mode === "existing" ? { venue: "", address: "", neighborhood: "" } : {}),
+    }));
+  };
 
   const handleFile = (file: File) => {
     if (!ACCEPTED_MIME.includes(file.type)) {
@@ -228,6 +269,16 @@ export default function EventForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (venueOptions) {
+      if (venueMode === "existing" && !formData.venueId) {
+        toast.error("Please choose a bar, or switch to entering a location manually.");
+        return;
+      }
+      if (venueMode === "manual" && (!formData.venue.trim() || !formData.address.trim())) {
+        toast.error("Please enter the venue name and address.");
+        return;
+      }
+    }
     if (formData.date && formData.startTime) {
       const eventStart = fromZonedTime(`${formData.date}T${formData.startTime}`, "Europe/Berlin");
       if (eventStart.getTime() <= Date.now()) {
@@ -345,6 +396,71 @@ export default function EventForm({
             className={inputClass}
           />
         </div>
+
+        {/* Location — only shown when the caller passes venueOptions (plain
+            users without a bar). Bar owners keep the prefilled venue. */}
+        {venueOptions && (
+          <div className="space-y-3">
+            <label className="text-sm font-medium flex items-center gap-1">
+              <MapPin className="h-3 w-3" /> Location *
+            </label>
+            <div className="flex gap-2">
+              {(["existing", "manual"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => changeVenueMode(mode)}
+                  className={`h-9 px-3 border-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
+                    venueMode === mode
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-foreground hover:bg-foreground hover:text-background"
+                  }`}
+                >
+                  {mode === "existing" ? "Choose a bar" : "Enter manually"}
+                </button>
+              ))}
+            </div>
+            {venueMode === "existing" ? (
+              <select
+                value={formData.venueId ?? ""}
+                onChange={(e) => selectVenue(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select a bar…</option>
+                {venueOptions.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={formData.venue}
+                  onChange={(e) => update("venue", e.target.value)}
+                  placeholder="Venue / location name"
+                  className={inputClass}
+                />
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => update("address", e.target.value)}
+                  placeholder="Address"
+                  className={inputClass}
+                />
+                <select
+                  value={formData.neighborhood}
+                  onChange={(e) => update("neighborhood", e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Neighborhood (optional)</option>
+                  {ALL_NEIGHBORHOODS.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Date & Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

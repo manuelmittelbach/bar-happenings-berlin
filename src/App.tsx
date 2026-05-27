@@ -115,7 +115,7 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   if (pending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Spinner />
+        <Spinner size="lg" />
       </div>
     );
   }

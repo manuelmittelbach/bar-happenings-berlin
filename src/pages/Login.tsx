@@ -4,7 +4,7 @@ import { Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
-import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
@@ -120,11 +120,7 @@ export default function Login() {
 	};
 
 	if (authLoading || user) {
-		return (
-			<div className="flex-1 flex items-center justify-center py-16">
-				<Spinner />
-			</div>
-		);
+		return <PageSpinner />;
 	}
 
 	if (success) {

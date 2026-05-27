@@ -15,7 +15,7 @@ import {
 import { hasEventStarted } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
-import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 
 export default function EditEvent() {
   const { id } = useParams<{ id: string }>();
@@ -42,7 +42,9 @@ export default function EditEvent() {
       return;
     }
     if (!roleResolved) return;
-    if (role !== "organizer" && role !== "admin") {
+    // Any signed-in role may reach the editor; the loader below still
+    // restricts non-admins to events they created (event.createdBy === user.id).
+    if (role !== "user" && role !== "organizer" && role !== "admin") {
       navigate("/", { replace: true });
     }
   }, [authLoading, user, role, roleResolved, navigate]);
@@ -172,11 +174,7 @@ export default function EditEvent() {
   }
 
   if (!initialValues || !seriesInfo) {
-    return (
-      <div className="flex-1 flex items-center justify-center py-16">
-        <Spinner />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const subtitle = applyToSeries

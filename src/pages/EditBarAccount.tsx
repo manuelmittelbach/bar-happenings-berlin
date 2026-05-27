@@ -11,7 +11,7 @@ import {
 } from "@/lib/supabaseQueries";
 import { deriveNeighborhoodFromAddress } from "@/lib/neighborhoodFromAddress";
 import { geocodeAddress } from "@/lib/geocoding";
-import { Spinner } from "@/components/ui/spinner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 
 type EditMode = "venue" | "pending" | "claim";
 
@@ -234,11 +234,7 @@ export default function EditBarAccount() {
 	};
 
 	if (authLoading || !roleResolved) {
-		return (
-			<div className="flex-1 flex items-center justify-center py-16">
-				<Spinner />
-			</div>
-		);
+		return <PageSpinner />;
 	}
 	if (role !== "admin") return null;
 
@@ -251,11 +247,7 @@ export default function EditBarAccount() {
 	}
 
 	if (!mode) {
-		return (
-			<div className="flex-1 flex items-center justify-center py-16">
-				<Spinner />
-			</div>
-		);
+		return <PageSpinner />;
 	}
 
 	return (
