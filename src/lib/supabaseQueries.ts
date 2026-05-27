@@ -401,6 +401,109 @@ export async function approveEvent(seriesId: string, adminId: string): Promise<v
   if (error) throw error;
 }
 
+// --- Approving submissions whose venue was typed in manually -----------------
+// When a plain user picks a bar from the directory the submission already has a
+// venue_id and plain approveEvent() is enough. When they typed a location by
+// hand, venue_id is null and an admin decides at approve time whether to create
+// a brand-new venue or link the event(s) to one that already exists. Both paths
+// mirror the organizer flow (approveOrganizerWithNewBar / updateApprovedEvent):
+// venue writes are admin-only per RLS, so this is the first point the bar can
+// legally be created.
+
+export interface SubmissionVenueData {
+  name: string;
+  address: string;
+  neighborhood: string;
+}
+
+/** Create a brand-new venue from a manually-entered submission, then link and
+ * approve the whole series. Coordinates are resolved BEFORE any write — a
+ * geocoding miss throws and leaves the submission untouched (still pending)
+ * rather than producing a venue that never shows on the map. */
+export async function approveSubmissionWithNewVenue(
+  seriesId: string,
+  adminId: string,
+  submission: SubmissionVenueData,
+  coords?: { lat: number; lng: number },
+): Promise<{ venueId: string }> {
+  let lat = coords?.lat;
+  let lng = coords?.lng;
+  if (lat == null || lng == null) {
+    const geo = await geocodeAddress(submission.address);
+    if (!geo) {
+      throw new Error(
+        "Couldn't locate that address on the map, so the bar can't be created. Link the event to an existing bar, or reject it and ask the submitter for a more precise address.",
+      );
+    }
+    lat = geo.lat;
+    lng = geo.lng;
+  }
+
+  const { data: venueRow, error: venueError } = await supabase
+    .from("venues")
+    .insert({
+      name: submission.name,
+      address: submission.address,
+      neighborhood: submission.neighborhood,
+      website: null,
+      instagram: null,
+      phone: null,
+      lat,
+      lng,
+    })
+    .select("id")
+    .single();
+  if (venueError) throw venueError;
+  const venueId = venueRow.id;
+
+  const { error: eventError } = await supabase
+    .from("events")
+    .update({
+      venue_id: venueId,
+      venue: submission.name,
+      address: submission.address,
+      neighborhood: submission.neighborhood,
+      status: "approved",
+      approved_by: adminId,
+      approved_at: new Date().toISOString(),
+    })
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
+  if (eventError) throw eventError;
+
+  return { venueId };
+}
+
+/** Approve a manual-venue submission by LINKING it to an existing venue instead
+ * of creating a duplicate. Fetches the canonical venue from the DB (local
+ * copies may be stale) and overwrites the events' denormalized
+ * venue/address/neighborhood to match — same as updateApprovedEvent. */
+export async function approveSubmissionWithExistingVenue(
+  seriesId: string,
+  adminId: string,
+  venueId: string,
+): Promise<void> {
+  const { data: venue, error: venueErr } = await supabase
+    .from("venues")
+    .select("id, name, address, neighborhood")
+    .eq("id", venueId)
+    .maybeSingle();
+  if (venueErr || !venue) throw new Error("Venue not found");
+
+  const { error: eventError } = await supabase
+    .from("events")
+    .update({
+      venue_id: venue.id,
+      venue: venue.name,
+      address: venue.address,
+      neighborhood: venue.neighborhood,
+      status: "approved",
+      approved_by: adminId,
+      approved_at: new Date().toISOString(),
+    })
+    .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`);
+  if (eventError) throw eventError;
+}
+
 export async function rejectEvent(seriesId: string): Promise<void> {
   const { error } = await supabase
     .from("events")
