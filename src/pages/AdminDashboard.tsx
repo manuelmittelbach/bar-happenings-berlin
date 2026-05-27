@@ -1142,6 +1142,20 @@ export default function AdminDashboard() {
                           {head.address && (
                             <p className="text-xs text-muted-foreground mt-0.5 break-words">{head.address}</p>
                           )}
+                          {/* Who submitted it — so admins can identify / contact
+                              the plain user behind a pending event. */}
+                          {head.submitter && (
+                            <p className="text-xs text-muted-foreground mt-1.5 break-words">
+                              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/55">Submitted by</span>{" "}
+                              {[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ") &&
+                                `${[head.submitter.firstName, head.submitter.lastName].filter(Boolean).join(" ")} · `}
+                              {head.submitter.email ? (
+                                <a href={`mailto:${head.submitter.email}`} className="underline hover:text-foreground">
+                                  {head.submitter.email}
+                                </a>
+                              ) : "—"}
+                            </p>
+                          )}
                           {/* Preview the live detail page exactly as it'll look
                               once approved (admins can read pending rows via RLS). */}
                           <button
