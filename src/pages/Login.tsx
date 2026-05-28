@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsNative } from "@/hooks/useIsNative";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -20,6 +21,7 @@ export default function Login() {
 	const location = useLocation();
 	const from = (location.state as { from?: string })?.from ?? null;
 	const { user, loading: authLoading, signUp } = useAuth();
+	const isNative = useIsNative();
 
 	const [isBarOwner, setIsBarOwner] = useState(false);
 	const [firstName, setFirstName] = useState("");
@@ -137,7 +139,7 @@ export default function Login() {
 						</p>
 					)}
 					<button
-						onClick={() => navigate("/for-bars", { state: { scrollToSignIn: true } })}
+						onClick={() => navigate("/for-bars?view=signin")}
 						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
 					>
 						Go to sign in
@@ -389,17 +391,19 @@ export default function Login() {
 			</div>
 			</section>
 			</div>
-			<nav
-				aria-label="Legal"
-				className="border-t-2 border-foreground/10 px-4 py-6 flex flex-wrap justify-center gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
-			>
-				<Link to="/impressum" className="hover:text-foreground transition-colors">
-					Impressum
-				</Link>
-				<Link to="/datenschutz" className="hover:text-foreground transition-colors">
-					Datenschutz
-				</Link>
-			</nav>
+			{isNative && (
+				<nav
+					aria-label="Legal"
+					className="border-t-2 border-foreground/10 px-4 py-6 flex flex-wrap justify-center gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+				>
+					<Link to="/impressum" className="hover:text-foreground transition-colors">
+						Impressum
+					</Link>
+					<Link to="/datenschutz" className="hover:text-foreground transition-colors">
+						Datenschutz
+					</Link>
+				</nav>
+			)}
 		</div>
 	);
 }
