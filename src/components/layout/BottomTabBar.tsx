@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { ListBullets, MapTrifold, Storefront, UserCircle } from "@phosphor-icons/react";
+import { ListBullets, MapTrifold, Storefront, Info } from "@phosphor-icons/react";
 
-type TabKey = "list" | "map" | "bars" | "profile";
+type TabKey = "list" | "map" | "bars" | "info";
 
 interface TabDef {
   key: TabKey;
@@ -11,6 +11,12 @@ interface TabDef {
   isActive: (pathname: string) => boolean;
 }
 
+// Four primary surfaces. A Profile tab used to live in the Info slot
+// pointing at /signin, but creating an account gives the user nothing
+// of value today (no saved bars, no notifications, no syncing) —
+// surfacing a dead-end "Profile" entry would just teach users to
+// ignore it. Info now houses Impressum, Datenschutz, and the
+// "bar owners → manage on web" pointer.
 const TABS: TabDef[] = [
   {
     key: "list",
@@ -39,14 +45,11 @@ const TABS: TabDef[] = [
     isActive: (p) => p === "/bars",
   },
   {
-    // Profile tab points at the auth surface. /signin auto-redirects signed-in
-    // users to /profile, so guests land on the sign-in form and signed-in
-    // users land on their account — without BottomTabBar needing auth state.
-    key: "profile",
-    to: "/signin",
-    label: "Profile",
-    Icon: UserCircle,
-    isActive: (p) => p === "/signin" || p === "/profile",
+    key: "info",
+    to: "/info",
+    label: "Info",
+    Icon: Info,
+    isActive: (p) => p === "/info" || p === "/impressum" || p === "/datenschutz",
   },
 ];
 

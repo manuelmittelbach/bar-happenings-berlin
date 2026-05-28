@@ -10,36 +10,39 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, "..", "public");
 const ASSETS = join(__dirname, "..", "assets");
 
-// Master design — matches public/favicon.svg (white tile, black border, Georgia bold "IB").
+// Master design — matches public/favicon.svg and the live insidebars.co
+// favicon: white tile (rounded), black "iB" in Helvetica Neue 900 with
+// lowercase "i" + uppercase "B" and tight -1 letter-spacing.
 const standardSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="1" y="1" width="62" height="62" rx="12" fill="#FFFFFF" stroke="#0F0F0F" stroke-width="2"/>
-  <text x="32" y="44" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', Times, serif"
-        font-weight="700" font-size="32" letter-spacing="-1" fill="#0F0F0F">IB</text>
+  <rect width="64" height="64" rx="12" fill="#FFFFFF"/>
+  <text x="32" y="46" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-weight="900" font-size="40" letter-spacing="-1" fill="#000000">iB</text>
 </svg>`;
 
-// Native app icon (Capacitor source) — full-bleed cream brand background
-// + black Georgia bold IB. No built-in rounded corners: iOS applies its
-// own squircle mask, and any pre-rounded PNG ends up with doubled or
-// uneven corners. Sized for the 1024×1024 source @capacitor/assets fans
-// out into every iOS AppIcon variant.
+// Native app icon (Capacitor source) — same iB monogram scaled to the
+// 1024×1024 source @capacitor/assets fans out into every iOS AppIcon
+// variant. No built-in rounded corners: iOS applies its own squircle
+// mask, and any pre-rounded PNG ends up with doubled or uneven corners.
 const nativeSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#F5F1E8"/>
-  <text x="512" y="700" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', Times, serif"
-        font-weight="700" font-size="560" letter-spacing="-20" fill="#0F0F0F">IB</text>
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <text x="512" y="736" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-weight="900" font-size="640" letter-spacing="-16" fill="#000000">iB</text>
 </svg>`;
 
-// Maskable: edge-to-edge black so Android adaptive crop keeps strong brand presence.
-// IB sits inside the 80% safe zone so it survives a circle mask.
+// Maskable: edge-to-edge black so Android adaptive crop keeps strong
+// brand presence. iB sits inside the 80% safe zone so it survives a
+// circle mask. Font-size kept conservative to leave margin against the
+// crop circle.
 const maskableSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" fill="#0F0F0F"/>
-  <text x="32" y="40" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', Times, serif"
-        font-weight="700" font-size="22" letter-spacing="-0.5" fill="#FFFFFF">IB</text>
+  <text x="32" y="42" text-anchor="middle"
+        font-family="'Helvetica Neue', Arial, sans-serif"
+        font-weight="900" font-size="28" letter-spacing="-0.7" fill="#FFFFFF">iB</text>
 </svg>`;
 
 // Social-share card 1200×630 — editorial cream bg, Georgia bold uppercase headline

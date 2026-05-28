@@ -1,7 +1,23 @@
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { useIsNative } from "@/hooks/useIsNative";
+
 export default function Datenschutz() {
+  const navigate = useNavigate();
+  const isNative = useIsNative();
   return (
     <div className="flex-1">
-      <div className="container max-w-2xl py-16">
+      <div className={`container max-w-2xl pb-16 ${isNative ? "pt-4" : "pt-16"}`}>
+        {isNative && (
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 p-2 -ml-2 mb-6 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+          </button>
+        )}
         <h1 className="heading-display text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-8">Datenschutzerklärung</h1>
 
         <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
@@ -30,10 +46,11 @@ export default function Datenschutz() {
             </h2>
             <p className="mb-2">
               <strong className="text-foreground">Beim Besuch der Website:</strong> Wir verwenden
-              keine Cookies oder Tracking-Tools für Marketing- oder Analysezwecke. Technisch
-              notwendiger lokaler Speicher (localStorage / sessionStorage) wird ausschließlich für
-              die Funktion der Seite genutzt (z. B. Login-Session, UI-Zustand). Eine
-              Einwilligungspflicht nach § 25 Abs. 2 TTDSG besteht hierfür nicht.
+              keine Cookies. Für die anonyme Reichweitenmessung kommt ein cookieless Analyse-Dienst
+              zum Einsatz (siehe § 5). Technisch notwendiger lokaler Speicher (localStorage /
+              sessionStorage) wird ausschließlich für die Funktion der Seite genutzt (z. B.
+              Login-Session, UI-Zustand). Eine Einwilligungspflicht nach § 25 Abs. 2 TTDSG besteht
+              hierfür nicht.
             </p>
             <p className="mb-2">
               <strong className="text-foreground">Bei Registrierung als Nutzer:in:</strong> Wir
@@ -80,7 +97,41 @@ export default function Datenschutz() {
 
           <section>
             <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-              5. Speicherdauer
+              5. Reichweitenmessung – Vercel Web Analytics
+            </h2>
+            <p>
+              Zur statistischen Auswertung der Seitenaufrufe nutzen wir Vercel Web Analytics, einen
+              Dienst der Vercel Inc. (340 S Lemon Ave #4133, Walnut, CA 91789, USA). Der Dienst
+              setzt <strong className="text-foreground">keine Cookies</strong> und erstellt{" "}
+              <strong className="text-foreground">keine personenbezogenen Profile</strong>.
+              Erfasst werden ausschließlich anonymisierte Aufrufdaten (aufgerufene Seite,
+              Referrer, Gerätetyp, grobe Geo-Region auf Länderebene). Eine Wiedererkennung
+              einzelner Besucher:innen findet nicht statt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
+              DSGVO (berechtigtes Interesse an einer datensparsamen Reichweitenmessung). In der
+              nativen App (iOS / Android) ist die Reichweitenmessung deaktiviert.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+              6. Standortdaten
+            </h2>
+            <p>
+              Für Funktionen wie „In meiner Nähe" oder die Karten-Ansicht kann die App deinen
+              Standort abfragen. Die Abfrage erfolgt ausschließlich nach deiner ausdrücklichen
+              Freigabe im System-Dialog deines Browsers bzw. Betriebssystems. Die Koordinaten
+              werden{" "}
+              <strong className="text-foreground">ausschließlich auf deinem Gerät verarbeitet</strong>{" "}
+              (z. B. zur Sortierung von Bars nach Entfernung) und{" "}
+              <strong className="text-foreground">nicht an uns oder Dritte übermittelt oder
+              gespeichert</strong>. Du kannst die Freigabe jederzeit in den Einstellungen deines
+              Browsers bzw. Betriebssystems widerrufen.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+              7. Speicherdauer
             </h2>
             <p>
               Account-Daten speichern wir, solange dein Account besteht. Auf Anfrage löschen wir
@@ -91,7 +142,7 @@ export default function Datenschutz() {
 
           <section>
             <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-              6. Deine Rechte
+              8. Deine Rechte
             </h2>
             <p>
               Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung
@@ -110,7 +161,7 @@ export default function Datenschutz() {
 
           <section>
             <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-              7. Änderungen dieser Erklärung
+              9. Änderungen dieser Erklärung
             </h2>
             <p>
               Wir passen diese Datenschutzerklärung an, wenn sich die rechtliche Lage oder unsere
@@ -119,7 +170,7 @@ export default function Datenschutz() {
             </p>
           </section>
 
-          <p className="pt-4 text-xs text-muted-foreground/60">Stand: April 2026</p>
+          <p className="pt-4 text-xs text-muted-foreground/60">Stand: Mai 2026</p>
         </div>
       </div>
     </div>
