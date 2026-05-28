@@ -26,7 +26,6 @@ import {
   setVenueScrapeEnabled,
   updateVenueLinks,
   fetchStagedEvents,
-  fetchStagedEventCount,
   fetchApprovedEvents,
   approveStagedEvent,
   rejectStagedEvent,
@@ -216,9 +215,6 @@ export default function AdminDashboard() {
   );
   const [userQuery, setUserQuery] = useState("");
   const [venues, setVenues] = useState<Venue[]>([]);
-  const [scrapedPendingCount, setScrapedPendingCount] = useState<number | null>(null);
-  const [manualPendingCount, setManualPendingCount] = useState<number | null>(null);
-  const [recurringPendingCount, setRecurringPendingCount] = useState<number | null>(null);
   const [userPendingCount, setUserPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -352,16 +348,7 @@ export default function AdminDashboard() {
 
   const loadPendingEventCounts = useCallback(async () => {
     try {
-      const [scraped, manual, recurring, userPending] = await Promise.all([
-        fetchStagedEventCount("scraped"),
-        fetchStagedEventCount("manual"),
-        fetchStagedEventCount("recurring"),
-        fetchPendingUserSubmissionCount(),
-      ]);
-      setScrapedPendingCount(scraped);
-      setManualPendingCount(manual);
-      setRecurringPendingCount(recurring);
-      setUserPendingCount(userPending);
+      setUserPendingCount(await fetchPendingUserSubmissionCount());
     } catch {
       // Silent — count is informational, not critical.
     }
@@ -966,18 +953,13 @@ export default function AdminDashboard() {
             </div>
             <div className="border border-border rounded-sm p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground font-medium">Pending Events</span>
+                <span className="text-xs text-muted-foreground font-medium">Pending User Events</span>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </div>
-              {scrapedPendingCount === null || manualPendingCount === null || recurringPendingCount === null || userPendingCount === null ? (
+              {userPendingCount === null ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
-                <>
-                  <p className="font-serif text-2xl font-bold">{String(scrapedPendingCount + manualPendingCount + recurringPendingCount + userPendingCount)}</p>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {scrapedPendingCount} scraped · {manualPendingCount} manual · {recurringPendingCount} recurring · {userPendingCount} user
-                  </p>
-                </>
+                <p className="font-serif text-2xl font-bold">{String(userPendingCount)}</p>
               )}
             </div>
           </div>
