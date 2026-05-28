@@ -76,6 +76,26 @@ function ForBarsLegacyRedirect() {
   return <Navigate to={`/for-organizers${location.search}`} replace />;
 }
 
+// Old auth surface used `/for-organizers?view=signin`. Strip the `view` param
+// and forward to /signin so any preserved query (e.g. `link_error`) survives.
+function ForOrganizersOrSignin() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (params.get("view") === "signin") {
+    params.delete("view");
+    const qs = params.toString();
+    return <Navigate to={`/signin${qs ? `?${qs}` : ""}`} replace />;
+  }
+  return <ForBars />;
+}
+
+// Old signup URL `/login`. Forward (preserve query) to /signup so any inbound
+// `?mode=signup&bar=1` from external links / older emails keeps working.
+function LoginLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/signup${location.search}`} replace />;
+}
+
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { user, role, roleResolved, loading } = useAuth();
@@ -89,13 +109,13 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
-      // Bar-owner-only: every confirm/reset error funnels to /for-organizers
-      // (the single auth surface). The `params` look-up for `?bar=1` is gone
+      // Bar-owner-only: every confirm/reset error funnels to /signin (the
+      // single auth surface). The `params` look-up for `?bar=1` is gone
       // because there's no longer a non-bar signup branch to disambiguate.
       const isReset = window.location.pathname.includes("reset-password");
       const target = isReset
-        ? "/for-organizers?link_error=reset"
-        : "/for-organizers?link_error=confirm";
+        ? "/signin?link_error=reset"
+        : "/signin?link_error=confirm";
       navigate(target, { replace: true });
       setPending(false);
       return;
@@ -133,7 +153,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
 import PublishEvent from "./pages/PublishEvent";
-import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Signin from "./pages/Signin";
 import OrganizerDashboard from "./pages/OrganizerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForBars from "./pages/ForBars";
@@ -219,10 +240,14 @@ const App = () => (
             <Route path="/bar/:id" element={<BarDetail />} />
             <Route path="/bars" element={<BarsList />} />
             <Route path="/publish" element={<PublishEvent />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/signin" element={<Signin />} />
+            {/* Legacy: old "Create account" buttons and email templates may
+                still link to /login. Forward (preserving query) to /signup. */}
+            <Route path="/login" element={<LoginLegacyRedirect />} />
             <Route path="/dashboard" element={<OrganizerDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/for-organizers" element={<ForBars />} />
+            <Route path="/for-organizers" element={<ForOrganizersOrSignin />} />
             {/* Legacy: old confirm/reset emails and bookmarks may still point
                 at /for-bars. Forward (preserving query) so they keep working. */}
             <Route path="/for-bars" element={<ForBarsLegacyRedirect />} />

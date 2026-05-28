@@ -11,12 +11,11 @@ import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
 type VenueOption = { id: string; name: string };
 
-/* Bar-owner signup. Reached from /for-organizers → "Create account". This page
- * is intentionally signup-only: signin, forgot-password, and signin lockout
- * all live on /for-organizers now that regular-user accounts no longer exist. The
- * `?bar=1` query param is no longer load-bearing — every visit to /login is
- * a bar-owner signup — but it stays in inbound URLs for backwards-compat. */
-export default function Login() {
+/* Bar-owner signup. Reached from /for-organizers → "Create account". Sign-in,
+ * forgot-password, and link-error lockout live on /signin. The `?bar=1` query
+ * param is no longer load-bearing — every visit to /signup is a bar-owner
+ * signup — but it stays in inbound URLs for backwards-compat. */
+export default function Signup() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const from = (location.state as { from?: string })?.from ?? null;
@@ -45,7 +44,7 @@ export default function Login() {
 
 	useEffect(() => {
 		if (authLoading || !user) return;
-		if (from && from.startsWith("/") && from !== "/login" && from !== "/for-organizers") {
+		if (from && from.startsWith("/") && from !== "/signup" && from !== "/signin" && from !== "/for-organizers") {
 			navigate(from, { replace: true });
 			return;
 		}
@@ -139,7 +138,7 @@ export default function Login() {
 						</p>
 					)}
 					<button
-						onClick={() => navigate("/for-organizers?view=signin")}
+						onClick={() => navigate("/signin")}
 						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
 					>
 						Go to sign in

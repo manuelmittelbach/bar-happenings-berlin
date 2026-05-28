@@ -89,7 +89,7 @@ export default function ProfileDetails() {
     // Open to every signed-in role (user, organizer, admin); only
     // unauthenticated visitors get redirected to the sign-in surface.
     if (!user) {
-      navigate("/for-organizers", { replace: true });
+      navigate("/signin", { replace: true });
     }
   }, [user, loading, navigate]);
 

@@ -39,15 +39,14 @@ const TABS: TabDef[] = [
     isActive: (p) => p === "/bars",
   },
   {
-    // Profile tab is the only native surface that surfaces Impressum +
-    // Datenschutz (the web Footer is dropped on native), so it must stay
-    // reachable in every auth state — /for-organizers already renders sensibly
-    // for guests, bar-owners, and admins without redirecting away.
+    // Profile tab points at the auth surface. /signin auto-redirects signed-in
+    // users to /profile, so guests land on the sign-in form and signed-in
+    // users land on their account — without BottomTabBar needing auth state.
     key: "profile",
-    to: "/for-organizers",
+    to: "/signin",
     label: "Profile",
     Icon: UserCircle,
-    isActive: (p) => p === "/for-organizers",
+    isActive: (p) => p === "/signin" || p === "/profile",
   },
 ];
 

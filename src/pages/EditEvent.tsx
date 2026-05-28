@@ -60,7 +60,7 @@ export default function EditEvent() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate("/for-organizers", { replace: true });
+      navigate("/signin", { replace: true });
       return;
     }
     if (!roleResolved) return;
