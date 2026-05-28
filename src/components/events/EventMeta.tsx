@@ -68,6 +68,11 @@ export default function EventMeta({ event, categories, size = "sm", walkingMin }
           Donation
         </span>
       )}
+      {event.isCommunitySubmission && (
+        <span className="ml-1 px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em] text-[10px]">
+          Community submission
+        </span>
+      )}
       {isCanceled && (
         <span className="ml-1 px-1.5 py-0.5 border tracking-[0.1em]" style={{ borderColor: "#b91c1c", color: "#b91c1c" }}>
           Canceled
