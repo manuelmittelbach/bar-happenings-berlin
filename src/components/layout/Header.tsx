@@ -71,10 +71,7 @@ export default function Header() {
     navigate("/");
   };
 
-  // Links without a query match on pathname (Events, Map, …). The Sign-in
-  // icon links to "/for-organizers?view=signin" and should only be active on
-  // that exact view — not on the plain /for-organizers page — so match the
-  // full path + query when the link carries one.
+  // Links without a query match on pathname (Events, Map, …).
   const isActive = (path: string) =>
     path.includes("?")
       ? location.pathname + location.search === path
@@ -149,7 +146,7 @@ export default function Header() {
           ))}
 
           {!loading && !user && (
-            <NavLink path="/for-organizers?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+            <NavLink path="/signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
           )}
 
           {!loading && user && (
@@ -169,7 +166,7 @@ export default function Header() {
           ))}
 
           {!loading && !user && (
-            <NavLink path="/for-organizers?view=signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
+            <NavLink path="/signin" icon={<User className="h-4 w-4" />} ariaLabel="Sign in" />
           )}
 
           {!loading && user && (

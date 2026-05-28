@@ -67,7 +67,7 @@ export default function BarAccount() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      navigate("/for-organizers", { replace: true });
+      navigate("/signin", { replace: true });
       return;
     }
     if (!roleResolved) return;
