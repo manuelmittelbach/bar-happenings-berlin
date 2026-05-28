@@ -8,6 +8,7 @@ import {
   cancelEvent,
   cancelEventSeries,
   deleteApprovedEvent,
+  deleteUserStagedSubmission,
   fetchEventById,
   fetchMyStagedSubmissionById,
   updateEvent,
@@ -202,6 +203,22 @@ export default function EditEvent() {
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!id) return;
+    if (!window.confirm("Withdraw this submission? It will be permanently removed and won't be reviewed.")) return;
+    try {
+      const { withdrawn } = await deleteUserStagedSubmission(id);
+      if (!withdrawn) {
+        toast.info("This event was just approved by an admin and can't be withdrawn anymore.");
+      } else {
+        toast.success("Submission withdrawn.");
+      }
+      navigate("/profile/events", { replace: true });
+    } catch {
+      toast.error("Couldn't withdraw the submission. Please try again.");
+    }
+  };
+
   const handleHardDelete = async () => {
     if (!id || !seriesInfo) return;
     const seriesId = seriesInfo.isSeries ? seriesInfo.seriesId : null;
@@ -285,7 +302,18 @@ export default function EditEvent() {
         </button>
       }
       footer={
-        isStaging ? null : (
+        isStaging ? (
+        <div className="relative z-10 pt-6 border-t border-border flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleWithdraw}
+            style={{ touchAction: "manipulation" }}
+            className="w-full h-12 bg-background border border-accent text-accent text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
+          >
+            Withdraw submission
+          </button>
+        </div>
+        ) : (
         <div className="relative z-10 pt-6 border-t border-border flex flex-col gap-3">
           <button
             type="button"
