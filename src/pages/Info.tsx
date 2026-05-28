@@ -20,7 +20,7 @@ export default function Info() {
 
         <p className="font-body text-[15px] md:text-base leading-relaxed text-foreground/80 mb-10 max-w-2xl">
           A live directory of what's on tonight in Berlin's bar scene — events,
-          venues, neighborhoods. Browse without an account.
+          venues, neighborhoods.
         </p>
 
         <section className="mb-10 max-w-2xl">
