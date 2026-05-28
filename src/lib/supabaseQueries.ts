@@ -1751,6 +1751,21 @@ export async function updateUserStagedSubmission(
   return { updated: (data?.length ?? 0) > 0 };
 }
 
+// Owner-triggered withdrawal of a pending submission. Same race contract as
+// update: { withdrawn: false } means 0 rows deleted (admin already approved
+// the row, so it's in `events` now and no longer ours to remove).
+export async function deleteUserStagedSubmission(
+  stagingId: string,
+): Promise<{ withdrawn: boolean }> {
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .delete()
+    .eq("id", stagingId)
+    .select("id");
+  if (error) throw error;
+  return { withdrawn: (data?.length ?? 0) > 0 };
+}
+
 // Resolve each row's submitter (email + name) from profiles via created_by.
 // There's no FK on created_by (it points at auth.users, not profiles), so we
 // batch-fetch the profiles rather than relying on a PostgREST embed. Rows whose
