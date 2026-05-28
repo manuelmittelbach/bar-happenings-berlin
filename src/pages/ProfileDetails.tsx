@@ -59,8 +59,7 @@ export default function ProfileDetails() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [name, setName] = useState("");
   const [initialized, setInitialized] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -98,8 +97,7 @@ export default function ProfileDetails() {
     fetchProfile(user.id)
       .then((p) => {
         if (p) {
-          setFirstName(p.firstName);
-          setLastName(p.lastName);
+          setName(`${p.firstName ?? ""} ${p.lastName ?? ""}`.trim());
         }
         setInitialized(true);
       })
@@ -113,15 +111,14 @@ export default function ProfileDetails() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const trimmedFirst = firstName.trim();
-    const trimmedLast = lastName.trim();
-    if (!trimmedFirst || !trimmedLast) {
-      toast.error("First and last name are required.");
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("Name is required.");
       return;
     }
     setSaving(true);
     try {
-      await updateProfile(user.id, { firstName: trimmedFirst, lastName: trimmedLast });
+      await updateProfile(user.id, { firstName: trimmed, lastName: "" });
       toast.success("Profile updated.");
     } catch {
       toast.error("Couldn't save profile. Please try again.");
@@ -287,28 +284,16 @@ export default function ProfileDetails() {
 
           {!loadError && (
             <form onSubmit={handleSave} className="space-y-5">
-              {/* First + last name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="mono-label text-muted-foreground">First name</label>
-                  <input
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="mono-label text-muted-foreground">Last name</label>
-                  <input
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="mono-label text-muted-foreground">Name</label>
+                <input
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                />
               </div>
 
               <div className="pt-2">
