@@ -310,8 +310,9 @@ export default function OrganizerDashboard() {
                 const canExtend = isSeries && canExtendSeries(parent);
                 const isExpanded = expandedId === parent.id;
                 // A pending submission lives in venue_events_staging, not
-                // `events`, so it has no /event/:id or /edit-event/:id route —
-                // suppress its View/Edit links. The "pending" badge says it all.
+                // `events`, so it has no /event/:id route — suppress View.
+                // Edit is wired through: /edit-event/:id falls back to the
+                // user's staging row when the live event isn't found.
                 const isPendingSubmission = displayEvent.status === "pending";
                 return (
                   <div
@@ -374,18 +375,13 @@ export default function OrganizerDashboard() {
                                   <Eye className="h-4 w-4" /> View
                                 </Link>
                               )}
-                              {!isPendingSubmission && displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
+                              {displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
                                 <Link
                                   to={`/edit-event/${displayEvent.id}`}
                                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   <Pencil className="h-4 w-4" /> Edit
                                 </Link>
-                              )}
-                              {isPendingSubmission && (
-                                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                                  <Clock3 className="h-4 w-4" /> Awaiting review
-                                </span>
                               )}
                             </>
                           )
