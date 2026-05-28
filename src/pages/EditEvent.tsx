@@ -38,12 +38,13 @@ export default function EditEvent() {
       ? "/admin?tab=all-bars"
       : isAdmin
       ? `/event/${id}`
-      : "/dashboard";
+      : "/profile/events";
 
   // Cancel = step back to where they came from. Going back (rather than
-  // pushing/replacing the dashboard URL) avoids stranding a duplicate entry
-  // that makes the first browser-back press a no-op. `location.key === "default"`
-  // means this was the first page loaded, so there's nothing to pop — fall back.
+  // pushing/replacing the /profile/events URL) avoids stranding a duplicate
+  // entry that makes the first browser-back press a no-op. `location.key ===
+  // "default"` means this was the first page loaded, so there's nothing to
+  // pop — fall back.
   const handleCancel = () => {
     if (location.key !== "default") navigate(-1);
     else navigate(cancelFallback, { replace: true });
@@ -79,7 +80,7 @@ export default function EditEvent() {
         return;
       }
       if (event.status === "canceled" || hasEventStarted(event)) {
-        navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
+        navigate(isAdmin ? "/admin" : "/profile/events", { replace: true });
         return;
       }
       setInitialValues({
@@ -129,7 +130,7 @@ export default function EditEvent() {
         }
         queryClient.invalidateQueries({ queryKey: ["events"] });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
-        navigate(isAdmin ? `/event/${id}` : "/dashboard");
+        navigate(isAdmin ? `/event/${id}` : "/profile/events");
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
@@ -161,7 +162,7 @@ export default function EditEvent() {
       }
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
-      navigate(isAdmin ? "/" : "/dashboard");
+      navigate(isAdmin ? "/" : "/profile/events");
     } catch {
       toast.error("Couldn't cancel the event. Please try again.");
     }
