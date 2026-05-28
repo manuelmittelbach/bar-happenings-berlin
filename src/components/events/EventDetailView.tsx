@@ -50,6 +50,7 @@ export interface EventDetailViewProps {
     | "imagePosition"
     | "status"
     | "canceledBy"
+    | "isCommunitySubmission"
   >;
 
   // Pre-computed recurrence label (e.g. "Every Tuesday"). null = hide.
@@ -167,6 +168,11 @@ export default function EventDetailView({
                 <span>{part.text}</span>
               </span>
             ))}
+            {event.isCommunitySubmission && (
+              <span className="inline-block px-1.5 py-0.5 border border-current text-muted-foreground tracking-[0.1em] text-[10px] font-bold uppercase">
+                Community submission
+              </span>
+            )}
           </div>
           {!hasRealImage && isCanceled && (
             <span className="shrink-0 inline-block font-mono font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-2.5 py-0.5 -rotate-3 whitespace-nowrap">

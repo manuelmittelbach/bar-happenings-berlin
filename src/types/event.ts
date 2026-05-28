@@ -33,6 +33,12 @@ export interface BarlinEvent {
   // "Just added" badge on cards added in the last ~48h. Optional because
   // events_archive doesn't always carry it through cleanly.
   createdAt?: string;
+  // True when this event came through the plain-user submission pipeline.
+  // Drives the "Community submission" badge on cards + detail. Bar-owner
+  // and admin events stay false. Only present on rows from `events` (the
+  // live table); events_archive doesn't carry the flag, so archived rows
+  // surface as false via the mapper.
+  isCommunitySubmission: boolean;
   // Who submitted this event, resolved from profiles via created_by. Only
   // populated for the admin moderation queue (fetchPendingUserSubmissions) so
   // admins see the plain user behind a pending submission. Email always present
