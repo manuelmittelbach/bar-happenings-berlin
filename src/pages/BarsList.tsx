@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Shuffle, X } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +13,20 @@ import { berlinDateString } from "@/lib/dateFormat";
 import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import type { Venue, BarlinEvent } from "@/types/event";
+
+// Bars-page filter persistence. Lives in sessionStorage so bar-card →
+// bar detail → back keeps the filter the user dialled in. Mirrors the
+// reload-clear pattern in useFilterParams (module-top removeItem runs
+// on real reloads, SPA navigation leaves it intact). Kept in a private
+// namespace (bars_*) so it doesn't leak into the shared Events/Map
+// filter slot — that separation is intentional, see the comment on the
+// state hooks below.
+const BARS_Q_KEY = "bars_q";
+const BARS_HOOD_KEY = "bars_hood";
+if (typeof sessionStorage !== "undefined") {
+  sessionStorage.removeItem(BARS_Q_KEY);
+  sessionStorage.removeItem(BARS_HOOD_KEY);
+}
 
 /* BarsList — directory of every venue, grouped by neighborhood.
  *
@@ -43,9 +57,27 @@ export default function BarsList() {
   // a hood here should not leak to Events/Map — those surfaces have
   // their own discovery logic, and a stray "Kreuzberg" filter
   // following the user there would silently hide most of what they
-  // came to see.
-  const [nameQuery, setNameQuery] = useState("");
-  const [activeNeighborhood, setActiveNeighborhood] = useState("");
+  // came to see. State is mirrored to a private sessionStorage slot
+  // so card → bar detail → back preserves the filter; clears on full
+  // reload via the module-top removeItem block.
+  const [nameQuery, setNameQuery] = useState(() =>
+    typeof sessionStorage !== "undefined" ? sessionStorage.getItem(BARS_Q_KEY) ?? "" : "",
+  );
+  const [activeNeighborhood, setActiveNeighborhood] = useState(() =>
+    typeof sessionStorage !== "undefined" ? sessionStorage.getItem(BARS_HOOD_KEY) ?? "" : "",
+  );
+
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    if (nameQuery) sessionStorage.setItem(BARS_Q_KEY, nameQuery);
+    else sessionStorage.removeItem(BARS_Q_KEY);
+  }, [nameQuery]);
+
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    if (activeNeighborhood) sessionStorage.setItem(BARS_HOOD_KEY, activeNeighborhood);
+    else sessionStorage.removeItem(BARS_HOOD_KEY);
+  }, [activeNeighborhood]);
 
   const today = berlinDateString();
 
