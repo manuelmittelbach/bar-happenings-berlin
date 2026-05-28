@@ -9,8 +9,10 @@ import {
   cancelEventSeries,
   deleteApprovedEvent,
   fetchEventById,
+  fetchMyStagedSubmissionById,
   updateEvent,
   updateEventSeries,
+  updateUserStagedSubmission,
   uploadEventImage,
 } from "@/lib/supabaseQueries";
 import { hasEventStarted } from "@/lib/eventStatus";
@@ -55,8 +57,14 @@ export default function EditEvent() {
   const [initialImageUrl, setInitialImageUrl] = useState<string | null>(null);
   const [seriesInfo, setSeriesInfo] = useState<{ isSeries: boolean; seriesId: string; eventDate: string } | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
+  // Which table this row lives in. Staging = the user's own pending submission
+  // (no /event/:id route until approved); events = the live moderation-passed
+  // row. Set on load, drives save destination and which footer actions show.
+  const [source, setSource] = useState<"events" | "staging" | null>(null);
 
-  const applyToSeries = seriesInfo?.isSeries && scopeParam === "future";
+  // applyToSeries only makes sense for live events with materialized children.
+  // A staging row is a single template; the rule lives on the one row.
+  const applyToSeries = source === "events" && seriesInfo?.isSeries && scopeParam === "future";
 
   useEffect(() => {
     if (authLoading) return;
@@ -74,7 +82,17 @@ export default function EditEvent() {
 
   useEffect(() => {
     if (!id || authLoading || !user || !roleResolved) return;
-    fetchEventById(id).then((event) => {
+    const load = async () => {
+      // Try the live `events` table first (the common case). Fall back to the
+      // user's own staging row for pending submissions — admins skip the
+      // fallback since their staging review path is the AdminDashboard, not
+      // this editor.
+      let loadedSource: "events" | "staging" = "events";
+      let event = await fetchEventById(id);
+      if (!event && !isAdmin) {
+        event = await fetchMyStagedSubmissionById(id, user.id);
+        if (event) loadedSource = "staging";
+      }
       if (!event || (!isAdmin && event.createdBy !== user.id)) {
         setNotFound(true);
         return;
@@ -83,6 +101,7 @@ export default function EditEvent() {
         navigate(isAdmin ? "/profile/admin" : "/profile/events", { replace: true });
         return;
       }
+      setSource(loadedSource);
       setInitialValues({
         title: event.title,
         venue: event.venue,
@@ -109,18 +128,33 @@ export default function EditEvent() {
         seriesId: event.parentId || event.id,
         eventDate: event.date,
       });
-    });
+    };
+    void load();
   }, [id, user, authLoading, role, roleResolved, isAdmin, navigate]);
 
   const handleSubmit = useMemo(
     () => async (data: EventFormData, image: { file: File | null; changed: boolean }) => {
-      if (!id || !user || !seriesInfo) return;
+      if (!id || !user || !seriesInfo || !source) return;
       try {
         let imageUrl: string | null | undefined;
         if (image.changed) {
           imageUrl = image.file ? await uploadEventImage(image.file, user.id) : null;
         }
         const dataWithVenueId = { ...data, venueId: venueId ?? undefined };
+        if (source === "staging") {
+          const { updated } = await updateUserStagedSubmission(id, dataWithVenueId, imageUrl);
+          if (!updated) {
+            // Admin approved the row between load and save — it moved into the
+            // `events` table under a new id. Send them back to "Your events"
+            // where the now-live event is reachable.
+            toast.info("This event was just approved. Reload to edit the live version.");
+            navigate("/profile/events", { replace: true });
+            return;
+          }
+          toast.success("Submission updated!");
+          navigate("/profile/events");
+          return;
+        }
         if (applyToSeries) {
           await updateEventSeries(seriesInfo.seriesId, seriesInfo.eventDate, dataWithVenueId, imageUrl);
           toast.success("Series updated!");
@@ -135,7 +169,7 @@ export default function EditEvent() {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId],
+    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId, source],
   );
 
   const handleDelete = async () => {
@@ -196,11 +230,14 @@ export default function EditEvent() {
     );
   }
 
-  if (!initialValues || !seriesInfo) {
+  if (!initialValues || !seriesInfo || !source) {
     return <PageSpinner />;
   }
 
-  const subtitle = applyToSeries
+  const isStaging = source === "staging";
+  const subtitle = isStaging
+    ? "This event is awaiting admin review. Changes apply to your pending submission."
+    : applyToSeries
     ? "Changes will apply to all upcoming events in this series."
     : seriesInfo.isSeries
     ? "Changes will apply to this event only."
@@ -248,6 +285,7 @@ export default function EditEvent() {
         </button>
       }
       footer={
+        isStaging ? null : (
         <div className="relative z-10 pt-6 border-t border-border flex flex-col gap-3">
           <button
             type="button"
@@ -268,6 +306,7 @@ export default function EditEvent() {
             </button>
           )}
         </div>
+        )
       }
       />
     </>
