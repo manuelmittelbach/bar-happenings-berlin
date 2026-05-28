@@ -155,6 +155,13 @@ export default function EventDetailView({
             visual signature on a per-event basis, and splitting it across
             black/gray/colour drained the page's warmth without enough
             hierarchy gain to justify the cost. */}
+        {!hasRealImage && isCanceled && (
+          <div className="mb-3">
+            <span className="inline-block font-mono font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
+              {canceledLabel}
+            </span>
+          </div>
+        )}
         <div className="flex items-center gap-3 mb-3">
           <div
             className="flex-1 min-w-0 font-mono text-[13px] md:text-[14px] font-bold uppercase tracking-[0.14em] flex items-center gap-4 flex-wrap"
@@ -174,11 +181,6 @@ export default function EventDetailView({
               </span>
             )}
           </div>
-          {!hasRealImage && isCanceled && (
-            <span className="shrink-0 inline-block font-mono font-bold text-xs uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-2.5 py-0.5 -rotate-3 whitespace-nowrap">
-              {canceledLabel}
-            </span>
-          )}
           {!hasRealImage && onEdit && (
             <button
               onClick={onEdit}
@@ -314,7 +316,7 @@ export default function EventDetailView({
             />
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <span className="inline-block font-mono font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive rounded-md px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
+                <span className="inline-block font-mono font-bold text-xs md:text-sm uppercase tracking-[0.06em] text-destructive border-2 border-destructive px-3 py-1 bg-background/85 -rotate-3 whitespace-nowrap">
                   {canceledLabel}
                 </span>
               </div>

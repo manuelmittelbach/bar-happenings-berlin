@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Globe, Instagram, Mail, Phone, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchOrganizerById,
@@ -9,10 +10,6 @@ import {
   uploadVenueImage,
   type MyVenuePatch,
 } from "@/lib/supabaseQueries";
-import { useEventsByVenue, useVenueById } from "@/hooks/useEvents";
-import { berlinDateString } from "@/lib/dateFormat";
-import { addSoftHyphens } from "@/lib/cleanTitle";
-import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { Spinner } from "@/components/ui/spinner";
 import { PageSpinner } from "@/components/ui/page-spinner";
 
@@ -42,6 +39,7 @@ function parsePosition(pos: string): [number, number] {
 
 export default function BarAccount() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, role, approvalStatus, loading, roleResolved } = useAuth();
   const [venue, setVenue] = useState<Venue | null>(null);
   const [venueLoading, setVenueLoading] = useState(true);
@@ -55,7 +53,6 @@ export default function BarAccount() {
   const [imagePosition, setImagePosition] = useState<string>(DEFAULT_POSITION);
   const [isDragging, setIsDragging] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -229,6 +226,14 @@ export default function BarAccount() {
       setImageFile(null);
       setImageRemoved(false);
       setImagePosition(updated.image_position);
+      // Bust the SW cache for the venues list — sw.ts uses StaleWhileRevalidate
+      // on /rest/v1/venues, so without this the public /bars page would keep
+      // serving the pre-edit venue row (and old image URL) until the SW's
+      // background revalidation catches up on a later visit.
+      if (typeof caches !== "undefined") {
+        await caches.delete("supabase-venues");
+      }
+      queryClient.invalidateQueries({ queryKey: ["venues"] });
       toast.success("Your bar updated.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Couldn't save changes.";
@@ -285,20 +290,6 @@ export default function BarAccount() {
 
   return (
     <div className="relative">
-      {previewOpen ? (
-        <BarAccountPreview
-          venueId={venue.id}
-          venueName={venue.name}
-          venueAddress={venue.address}
-          imageUrl={displayedImageUrl}
-          imagePosition={imagePosition}
-          website={website.trim()}
-          instagram={instagram.trim()}
-          phone={phone.trim()}
-          onClose={() => setPreviewOpen(false)}
-        />
-      ) : (
-        <>
       {/* Sticky Back row — mirrors EventDetail/BarDetail so the back
           affordance sits at the same screen position across detail-style
           pages, regardless of where the user came from. */}
@@ -353,7 +344,7 @@ export default function BarAccount() {
                 onPointerMove={handlePreviewPointerMove}
                 onPointerUp={handlePreviewPointerUp}
                 onPointerCancel={handlePreviewPointerUp}
-                className="relative h-64 border-2 border-foreground overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
+                className="relative aspect-[4/3] border-2 border-foreground overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
               >
                 <img
                   src={displayedImageUrl}
@@ -365,6 +356,7 @@ export default function BarAccount() {
                 <button
                   type="button"
                   onClick={handleRemoveImage}
+                  onPointerDown={(e) => e.stopPropagation()}
                   className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center bg-black/70 text-white rounded-full hover:bg-black/90 transition-colors"
                   aria-label="Remove image"
                 >
@@ -385,6 +377,10 @@ export default function BarAccount() {
               </div>
             </div>
           ) : (
+            // Empty state mirrors the BarsList "no image" placeholder exactly
+            // (warm radial tint, crosshairs, accent dot, mono caption) so the
+            // owner sees the actual fallback visitors get on /bars. The whole
+            // tile is the upload affordance — click or drop a file to add one.
             <div
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => {
@@ -393,27 +389,46 @@ export default function BarAccount() {
               }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              className={`border-2 border-dashed p-8 text-center transition-colors cursor-pointer ${
+              className={`relative aspect-[4/3] border-2 overflow-hidden cursor-pointer transition-colors ${
                 isDragging
                   ? "border-foreground bg-muted/50"
-                  : "border-foreground/40 hover:border-foreground"
+                  : "border-foreground hover:border-accent"
               }`}
+              style={{
+                background:
+                  "radial-gradient(circle at 28% 32%, hsla(28, 85%, 55%, 0.20), hsla(18, 85%, 52%, 0.06) 65%)",
+              }}
             >
-              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">
-                {isDragging
-                  ? "Drop image here"
-                  : "Drag & drop or click to upload a cover image"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                JPG, PNG or WebP, max {MAX_SIZE_MB}MB
-              </p>
+              <span
+                aria-hidden
+                className="absolute inset-x-0 top-1/2 h-px bg-foreground/10"
+                style={{ transform: "translateY(-0.5px)" }}
+              />
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-1/2 w-px bg-foreground/10"
+                style={{ transform: "translateX(-0.5px)" }}
+              />
+              <span
+                aria-hidden
+                className="absolute left-1/2 top-1/2 rounded-full bg-accent"
+                style={{ width: 8, height: 8, transform: "translate(-50%, -50%)" }}
+              />
+              <span className="absolute right-3 bottom-2.5 font-mono text-[9px] uppercase tracking-[0.18em] text-foreground/45">
+                Inside · Bars
+              </span>
+              {/* Upload affordance — bottom-left so it doesn't cover the
+                  Inside·Bars caption or the centered accent dot. */}
+              <div className="absolute left-3 bottom-2.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/70">
+                <Upload className="h-3 w-3" />
+                {isDragging ? "Drop image" : "Click or drop to add"}
+              </div>
             </div>
           )}
           <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-            By uploading, you confirm that you hold the rights to this image and
-            grant Inside Bars permission to display it on your bar's public
-            page. See our{" "}
+            By uploading, you confirm that you hold the rights to this image
+            and grant Inside Bars permission to display it on the public bars
+            directory. See our{" "}
             <a
               href="/impressum"
               target="_blank"
@@ -478,13 +493,14 @@ export default function BarAccount() {
               </>
             )}
           </button>
-          <button
-            type="button"
-            onClick={() => setPreviewOpen(true)}
+          <a
+            href={`/bar/${venue.id}`}
+            target="_blank"
+            rel="noopener"
             className="inline-flex items-center gap-2 h-12 px-6 border-2 border-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-foreground hover:bg-foreground hover:text-background transition-colors"
           >
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </button>
+            <Eye className="h-3.5 w-3.5" /> View
+          </a>
         </div>
       </form>
 
@@ -515,209 +531,6 @@ export default function BarAccount() {
         </div>
       </section>
       </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-interface PreviewProps {
-  venueId: string;
-  venueName: string;
-  venueAddress: string;
-  imageUrl: string | null;
-  imagePosition: string;
-  website: string;
-  instagram: string;
-  phone: string;
-  onClose: () => void;
-}
-
-function BarAccountPreview({
-  venueId,
-  venueName,
-  venueAddress,
-  imageUrl,
-  imagePosition,
-  website,
-  instagram,
-  phone,
-  onClose,
-}: PreviewProps) {
-  const { venue: liveVenue } = useVenueById(venueId);
-  const todayStr = berlinDateString();
-  const { data: venueEvents = [] } = useEventsByVenue(venueId, todayStr);
-
-  useEffect(() => {
-    // In-flow page (not a modal): scroll to top on open and let Escape close.
-    window.scrollTo(0, 0);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const cleanAddress = venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
-  const websiteHref = website ? (/^https?:\/\//i.test(website) ? website : `https://${website}`) : "";
-  const instagramHref = instagram
-    ? /^https?:\/\//i.test(instagram)
-      ? instagram
-      : `https://instagram.com/${instagram.replace(/^@/, "")}`
-    : "";
-
-  const upcomingEvents = venueEvents
-    .filter((e) => e.status !== "canceled" && e.date >= todayStr)
-    .sort((a, b) => {
-      const dateCmp = a.date.localeCompare(b.date);
-      if (dateCmp !== 0) return dateCmp;
-      const tA = a.startTime || "99:99";
-      const tB = b.startTime || "99:99";
-      return tA.localeCompare(tB);
-    });
-
-  const handleOpenMaps = () => {
-    window.open(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        venueAddress || venueName,
-      )}`,
-      "_blank",
-    );
-  };
-
-  return (
-    <div aria-label="Your bar preview" className="bg-background">
-      {/* Preview chrome — renders in-flow so the global Header/Footer stay
-          visible; Back (matching the app's sticky back rows) replaces the old
-          modal close X, with the PREVIEW label on the right. */}
-      <div
-        className="sticky z-40 bg-background"
-        style={{ top: "var(--header-h)" }}
-      >
-        <div className="container flex items-center justify-between py-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
-            aria-label="Back"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
-          </button>
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            <Eye className="h-3.5 w-3.5" /> Preview · how visitors see your bar
-          </span>
-        </div>
-      </div>
-
-      <article className="max-w-[880px] mx-auto px-6 pt-8 pb-16 md:px-8">
-        <h1
-          lang="de"
-          className="font-serif font-bold tracking-[-0.02em] leading-[0.95] mb-6 break-words hyphens-auto"
-          style={{ fontSize: "clamp(26px, 4.5vw, 40px)" }}
-        >
-          {addSoftHyphens(venueName)}
-        </h1>
-
-        {imageUrl ? (
-          <figure className="relative border-2 border-foreground overflow-hidden mb-6 aspect-[3/2] md:aspect-[16/9] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)]">
-            <img
-              src={imageUrl}
-              alt={venueName}
-              style={{ objectPosition: imagePosition }}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </figure>
-        ) : (
-          <div className="border-2 border-dashed border-foreground/40 mb-6 aspect-[3/2] md:aspect-[16/9] flex items-center justify-center">
-            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-              No cover image yet
-            </p>
-          </div>
-        )}
-
-        {(website || instagram || phone) && (
-          <div className="flex items-center gap-4 flex-wrap pb-3 border-b border-foreground/15 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-            {website && (
-              <a
-                href={websiteHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
-              >
-                <Globe className="h-3.5 w-3.5 shrink-0" />
-                <span>Website</span>
-              </a>
-            )}
-            {instagram && (
-              <a
-                href={instagramHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
-              >
-                <Instagram className="h-3.5 w-3.5 shrink-0" />
-                <span>Instagram</span>
-              </a>
-            )}
-            {phone && (
-              <a
-                href={`tel:${phone.replace(/\s+/g, "")}`}
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors normal-case tracking-normal text-[12px]"
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                <span>{phone}</span>
-              </a>
-            )}
-          </div>
-        )}
-
-        <section className="mt-4">
-          {cleanAddress && (
-            <p lang="de" className="font-body text-[14px] text-muted-foreground leading-snug">
-              {cleanAddress}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={handleOpenMaps}
-            className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
-          >
-            Open in Maps <span aria-hidden="true">→</span>
-          </button>
-        </section>
-
-        {liveVenue?.description && (
-          <section className="mt-6 pt-4 border-t border-foreground/15">
-            <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
-              About the bar
-            </h2>
-            <div className="font-body text-[17px] md:text-[18px] leading-[1.6] space-y-5 max-w-[65ch]">
-              {liveVenue.description.split("\n\n").map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="mt-6 pt-4 border-t border-foreground/15">
-          <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
-            Upcoming events
-          </h2>
-          {upcomingEvents.length === 0 ? (
-            <p className="font-body italic text-[16px] text-muted-foreground py-4 m-0">
-              Nothing on the calendar yet. Check back soon.
-            </p>
-          ) : (
-            <UpcomingAgenda
-              events={upcomingEvents}
-              onEventClick={() => {
-                /* preview is read-only — clicks are no-ops */
-              }}
-            />
-          )}
-        </section>
-      </article>
     </div>
   );
 }
