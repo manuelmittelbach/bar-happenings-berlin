@@ -85,6 +85,9 @@ function mapEventRow(row: Tables<"events"> | Tables<"events_archive">): BarlinEv
     editorNote: isLive ? liveRow.editor_note ?? undefined : undefined,
     highlightPriority: isLive ? liveRow.highlight_priority : 0,
     createdAt: row.created_at ?? undefined,
+    // Only the live `events` table has submitted_by_user; archive rows lack
+    // it and surface as false (no badge on past events anyway).
+    isCommunitySubmission: isLive ? liveRow.submitted_by_user : false,
   };
 }
 
@@ -1508,6 +1511,11 @@ export async function approveStagedEvent(
     approved_by: adminUserId,
     approved_at: new Date().toISOString(),
     is_manual: staged.isManual,
+    // Community-submission marker: staging rows with a user submitter and
+    // no admin-created flag are plain-user submissions. Bar owners + admins
+    // skip staging entirely (createEvent writes straight to events), so the
+    // default `false` covers them.
+    submitted_by_user: !!staged.createdBy && !staged.createdByAdmin,
   });
 
   if (merged.recurrence) {
@@ -1614,6 +1622,10 @@ function stagedSubmissionToEvent(
     isHighlight: false,
     highlightPriority: 0,
     submitter,
+    // Staging rows representing plain-user submissions (createdBy set,
+    // createdByAdmin false) carry the badge through the dashboard preview
+    // so the user sees what their event will look like once approved.
+    isCommunitySubmission: !!s.createdBy && !s.createdByAdmin,
   };
 }
 

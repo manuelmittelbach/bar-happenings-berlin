@@ -129,6 +129,7 @@ export type Database = {
           recurrence: string | null
           start_time: string | null
           status: string
+          submitted_by_user: boolean
           title: string
           url: string | null
           venue: string
@@ -161,6 +162,7 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
+          submitted_by_user?: boolean
           title: string
           url?: string | null
           venue: string
@@ -193,6 +195,7 @@ export type Database = {
           recurrence?: string | null
           start_time?: string | null
           status?: string
+          submitted_by_user?: boolean
           title?: string
           url?: string | null
           venue?: string
