@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, Clock3, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 
 export default function PublishEvent() {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const queryClient = useQueryClient();
 	const { user, role, approvalStatus, loading, roleResolved } = useAuth();
 	const [venuePrefill, setVenuePrefill] = useState<Partial<EventFormData>>({});
@@ -37,7 +38,7 @@ export default function PublishEvent() {
 	useEffect(() => {
 		if (loading) return;
 		if (!user) {
-			navigate("/for-bars", { replace: true });
+			navigate("/for-organizers", { replace: true });
 			return;
 		}
 		if (!roleResolved) return;
@@ -94,12 +95,21 @@ export default function PublishEvent() {
 				} else {
 					toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
 				}
-				navigate("/dashboard");
+				// Pop /publish off the history instead of pushing /dashboard on
+				// top of it. The dashboard is already the previous entry in the
+				// normal flow, so back from it after publish lands wherever the
+				// user came from. `location.key === "default"` means deep-link
+				// (nothing to pop) — fall back to a replace-nav onto /dashboard.
+				if (location.key !== "default") {
+					navigate(-1);
+				} else {
+					navigate("/dashboard", { replace: true });
+				}
 			} catch {
 				toast.error("Something went wrong. Please try again.");
 			}
 		},
-		[user, navigate, queryClient, venueId, isPlainUser]
+		[user, navigate, queryClient, venueId, isPlainUser, location.key]
 	);
 
 	if (loading || !roleResolved) {

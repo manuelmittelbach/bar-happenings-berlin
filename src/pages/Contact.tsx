@@ -205,12 +205,12 @@ export default function Contact() {
               </div>
             </div>
 
-            {/* Bar-owner CTA — funnels venue claims to /for-bars so
+            {/* Bar-owner CTA — funnels venue claims to /for-organizers so
                 they don't get lost in the generic form. Plain bordered
                 block (no shadow) so the IG ask stays the page's
                 top-priority visual. */}
             <Link
-              to="/for-bars"
+              to="/for-organizers"
               className="group mt-4 flex w-full items-start gap-3 border-2 border-foreground bg-background p-5 text-left transition-colors hover:bg-foreground hover:text-background"
             >
               <Store className="mt-0.5 h-4 w-4 shrink-0 text-accent group-hover:text-background" />

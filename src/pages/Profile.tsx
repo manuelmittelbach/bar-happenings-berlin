@@ -15,7 +15,7 @@ export default function Profile() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      navigate("/for-bars", { replace: true });
+      navigate("/for-organizers", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -23,7 +23,7 @@ export default function Profile() {
     await signOut();
     // Land back on the sign-in surface (the account entry), not the
     // marketing landing page.
-    navigate("/for-bars?view=signin");
+    navigate("/for-organizers?view=signin");
   };
 
   if (loading || !user) {

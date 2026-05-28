@@ -41,13 +41,13 @@ const TABS: TabDef[] = [
   {
     // Profile tab is the only native surface that surfaces Impressum +
     // Datenschutz (the web Footer is dropped on native), so it must stay
-    // reachable in every auth state — /for-bars already renders sensibly
+    // reachable in every auth state — /for-organizers already renders sensibly
     // for guests, bar-owners, and admins without redirecting away.
     key: "profile",
-    to: "/for-bars",
+    to: "/for-organizers",
     label: "Profile",
     Icon: UserCircle,
-    isActive: (p) => p === "/for-bars",
+    isActive: (p) => p === "/for-organizers",
   },
 ];
 
