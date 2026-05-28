@@ -32,11 +32,11 @@ export default function Profile() {
 
   const links: { label: string; to: string }[] = [];
   if (role === "user") {
-    links.push({ label: "Your events", to: "/dashboard" });
+    links.push({ label: "Your events", to: "/profile/events" });
   }
   if (role === "organizer") {
-    links.push({ label: "Your events", to: "/dashboard" });
-    links.push({ label: "Your bar", to: "/bar-account" });
+    links.push({ label: "Your events", to: "/profile/events" });
+    links.push({ label: "Your bar", to: "/profile/bar" });
   }
   if (role === "admin") {
     links.push({ label: "Admin", to: "/admin" });

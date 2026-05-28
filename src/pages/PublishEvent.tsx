@@ -95,15 +95,15 @@ export default function PublishEvent() {
 				} else {
 					toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
 				}
-				// Pop /publish off the history instead of pushing /dashboard on
-				// top of it. The dashboard is already the previous entry in the
-				// normal flow, so back from it after publish lands wherever the
-				// user came from. `location.key === "default"` means deep-link
-				// (nothing to pop) — fall back to a replace-nav onto /dashboard.
+				// Pop /publish off the history instead of pushing /profile/events
+				// on top of it. /profile/events is already the previous entry in
+				// the normal flow, so back from it after publish lands wherever
+				// the user came from. `location.key === "default"` means deep-link
+				// (nothing to pop) — fall back to a replace-nav onto /profile/events.
 				if (location.key !== "default") {
 					navigate(-1);
 				} else {
-					navigate("/dashboard", { replace: true });
+					navigate("/profile/events", { replace: true });
 				}
 			} catch {
 				toast.error("Something went wrong. Please try again.");
@@ -170,8 +170,8 @@ export default function PublishEvent() {
 				submitLabel={isPlainUser ? "Submit for review" : "Publish Event"}
 				onSubmit={handleSubmit}
 				secondaryActions={
-					// Go back rather than pushing a new /dashboard entry — otherwise
-					// the stack becomes dashboard → publish → dashboard, and pressing
+					// Go back rather than pushing a new /profile/events entry — otherwise
+					// the stack becomes events → publish → events, and pressing
 					// Back on "Your events" would return to the publish form.
 					<button
 						type="button"

@@ -96,6 +96,16 @@ function LoginLegacyRedirect() {
   return <Navigate to={`/signup${location.search}`} replace />;
 }
 
+function DashboardLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/profile/events${location.search}`} replace />;
+}
+
+function BarAccountLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/profile/bar${location.search}`} replace />;
+}
+
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { user, role, roleResolved, loading } = useAuth();
@@ -127,9 +137,9 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     } else {
       markEmailJustConfirmed();
       // Confirmed accounts land on their role's home: admins → /admin,
-      // organizers → /dashboard, plain users → the events list.
+      // organizers → /profile/events, plain users → the events list.
       const destination =
-        role === "admin" ? "/admin" : role === "organizer" ? "/dashboard" : "/events";
+        role === "admin" ? "/admin" : role === "organizer" ? "/profile/events" : "/events";
       navigate(destination, { replace: true });
     }
     setPending(false);
@@ -243,7 +253,8 @@ const App = () => (
             {/* Legacy: old "Create account" buttons and email templates may
                 still link to /login. Forward (preserving query) to /signup. */}
             <Route path="/login" element={<LoginLegacyRedirect />} />
-            <Route path="/dashboard" element={<OrganizerDashboard />} />
+            <Route path="/profile/events" element={<OrganizerDashboard />} />
+            <Route path="/dashboard" element={<DashboardLegacyRedirect />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/for-organizers" element={<ForOrganizersOrSignin />} />
             {/* Legacy: old confirm/reset emails and bookmarks may still point
@@ -254,7 +265,8 @@ const App = () => (
             <Route path="/map" element={<MapPage />} />
             <Route path="/edit-event/:id" element={<EditEvent />} />
             <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
-            <Route path="/bar-account" element={<BarAccount />} />
+            <Route path="/profile/bar" element={<BarAccount />} />
+            <Route path="/bar-account" element={<BarAccountLegacyRedirect />} />
             <Route path="/reset-password" element={<UpdatePassword />} />
             <Route path="/confirm" element={<ConfirmEmail />} />
             <Route path="/profile" element={<Profile />} />

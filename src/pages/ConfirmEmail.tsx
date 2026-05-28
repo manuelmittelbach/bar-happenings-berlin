@@ -21,8 +21,8 @@ const VALID_TYPES: ReadonlySet<EmailOtpType> = new Set([
 
 function defaultTargetForRole(role: "user" | "organizer" | "admin"): string {
   if (role === "admin") return "/admin";
-  if (role === "organizer") return "/dashboard";
-  // Plain users have no dashboard — send them to the events list.
+  if (role === "organizer") return "/profile/events";
+  // Plain users land on the events list, not their own events page.
   return "/events";
 }
 

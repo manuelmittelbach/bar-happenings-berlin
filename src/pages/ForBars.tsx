@@ -76,7 +76,7 @@ export default function ForBars() {
 								Signed in as <strong className="font-mono">{user.email}</strong>.
 							</p>
 							<Link
-								to="/dashboard"
+								to="/profile/events"
 								className="group inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground hover:text-accent transition-colors"
 							>
 								Go to your dashboard
