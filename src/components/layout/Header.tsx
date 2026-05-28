@@ -35,27 +35,26 @@ function Wordmark({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* Compact "I·B" monogram — used on mobile web where the full wordmark
- * would crowd the nav row. Georgia bold uppercase "I" + accent dot + "B"
- * mirrors the desktop wordmark's structure ("Inside · Bars") in monogram
- * form. `normal-case` keeps the letters as written so the small accent
- * dot still reads as a separator rather than disappearing under all-caps
- * default tracking. */
+/* Compact "iB" monogram — used on mobile web (and elsewhere monogram
+ * is called for) where the full "Inside · Bars" wordmark would crowd
+ * the row. Matches the live favicon at insidebars.co/favicon.svg:
+ * Helvetica Neue 900, lowercase "i" + uppercase "B", letter-spacing
+ * -1px tight. Kept as a distinct mark from the Georgia full wordmark
+ * so the two voices don't compete. */
 function WordmarkCompact({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="heading-display normal-case inline-flex items-center"
-      style={{ fontSize: 22 }}
+      className="inline-flex items-baseline leading-none"
+      style={{
+        fontFamily: "'Helvetica Neue', Arial, sans-serif",
+        fontSize: 26,
+        fontWeight: 900,
+        letterSpacing: "-1px",
+      }}
       aria-label="Inside Bars — home"
     >
-      <span style={{ marginRight: 2 }}>I</span>
-      <span
-        aria-hidden="true"
-        className="rounded-full bg-accent"
-        style={{ width: 5, height: 5, marginRight: 0 }}
-      />
-      <span style={{ marginLeft: 1 }}>B</span>
+      iB
     </button>
   );
 }
