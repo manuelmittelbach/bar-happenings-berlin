@@ -4,6 +4,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "@/hooks/useAuth";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
@@ -241,6 +242,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       {!Capacitor.isNativePlatform() && <UpdatePrompt />}
+      {!Capacitor.isNativePlatform() && <Analytics />}
       <BrowserRouter>
         <ScrollManager />
         <AuthCallbackGate>
