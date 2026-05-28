@@ -20,7 +20,7 @@ export default function EditBarAccount() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const returnPath =
-		(location.state as { returnPath?: string } | null)?.returnPath ?? "/admin";
+		(location.state as { returnPath?: string } | null)?.returnPath ?? "/profile/admin";
 	const { role, loading: authLoading, roleResolved } = useAuth();
 	const [submitting, setSubmitting] = useState(false);
 	const [geocoding, setGeocoding] = useState(false);

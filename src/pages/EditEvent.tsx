@@ -33,9 +33,9 @@ export default function EditEvent() {
   // fresh load). Mirrors the entry points the editor is reached from.
   const cancelFallback =
     fromParam === "admin"
-      ? "/admin?tab=recurring&filter=approved"
+      ? "/profile/admin?tab=recurring&filter=approved"
       : fromParam === "admin-all-bars"
-      ? "/admin?tab=all-bars"
+      ? "/profile/admin?tab=all-bars"
       : isAdmin
       ? `/event/${id}`
       : "/profile/events";
@@ -80,7 +80,7 @@ export default function EditEvent() {
         return;
       }
       if (event.status === "canceled" || hasEventStarted(event)) {
-        navigate(isAdmin ? "/admin" : "/profile/events", { replace: true });
+        navigate(isAdmin ? "/profile/admin" : "/profile/events", { replace: true });
         return;
       }
       setInitialValues({
