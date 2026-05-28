@@ -58,7 +58,7 @@ If you extracted **zero events** for a venue (for ANY reason), run Step 2b
 end. Do NOT batch all venues into a single write — that broke a previous
 run by exceeding the output token limit.
 
-> **For full runs (30+ venues):** the per-venue loop below is what each
+> **For full runs (10+ venues):** the per-venue loop below is what each
 > **sub-agent** follows for its own batch. The main orchestrator does Step 1,
 > then spawns sub-agents instead of looping itself — see "Orchestration model".
 
