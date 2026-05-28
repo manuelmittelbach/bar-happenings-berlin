@@ -1,7 +1,23 @@
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { useIsNative } from "@/hooks/useIsNative";
+
 export default function Datenschutz() {
+  const navigate = useNavigate();
+  const isNative = useIsNative();
   return (
     <div className="flex-1">
-      <div className="container max-w-2xl py-16">
+      <div className={`container max-w-2xl pb-16 ${isNative ? "pt-4" : "pt-16"}`}>
+        {isNative && (
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 p-2 -ml-2 mb-6 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+          </button>
+        )}
         <h1 className="heading-display text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-8">Datenschutzerklärung</h1>
 
         <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
