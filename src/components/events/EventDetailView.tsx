@@ -181,7 +181,7 @@ export default function EventDetailView({
               </span>
             )}
           </div>
-          {!hasRealImage && onEdit && (
+          {onEdit && (
             <button
               onClick={onEdit}
               aria-label="Edit event"
@@ -320,15 +320,6 @@ export default function EventDetailView({
                   {canceledLabel}
                 </span>
               </div>
-            )}
-            {onEdit && (
-              <button
-                onClick={onEdit}
-                aria-label="Edit event"
-                className="absolute top-3 right-3 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-background/85 backdrop-blur-sm border-2 border-foreground text-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors active:scale-95"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
             )}
           </figure>
         )}
