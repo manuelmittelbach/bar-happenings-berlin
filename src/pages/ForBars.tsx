@@ -92,7 +92,7 @@ export default function ForBars() {
 						>
 							<button
 								onClick={() =>
-									navigate("/signup?mode=signup&bar=1", { state: { from: "/for-organizers" } })
+									navigate("/signup", { state: { from: "/for-organizers", barOwner: true } })
 								}
 								className="group inline-flex items-center gap-2 h-12 px-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors"
 							>

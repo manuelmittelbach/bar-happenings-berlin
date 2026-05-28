@@ -157,7 +157,7 @@ export default function Signin() {
 								<button
 									type="button"
 									onClick={() =>
-										navigate("/signup?mode=signup&bar=1", { state: { from: "/signin" } })
+										navigate("/signup", { state: { from: "/signin" } })
 									}
 									className="text-foreground font-medium hover:text-accent transition-colors"
 								>
