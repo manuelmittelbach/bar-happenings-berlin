@@ -115,8 +115,13 @@ export default function OrganizerDashboard() {
       const nB = getNextUpcoming(b)!;
       return nA.date.localeCompare(nB.date) || nA.startTime.localeCompare(nB.startTime);
     });
+  // Past tab includes any series with at least one past occurrence — even if
+  // the series still has upcoming dates. Otherwise past occurrences of active
+  // series would be unreachable: they don't show up in the Upcoming card's
+  // expanded view (filtered to future), and the series wouldn't appear in
+  // Past until every date was over.
   const past = parents
-    .filter((p) => getNextUpcoming(p) === null && getLastPast(p) !== null)
+    .filter((p) => getLastPast(p) !== null)
     .sort((a, b) => {
       const lA = getLastPast(a)!;
       const lB = getLastPast(b)!;
