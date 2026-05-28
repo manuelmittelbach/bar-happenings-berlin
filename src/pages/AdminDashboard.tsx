@@ -942,7 +942,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-md">
             <div className="border border-border rounded-sm p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground font-medium">Pending Bars</span>
+                <span className="text-xs text-muted-foreground font-medium">Pending Bar Submissions</span>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </div>
               {pendingOrganizersLoading ? (
@@ -2068,8 +2068,9 @@ function StagedEventCard({
   // User events tab, approved: moderators only need to identify the
   // submission, view it, see its dates and delete the series. The full
   // editor (venue tools, form fields, recurrence, inline save) is omitted
-  // here on purpose — per-date editing still happens via the dates list.
-  // Pending user cards and every other scope keep the full editor below.
+  // here on purpose — edits run through the live event detail page (Show
+  // event → admin pencil), and per-date editing still happens via the
+  // dates list. Pending user cards keep the full editor below.
   if (scope === "user" && isApproved) {
     return (
       <div className="border border-border rounded-sm p-4 space-y-3">
@@ -2122,17 +2123,6 @@ function StagedEventCard({
               {datesExpanded ? "Hide dates" : `All ${staged.approvedSiblings.length} dates`}
             </button>
           )}
-          <Link
-            to={
-              staged.approvedSiblings && staged.approvedSiblings.length > 1
-                ? `/edit-event/${staged.id}?scope=future&from=admin`
-                : `/edit-event/${staged.id}?from=admin`
-            }
-            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
-          >
-            <Edit className="h-3 w-3" />{" "}
-            {staged.approvedSiblings && staged.approvedSiblings.length > 1 ? "Edit series" : "Edit"}
-          </Link>
           {onDeleteApproved && (
             <button
               onClick={onDeleteApproved}
