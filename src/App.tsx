@@ -4,6 +4,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "@/hooks/useAuth";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
@@ -191,6 +192,7 @@ import Profile from "./pages/Profile";
 import ProfileDetails from "./pages/ProfileDetails";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
+import Info from "./pages/Info";
 import Instagram from "./pages/Instagram";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
@@ -240,6 +242,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       {!Capacitor.isNativePlatform() && <UpdatePrompt />}
+      {!Capacitor.isNativePlatform() && <Analytics />}
       <BrowserRouter>
         <ScrollManager />
         <AuthCallbackGate>
@@ -286,6 +289,7 @@ const App = () => (
             <Route path="/profile/details" element={<ProfileDetails />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/info" element={<Info />} />
             <Route path="/instagram" element={<Instagram />} />
             <Route path="*" element={<NotFound />} />
           </Route>

@@ -1,11 +1,19 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, Globe, Instagram, Phone } from "lucide-react";
+import { ChevronLeft, Globe, Instagram, Phone, Share } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Share as CapacitorShare } from "@capacitor/share";
 import { useVenueById, useEventsByVenue } from "@/hooks/useEvents";
+import { useIsNative } from "@/hooks/useIsNative";
 import { berlinDateString } from "@/lib/dateFormat";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { PageSpinner } from "@/components/ui/page-spinner";
+
+// Production origin for share links. Mirrors EventDetail — keeping it
+// local to each detail surface (instead of a shared constant) keeps the
+// share affordance self-contained.
+const PUBLIC_ORIGIN = "https://insidebars.co";
 
 /* BarDetail — magazine layout matched to EventDetailView's editorial
  * language: sticky Back top bar, warm radial atmosphere disks, mixed-case
@@ -19,6 +27,7 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 export default function BarDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isNative = useIsNative();
   const { venue, isLoading } = useVenueById(id || "");
   const todayStr = berlinDateString();
   const { data: venueEvents = [], isLoading: eventsLoading } = useEventsByVenue(id || "", todayStr);
@@ -56,11 +65,43 @@ export default function BarDetail() {
     );
   };
 
+  // Share — mirrors EventDetail's handler. Native iOS routes through
+  // Capacitor's Share plugin (real UIActivityViewController), web uses
+  // navigator.share when available, and everything else falls back to
+  // clipboard. The shared URL always points at the public origin so a
+  // recipient can open it without our app installed.
+  const handleShare = async () => {
+    const url = `${PUBLIC_ORIGIN}/bar/${venue.id}`;
+    const title = venue.name || "Inside Bars";
+    if (isNative) {
+      try {
+        await CapacitorShare.share({ title, url, dialogTitle: "Share bar" });
+        return;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.toLowerCase().includes("cancel")) return;
+      }
+    } else if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Could not share");
+    }
+  };
+
   return (
     <div className="relative isolate bg-background pb-24">
-      {/* Sticky Back row — mirrors EventDetail. No Share on the bar
-          surface yet; can be added later if the bar URL becomes a
-          shareable object. */}
+      {/* Sticky Back / Share row — mirrors EventDetail exactly. Share
+          opens the native share sheet on iOS, navigator.share on capable
+          web, clipboard fallback otherwise. */}
       <div
         className="sticky z-40 bg-background"
         style={{ top: "var(--header-h)" }}
@@ -73,6 +114,16 @@ export default function BarDetail() {
           >
             <ChevronLeft className="h-5 w-5" />
             <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+          </button>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
+            aria-label="Share"
+          >
+            <Share className="h-3.5 w-3.5" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
+              Share
+            </span>
           </button>
         </div>
       </div>
@@ -108,6 +159,7 @@ export default function BarDetail() {
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" />
                 <span>Website</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
             {venue.instagram && (
@@ -119,6 +171,7 @@ export default function BarDetail() {
               >
                 <Instagram className="h-3.5 w-3.5 shrink-0" />
                 <span>Instagram</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
             {venue.phone && (
@@ -128,6 +181,7 @@ export default function BarDetail() {
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 <span>{venue.phone}</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
           </div>
