@@ -113,9 +113,15 @@ export default function ProfileDetails() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    if (!trimmedFirst || !trimmedLast) {
+      toast.error("First and last name are required.");
+      return;
+    }
     setSaving(true);
     try {
-      await updateProfile(user.id, { firstName: firstName.trim(), lastName: lastName.trim() });
+      await updateProfile(user.id, { firstName: trimmedFirst, lastName: trimmedLast });
       toast.success("Profile updated.");
     } catch {
       toast.error("Couldn't save profile. Please try again.");
@@ -287,6 +293,7 @@ export default function ProfileDetails() {
                   <label className="mono-label text-muted-foreground">First name</label>
                   <input
                     type="text"
+                    required
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className={inputClass}
@@ -296,6 +303,7 @@ export default function ProfileDetails() {
                   <label className="mono-label text-muted-foreground">Last name</label>
                   <input
                     type="text"
+                    required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className={inputClass}
