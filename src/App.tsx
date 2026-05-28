@@ -191,6 +191,7 @@ import Profile from "./pages/Profile";
 import ProfileDetails from "./pages/ProfileDetails";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
+import Info from "./pages/Info";
 import Instagram from "./pages/Instagram";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
@@ -286,6 +287,7 @@ const App = () => (
             <Route path="/profile/details" element={<ProfileDetails />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/info" element={<Info />} />
             <Route path="/instagram" element={<Instagram />} />
             <Route path="*" element={<NotFound />} />
           </Route>
