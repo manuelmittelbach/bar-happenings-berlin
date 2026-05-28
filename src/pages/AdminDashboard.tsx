@@ -1052,6 +1052,7 @@ export default function AdminDashboard() {
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
+              onCancelOccurrence={handleCancelOccurrence}
               onCreateVenue={handleCreateVenueForSubmission}
               emptyLabel="user"
             />
@@ -2082,6 +2083,135 @@ function StagedEventCard({
     setVenueIdLocal(staged.venueId);
   };
 
+  // User events tab, approved: moderators only need to identify the
+  // submission, view it, see its dates and delete the series. The full
+  // editor (venue tools, form fields, recurrence, inline save) is omitted
+  // here on purpose — per-date editing still happens via the dates list.
+  // Pending user cards and every other scope keep the full editor below.
+  if (scope === "user" && isApproved) {
+    return (
+      <div className="border border-border rounded-sm p-4 space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-serif text-sm font-semibold">{staged.title}</p>
+          <span className="text-xs text-muted-foreground">
+            {staged.venueName}
+            {staged.venueNeighborhood ? ` · ${staged.venueNeighborhood}` : ""}
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-sm font-medium capitalize ${statusPill}`}>
+            {staged.status}
+          </span>
+        </div>
+
+        {staged.submitter && (
+          <p className="text-xs text-muted-foreground">
+            Submitted by{" "}
+            {(`${staged.submitter.firstName} ${staged.submitter.lastName}`).trim() && (
+              <span className="text-foreground font-medium">
+                {(`${staged.submitter.firstName} ${staged.submitter.lastName}`).trim()}
+                {" · "}
+              </span>
+            )}
+            {staged.submitter.email ? (
+              <a href={`mailto:${staged.submitter.email}`} className="text-blue-600 hover:underline">
+                {staged.submitter.email}
+              </a>
+            ) : (
+              <span className="italic">no email on file</span>
+            )}
+          </p>
+        )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => window.open(`/event/${staged.id}`, "_blank")}
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+          >
+            <ExternalLink className="h-3 w-3" /> Show event
+          </button>
+          {staged.approvedSiblings && staged.approvedSiblings.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setDatesExpanded((v) => !v)}
+              aria-expanded={datesExpanded}
+              className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+            >
+              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${datesExpanded ? "rotate-180" : ""}`} />
+              {datesExpanded ? "Hide dates" : `All ${staged.approvedSiblings.length} dates`}
+            </button>
+          )}
+          <Link
+            to={
+              staged.approvedSiblings && staged.approvedSiblings.length > 1
+                ? `/edit-event/${staged.id}?scope=future&from=admin`
+                : `/edit-event/${staged.id}?from=admin`
+            }
+            className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+          >
+            <Edit className="h-3 w-3" />{" "}
+            {staged.approvedSiblings && staged.approvedSiblings.length > 1 ? "Edit series" : "Edit"}
+          </Link>
+          {onDeleteApproved && (
+            <button
+              onClick={onDeleteApproved}
+              disabled={submitting}
+              title={
+                staged.parentId || staged.recurrence
+                  ? "Delete the entire series (all dates) from the site"
+                  : "Delete this event from the site"
+              }
+              className="inline-flex items-center gap-1 h-8 px-3 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <Trash2 className="h-3 w-3" />{" "}
+              {staged.parentId || staged.recurrence ? "Delete series" : "Delete"}
+            </button>
+          )}
+        </div>
+
+        {datesExpanded && staged.approvedSiblings && staged.approvedSiblings.length > 1 && (
+          <div className="mt-2 pt-2 border-t border-border divide-y divide-border/50">
+            {staged.approvedSiblings.map((m) => (
+              <div
+                key={m.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-2 px-2 -mx-2 rounded-sm hover:bg-muted/50"
+              >
+                <span className="text-muted-foreground flex-1 min-w-0">
+                  {formatDateWithDay(m.date)}
+                </span>
+                <div className="flex gap-3 sm:justify-end flex-shrink-0">
+                  <Link
+                    to={`/event/${m.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Eye className="h-3 w-3" /> Show
+                  </Link>
+                  <Link
+                    to={`/edit-event/${m.id}?scope=single&from=admin`}
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Edit className="h-3 w-3" /> Edit
+                  </Link>
+                  {onCancelOccurrence && (
+                    <button
+                      type="button"
+                      onClick={() => onCancelOccurrence({ id: m.id, date: m.date })}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      <Ban className="h-3 w-3" /> Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`border rounded-sm p-4 space-y-3 ${
       staged.replacesEventId
@@ -2696,6 +2826,19 @@ function StagedEventCard({
                   <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${datesExpanded ? "rotate-180" : ""}`} />
                   {datesExpanded ? "Hide dates" : `All ${staged.approvedSiblings.length} dates`}
                 </button>
+              )}
+              {scope === "recurring" && (
+                <Link
+                  to={
+                    staged.approvedSiblings && staged.approvedSiblings.length > 1
+                      ? `/edit-event/${staged.id}?scope=future&from=admin`
+                      : `/edit-event/${staged.id}?from=admin`
+                  }
+                  className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
+                >
+                  <Edit className="h-3 w-3" />{" "}
+                  {staged.approvedSiblings && staged.approvedSiblings.length > 1 ? "Edit series" : "Edit"}
+                </Link>
               )}
             </div>
             {canEdit && isDirty && (
