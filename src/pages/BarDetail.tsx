@@ -108,6 +108,7 @@ export default function BarDetail() {
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" />
                 <span>Website</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
             {venue.instagram && (
@@ -119,6 +120,7 @@ export default function BarDetail() {
               >
                 <Instagram className="h-3.5 w-3.5 shrink-0" />
                 <span>Instagram</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
             {venue.phone && (
@@ -128,6 +130,7 @@ export default function BarDetail() {
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 <span>{venue.phone}</span>
+                <span aria-hidden="true">→</span>
               </a>
             )}
           </div>
@@ -145,7 +148,7 @@ export default function BarDetail() {
           )}
           <button
             onClick={handleOpenMaps}
-            className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
+            className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-accent hover:text-foreground active:opacity-70 transition-colors"
           >
             Open in Maps <span aria-hidden="true">→</span>
           </button>
