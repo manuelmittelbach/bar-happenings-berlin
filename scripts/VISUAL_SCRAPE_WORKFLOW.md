@@ -9,7 +9,7 @@ needed to execute the workflow.
 
 ## How to invoke (from a fresh Claude Code session)
 
-For full runs (30+ venues), switch to Sonnet — same quality for this task,
+For full runs (10+ venues), switch to Sonnet — same quality for this task,
 much lower token cost than Opus, and 30+ importer calls + browser sessions
 burn context fast:
 
@@ -254,12 +254,15 @@ Then go back to Step 2 with the next venue.
 
 After all venues are done:
 
-1. Close the browser:
+1. Close the browser (**single-session runs only** — in the orchestration
+   model the main session never opens a browser; each sub-agent closes its
+   own at the end of its batch):
    ```
    mcp__playwright__browser_close
    ```
 2. Optional: remove Playwright MCP cache files (after a full run there can
-   be 80+ leftover `.yml` files):
+   be 80+ leftover `.yml` files — applies to both single-session and
+   orchestrated runs):
    ```
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
    ```
@@ -452,7 +455,7 @@ Hierarchy — use the most specific that fits the page:
 1. `"Free"` — no entry charge
 2. `"Donation"` — fully optional payment / "pay what you want" wording. Map
    common German donation indicators here too: `"Spende"`, `"Spendenbasis"`,
-   `"Auf Spendenbasis"`, `"Spende"`, `"Die Band sammelt am Ende"`.
+   `"Auf Spendenbasis"`, `"Die Band sammelt am Ende"`.
    Do NOT map sliding-scale ranges (e.g. `"5–15 €"`) — those go to free-text.
 3. `"5 €"`, `"12 €"`, `"15,50 €"` — fixed price (integer or integer,50 + space + €)
 4. **Free-text fallback** — pricing IS stated on the page but doesn't fit
