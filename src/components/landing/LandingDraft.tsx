@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
 import { useEvents, useCategories } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
-import { berlinDateString } from "@/lib/dateFormat";
+import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import { cleanEventTitle } from "@/lib/cleanTitle";
@@ -28,15 +28,35 @@ export default function LandingDraft() {
   const { data: eventsData = [] } = useEvents();
   const { data: categoriesData = [] } = useCategories();
   const today = berlinDateString();
+  const tomorrow = berlinDateStringOffset(1);
 
-  // Both landing CTAs that read "tonight" (the primary "Events tonight"
-  // button and the orange "{N} tonight" sticker) must actually land on the
-  // Tonight tab — but Index's day filter lives in sessionStorage, so if the
-  // user previously switched to Tomorrow/Upcoming and came back, the tab
-  // would still be on that stale value. Reset before navigate to honor the
-  // CTA's promise. "All" is the default that maps to the Tonight tab.
-  const goToEventsTonight = () => {
-    setFilter("activeDate", "All");
+  // Late-night / next-day fallback: once today's pool empties, the page
+  // pivots to tomorrow so the hero cluster + CTAs land somewhere with
+  // events instead of advertising an empty Tonight tab. `mode` drives
+  // both the carousel pool and the visible copy further down.
+  const { pool, count, mode } = useMemo(() => {
+    const todays = eventsData.filter(
+      (e) =>
+        e.date === today &&
+        isEventStillOnline(e) &&
+        e.status !== "canceled",
+    );
+    if (todays.length > 0)
+      return { pool: todays, count: todays.length, mode: "tonight" as const };
+    const tomorrows = eventsData.filter(
+      (e) => e.date === tomorrow && e.status !== "canceled",
+    );
+    if (tomorrows.length > 0)
+      return { pool: tomorrows, count: tomorrows.length, mode: "tomorrow" as const };
+    return { pool: [] as BarlinEvent[], count: 0, mode: "empty" as const };
+  }, [eventsData, today, tomorrow]);
+
+  // Both landing CTAs (primary button + accent sticker) must land on the
+  // tab whose events the hero is actually showing. Index's day filter lives
+  // in sessionStorage, so a stale value from a previous visit would otherwise
+  // override the CTA's promise.
+  const goToEvents = () => {
+    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
     navigate("/events");
   };
 
@@ -45,18 +65,12 @@ export default function LandingDraft() {
   // without re-shuffling on every re-render.
   const [shuffleSeed] = useState(() => Math.random());
 
-  // Carousel pool — up to 8 of today's events, shuffled deterministically
-  // per visit. The hero stack cycles through this pool every few seconds;
-  // smaller cap keeps the loop short enough to feel intentional rather
-  // than an endless slideshow.
+  // Carousel pool — up to 8 events from the active day (tonight, or tomorrow
+  // when tonight is empty), shuffled deterministically per visit. The hero
+  // stack cycles through this pool every few seconds; smaller cap keeps
+  // the loop short enough to feel intentional rather than an endless slideshow.
   const HERO_POOL_SIZE = 8;
   const heroPool = useMemo(() => {
-    const todaysEvents = eventsData.filter(
-      (e) =>
-        e.date === today &&
-        isEventStillOnline(e) &&
-        e.status !== "canceled",
-    );
     let seed = Math.floor(shuffleSeed * 1e9);
     const rand = () => {
       seed = (seed + 0x6d2b79f5) | 0;
@@ -65,7 +79,7 @@ export default function LandingDraft() {
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
-    const shuffled = [...todaysEvents].sort(() => rand() - 0.5);
+    const shuffled = [...pool].sort(() => rand() - 0.5);
     // Spread across distinct venues first so consecutive cards in the
     // cycle don't share a bar — pad with remaining events if the pool
     // still has room.
@@ -85,7 +99,7 @@ export default function LandingDraft() {
       }
     }
     return picks;
-  }, [eventsData, today, shuffleSeed]);
+  }, [pool, shuffleSeed]);
 
   // Carousel cycle — the stack advances one slot every CYCLE_MS. With a
   // linear easing and a transition duration matching the interval, the
@@ -180,19 +194,6 @@ export default function LandingDraft() {
     if (hasVisibleCards) cardsHaveMountedRef.current = true;
   }, [hasVisibleCards]);
 
-  // Tonight count — feeds the "1 of N" label on the mobile card and the
-  // accent sticker on the desktop cluster.
-  const tonightCount = useMemo(
-    () =>
-      eventsData.filter(
-        (e) =>
-          e.date === today &&
-          isEventStillOnline(e) &&
-          e.status !== "canceled",
-      ).length,
-    [eventsData, today],
-  );
-
   return (
     <div className="flex flex-1 min-h-0 flex-col bg-background text-foreground">
       {/* ─── HERO (fills remaining viewport) ─── */}
@@ -257,11 +258,11 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={goToEventsTonight}
+                onClick={goToEvents}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                <span>Events tonight</span>
+                <span>{mode === "tomorrow" ? "Events tomorrow" : "Events tonight"}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
               <button
@@ -313,14 +314,16 @@ export default function LandingDraft() {
                   style={{ fontSize: 10, letterSpacing: "0.18em" }}
                 >
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
-                      <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-                    </span>
-                    Tonight
+                    {mode === "tonight" && (
+                      <span className="relative inline-flex h-1.5 w-1.5">
+                        <span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-75" />
+                        <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+                      </span>
+                    )}
+                    {mode === "tomorrow" ? "Tomorrow" : "Tonight"}
                   </span>
                   <span className="text-foreground/25">·</span>
-                  <span>1 of {tonightCount}</span>
+                  <span>1 of {count}</span>
                 </div>
                 {/* Reservation slot — min-h is the *outer* container,
                     not the card. Each card renders at its natural
@@ -434,14 +437,14 @@ export default function LandingDraft() {
                 Reads as a CTA (accent slab, bold, shadow), so it acts like
                 one: click → /, same destination as the "Events tonight"
                 secondary button. */}
-            {tonightCount > 0 && (
+            {count > 0 && (
               <button
                 type="button"
-                onClick={goToEventsTonight}
+                onClick={goToEvents}
                 className="group absolute bottom-[1%] right-[3%] rotate-[8deg] border-2 border-foreground bg-accent px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-accent-foreground shadow-[6px_6px_0_0_#0f0f0f] transition-all hover:-translate-y-0.5 hover:translate-x-0.5 hover:rotate-[8deg] hover:shadow-[4px_4px_0_0_#0f0f0f] active:translate-x-1 active:translate-y-1 active:rotate-[8deg] active:shadow-[2px_2px_0_0_#0f0f0f]"
                 style={{ zIndex: 10 }}
               >
-                {tonightCount} tonight
+                {count} {mode === "tomorrow" ? "tomorrow" : "tonight"}
               </button>
             )}
           </motion.div>
