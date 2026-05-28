@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Apple, ArrowRight, ArrowUpRight } from "lucide-react";
+import { Apple, ArrowRight, ArrowUpRight, Play } from "lucide-react";
 import { useEvents, useCategories } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
@@ -275,24 +275,44 @@ export default function LandingDraft() {
               </button>
             </motion.div>
 
-            {/* tertiary — iOS app */}
-            <motion.a
-              href="#"
-              onClick={(e) => e.preventDefault()}
-              className="group mt-4 inline-flex items-center gap-2 text-foreground/65 transition-colors hover:text-foreground md:mt-3"
+            {/* tertiary — store links. Hrefs are placeholders ("#") until
+                the App Store and Google Play listings go live; both anchors
+                stay clickable-looking so the row reads as real CTAs. */}
+            <motion.div
+              className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-foreground/65 md:mt-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.55 }}
             >
-              <Apple className="h-[14px] w-[14px]" strokeWidth={2.2} />
-              <span
-                className="font-mono uppercase"
-                style={{ fontSize: 11, letterSpacing: "0.14em" }}
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="group inline-flex items-center gap-2 transition-colors hover:text-foreground"
               >
-                Also on iOS
-              </span>
-              <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </motion.a>
+                <Apple className="h-[14px] w-[14px]" strokeWidth={2.2} />
+                <span
+                  className="font-mono uppercase"
+                  style={{ fontSize: 11, letterSpacing: "0.14em" }}
+                >
+                  App Store
+                </span>
+                <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="group inline-flex items-center gap-2 transition-colors hover:text-foreground"
+              >
+                <Play className="h-[14px] w-[14px]" strokeWidth={2.2} fill="currentColor" />
+                <span
+                  className="font-mono uppercase"
+                  style={{ fontSize: 11, letterSpacing: "0.14em" }}
+                >
+                  Google Play
+                </span>
+                <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
+            </motion.div>
 
             {/* ── Mobile-only preview card ──
                 Single cycling event card that anchors the bottom half of
