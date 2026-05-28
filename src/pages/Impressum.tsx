@@ -2,7 +2,7 @@ export default function Impressum() {
   return (
     <div className="flex-1">
       <div className="container max-w-2xl py-16">
-        <h1 className="heading-display text-4xl md:text-5xl mb-8">Impressum</h1>
+        <h1 className="heading-display text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-8">Impressum</h1>
 
         <div className="space-y-6 text-sm text-muted-foreground leading-relaxed">
           <section>
