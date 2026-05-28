@@ -27,8 +27,7 @@ export default function Signup() {
 	const isNative = useIsNative();
 
 	const [isBarOwner, setIsBarOwner] = useState(() => Boolean(navState?.barOwner));
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
+	const [name, setName] = useState("");
 	const [venueOptions, setVenueOptions] = useState<VenueOption[]>([]);
 	const [selectedVenueId, setSelectedVenueId] = useState("");
 	const [barNotInList, setBarNotInList] = useState(false);
@@ -114,7 +113,7 @@ export default function Signup() {
 					instagram: barInstagram,
 					phone: barPhone,
 				};
-			await signUp(email, password, firstName, lastName, isBarOwner, isBarOwner ? venuePayload : undefined);
+			await signUp(email, password, name, isBarOwner, isBarOwner ? venuePayload : undefined);
 			setSuccess(true);
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Something went wrong";
@@ -194,31 +193,17 @@ export default function Signup() {
 					</div>
 
 					{/* Name — required for every account, bar owner or not. */}
-					<div className="flex gap-2">
-						<div className="flex-1 space-y-1.5">
-							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">First name <span className="text-accent">*</span></label>
-							<input
-								type="text"
-								required
-								autoComplete="given-name"
-								value={firstName}
-								onChange={(e) => setFirstName(e.target.value)}
-								placeholder="Anna"
-								className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
-							/>
-						</div>
-						<div className="flex-1 space-y-1.5">
-							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Last name <span className="text-accent">*</span></label>
-							<input
-								type="text"
-								required
-								autoComplete="family-name"
-								value={lastName}
-								onChange={(e) => setLastName(e.target.value)}
-								placeholder="Smith"
-								className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
-							/>
-						</div>
+					<div className="space-y-1.5">
+						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Name <span className="text-accent">*</span></label>
+						<input
+							type="text"
+							required
+							autoComplete="name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Anna"
+							className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
+						/>
 					</div>
 
 					{isBarOwner && (

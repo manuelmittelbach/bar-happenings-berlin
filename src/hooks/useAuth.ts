@@ -98,8 +98,7 @@ export function useAuth() {
   const signUp = async (
     email: string,
     password: string,
-    firstName: string,
-    lastName: string,
+    name: string,
     isBarOwner = false,
     venueData?:
       | { existingVenueId: string; website?: string; instagram?: string; phone?: string }
@@ -135,8 +134,8 @@ export function useAuth() {
       password,
       options: {
         data: {
-          first_name: firstName,
-          last_name: lastName,
+          first_name: name,
+          last_name: "",
           role: isBarOwner ? "organizer" : "user",
           bar_submission: barSubmissionMeta,
           venue_claim: venueClaimMeta,
