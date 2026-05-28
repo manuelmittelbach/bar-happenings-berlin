@@ -32,6 +32,12 @@ export default function BarDetail() {
   const todayStr = berlinDateString();
   const { data: venueEvents = [], isLoading: eventsLoading } = useEventsByVenue(id || "", todayStr);
 
+  // Hide Back when this tab has no prior history (e.g. opened via
+  // target="_blank" from the dashboard's View link) — a non-functional
+  // Back button there is more confusing than helpful. React Router v6
+  // tracks position via history.state.idx; idx === 0 means first entry.
+  const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
+
   if (isLoading) return <PageSpinner />;
 
   if (!venue) {
@@ -101,20 +107,26 @@ export default function BarDetail() {
     <div className="relative isolate bg-background pb-24">
       {/* Sticky Back / Share row — mirrors EventDetail exactly. Share
           opens the native share sheet on iOS, navigator.share on capable
-          web, clipboard fallback otherwise. */}
+          web, clipboard fallback otherwise. Back is hidden when there's
+          no in-app history (e.g. opened in a new tab from the bar-owner
+          dashboard's "View" link) — `navigate(-1)` would close the tab. */}
       <div
         className="sticky z-40 bg-background"
         style={{ top: "var(--header-h)" }}
       >
         <div className="container flex items-center justify-between py-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
-            aria-label="Back"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
-          </button>
+          {canGoBack ? (
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+              aria-label="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+            </button>
+          ) : (
+            <div />
+          )}
           <button
             onClick={handleShare}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
