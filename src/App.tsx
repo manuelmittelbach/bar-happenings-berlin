@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +106,17 @@ function BarAccountLegacyRedirect() {
   return <Navigate to={`/profile/bar${location.search}`} replace />;
 }
 
+function AdminLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/profile/admin${location.search}`} replace />;
+}
+
+function AdminBarAccountLegacyRedirect() {
+  const { id } = useParams();
+  const location = useLocation();
+  return <Navigate to={`/profile/admin/bar-account/${id}${location.search}`} replace />;
+}
+
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { user, role, roleResolved, loading } = useAuth();
@@ -136,10 +147,10 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
       navigate("/profile/details", { replace: true });
     } else {
       markEmailJustConfirmed();
-      // Confirmed accounts land on their role's home: admins → /admin,
+      // Confirmed accounts land on their role's home: admins → /profile/admin,
       // organizers → /profile/events, plain users → the events list.
       const destination =
-        role === "admin" ? "/admin" : role === "organizer" ? "/profile/events" : "/events";
+        role === "admin" ? "/profile/admin" : role === "organizer" ? "/profile/events" : "/events";
       navigate(destination, { replace: true });
     }
     setPending(false);
@@ -255,7 +266,8 @@ const App = () => (
             <Route path="/login" element={<LoginLegacyRedirect />} />
             <Route path="/profile/events" element={<OrganizerDashboard />} />
             <Route path="/dashboard" element={<DashboardLegacyRedirect />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/profile/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminLegacyRedirect />} />
             <Route path="/for-organizers" element={<ForOrganizersOrSignin />} />
             {/* Legacy: old confirm/reset emails and bookmarks may still point
                 at /for-bars. Forward (preserving query) so they keep working. */}
@@ -264,7 +276,8 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/edit-event/:id" element={<EditEvent />} />
-            <Route path="/admin/bar-account/:id" element={<EditBarAccount />} />
+            <Route path="/profile/admin/bar-account/:id" element={<EditBarAccount />} />
+            <Route path="/admin/bar-account/:id" element={<AdminBarAccountLegacyRedirect />} />
             <Route path="/profile/bar" element={<BarAccount />} />
             <Route path="/bar-account" element={<BarAccountLegacyRedirect />} />
             <Route path="/reset-password" element={<UpdatePassword />} />

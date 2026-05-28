@@ -1070,7 +1070,7 @@ export default function AdminDashboard() {
                   organizer={organizer}
                   onApprove={() => handleApproveOrganizer(organizer)}
                   onReject={() => handleRejectOrganizer(organizer)}
-                  returnPath="/admin"
+                  returnPath="/profile/admin"
                 />
               ))}
             </div>
@@ -1083,7 +1083,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">No bar accounts approved or rejected yet.</p>
               )}
               {decidedOrganizers.map((organizer) => (
-                <OrganizerCard key={organizer.id} organizer={organizer} returnPath="/admin?tab=overview" />
+                <OrganizerCard key={organizer.id} organizer={organizer} returnPath="/profile/admin?tab=overview" />
               ))}
             </div>
           )}
@@ -1685,7 +1685,7 @@ function OrganizerCard({
         )}
         {(organizer.venue || organizer.pendingSubmission || organizer.pendingClaim) && (
           <Link
-            to={`/admin/bar-account/${organizer.id}`}
+            to={`/profile/admin/bar-account/${organizer.id}`}
             state={{ returnPath }}
             className="inline-flex items-center gap-1 h-8 px-3 border border-border rounded-sm text-xs font-medium hover:bg-muted"
             title="Edit"

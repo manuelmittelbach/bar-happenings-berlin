@@ -39,7 +39,7 @@ export default function Profile() {
     links.push({ label: "Your bar", to: "/profile/bar" });
   }
   if (role === "admin") {
-    links.push({ label: "Admin", to: "/admin" });
+    links.push({ label: "Admin", to: "/profile/admin" });
   }
   links.push({ label: "Your profile", to: "/profile/details" });
 
