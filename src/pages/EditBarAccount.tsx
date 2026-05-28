@@ -30,8 +30,7 @@ export default function EditBarAccount() {
 	const [email, setEmail] = useState<string | null>(null);
 	const [existingNeighborhood, setExistingNeighborhood] = useState("");
 	const [form, setForm] = useState({
-		firstName: "",
-		lastName: "",
+		name: "",
 		barName: "",
 		barAddress: "",
 		barWebsite: "",
@@ -60,8 +59,7 @@ export default function EditBarAccount() {
 					setVenueId(organizer.venue.id);
 					setExistingNeighborhood(organizer.venue.neighborhood);
 					setForm({
-						firstName: organizer.firstName,
-						lastName: organizer.lastName,
+						name: `${organizer.firstName ?? ""} ${organizer.lastName ?? ""}`.trim(),
 						barName: organizer.venue.name,
 						barAddress: organizer.venue.address,
 						barWebsite: organizer.venue.website ?? "",
@@ -74,8 +72,7 @@ export default function EditBarAccount() {
 					setMode("pending");
 					setExistingNeighborhood(organizer.pendingSubmission.neighborhood);
 					setForm({
-						firstName: organizer.firstName,
-						lastName: organizer.lastName,
+						name: `${organizer.firstName ?? ""} ${organizer.lastName ?? ""}`.trim(),
 						barName: organizer.pendingSubmission.name,
 						barAddress: organizer.pendingSubmission.address,
 						barWebsite: organizer.pendingSubmission.website ?? "",
@@ -89,8 +86,7 @@ export default function EditBarAccount() {
 					setVenueId(organizer.pendingClaim.venueId);
 					setExistingNeighborhood(organizer.pendingClaim.venueNeighborhood);
 					setForm({
-						firstName: organizer.firstName,
-						lastName: organizer.lastName,
+						name: `${organizer.firstName ?? ""} ${organizer.lastName ?? ""}`.trim(),
 						barName: organizer.pendingClaim.venueName,
 						barAddress: organizer.pendingClaim.venueAddress,
 						barWebsite: organizer.pendingClaim.proposedWebsite ?? organizer.pendingClaim.venueWebsite ?? "",
@@ -176,7 +172,7 @@ export default function EditBarAccount() {
 			if (mode === "venue" && venueId) {
 				await updateOrganizerAccount(
 					id,
-					{ firstName: form.firstName, lastName: form.lastName },
+					{ firstName: form.name.trim(), lastName: "" },
 					{
 						id: venueId,
 						name: form.barName,
@@ -193,7 +189,7 @@ export default function EditBarAccount() {
 				// Claim mode keeps the existing venue's coords — don't pass lat/lng.
 				await updateOrganizerAccount(
 					id,
-					{ firstName: form.firstName, lastName: form.lastName },
+					{ firstName: form.name.trim(), lastName: "" },
 					{
 						id: venueId,
 						name: form.barName,
@@ -206,7 +202,7 @@ export default function EditBarAccount() {
 				);
 				await clearVenueClaimProposals(id);
 			} else {
-				await updateProfile(id, { firstName: form.firstName, lastName: form.lastName });
+				await updateProfile(id, { firstName: form.name.trim(), lastName: "" });
 				await updatePendingBarSubmission(id, {
 					name: form.barName,
 					address: form.barAddress,
@@ -269,27 +265,16 @@ export default function EditBarAccount() {
 					</p>
 
 					<form onSubmit={handleSubmit} className="space-y-6">
-						<div className="flex gap-2">
-							<div className="flex-1 space-y-1.5">
-								<label className="text-sm font-medium">First name <span className="text-accent">*</span></label>
-								<input
-									type="text"
-									required
-									value={form.firstName}
-									onChange={(e) => update("firstName", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
-								/>
-							</div>
-							<div className="flex-1 space-y-1.5">
-								<label className="text-sm font-medium">Last name <span className="text-accent">*</span></label>
-								<input
-									type="text"
-									required
-									value={form.lastName}
-									onChange={(e) => update("lastName", e.target.value)}
-									className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
-								/>
-							</div>
+						<div className="space-y-1.5">
+							<label className="text-sm font-medium">Name <span className="text-accent">*</span></label>
+							<input
+								type="text"
+								required
+								autoComplete="name"
+								value={form.name}
+								onChange={(e) => update("name", e.target.value)}
+								className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
+							/>
 						</div>
 
 						<div className="space-y-3 border-l-2 border-foreground pl-4">
