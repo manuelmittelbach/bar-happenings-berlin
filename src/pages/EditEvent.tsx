@@ -153,7 +153,8 @@ export default function EditEvent() {
             return;
           }
           toast.success("Submission updated!");
-          navigate("/profile/events");
+          if (location.key !== "default") navigate(-1);
+          else navigate("/profile/events", { replace: true });
           return;
         }
         if (applyToSeries) {
@@ -165,12 +166,18 @@ export default function EditEvent() {
         }
         queryClient.invalidateQueries({ queryKey: ["events"] });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
-        navigate(isAdmin ? `/event/${id}` : "/profile/events");
+        if (isAdmin) {
+          navigate(`/event/${id}`);
+        } else if (location.key !== "default") {
+          navigate(-1);
+        } else {
+          navigate("/profile/events", { replace: true });
+        }
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId, source],
+    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId, source, location.key],
   );
 
   const handleDelete = async () => {
@@ -197,7 +204,13 @@ export default function EditEvent() {
       }
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
-      navigate(isAdmin ? "/" : "/profile/events");
+      if (isAdmin) {
+        navigate("/");
+      } else if (location.key !== "default") {
+        navigate(-1);
+      } else {
+        navigate("/profile/events", { replace: true });
+      }
     } catch {
       toast.error("Couldn't cancel the event. Please try again.");
     }
@@ -213,7 +226,8 @@ export default function EditEvent() {
       } else {
         toast.success("Submission withdrawn.");
       }
-      navigate("/profile/events", { replace: true });
+      if (location.key !== "default") navigate(-1);
+      else navigate("/profile/events", { replace: true });
     } catch {
       toast.error("Couldn't withdraw the submission. Please try again.");
     }

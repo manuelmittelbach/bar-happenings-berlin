@@ -102,6 +102,12 @@ export default function EventDetail() {
 
 	const canEdit = roleResolved && role === "admin";
 
+	// Hide Back when this tab has no prior history (e.g. opened via
+	// target="_blank" from the dashboard's View link) — a non-functional
+	// Back button there is more confusing than helpful. React Router v6
+	// tracks position via history.state.idx; idx === 0 means first entry.
+	const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
+
 	return (
 		<div className="relative isolate bg-background pb-24">
 			{/* Sticky Back / Share row — used on both native (below safe-area
@@ -114,14 +120,18 @@ export default function EventDetail() {
 				style={{ top: "var(--header-h)" }}
 			>
 				<div className="container flex items-center justify-between py-2">
-					<button
-						onClick={() => navigate(-1)}
-						className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
-						aria-label="Back"
-					>
-						<ChevronLeft className="h-5 w-5" />
-						<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
-					</button>
+					{canGoBack ? (
+						<button
+							onClick={() => navigate(-1)}
+							className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
+							aria-label="Back"
+						>
+							<ChevronLeft className="h-5 w-5" />
+							<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
+						</button>
+					) : (
+						<div />
+					)}
 					<button
 						onClick={handleShare}
 						className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
@@ -145,7 +155,7 @@ export default function EventDetail() {
 				/* Share moved to the sticky top bar on every surface
 				   (web + native), so the inline action-row CTA is off. */
 				showShare={false}
-				onEdit={canEdit ? () => navigate(`/edit-event/${event.id}`) : undefined}
+				onEdit={canEdit ? () => window.open(`/edit-event/${event.id}`, "_blank", "noopener,noreferrer") : undefined}
 			/>
 		</div>
 	);

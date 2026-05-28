@@ -79,11 +79,14 @@ export default function EventMeta({ event, categories, size = "sm", walkingMin }
         </span>
       )}
       {walkingMin !== undefined && (
-        // Walking-distance chip — uses the same Tabler "walk" SVG and
-        // accent color as the map popup chip so the signal is identical
-        // across the index and the map. The chip pushes to the row's end
-        // via ml-auto so it sits flush right next to the line break.
-        <span className="ml-auto inline-flex items-center gap-1 text-accent">
+        <>
+          <span className="text-muted-foreground">·</span>
+        {/* Walking-distance chip — uses the same Tabler "walk" SVG and
+            accent color as the map popup chip so the signal is identical
+            across the index and the map. Sits inline at the end of the
+            meta row (next to category / Free / Canceled), not pushed
+            flush right — keeps the row's left-anchored reading order. */}
+        <span className="inline-flex items-center gap-1 text-accent">
           <svg
             aria-hidden="true"
             width="14"
@@ -102,6 +105,7 @@ export default function EventMeta({ event, categories, size = "sm", walkingMin }
           </svg>
           {walkingMin} min
         </span>
+        </>
       )}
     </div>
   );
