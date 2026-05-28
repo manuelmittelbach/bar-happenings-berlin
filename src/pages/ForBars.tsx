@@ -9,7 +9,7 @@ const benefits = [
 	{
 		num: "01",
 		label: "2-min setup",
-		desc: "Sign up, claim your bar, publish your first event.",
+		desc: "Sign up, claim your bar or just submit your event.",
 	},
 	{
 		num: "02",
