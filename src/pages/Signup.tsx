@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Eye, EyeOff, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsNative } from "@/hooks/useIsNative";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,25 +152,9 @@ export default function Signup() {
 	}
 
 	return (
-		<div className="flex flex-1 flex-col">
-			{/* Layout mirrors the /for-organizers sign-in surface exactly — same
-			    container, single centered section, and legal footer — so
-			    "Create account" lands at the same height as "Welcome back!".
-			    (The earlier absolute-back-button fix wasn't enough on its own:
-			    without the footer below, this page centered in a taller box
-			    and the heading sat lower.) */}
-			<div className="container relative flex-1 flex flex-col md:flex-row md:items-stretch md:py-8">
-			{/* Back — overlaid top-left so it doesn't push the form down. */}
-			<button
-				onClick={() => navigate(-1)}
-				className="absolute left-4 top-3 inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
-				aria-label="Back"
-			>
-				<ChevronLeft className="h-5 w-5" />
-				<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">Back</span>
-			</button>
-			<section className="md:flex-1 md:flex md:items-center">
-			<div className="w-full py-12 md:py-20 px-4">
+		<div className="flex flex-1 flex-col bg-background">
+			<section className="flex flex-1 items-center">
+				<div className="w-full px-4 py-12 md:py-20">
 				<div className="max-w-sm mx-auto text-center mb-8">
 					<h1 className="heading-display text-2xl">Create account</h1>
 					<p className="text-sm text-muted-foreground mt-1">Create your account</p>
@@ -375,10 +359,20 @@ export default function Signup() {
 					>
 						{loading ? "..." : "Create account"}
 					</button>
+
+					<p className="text-center text-sm text-muted-foreground pt-2">
+						Already signed up?{" "}
+						<button
+							type="button"
+							onClick={() => navigate("/signin", { state: { from } })}
+							className="text-foreground font-medium hover:text-accent transition-colors"
+						>
+							Sign in
+						</button>
+					</p>
 				</form>
 			</div>
 			</section>
-			</div>
 			{isNative && (
 				<nav
 					aria-label="Legal"
