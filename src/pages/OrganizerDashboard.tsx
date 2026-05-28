@@ -370,6 +370,8 @@ export default function OrganizerDashboard() {
                               {!isPendingSubmission && displayEvent.status !== "canceled" && (
                                 <Link
                                   to={`/event/${displayEvent.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   <Eye className="h-4 w-4" /> View
@@ -389,6 +391,8 @@ export default function OrganizerDashboard() {
                           !canExpand && !isPendingSubmission && displayEvent.status !== "canceled" && (
                             <Link
                               to={`/event/${displayEvent.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <Eye className="h-4 w-4" /> View
@@ -445,6 +449,8 @@ export default function OrganizerDashboard() {
                               <div className="flex gap-3 sm:justify-end flex-shrink-0">
                                 <Link
                                   to={`/event/${m.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   <Eye className="h-4 w-4" /> View

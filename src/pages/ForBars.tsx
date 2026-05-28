@@ -53,7 +53,7 @@ export default function ForBars() {
 						className="mt-4 heading-editorial italic font-light text-foreground/55 leading-[1.2]"
 						style={{ fontSize: "clamp(15px, 1.8vw, 22px)" }}
 					>
-						— or host a night in one?
+						— or host an event in one?
 					</motion.p>
 
 					<motion.p
@@ -76,10 +76,10 @@ export default function ForBars() {
 								Signed in as <strong className="font-mono">{user.email}</strong>.
 							</p>
 							<Link
-								to="/profile/events"
+								to="/profile"
 								className="group inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground hover:text-accent transition-colors"
 							>
-								Go to your dashboard
+								Go to your account
 								<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
 							</Link>
 						</motion.div>
@@ -134,7 +134,7 @@ export default function ForBars() {
 							<span className="text-accent">.</span>
 						</h2>
 						<p className="mt-5 text-[15px] leading-[1.65] text-foreground/75 md:text-base">
-							Live music on weekends? Pub quiz on Tuesdays? List your bar and put your nights on the map.
+							Live music on weekends? Pub quiz on Tuesdays? List your bar and put your events on the map.
 						</p>
 					</article>
 
@@ -144,9 +144,9 @@ export default function ForBars() {
 							For event hosts
 						</div>
 						<h2 className="heading-display text-3xl leading-[1.05] md:text-4xl">
-							Host a{" "}
+							Host an{" "}
 							<span className="heading-editorial italic lowercase font-light">
-								night
+								event
 							</span>
 							<span className="text-accent">.</span>
 						</h2>
