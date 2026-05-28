@@ -1683,6 +1683,74 @@ export async function fetchMyStagedSubmissions(userId: string): Promise<BarlinEv
   );
 }
 
+// Single staging row by id, scoped to the owner — backs the editor when a
+// pending submission is opened from "Your events". Returns null if the row
+// isn't there (admin already approved it, or it never belonged to the user).
+export async function fetchMyStagedSubmissionById(
+  stagingId: string,
+  userId: string,
+): Promise<BarlinEvent | null> {
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .select("*, venues(name, address, neighborhood)")
+    .eq("id", stagingId)
+    .eq("created_by", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const s = mapStagedEventRow(data as StagedEventRow);
+  return stagedSubmissionToEvent(s, {
+    id: s.id,
+    parentId: "",
+    date: s.date,
+    recurrence: s.recurrence ? formatRule(s.recurrence as RecurrenceFreq, s.recurrenceUntil) : "",
+  });
+}
+
+// Patch the owner's pending staging row. Field mapping mirrors the insert
+// path in createUserStagedSubmission. The row stays "pending" — admin reviews
+// the updated template on approve. Returns updated:false when 0 rows change
+// (race: admin approved the row between load and save, so it's now in
+// `events` and gone from staging) so the caller can surface a useful toast.
+export async function updateUserStagedSubmission(
+  stagingId: string,
+  formData: EventWriteData,
+  imageUrl?: string | null,
+): Promise<{ updated: boolean }> {
+  const times = normalizeStartDoors(formData.startTime, formData.doorsTime);
+  const hasVenue = !!formData.venueId;
+  const patch: TablesUpdate<"venue_events_staging"> = {
+    venue_id: formData.venueId || null,
+    manual_venue_name: hasVenue ? null : (formData.venue || null),
+    manual_venue_address: hasVenue ? null : (formData.address || null),
+    manual_venue_neighborhood: hasVenue ? null : (formData.neighborhood || null),
+    title: formData.title,
+    date: formData.date,
+    start_time: times.start,
+    end_time: formData.endTime ? trimTime(formData.endTime) : null,
+    doors_time: times.doors,
+    category: formData.category,
+    description: formData.description || null,
+    entry_info: formData.entryInfo || null,
+    language: formData.language || null,
+    source_url: cleanUrl(formData.website) || null,
+    image_position: formData.imagePosition,
+    recurrence: formData.recurrence || "",
+    recurrence_until: formData.recurrenceUntil || null,
+  };
+  // Only touch the image column when the form actually changed it. Caller
+  // passes `undefined` when unchanged, `null` to clear, a url to replace.
+  if (imageUrl !== undefined) patch.image = imageUrl;
+
+  const { data, error } = await supabase
+    .from("venue_events_staging")
+    .update(patch)
+    .eq("id", stagingId)
+    .select("id");
+  if (error) throw error;
+  return { updated: (data?.length ?? 0) > 0 };
+}
+
 // Resolve each row's submitter (email + name) from profiles via created_by.
 // There's no FK on created_by (it points at auth.users, not profiles), so we
 // batch-fetch the profiles rather than relying on a PostgREST embed. Rows whose
