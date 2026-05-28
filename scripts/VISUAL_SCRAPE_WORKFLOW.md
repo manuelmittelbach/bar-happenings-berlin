@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-08 -->
+<!-- last-updated: 2026-05-28 -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -30,6 +30,13 @@ in this document.
 prompt. Already-imported venues are automatically skipped via the staged-keys
 dedup in Step 1b — no manual cleanup needed.
 
+**Context management:** For runs of 10+ venues the main context window fills
+up quickly (browser content is large). Use the **sub-agent orchestration
+model** described in the "Orchestration model" section below. The orchestrator
+runs Step 1, splits venues into batches, spawns parallel sub-agents (one per
+batch), and collects compact summaries. Each sub-agent has its own fresh
+context — browser content never lands in the main session.
+
 ### Tools you'll need (deferred — load before using)
 
 The Playwright + Supabase MCP tools are deferred in fresh sessions. Load them
@@ -50,6 +57,10 @@ If you extracted **zero events** for a venue (for ANY reason), run Step 2b
 (placeholder) instead of Step 3 and move on. Step 4 (cleanup) once at the
 end. Do NOT batch all venues into a single write — that broke a previous
 run by exceeding the output token limit.
+
+> **For full runs (30+ venues):** the per-venue loop below is what each
+> **sub-agent** follows for its own batch. The main orchestrator does Step 1,
+> then spawns sub-agents instead of looping itself — see "Orchestration model".
 
 ### Step 1 — Read venues and existing staging
 
@@ -252,6 +263,76 @@ After all venues are done:
    ```
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
    ```
+
+## Orchestration model
+
+For runs of 10+ venues, the main orchestrator uses **sub-agents per batch**
+so the main context stays small. Browser content accumulates quickly even
+for a handful of venues; sub-agents contain that within their own sessions.
+
+### Orchestrator flow (replaces the per-venue loop after Step 1)
+
+1. Run Step 1a + 1b (venue list + staged keys) in the main session.
+2. Build `staged_keys_by_venue` as usual.
+3. Split the venue list into batches of **~8 venues each**.
+4. Spawn all batches as **parallel sub-agents** in a single message
+   (multiple `Agent` tool calls at once). Pass each sub-agent a
+   self-contained prompt — see template below.
+5. Wait for all sub-agents to return their compact summaries.
+6. If any sub-agent reports a `✗ insert error` or hard crash, re-run just
+   that batch's venues (the dedup will skip anything already staged).
+7. Run Step 4 cleanup (browser_close + remove .playwright-mcp files) in the
+   main session once all batches are done.
+
+> **No browser_close needed in the main session** — each sub-agent closes
+> its own browser at the end of its batch.
+
+### Sub-agent prompt template
+
+Fill in `{TODAY}`, `{WINDOW_END}`, the staged-keys subset (only for the
+batch's venue IDs), and the venue list. The project root is
+`/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin`.
+
+```
+Working directory: /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin
+
+You are scraping a batch of Berlin bar venues. Read
+`scripts/VISUAL_SCRAPE_WORKFLOW.md` for all field rules (Step 2 scraping,
+Step 2b placeholder, Step 3 write+import, field rules, pre-import checklist).
+
+Today: {TODAY}. Window: {TODAY} to {WINDOW_END} (inclusive).
+
+Already-staged keys for YOUR venues only — skip events where
+(date, normalized_title) is already present:
+{JSON map: venue_id → [[date, normalized_title], ...]}
+
+Your venues (process in order, one at a time):
+1. Name — venue_id — website_events URL
+2. ...
+
+Load tools first with a single ToolSearch call (one line):
+  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__supabase__execute_sql"
+
+Then for each venue: Step 2 (scrape) → Step 3a+3b (write+import), or
+Step 2b (placeholder) for zero-event venues. After the last venue, call
+browser_close once.
+
+Return a compact summary — one line per venue:
+  "Venue Name: N new + M update" or "Venue Name: placeholder" or "Venue Name: all skipped (dedup)"
+Stop and flag immediately on any ✗ insert error.
+```
+
+### Notes on parallel execution
+
+- All batches can run in one parallel message — sub-agents use independent
+  browser sessions, no shared state.
+- Staged-keys passed to each sub-agent only need to cover that batch's
+  venue IDs — filter the full map before building the prompt.
+- Sub-agent summaries are short (1 line per venue), so the orchestrator's
+  context grows very slowly regardless of how many batches there are.
+- If a sub-agent crashes mid-batch, re-run with the same venue list — the
+  dedup skips anything already staged, so only the remaining venues get
+  processed.
 
 ## Field rules — strict, follow exactly
 
