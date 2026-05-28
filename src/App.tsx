@@ -90,7 +90,7 @@ function ForOrganizersOrSignin() {
 }
 
 // Old signup URL `/login`. Forward (preserve query) to /signup so any inbound
-// `?mode=signup&bar=1` from external links / older emails keeps working.
+// link from older emails / bookmarks keeps working.
 function LoginLegacyRedirect() {
   const location = useLocation();
   return <Navigate to={`/signup${location.search}`} replace />;
@@ -109,9 +109,7 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
-      // Bar-owner-only: every confirm/reset error funnels to /signin (the
-      // single auth surface). The `params` look-up for `?bar=1` is gone
-      // because there's no longer a non-bar signup branch to disambiguate.
+      // Every confirm/reset error funnels to /signin (the single auth surface).
       const isReset = window.location.pathname.includes("reset-password");
       const target = isReset
         ? "/signin?link_error=reset"

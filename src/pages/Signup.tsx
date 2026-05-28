@@ -11,18 +11,22 @@ import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
 
 type VenueOption = { id: string; name: string };
 
-/* Bar-owner signup. Reached from /for-organizers → "Create account". Sign-in,
- * forgot-password, and link-error lockout live on /signin. The `?bar=1` query
- * param is no longer load-bearing — every visit to /signup is a bar-owner
- * signup — but it stays in inbound URLs for backwards-compat. */
+/* Signup surface. Reached from /for-organizers → "Create account" (passes
+ * `barOwner: true` via router state so the bar-owner checkbox starts
+ * pre-selected) or from /signin → "Create account" (no state, neutral signup
+ * with the checkbox off). Sign-in, forgot-password, and link-error lockout
+ * live on /signin. */
+type SignupNavState = { from?: string; barOwner?: boolean };
+
 export default function Signup() {
 	const navigate = useNavigate();
 	const location = useLocation();
-	const from = (location.state as { from?: string })?.from ?? null;
+	const navState = (location.state as SignupNavState | null) ?? null;
+	const from = navState?.from ?? null;
 	const { user, loading: authLoading, signUp } = useAuth();
 	const isNative = useIsNative();
 
-	const [isBarOwner, setIsBarOwner] = useState(false);
+	const [isBarOwner, setIsBarOwner] = useState(() => Boolean(navState?.barOwner));
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [venueOptions, setVenueOptions] = useState<VenueOption[]>([]);
