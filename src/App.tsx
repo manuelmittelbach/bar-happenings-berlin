@@ -71,6 +71,11 @@ function isEmailChangeCallback(): boolean {
   return h.includes("type=email_change") || h.includes("type=email");
 }
 
+function ForBarsLegacyRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/for-organizers${location.search}`} replace />;
+}
+
 function AuthCallbackGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { user, role, roleResolved, loading } = useAuth();
@@ -84,13 +89,13 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     const hasError = params.has("error") || window.location.hash.includes("error=");
 
     if (hasError) {
-      // Bar-owner-only: every confirm/reset error funnels to /for-bars (the
-      // single auth surface). The `params` look-up for `?bar=1` is gone
+      // Bar-owner-only: every confirm/reset error funnels to /for-organizers
+      // (the single auth surface). The `params` look-up for `?bar=1` is gone
       // because there's no longer a non-bar signup branch to disambiguate.
       const isReset = window.location.pathname.includes("reset-password");
       const target = isReset
-        ? "/for-bars?link_error=reset"
-        : "/for-bars?link_error=confirm";
+        ? "/for-organizers?link_error=reset"
+        : "/for-organizers?link_error=confirm";
       navigate(target, { replace: true });
       setPending(false);
       return;
@@ -217,7 +222,10 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<OrganizerDashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/for-bars" element={<ForBars />} />
+            <Route path="/for-organizers" element={<ForBars />} />
+            {/* Legacy: old confirm/reset emails and bookmarks may still point
+                at /for-bars. Forward (preserving query) so they keep working. */}
+            <Route path="/for-bars" element={<ForBarsLegacyRedirect />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/map" element={<MapPage />} />

@@ -74,7 +74,7 @@ export default function Footer() {
                 Contact
               </Link>
               <Link
-                to="/for-bars"
+                to="/for-organizers"
                 className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
               >
                 For organizers

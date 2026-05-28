@@ -80,7 +80,7 @@ export default function ConfirmEmail() {
             <h1 className="heading-display text-2xl">Confirmation failed</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">{errorMessage}</p>
             <button
-              onClick={() => navigate("/for-bars", { replace: true })}
+              onClick={() => navigate("/for-organizers", { replace: true })}
               className="inline-flex items-center gap-2 h-11 px-6 bg-foreground text-background font-body font-semibold text-sm hover:bg-foreground/90 transition-colors"
             >
               Back to bar signup

@@ -11,7 +11,7 @@ export default function ForBars() {
 	const { user, signIn, signOut, resetPassword } = useAuth();
 	const isNative = useIsNative();
 	// Bare sign-in (no marketing) on native apps, and on web when reached via
-	// the header "Sign in" entry (/for-bars?view=signin).
+	// the header "Sign in" entry (/for-organizers?view=signin).
 	const bareSignIn = isNative || new URLSearchParams(location.search).get("view") === "signin";
 	const [signingOut, setSigningOut] = useState(false);
 
@@ -182,7 +182,7 @@ export default function ForBars() {
 											<button
 												type="button"
 												onClick={() =>
-													navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
+													navigate("/login?mode=signup&bar=1", { state: { from: "/for-organizers" } })
 												}
 												className="text-foreground font-medium hover:text-accent transition-colors"
 											>
@@ -272,7 +272,7 @@ export default function ForBars() {
 										You're signed in as <strong className="font-mono">{user.email}</strong>.
 									</p>
 									<p className="text-sm text-muted-foreground leading-relaxed">
-										Sign out to register a new bar account.
+										Sign out to register a new account.
 									</p>
 									<button
 										type="button"
@@ -293,7 +293,7 @@ export default function ForBars() {
 								>
 									<button
 										onClick={() =>
-											navigate("/login?mode=signup&bar=1", { state: { from: "/for-bars" } })
+											navigate("/login?mode=signup&bar=1", { state: { from: "/for-organizers" } })
 										}
 										className="group inline-flex items-center gap-2 h-12 px-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors"
 									>
@@ -301,7 +301,7 @@ export default function ForBars() {
 										<ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
 									</button>
 									<Link
-										to="/for-bars?view=signin"
+										to="/for-organizers?view=signin"
 										className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55 hover:text-foreground transition-colors"
 									>
 										Already have an account? Sign in →
