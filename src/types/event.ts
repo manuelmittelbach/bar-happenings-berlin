@@ -68,6 +68,7 @@ export interface Venue {
   websiteEvents?: string;
   phone?: string;
   scrapeEnabled: boolean;
+  isVisible: boolean;
   lat: number;
   lng: number;
 }

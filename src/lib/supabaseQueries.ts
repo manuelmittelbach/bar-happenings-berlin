@@ -107,6 +107,7 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     websiteEvents: row.website_events ?? undefined,
     phone: row.phone ?? undefined,
     scrapeEnabled: row.scrape_enabled,
+    isVisible: row.is_visible,
     lat: Number(row.lat),
     lng: Number(row.lng),
   };
@@ -134,6 +135,14 @@ export async function setVenueScrapeEnabled(
   if (error) throw error;
 }
 
+export async function setVenueVisible(venueId: string, visible: boolean): Promise<void> {
+  const { error } = await supabase
+    .from("venues")
+    .update({ is_visible: visible })
+    .eq("id", venueId);
+  if (error) throw error;
+}
+
 export async function updateVenueLinks(
   venueId: string,
   patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
@@ -151,10 +160,19 @@ export async function updateVenueLinks(
 }
 
 export async function fetchEvents(untilDate?: string): Promise<BarlinEvent[]> {
+  const { data: venueData, error: venueError } = await supabase
+    .from("venues")
+    .select("id")
+    .eq("is_visible", true);
+  if (venueError) throw venueError;
+  const visibleIds = (venueData ?? []).map((v) => v.id);
+  if (visibleIds.length === 0) return [];
+
   let query = supabase
     .from("events")
     .select("*")
-    .in("status", ["approved", "canceled"]);
+    .in("status", ["approved", "canceled"])
+    .in("venue_id", visibleIds);
   if (untilDate) query = query.lte("date", untilDate);
   const { data, error } = await query.order("date").order("start_time");
   if (error) throw error;
@@ -473,7 +491,7 @@ export async function fetchEventsByVenue(
 }
 
 export async function fetchVenues(): Promise<Venue[]> {
-  const { data, error } = await supabase.from("venues").select("*");
+  const { data, error } = await supabase.from("venues").select("*").eq("is_visible", true);
   if (error) throw error;
   return data.map(mapVenueRow);
 }
