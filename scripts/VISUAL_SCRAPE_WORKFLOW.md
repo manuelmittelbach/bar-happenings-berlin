@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-29 (fix: serialize browser calls) -->
+<!-- last-updated: 2026-05-29 (orchestration is the only path; unified temp-file naming; trimmed Rules & constraints to non-redundant agent-facing items) -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -9,14 +9,20 @@ needed to execute the workflow.
 
 ## How to invoke (from a fresh Claude Code session)
 
-For full runs (10+ venues), switch to Sonnet — same quality for this task,
-much lower token cost than Opus, and 30+ importer calls + browser sessions
-burn context fast:
+Switch the session to Sonnet before starting — same quality for this scrape
+task, much lower token cost than Opus:
 
 ```
 /model
 ```
 → pick `sonnet-4-6` (or whichever Sonnet is current).
+
+**Why Sonnet matters:** the run always uses the sub-agent orchestration model
+(see "Orchestration model" below). The orchestrator itself stays tiny (just
+Step 1 + spawning), but **sub-agents inherit the session model**, so the
+`/model` switch is what makes every spawned venue agent run on Sonnet — and the
+sub-agents are where ~all the tokens go. The orchestrator's own model barely
+matters.
 
 Then paste:
 
@@ -28,16 +34,16 @@ That's it. Claude reads `currentDate` from memory and passes `today` and
 Workflow tool. Everything else (dedup rules, staging behavior, field rules)
 is in this document.
 
+**This is the only path — always orchestrate with sub-agents.** The orchestrator
+runs Step 1, then spawns **one sub-agent per venue, sequentially** (see the
+shared-browser warning in the Orchestration model). Each sub-agent has its own
+fresh context, so browser content never accumulates in the main session — this
+holds regardless of how many venues there are. Do not run the per-venue loop
+inline in the main session.
+
 **Crash recovery:** if a previous run crashed mid-way, just re-run the same
 prompt. Already-imported venues are automatically skipped via the staged-keys
 dedup in Step 1b — no manual cleanup needed.
-
-**Context management:** For runs of 10+ venues the main context window fills
-up quickly (browser content is large). Use the **sub-agent orchestration
-model** described in the "Orchestration model" section below. The orchestrator
-runs Step 1, then spawns sub-agents **sequentially** (one at a time — see the
-shared-browser warning in the Orchestration model). Each sub-agent has its own
-fresh context — browser content never lands in the main session.
 
 ### Tools you'll need (deferred — load before using)
 
@@ -48,21 +54,17 @@ The `query` value must be a **single line** — the example below is split
 across lines for readability only:
 
 ```
-ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__supabase__execute_sql"
+ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_close,mcp__supabase__execute_sql"
 ```
 
 ## Step-by-step instructions
 
-**Overall shape:** Step 1 once at the start. Then **loop per venue**:
-Step 2 (scrape) → Step 3a (write batch JSON) → Step 3b (import) → next venue.
-If you extracted **zero events** for a venue (for ANY reason), run Step 2b
-(placeholder) instead of Step 3 and move on. Step 4 (cleanup) once at the
-end. Do NOT batch all venues into a single write — that broke a previous
-run by exceeding the output token limit.
-
-> **For full runs (10+ venues):** the per-venue loop below is what each
-> **sub-agent** follows for its own batch. The main orchestrator does Step 1,
-> then spawns sub-agents instead of looping itself — see "Orchestration model".
+**Map of the run:** the orchestrator does **Step 1** once, then spawns **one
+sub-agent per venue**. **The hard rule: one agent = one venue.** Steps 2–4 below
+are written from that sub-agent's point of view — it scrapes its single venue
+(Step 2), imports it (Step 3) or stages a placeholder (Step 2b) if it found
+nothing, then returns. Step 4 (cleanup) runs once in the main session at the
+end. The spawn mechanics live in one place: **"Orchestration model"**.
 
 ### Step 1 — Read venues and existing staging
 
@@ -102,13 +104,9 @@ While scraping each venue in Step 2, skip events where the
 by a live event. The importer compares fields and either silently drops
 unchanged events or stages them as updates (`replaces_event_id` set).
 
-### Step 2 — Extract events for ONE venue
+### Step 2 — Extract events for your venue
 
-This is the start of the per-venue loop. Do Step 2 + Step 3 for the current
-venue, then come back here for the next one. Don't run Step 2 for all
-venues before moving to Step 3.
-
-Use Playwright tools:
+You are a sub-agent responsible for exactly one venue. Use Playwright tools:
 
 ```
 mcp__playwright__browser_navigate → website_events URL
@@ -142,6 +140,10 @@ Tips that worked well:
      `mcp__playwright__browser_take_screenshot` and read the screenshot with the
      `Read` tool to extract events visually (e.g. Jatz Bar publishes a monthly
      PNG). Use the venue's `website_events` URL as `source_url` in this case.
+     **Always save the screenshot under `/tmp`** (e.g.
+     `filename: /tmp/visual_scrape_shot_{venue_id}.png`) — never the default
+     location, which dumps PNGs into the repo root. Step 4 cleans `/tmp` shots
+     up; stray repo-root PNGs would otherwise show up as untracked files.
 
 ### Step 2b — Placeholder when zero events extracted
 
@@ -171,20 +173,18 @@ python3 scripts/stage_visual_placeholder.py VENUE_ID SOURCE_URL
 ```
 
 Use the venue's `website_events` URL as `SOURCE_URL`. The script is
-idempotent — if a placeholder already exists for the venue it skips. After
-this, skip Step 3 and continue with the next venue.
+idempotent — if a placeholder already exists for the venue it skips. This
+replaces Step 3 (don't also run the importer); after it, call `browser_close`
+and return.
 
-### Step 3 — Write + import for THIS venue (incremental)
+### Step 3 — Write + import your venue
 
-**Do NOT accumulate all venues and write at the end.** Write and import
-after each venue so a crash only loses the current venue. Run the
-pre-import checklist (bottom of this doc) over the venue's events before
-writing.
+Run the pre-import checklist (bottom of this doc) over your venue's events
+before writing.
 
-**3a.** Write the current venue's events (and only this venue's) to
-`/tmp/visual_scrape_events_batch.json`. The file is overwritten each
-iteration — that's intentional; the importer is what persists state, the
-batch file is just a handoff.
+**3a.** Write your venue's events to `/tmp/visual_scrape_{venue_id}.json` —
+one file per venue so concurrent agents never collide. Use `json.dumps`; the
+importer is what persists state, this file is just a handoff to it.
 
 **Always use `python3 + json.dumps` — never the `Write` tool directly.**
 Descriptions frequently contain German typographic quotes like `„word"` where
@@ -195,6 +195,7 @@ escapes everything correctly regardless of content.
 ```python
 python3 << 'EOF'
 import json
+venue_id = "..."  # this venue's UUID — substitute the real value
 events = [
   {
     "venue_id": "uuid",
@@ -210,7 +211,7 @@ events = [
     "source_url": "https://venue.example/path/to/this-event"
   }
 ]
-with open('/tmp/visual_scrape_events_batch.json', 'w', encoding='utf-8') as f:
+with open(f'/tmp/visual_scrape_{venue_id}.json', 'w', encoding='utf-8') as f:
     json.dump(events, f, ensure_ascii=False, indent=2)
 EOF
 ```
@@ -221,7 +222,7 @@ Step 2b (placeholder) instead — don't run the importer with an empty array.
 **3b.** Run the importer immediately:
 
 ```
-python3 scripts/import_visual_events.py /tmp/visual_scrape_events_batch.json
+python3 scripts/import_visual_events.py /tmp/visual_scrape_{venue_id}.json
 ```
 
 It re-applies normalization, runs dedup against both live events and
@@ -250,34 +251,33 @@ Decision rules:
   (not just updates/dupes) → STOP, check for `venue_id` typo.
 - Otherwise → continue.
 
-Then go back to Step 2 with the next venue.
+The sub-agent handles exactly one venue, so after Step 3b it calls
+`browser_close` and returns its result — it does NOT loop back to Step 2.
+The orchestrator then spawns the next venue's agent.
 
 ### Step 4 — Cleanup (once, at the end)
 
-After all venues are done:
+After all sub-agents are done, in the main session:
 
-1. Close the browser (**single-session runs only** — in the orchestration
-   model the main session never opens a browser; each sub-agent closes its
-   own at the end):
-   ```
-   mcp__playwright__browser_close
-   ```
+1. **No `browser_close` needed in the main session** — the main session never
+   opens a browser; each sub-agent already closed its own at the end of its run.
 2. Optional: remove Playwright MCP cache files (after a full run there can
-   be 80+ leftover `.yml` files — applies to both single-session and
-   orchestrated runs):
+   be 80+ leftover `.yml` files) and any image-OCR screenshots:
    ```
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
+   rm -f /tmp/visual_scrape_shot_*.png
    ```
 
 ## Orchestration model
 
-For runs of 10+ venues, the Workflow tool spawns **one sub-agent per venue
+This is the standard (and only) execution model — used for **every** run,
+regardless of venue count. The Workflow tool spawns **one sub-agent per venue
 sequentially**. Each agent handles exactly one venue, so browser content never
 accumulates across venues and peak context stays low (~50–80k per agent vs.
 150k+ with batching). See **"⚠ Shared browser — no parallel browser calls"**
 below for why agents must not run concurrently.
 
-### Orchestrator flow (replaces the per-venue loop after Step 1)
+### Orchestrator flow (main session)
 
 1. Run Step 1a + 1b (venue list + staged keys) in the main session.
 2. Build `staged_keys_by_venue` as usual.
@@ -295,9 +295,6 @@ below for why agents must not run concurrently.
 5. After each agent returns its result, check for `✗ insert error` — stop
    and report immediately if found.
 6. Run Step 4 cleanup in the main session once all agents are done.
-
-> **No browser_close needed in the main session** — each agent closes its
-> own browser at the end.
 
 ### Sub-agent prompt template
 
@@ -322,7 +319,7 @@ Already-staged keys for this venue:
 [["{date}", "{normalized_title}"], ...]
 
 Load tools first with a single ToolSearch call (one line):
-  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close"
+  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_close"
 
 Then:
 - Step 2: navigate to the URL, extract events in [{TODAY}, {WINDOW_END}]
@@ -352,10 +349,8 @@ per-agent browser context.
 `browser_close`) before the next starts. Use a `for` loop in the Workflow
 script, **not** `pipeline()` or `parallel()`.
 
-Other notes:
-- Each agent only receives staged keys for its own venue — prompt stays short.
-- If an agent crashes, re-run with the same venue list — the dedup skips
-  anything already staged, so only the unprocessed venue gets scraped again.
+Each agent only receives staged keys for its own venue, so its prompt stays
+short. (Crash recovery is the same as a normal re-run — see "How to invoke".)
 
 ## Field rules — strict, follow exactly
 
@@ -498,19 +493,15 @@ as fallback.
 
 ## Rules & constraints
 
-- 14-day window: `[today, today + 14 days]` inclusive
-- Title-based dedup against `staged_keys_by_venue` (existing pending staging)
-- All staging rows: `is_manual=false`
-- All categories: label from the table above (`Live Music`, `DJ`, ...)
-- Never invent: titles, dates, times, descriptions, URLs
-- Don't write directly to the database with raw SQL — use the importer script
-  so normalization stays consistent with the auto-scraper
-- Don't `is_manual=true` for these — that would put them in the Manual tab,
-  not Scraped
-- Don't set `created_by_admin=true` — these are scraper-class events
-- Don't follow links to non-event pages (impressum, privacy, ticketing
-  third-parties like Eventbrite) — they don't contain event data we need
-- Don't include past events even if listed prominently on the page
+- 14-day window `[today, today + 14 days]` inclusive; never include past events,
+  even if listed prominently.
+- Title-based dedup against `staged_keys_by_venue` (existing pending staging).
+- Never invent titles, dates, times, descriptions, or URLs — every value comes
+  from the page.
+- Write via the importer script (Step 3), not raw SQL, so normalization stays
+  consistent with the auto-scraper.
+- Don't follow links to non-event pages (impressum, privacy, third-party
+  ticketing like Eventbrite) — no event data there.
 
 ## Pre-import checklist
 

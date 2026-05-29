@@ -27,6 +27,7 @@ dist-ssr
 # Playwright / local test artifacts
 .playwright-mcp/
 test*.png
+visual_scrape_shot_*.png
 
 # Local design mockups / screenshots that shouldn't end up in the repo
 /hero-*.png

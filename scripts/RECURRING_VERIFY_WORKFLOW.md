@@ -1,6 +1,6 @@
 # Recurring Series Verification Workflow
 
-<!-- last-updated: 2026-05-29 → 2026-05-29 (fix: serialize browser calls) -->
+<!-- last-updated: 2026-05-29 (template is the single source of truth for judging rules; Step 2 + Rules trimmed to overview, removed duplication) -->
 
 Standard runbook for re-checking every **recurring event series** against its
 source page with Playwright/MCP, to confirm it is *still* a regular/recurring
@@ -8,16 +8,16 @@ event. **Read-only** — it never changes the database. The output is a Markdown
 report (`/tmp/recurring_verify_report.md`); you decide per flagged series in
 the Admin Dashboard.
 
-Sister workflow to `scripts/VISUAL_SCRAPE_WORKFLOW.md` — same shape (Step 1
-once, then loop/fan-out per item, Step 4 cleanup), same orchestration model,
-same tooling. The difference: this one *verifies existing* series rather than
-*scraping new* events, and writes nothing to the DB.
+Designed to be self-contained — read this file in a fresh session and you have
+everything needed to execute the workflow. You do not need to open any other
+runbook.
 
 ## What "recurring series" means here
 
-A **series root** is a row in the `events` table with an empty/NULL
-`parent_id` AND a non-empty `recurrence` rule (`weekly`, `biweekly`,
-`monthly_by_weekday`, `monthly_last_weekday`). There are ~23 of these.
+A **series root** is an **approved** row in the `events` table (`status =
+approved`) with an empty/NULL `parent_id` AND a non-empty `recurrence` rule
+(`weekly`, `biweekly`, `monthly_by_weekday`, `monthly_last_weekday`). There are
+~23 of these. (The Step 1 helper applies exactly this filter.)
 
 Each root has many materialized **child occurrences** (`parent_id` = root id,
 `recurrence` empty) that the pg_cron `extend_recurring_series` job keeps
@@ -28,8 +28,7 @@ be 137 redundant page loads for the same answer.
 ## How to invoke (from a fresh Claude Code session)
 
 This is a Playwright-heavy sweep (~23 browser sessions, run **sequentially**).
-Switch to Sonnet —
-same quality for this task, much lower token cost than Opus:
+Switch to Sonnet — same quality for this task, much lower token cost than Opus:
 
 ```
 /model
@@ -53,24 +52,21 @@ costs nothing but the re-scrape of unfinished series.
 
 Playwright + Supabase MCP tools are deferred in fresh sessions. The
 orchestrator only needs Supabase (for Step 1); each sub-agent loads Playwright
-itself. Load with a single `ToolSearch` call (the `query` must be **one
-line** — split here for readability only):
+itself (see the sub-agent template). So in the main session, load just:
 
 ```
-ToolSearch query="select:mcp__supabase__execute_sql,mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close"
+ToolSearch query="select:mcp__supabase__execute_sql"
 ```
 
 ## Step-by-step instructions
 
-**Overall shape:** Step 1 once at the start (load series roots). Then **per
-series**: Step 2 (visit page + judge) → collect one verdict object. Step 3
-(write report) once at the end. Step 4 (cleanup) once at the end. Nothing is
-written to the DB at any point.
-
-> **For the full run (all 23 series):** the per-series logic below is what
-> each **sub-agent** follows for its own series. The main orchestrator does
-> Step 1, runs one sub-agent per series **sequentially**, collects verdict
-> objects, then does Step 3 + Step 4 — see "Orchestration model".
+**Map of the run:** the orchestrator does **Step 1** once (load series roots),
+then spawns **one sub-agent per series**. **The hard rule: one agent = one
+series.** Each agent visits its series' page, judges it, and returns one verdict
+object (Step 2 is the overview; the exact prompt it runs is the sub-agent
+template under "Orchestration model"). The orchestrator collects all verdicts,
+then does **Step 3** (write report) and **Step 4** (cleanup) once at the end.
+Nothing is written to the DB at any point.
 
 ### Step 1 — Load the recurring series roots
 
@@ -101,80 +97,29 @@ This writes a JSON array, one object per series root:
 `describeRule()` does) — this is the thing you're checking the page still
 agrees with. `until` is the series end date (`null` = indefinite).
 
-### Step 2 — Verify ONE series
+### Step 2 — Verify your series (overview)
 
-Start of the per-series loop. For the current series:
+Each sub-agent visits its one series' `url` and judges whether the page still
+shows the event as recurring on its stored `cadence`, then returns exactly one
+verdict:
 
-```
-mcp__playwright__browser_navigate → the series' `url`
-mcp__playwright__browser_evaluate → '() => document.body.innerText'
-```
+- `confirmed` — still recurring and matches the stored rule.
+- `confirmed_weak` — title present as a regular item, but the cadence isn't
+  restated and no matching future date is confirmed. Low confidence, probably fine.
+- `changed` — still recurring, but on a different day/cadence than stored.
+- `not_found` — page loaded fine but the event is no longer on it as a recurring
+  item. Candidate for removal.
+- `unreachable` — page failed / blocked / login wall / OCR failed. Inconclusive.
 
-Then judge whether the page still shows this event as a recurring/regular
-occurrence. Look for, in order of strength:
+**Keep-bias (critical):** when the page loaded but you're unsure, choose
+`confirmed_weak`, **never** `not_found` — a false `not_found` risks deleting a
+live series. And never `not_found` for a page you couldn't actually read; that's
+`unreachable`.
 
-1. **Cadence wording** that matches `cadence` — e.g. for "every Thursday":
-   "every Thursday", "jeden Donnerstag", "Do. 20:00", "Thursdays", a weekly
-   calendar slot on that weekday. For monthly: "2. Samstag im Monat", "every
-   2nd Saturday", "monatlich", etc. German pages are the norm — match German
-   phrasings too.
-2. **The event title** (or a close variant) appearing as a regular/series
-   item, even if the exact cadence isn't restated in words.
-3. A **future-dated occurrence** of this event consistent with the rule
-   (e.g. the title appears on an upcoming date that falls on the right
-   weekday), which corroborates the series is alive.
-
-Tips (mirrors the visual-scrape runbook):
-- `document.body.innerText` is cleaner than HTML — use it as the primary text.
-- If `innerText` is sparse (< ~200 chars): check for an **iframe**
-  (`document.querySelectorAll('iframe')` → navigate to its `src`, e.g.
-  Donau115's Google Sheet) or an **event image / monthly PNG**
-  (`document.querySelectorAll('img')` → navigate to the image URL,
-  `browser_take_screenshot`, then `Read` the screenshot to judge visually,
-  e.g. Jatz Bar).
-- Instagram-post URLs (`instagram.com/p/...`) often block bots — if you get a
-  login wall or empty body, that's `unreachable`, not `not_found`.
-- If the page fails (timeout, 404, anti-bot block): retry **once**, then mark
-  `unreachable` and move on.
-
-#### Choose exactly one verdict
-
-| verdict          | when |
-|------------------|------|
-| `confirmed`      | Cadence wording (signal 1) OR a rule-consistent future occurrence (signal 3) clearly present. The series is alive and matches the stored rule. |
-| `confirmed_weak` | Title present as a regular item (signal 2) but the page doesn't restate the cadence and you couldn't confirm a matching future date. Probably fine, low confidence. |
-| `changed`        | The event is clearly still recurring **but on a different day/cadence** than `cadence` (e.g. moved from Thursday to Friday, weekly → monthly). Note old vs. new in `evidence`. |
-| `not_found`      | The page loaded fine and is the right page, but this event is **not** on it as a recurring item (only one-off concerts, or it's gone entirely). Candidate for removal. |
-| `unreachable`    | Page failed to load / blocked / login wall / OCR failed. **Inconclusive** — never infer removal from a page you couldn't read. |
-
-**Bias rules:**
-- When torn between `confirmed` and `not_found`, and the page loaded but you're
-  unsure → `confirmed_weak`, never `not_found`. A false `not_found` risks
-  deleting a live series; a false `confirmed_weak` just means the admin
-  double-checks.
-- Never return `not_found` for a page you couldn't actually read — that's
-  `unreachable`.
-
-#### Build the verdict object
-
-For each series return exactly this shape (carry through `id`, `title`,
-`venue`, `url`, `cadence` from Step 1 so the report is self-describing):
-
-```json
-{
-  "id": "7922a42d-...",
-  "title": "House of Spice Cabaret",
-  "venue": "800A Bar & Cabaret",
-  "url": "https://www.800aberlin.com/#events",
-  "cadence": "2nd Saturday of each month",
-  "verdict": "confirmed",
-  "evidence": "Page lists \"House of Spice Cabaret — every 2nd Saturday\" with next date 2026-06-13"
-}
-```
-
-`evidence` is a **short** quote/paraphrase of what you actually saw on the page
-that justifies the verdict (1–2 lines). For `changed`, state old vs. new. For
-`unreachable`, state the failure (e.g. "403 anti-bot", "Instagram login wall").
+The **exact operative spec each agent runs** — navigation, iframe/image
+fallbacks, the strength-ordered signals, and the precise per-verdict criteria —
+is the **"Sub-agent prompt template"** below, which is the single source of
+truth for the judging rules. This section is just the overview.
 
 ### Step 3 — Write the report (once, at the end)
 
@@ -186,7 +131,9 @@ break hand-written JSON.
 ```python
 python3 << 'EOF'
 import json
-results = [ /* all verdict objects */ ]
+results = [
+    # one verdict object per series — paste the full list here
+]
 with open('/tmp/recurring_verify_results.json', 'w', encoding='utf-8') as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 EOF
@@ -206,11 +153,10 @@ dashboard.
 
 ### Step 4 — Cleanup (once, at the end)
 
-1. Close the browser (single-session runs only — in the orchestration model
-   each sub-agent closes its own):
-   ```
-   mcp__playwright__browser_close
-   ```
+After all sub-agents are done, in the main session:
+
+1. **No `browser_close` needed in the main session** — the main session never
+   opens a browser; each sub-agent already closed its own at the end of its run.
 2. Optional: remove Playwright MCP cache files:
    ```
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
@@ -240,7 +186,7 @@ For the full run, the Workflow tool spawns **one sub-agent per series
 sequentially**. Each agent handles exactly one series, so browser content
 never accumulates and peak context stays low.
 
-### Orchestrator flow (replaces the per-series loop after Step 1)
+### Orchestrator flow (main session)
 
 1. Run Step 1 in the main session → `/tmp/recurring_roots.json`.
 2. Read that JSON. Spawn **one agent per root sequentially** via a `for`
@@ -259,8 +205,6 @@ never accumulates and peak context stays low.
    `report` command.
 5. Relay the summary; link the report.
 6. Run Step 4 cleanup in the main session.
-
-> **No `browser_close` in the main session** — each agent closes its own.
 
 ### Sub-agent schema (StructuredOutput)
 
@@ -282,13 +226,16 @@ never accumulates and peak context stays low.
 
 ### Sub-agent prompt template
 
-Fill in `{TODAY}` and the one series' fields. Project root is
-`/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin`.
+Self-contained on purpose — the agent needs **no file reads**. Fill in
+`{TODAY}` and the one series' fields. **This template is the single source of
+truth for the judging rules** (Step 2 above is just the overview) — edit verdict
+semantics here.
 
 ```
 Working directory: /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin
 
-Read scripts/RECURRING_VERIFY_WORKFLOW.md "Step 2" for the verdict rules.
+You verify ONE recurring event series against its source page. Read-only: do
+not touch any database.
 
 Today: {TODAY}.
 
@@ -302,30 +249,49 @@ Series to verify (only this one):
 Load tools first with a single ToolSearch call (one line):
   ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__playwright__browser_take_screenshot"
 
-Then:
-- Navigate to the url, read document.body.innerText (handle iframe / image
-  fallbacks per Step 2 if the body is sparse).
-- Decide if "{title}" is still a recurring event matching "{cadence}".
-- Pick exactly one verdict: confirmed | confirmed_weak | changed | not_found
-  | unreachable. Apply the bias rules: never not_found for a page you couldn't
-  read (that's unreachable); when unsure but the page loaded, confirmed_weak.
-- Call browser_close when done.
+Steps:
+1. browser_navigate to the url, then browser_evaluate '() => document.body.innerText'.
+2. If the body is sparse (< ~200 chars): check document.querySelectorAll('iframe')
+   — if present, navigate to its src (e.g. a Google Sheet) — or
+   document.querySelectorAll('img') for an event image / monthly PNG: navigate
+   to the image URL, browser_take_screenshot, then Read the screenshot to judge
+   visually. Instagram-post URLs (instagram.com/p/...) often show a login wall
+   or empty body → that is `unreachable`, not `not_found`.
+3. If the page fails (timeout / 404 / anti-bot): retry ONCE, then `unreachable`.
+4. Judge whether "{title}" still appears as a recurring event matching
+   "{cadence}". Signals, strongest first:
+     a. Cadence wording matching {cadence} — match GERMAN phrasings too
+        ("jeden Donnerstag", "2. Samstag im Monat", "monatlich", "Do. 20:00").
+     b. The title (or close variant) present as a regular/series item.
+     c. A future-dated occurrence consistent with the rule (right weekday/date).
+5. Pick EXACTLY ONE verdict:
+     confirmed       — signal (a) or (c) clearly present; alive & matches rule.
+     confirmed_weak  — only signal (b); cadence not restated, no matching future
+                       date confirmed. Probably fine, low confidence.
+     changed         — clearly still recurring but on a DIFFERENT day/cadence
+                       (note old vs. new in evidence).
+     not_found       — page loaded, right page, but the event is NOT on it as a
+                       recurring item (only one-offs, or gone). Review for removal.
+     unreachable     — page failed / blocked / login wall / OCR failed.
+                       INCONCLUSIVE — never infer removal from a page you couldn't read.
+   Bias rules: when the page loaded but you're unsure → confirmed_weak, NEVER
+   not_found (a false not_found risks deleting a live series). Never not_found
+   for a page you couldn't actually read — that's unreachable.
+6. browser_close.
 
-Return the verdict object (id/title/venue/url/cadence carried through verbatim,
-plus verdict + a 1-2 line evidence quote of what you saw).
+Return the verdict object: id/title/venue/url/cadence carried through verbatim,
+plus `verdict` and a 1–2 line `evidence` quote of what you actually saw (for
+`changed`: old vs. new; for `unreachable`: the failure, e.g. "403 anti-bot").
 ```
 
 ## Rules & constraints
 
-- **Read-only.** Never INSERT/UPDATE/DELETE any `events` row. The whole point
-  is a report the admin acts on by hand.
-- Verify **roots only** (parent_id empty + recurrence set) — never children.
-- Exactly one verdict per series, from the fixed vocabulary.
-- `unreachable` ≠ `not_found`. Never infer a series is dead from a page you
-  couldn't load. Better a retry next run than a wrongly-flagged live series.
-- Bias toward keeping: when the page loaded but you're unsure, `confirmed_weak`.
-- `evidence` must quote/paraphrase what was actually on the page — never invent.
-- Match **German** cadence phrasings, not just English (most pages are German).
-- Don't follow links to impressum/privacy/third-party ticketing — judge from
-  the venue's own event page (the stored `url`).
-```
+Orchestrator-level invariants (the per-verdict judging rules live in the
+sub-agent template):
+
+- **Read-only.** Never INSERT/UPDATE/DELETE any `events` row — the output is a
+  report the admin acts on by hand.
+- Verify **roots only** (approved, `parent_id` empty, `recurrence` set) — never
+  children. The Step 1 helper enforces this.
+- One verdict per series from the fixed vocabulary; `evidence` must come from
+  the page, never invented.
