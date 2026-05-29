@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-29 (added browser_wait_for to sub-agent tool template; clarified crash-recovery is event-level not venue-level; orchestrator checks insert-error summary count) -->
+<!-- last-updated: 2026-05-29 (canonical workflow script scripts/visual-scrape.workflow.js is now the single source of truth for the sequential loop + sub-agent dispatch; Step 1 moved to scripts/visual_scrape_helper.py list; runbook references the script instead of duplicating the orchestration) -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. This file is the
@@ -18,109 +18,111 @@ task, much lower token cost than Opus:
 ```
 → pick `sonnet-4-6` (or whichever Sonnet is current).
 
-**Why Sonnet matters:** the run always uses the sub-agent orchestration model
-(see "Orchestration model" below). The orchestrator itself stays tiny (just
-Step 1 + spawning), but **sub-agents inherit the session model**, so the
-`/model` switch is what makes every spawned venue agent run on Sonnet — and the
-sub-agents are where ~all the tokens go. The orchestrator's own model barely
-matters.
+**Why Sonnet matters:** the run uses sub-agent orchestration. The orchestrator
+itself stays tiny (Step 1 + invoking the workflow), but **sub-agents inherit the
+session model**, so the `/model` switch is what makes every spawned venue agent
+run on Sonnet — and the sub-agents are where ~all the tokens go.
 
 Then paste:
 
 > Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
 > active venues.
 
-That's it. Claude reads `currentDate` from memory and passes `today` and
-`windowEnd` (today + 14 days) automatically as `args` when invoking the
-Workflow tool. Everything else (dedup rules, staging behavior, field rules)
-is in this document or the per-venue manual it points to.
+Claude reads `currentDate` from memory and passes `today` and `windowEnd`
+(today + 14 days) as `args` when invoking the Workflow tool. Everything else
+(dedup rules, staging behavior, field rules) is in this document, the canonical
+workflow script, or the per-venue manual it points to.
 
-**This is the only path — always orchestrate with sub-agents.** The orchestrator
-runs Step 1, then spawns **one sub-agent per venue, sequentially** (see the
-shared-browser warning in the Orchestration model). Each sub-agent has its own
-fresh context, so browser content never accumulates in the main session — this
-holds regardless of how many venues there are. Do not run the per-venue loop
-inline in the main session.
+**This is the only path — always orchestrate with the canonical workflow
+script.** The orchestrator runs Step 1, then invokes
+`scripts/visual-scrape.workflow.js` via the Workflow tool's `scriptPath`, which
+spawns **one sub-agent per venue, sequentially**. Each sub-agent has its own
+fresh context, so browser content never accumulates in the main session. Do not
+hand-write a new workflow or run the per-venue loop inline in the main session.
 
-**Crash recovery:** if a previous run crashed mid-way, just re-run the same
-prompt — no manual cleanup needed. Note this dedups at the *event* level, not
-the venue level: already-staged events are skipped on re-import (via the
-staged-keys dedup in Step 1b), so no duplicates are created, but every venue is
-still scraped again from scratch. A re-run is therefore safe, just not faster.
-Venues that only got a placeholder last time (`is_manual=true`) aren't in the
-staged-keys set at all, so they're fully re-scraped (the placeholder insert is
-idempotent).
+> **Do not hand-write a new workflow each run.** The sequential loop and the
+> per-venue sub-agent dispatch are hard-wired in
+> `scripts/visual-scrape.workflow.js` precisely so they can't drift. Run that
+> file via the Workflow tool's `scriptPath`; only edit the script itself if the
+> orchestration logic genuinely changes.
+
+**Crash recovery:** to resume a partial run, relaunch the workflow with the same
+`scriptPath` plus `resumeFromRunId` — completed venues return from cache, only
+unfinished ones re-scrape. A plain re-run (no resume) re-scrapes every venue;
+this is safe (the importer dedups already-staged events at the *event* level via
+each venue's staged keys), just not faster. Venues that only got a placeholder
+last time (`is_manual=true`) aren't in the staged-keys set, so they're fully
+re-scraped (the placeholder insert is idempotent).
 
 ### Tools you'll need (deferred — load before using)
 
 The Playwright + Supabase MCP tools are deferred in fresh sessions. The
-orchestrator only needs Supabase for Step 1; each sub-agent loads Playwright
-itself (see the sub-agent template). So in the main session, load just:
-
-```
-ToolSearch query="select:mcp__supabase__execute_sql"
-```
+orchestrator only needs Supabase for Step 1 (and even that runs through the
+helper script); each sub-agent loads Playwright itself (see the sub-agent
+template in the workflow script). The helper uses `scripts/.env` directly, so
+in the main session you typically need no MCP tools at all to run Step 1 — just
+a shell. (Load `mcp__supabase__execute_sql` only if you want to inspect the DB
+by hand.)
 
 ## Step-by-step instructions
 
-**Map of the run:** the orchestrator does **Step 1** once, then spawns **one
-sub-agent per venue** (hard rule: one agent = one venue). Each agent scrapes its
-single venue, imports it (or stages a placeholder if it found nothing), then
-returns — the full per-venue procedure (Steps 2–3) and field rules live in
-`scripts/VISUAL_SCRAPE_FIELD_RULES.md`, which each agent reads via its prompt.
-Step 4 (cleanup) runs once in the main session at the end. Spawn mechanics:
-**"Orchestration model"**.
+**Map of the run:** the orchestrator does **Step 1** once (build the venue
+work-list), then invokes the **canonical workflow script**
+`scripts/visual-scrape.workflow.js`, which spawns **one sub-agent per venue,
+sequentially** (hard rule: one agent = one venue). Each agent scrapes its single
+venue and imports it — or stages a placeholder if it found nothing — then
+returns a status object. The full per-venue procedure (Steps 2–3) and field
+rules live in `scripts/VISUAL_SCRAPE_FIELD_RULES.md`, which each agent reads via
+its prompt. **Step 4** (cleanup) runs once in the main session at the end.
 
-### Step 1 — Read venues and existing staging
+### Step 1 — Build the venue work-list
 
-You need TWO datasets before scraping anything. The importer handles
-live-event matching itself — you don't need to load live events from Claude.
+Run the helper (it queries Supabase project `uybvrxqleutguucrifuf` via
+`scripts/.env`):
 
-Use `mcp__supabase__execute_sql` (project_id: `uybvrxqleutguucrifuf`).
-
-**1a. Active venues** — what to scrape:
-```sql
-SELECT id, name, website_events
-FROM venues
-WHERE scrape_enabled = true AND website_events IS NOT NULL
-ORDER BY name;
+```
+python3 scripts/visual_scrape_helper.py list --out /tmp/visual_scrape_venues.json
 ```
 
-**1b. Existing staged events** (`staged_keys_by_venue`) — for dedup against
-events already pending admin review (so a re-run within the same week doesn't
-duplicate them). Only `is_manual=false` rows matter — manual entries are
-admin-curated, separate concern:
-```sql
-SELECT venue_id, date, title
-FROM venue_events_staging
-WHERE is_manual = false
-  AND date IS NOT NULL
-  AND title IS NOT NULL;
+This writes a JSON array, one object per active scrape-enabled venue, each
+annotated with the events already pending review for that venue:
+
+```json
+{
+  "venue_id":       "uuid",
+  "name":           "Venue name",
+  "website_events": "https://…",
+  "staged_keys":    [["2026-05-30", "normalized title"], ...]
+}
 ```
-Build a map `{venue_id: set((date, title_lowercased_collapsed_whitespace)) }`
-— call it `staged_keys_by_venue`. Normalize titles the same way the
-importer does: lowercase, trim, collapse runs of whitespace to single
-spaces.
 
-Each sub-agent receives only its own venue's staged keys (via the prompt
-template), and skips any event whose `(date, normalized_title)` is already in
-that set.
+- **Active venues** = `scrape_enabled = true AND website_events IS NOT NULL`.
+- **`staged_keys`** = `(date, normalize_title(title))` for every non-manual
+  `venue_events_staging` row of that venue, normalized exactly like the importer
+  (lowercase, trim, collapse whitespace). Each sub-agent skips any event whose
+  `(date, normalized_title)` is already in its set, so a re-run within the same
+  week doesn't re-fetch detail pages for events still pending review. Only
+  `is_manual=false` rows are included — manual entries are admin-curated, a
+  separate concern.
 
-**No live-event lookup**: stage events even when a date is already covered
-by a live event. The importer compares fields and either silently drops
-unchanged events or stages them as updates (`replaces_event_id` set).
+**No live-event lookup is needed here**: the importer itself compares each
+scraped event against live events and either silently drops unchanged ones or
+stages them as updates (`replaces_event_id` set). Step 1 only needs venues +
+staged keys.
 
-### Steps 2–3 — Per-venue scrape + import
+### Steps 2–3 — Per-venue scrape + import (the sub-agents)
 
 The per-venue work — scrape the page (with iframe / image-OCR fallbacks), write
 the events JSON, run the importer, or stage a placeholder if nothing was found —
 plus the strict field rules and the pre-import checklist all live in
-**`scripts/VISUAL_SCRAPE_FIELD_RULES.md`**. Each sub-agent reads that file (its
-prompt template points at it); the orchestrator does not run these steps itself.
+**`scripts/VISUAL_SCRAPE_FIELD_RULES.md`**. Each sub-agent reads that file; the
+exact dispatch prompt it runs is `subAgentPrompt()` in
+`scripts/visual-scrape.workflow.js`. The orchestrator does not run these steps
+itself.
 
 ### Step 4 — Cleanup (once, at the end)
 
-After all sub-agents are done, in the main session:
+After the workflow returns, in the main session:
 
 1. **No `browser_close` needed in the main session** — the main session never
    opens a browser; each sub-agent already closed its own at the end of its run.
@@ -128,74 +130,10 @@ After all sub-agents are done, in the main session:
    be 80+ leftover `.yml` files) and any image-OCR screenshots:
    ```
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
-   rm -f /tmp/visual_scrape_shot_*.png
+   rm -f /tmp/visual_scrape_shot_*.png /tmp/visual_scrape_*.json
    ```
 
 ## Orchestration model
-
-This is the standard (and only) execution model — used for **every** run,
-regardless of venue count. The Workflow tool spawns **one sub-agent per venue
-sequentially**. Each agent handles exactly one venue, so browser content never
-accumulates across venues and peak context stays low (~50–80k per agent vs.
-150k+ with batching). See **"⚠ Shared browser — no parallel browser calls"**
-below for why agents must not run concurrently.
-
-### Orchestrator flow (main session)
-
-1. Run Step 1a + 1b (venue list + staged keys) in the main session.
-2. Build `staged_keys_by_venue` as usual.
-3. Spawn **one agent per venue sequentially** via a `for` loop — **not**
-   `pipeline()` or `parallel()`:
-   ```js
-   const results = []
-   for (const v of venues) {
-     const r = await agent(subAgentPrompt(v), { label: v.name })
-     if (r) results.push(r)
-   }
-   ```
-   See **"⚠ Shared browser — no parallel browser calls"** below for why.
-4. Each agent gets only its own venue's staged keys — no large JSON blob.
-5. After each agent returns its result, check for an `✗ insert error` line or
-   `insert-error > 0` in the importer summary — stop and report immediately if
-   found.
-6. Run Step 4 cleanup in the main session once all agents are done.
-
-### Sub-agent prompt template
-
-Fill in `{TODAY}`, `{WINDOW_END}`, the staged-keys for this venue only, and
-the venue details. Use a **unique temp file per venue** to avoid parallel
-write conflicts: `/tmp/visual_scrape_{venue_id}.json`. The project root is
-`/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin`.
-
-```
-Working directory: /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin
-
-Read scripts/VISUAL_SCRAPE_FIELD_RULES.md — your complete per-venue manual
-(scrape procedure + field rules + pre-import checklist). It is the only file
-you need to read.
-
-Today: {TODAY}. Window: {TODAY} to {WINDOW_END} (inclusive).
-
-Your venue (only this one):
-  Name: {name}
-  ID:   {venue_id}
-  URL:  {website_events}
-
-Already-staged keys for this venue:
-[["{date}", "{normalized_title}"], ...]
-
-Load tools first with a single ToolSearch call (one line):
-  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_wait_for,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_close"
-
-Then:
-- Step 2: navigate to the URL, extract events in [{TODAY}, {WINDOW_END}]
-- If events found: write to /tmp/visual_scrape_{venue_id}.json using python3
-  + json.dumps, then run: python3 scripts/import_visual_events.py /tmp/visual_scrape_{venue_id}.json
-- If zero events: run: python3 scripts/stage_visual_placeholder.py {venue_id} {website_events}
-- Call browser_close when done.
-
-Return: {"venue_name": "...", "status": "N new + M update inserted" / "placeholder" / "all skipped (dedup)" / "error: ..."}
-```
 
 ### ⚠ Shared browser — no parallel browser calls
 
@@ -212,8 +150,53 @@ navigated concurrently. The agents are **not** isolated; there is no
 per-agent browser context.
 
 **Always run venue agents sequentially** — one finishes (including
-`browser_close`) before the next starts. Use a `for` loop in the Workflow
-script, **not** `pipeline()` or `parallel()`.
+`browser_close`) before the next starts. This is why the canonical workflow
+script uses a `for` loop, **not** `pipeline()` or `parallel()`. Do not change
+that.
 
-Each agent only receives staged keys for its own venue, so its prompt stays
-short. (Crash recovery is the same as a normal re-run — see "How to invoke".)
+### Orchestrator flow (main session)
+
+1. Run **Step 1** → `/tmp/visual_scrape_venues.json`.
+2. Invoke the **canonical workflow script** via the Workflow tool's `scriptPath`,
+   passing `today` and `windowEnd` as `args` (the venues are loaded from the
+   file by a setup agent, so they don't need to go through `args`):
+   ```js
+   Workflow({
+     scriptPath: "scripts/visual-scrape.workflow.js",
+     args: { today: "<currentDate>", windowEnd: "<currentDate + 14 days>" },
+   })
+   ```
+   The script runs **one agent per venue in a strictly sequential `for` loop**
+   (never `pipeline()`/`parallel()` — see the shared-browser warning above),
+   forces each agent to return a schema-validated `{venue_name, status}` object,
+   and returns a summary (counts + any venues whose status looked like an error).
+   All `args` are optional — with none passed, the script resolves `today`/
+   `windowEnd` via setup agents and loads venues from the file.
+3. **Best-effort (see memory `feedback_scraper_best_effort`):** a single venue
+   erroring out does NOT stop the fleet — the loop logs it and moves on. Relay
+   the returned summary to the user; mention any `errored` venues, but a lost
+   event is acceptable and not a reason to halt.
+4. Run **Step 4** cleanup in the main session.
+
+### Sub-agent result schema (StructuredOutput)
+
+```json
+{
+  "type": "object",
+  "required": ["venue_name", "status"],
+  "properties": {
+    "venue_name": {"type": "string"},
+    "status":     {"type": "string"}
+  }
+}
+```
+
+### Sub-agent prompt — lives in code (single source of truth)
+
+The exact prompt each sub-agent runs is `subAgentPrompt()` in
+`scripts/visual-scrape.workflow.js`. It points the agent at
+`scripts/VISUAL_SCRAPE_FIELD_RULES.md` (the per-venue manual), fills in the
+venue + that venue's staged keys + the `[today, windowEnd]` window, and tells it
+to either run `import_visual_events.py` or `stage_visual_placeholder.py`. To
+change the dispatch behavior, edit that function; to change scrape/field rules,
+edit `VISUAL_SCRAPE_FIELD_RULES.md`.
