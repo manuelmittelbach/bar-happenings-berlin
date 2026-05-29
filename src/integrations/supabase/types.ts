@@ -617,6 +617,7 @@ export type Database = {
           neighborhood: string
           opening_hours: string | null
           phone: string | null
+          is_visible: boolean
           scrape_enabled: boolean
           telegram: string | null
           updated_at: string | null
@@ -643,6 +644,7 @@ export type Database = {
           neighborhood: string
           opening_hours?: string | null
           phone?: string | null
+          is_visible?: boolean
           scrape_enabled?: boolean
           telegram?: string | null
           updated_at?: string | null
@@ -669,6 +671,7 @@ export type Database = {
           neighborhood?: string
           opening_hours?: string | null
           phone?: string | null
+          is_visible?: boolean
           scrape_enabled?: boolean
           telegram?: string | null
           updated_at?: string | null
