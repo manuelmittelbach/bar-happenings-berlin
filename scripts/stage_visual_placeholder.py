@@ -4,7 +4,7 @@ event page was reached during the visual-scrape workflow but where no events
 could be extracted (iframe empty, image-OCR misslungen, anti-bot block,
 layout unparseable).
 
-Why: the placeholder shows up in the Admin "Manual" tab as a soft reminder
+Why: the placeholder shows up in the Admin "Manual Events" tab as a soft reminder
 to enter events by hand later, when the page can't be parsed automatically.
 
 Idempotent: skips if a placeholder (title IS NULL) already exists for the

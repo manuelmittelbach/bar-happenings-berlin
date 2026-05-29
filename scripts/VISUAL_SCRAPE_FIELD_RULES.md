@@ -1,6 +1,6 @@
 # Visual Scrape — Per-Venue Manual (procedure + field rules)
 
-<!-- last-updated: 2026-05-29 (Step 2: low-text is no longer a skip signal — parse visible text first, then wait/iframe/image fallback ladder; documented separate insert-error count in importer summary) -->
+<!-- last-updated: 2026-05-29 (Step 2: low-text is no longer a skip signal — parse visible text first, then wait/iframe/image fallback ladder; documented separate insert-error count in importer summary; corrected admin tab names to "Scraped Events"/"Manual Events") -->
 
 Read by each **venue sub-agent** (referenced from the sub-agent prompt template
 in `scripts/VISUAL_SCRAPE_WORKFLOW.md`). It is everything one agent needs to
@@ -62,7 +62,7 @@ Tips that worked well:
 ## Step 2b — Placeholder when zero events extracted
 
 If you extracted **zero events** for this venue — for **any reason** —
-stage a placeholder. The placeholder surfaces in the Admin "Manual" tab as
+stage a placeholder. The placeholder surfaces in the Admin "Manual Events" tab as
 a soft reminder to enter events by hand if you happen to know about
 something at this venue.
 

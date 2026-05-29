@@ -4,7 +4,7 @@ Importer for the visual-scrape workflow.
 Reads a JSON list of events that a Claude session extracted via Playwright/MCP
 and writes them to `venue_events_staging` with the same normalization and
 dedup rules the automated scraper uses, so the rows show up cleanly in the
-Admin Dashboard "Scraped" tab.
+Admin Dashboard "Scraped Events" tab.
 
 Usage:
     python3 scripts/import_visual_events.py path/to/events.json
@@ -26,14 +26,13 @@ JSON format — array of objects, each with these fields:
     entry_info    ("Free" | "Donation" | "X €" | "X,50 €" | free-text ≤80 chars | null)
     source_url    (string, the actual detail-page URL — never invented)
 
-Inserts with `is_manual=false` so events appear in the "Scraped" tab.
+Inserts with `is_manual=false` so events appear in the "Scraped Events" tab.
 """
 
 import argparse
 import json
 import os
 import sys
-from datetime import date
 from typing import Any
 
 from dotenv import load_dotenv
@@ -44,17 +43,17 @@ from supabase import create_client
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from scrape_helpers import (  # noqa: E402
     CATEGORIES,
-    MAX_DATE,
-    TODAY,
     _trim_time,
     compare_event_fields,
     fetch_existing_events_by_venue_for_match,
     fetch_existing_staged_keys_by_venue,
+    is_acceptable_date,
     load_enabled_categories,
     normalize_category,
     normalize_entry_info,
     normalize_language,
     normalize_title,
+    parse_event_date,
 )
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -75,14 +74,6 @@ def load_events(path: str) -> list[dict[str, Any]]:
     if not isinstance(data, list):
         raise SystemExit("Input must be a JSON array of event objects.")
     return data
-
-
-def is_in_window(date_str: str) -> bool:
-    try:
-        d = date.fromisoformat(date_str)
-    except ValueError:
-        return False
-    return TODAY <= d <= MAX_DATE
 
 
 def main():
@@ -118,7 +109,8 @@ def main():
             skipped_invalid += 1
             continue
 
-        if not is_in_window(date_iso):
+        parsed_date = parse_event_date(date_iso)
+        if parsed_date is None or not is_acceptable_date(parsed_date):
             print(f"  – skipping out-of-window: {date_iso} {title[:60]}")
             skipped_window += 1
             continue
