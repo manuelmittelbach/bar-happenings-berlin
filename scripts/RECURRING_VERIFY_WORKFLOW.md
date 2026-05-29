@@ -1,6 +1,6 @@
 # Recurring Series Verification Workflow
 
-<!-- last-updated: 2026-05-29 (template is the single source of truth for judging rules; Step 2 + Rules trimmed to overview, removed duplication) -->
+<!-- last-updated: 2026-05-29 (canonical workflow script scripts/recurring-verify.workflow.js is now the single source of truth for the sub-agent prompt + sequential/dynamic-roots invariants; runbook references it instead of duplicating) -->
 
 Standard runbook for re-checking every **recurring event series** against its
 source page with Playwright/MCP, to confirm it is *still* a regular/recurring
@@ -61,12 +61,19 @@ ToolSearch query="select:mcp__supabase__execute_sql"
 ## Step-by-step instructions
 
 **Map of the run:** the orchestrator does **Step 1** once (load series roots),
-then spawns **one sub-agent per series**. **The hard rule: one agent = one
-series.** Each agent visits its series' page, judges it, and returns one verdict
-object (Step 2 is the overview; the exact prompt it runs is the sub-agent
-template under "Orchestration model"). The orchestrator collects all verdicts,
-then does **Step 3** (write report) and **Step 4** (cleanup) once at the end.
-Nothing is written to the DB at any point.
+then runs the **canonical workflow script** `scripts/recurring-verify.workflow.js`
+which spawns **one sub-agent per series, sequentially**. **The hard rule: one
+agent = one series, run one at a time.** Each agent visits its series' page,
+judges it, and returns one verdict object (Step 2 is the overview; the exact
+prompt it runs is the sub-agent template under "Orchestration model"). The
+script collects all verdicts, then does **Step 3** (write report) itself; you
+do **Step 4** (cleanup) once at the end. Nothing is written to the DB at any
+point.
+
+> **Do not hand-write a new workflow each run.** The sequential loop and the
+> dynamic roots list are hard-wired in `scripts/recurring-verify.workflow.js`
+> precisely so they can't drift. Run that file via the Workflow tool's
+> `scriptPath`; only edit the script itself if the logic genuinely changes.
 
 ### Step 1 — Load the recurring series roots
 
@@ -118,8 +125,9 @@ live series. And never `not_found` for a page you couldn't actually read; that's
 
 The **exact operative spec each agent runs** — navigation, iframe/image
 fallbacks, the strength-ordered signals, and the precise per-verdict criteria —
-is the **"Sub-agent prompt template"** below, which is the single source of
-truth for the judging rules. This section is just the overview.
+lives in `subAgentPrompt()` inside `scripts/recurring-verify.workflow.js`, which
+is the **single source of truth for the judging rules**. This section is just the
+human-facing overview. To change judging semantics, edit `subAgentPrompt()`.
 
 ### Step 3 — Write the report (once, at the end)
 
@@ -189,22 +197,28 @@ never accumulates and peak context stays low.
 ### Orchestrator flow (main session)
 
 1. Run Step 1 in the main session → `/tmp/recurring_roots.json`.
-2. Read that JSON. Spawn **one agent per root sequentially** via a `for`
-   loop — **not** `pipeline()`:
+2. Read that JSON into memory.
+3. Invoke the **canonical workflow script** via the Workflow tool's `scriptPath`,
+   passing `today` and the parsed roots as `args`:
    ```js
-   const results = []
-   for (const r of roots) {
-     const v = await agent(subAgentPrompt(r), { schema: VERDICT_SCHEMA })
-     if (v) results.push(v)
-   }
+   Workflow({
+     scriptPath: "scripts/recurring-verify.workflow.js",
+     args: { today: "<currentDate>", roots: [ /* parsed /tmp/recurring_roots.json */ ] },
+   })
    ```
-   The schema forces each agent to return a validated verdict object (no
-   parsing needed).
-3. Collect the verdict objects.
-4. Write them to `/tmp/recurring_verify_results.json` and run Step 3's
-   `report` command.
-5. Relay the summary; link the report.
-6. Run Step 4 cleanup in the main session.
+   The script runs **one agent per root in a strictly sequential `for` loop**
+   (never `pipeline()`/`parallel()` — see the shared-browser warning above),
+   forces each agent to return a schema-validated verdict, then writes the
+   results JSON and runs Step 3's `report` command itself.
+4. The script returns a summary object (counts + flagged/unreachable series) and
+   the report helper's stdout. Relay the summary; link the report at
+   `/tmp/recurring_verify_report.md`.
+5. Run Step 4 cleanup in the main session.
+
+> **Crash recovery / re-run:** the script is read-only and idempotent. To resume
+> a partial run, relaunch with the same `scriptPath` plus `resumeFromRunId` —
+> completed series return from cache, only unfinished ones re-scrape. A plain
+> re-run (no resume) simply re-scrapes everything; harmless, just slower.
 
 ### Sub-agent schema (StructuredOutput)
 
@@ -224,65 +238,29 @@ never accumulates and peak context stays low.
 }
 ```
 
-### Sub-agent prompt template
+### Sub-agent prompt — lives in code (single source of truth)
 
-Self-contained on purpose — the agent needs **no file reads**. Fill in
-`{TODAY}` and the one series' fields. **This template is the single source of
-truth for the judging rules** (Step 2 above is just the overview) — edit verdict
-semantics here.
+The exact prompt each sub-agent runs is **not duplicated here** — it is
+`subAgentPrompt()` in `scripts/recurring-verify.workflow.js`. That function is
+the authoritative judging spec; keeping the only copy in the script that
+actually runs means it can't silently drift from a prose copy.
 
-```
-Working directory: /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin
+What that prompt does (read the function for the verbatim text):
 
-You verify ONE recurring event series against its source page. Read-only: do
-not touch any database.
+- Navigates to the series `url`, reads `document.body.innerText`.
+- Sparse-body fallbacks: follow an `iframe` `src` (e.g. a Google Sheet), or
+  screenshot an event-image / monthly PNG and judge it visually. Instagram-post
+  URLs (login wall / empty body) → `unreachable`, not `not_found`.
+- On load failure (timeout / 404 / anti-bot): retry ONCE, then `unreachable`.
+- Judges by signals, strongest first: (a) cadence wording matching the stored
+  rule — German phrasings included — (b) title present as a regular item,
+  (c) a future-dated occurrence consistent with the rule.
+- Picks exactly one verdict with the **keep-bias**: unsure but page loaded →
+  `confirmed_weak`, never `not_found`; page unreadable → `unreachable`.
+- Closes the browser, returns the schema-validated verdict object.
 
-Today: {TODAY}.
-
-Series to verify (only this one):
-  id:       {id}
-  title:    {title}
-  venue:    {venue}
-  cadence:  {cadence}        (the stored recurrence rule, human-readable)
-  url:      {url}
-
-Load tools first with a single ToolSearch call (one line):
-  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__playwright__browser_take_screenshot"
-
-Steps:
-1. browser_navigate to the url, then browser_evaluate '() => document.body.innerText'.
-2. If the body is sparse (< ~200 chars): check document.querySelectorAll('iframe')
-   — if present, navigate to its src (e.g. a Google Sheet) — or
-   document.querySelectorAll('img') for an event image / monthly PNG: navigate
-   to the image URL, browser_take_screenshot, then Read the screenshot to judge
-   visually. Instagram-post URLs (instagram.com/p/...) often show a login wall
-   or empty body → that is `unreachable`, not `not_found`.
-3. If the page fails (timeout / 404 / anti-bot): retry ONCE, then `unreachable`.
-4. Judge whether "{title}" still appears as a recurring event matching
-   "{cadence}". Signals, strongest first:
-     a. Cadence wording matching {cadence} — match GERMAN phrasings too
-        ("jeden Donnerstag", "2. Samstag im Monat", "monatlich", "Do. 20:00").
-     b. The title (or close variant) present as a regular/series item.
-     c. A future-dated occurrence consistent with the rule (right weekday/date).
-5. Pick EXACTLY ONE verdict:
-     confirmed       — signal (a) or (c) clearly present; alive & matches rule.
-     confirmed_weak  — only signal (b); cadence not restated, no matching future
-                       date confirmed. Probably fine, low confidence.
-     changed         — clearly still recurring but on a DIFFERENT day/cadence
-                       (note old vs. new in evidence).
-     not_found       — page loaded, right page, but the event is NOT on it as a
-                       recurring item (only one-offs, or gone). Review for removal.
-     unreachable     — page failed / blocked / login wall / OCR failed.
-                       INCONCLUSIVE — never infer removal from a page you couldn't read.
-   Bias rules: when the page loaded but you're unsure → confirmed_weak, NEVER
-   not_found (a false not_found risks deleting a live series). Never not_found
-   for a page you couldn't actually read — that's unreachable.
-6. browser_close.
-
-Return the verdict object: id/title/venue/url/cadence carried through verbatim,
-plus `verdict` and a 1–2 line `evidence` quote of what you actually saw (for
-`changed`: old vs. new; for `unreachable`: the failure, e.g. "403 anti-bot").
-```
+To change the judging rules, edit `subAgentPrompt()` — there is nothing to keep
+in sync.
 
 ## Rules & constraints
 
