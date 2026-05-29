@@ -16,8 +16,8 @@ runbook.
 
 A **series root** is an **approved** row in the `events` table (`status =
 approved`) with an empty/NULL `parent_id` AND a non-empty `recurrence` rule
-(`weekly`, `biweekly`, `monthly_by_weekday`, `monthly_last_weekday`). There are
-~23 of these. (The Step 1 helper applies exactly this filter.)
+(`weekly`, `biweekly`, `monthly_by_weekday`, `monthly_last_weekday`).
+(The Step 1 helper applies exactly this filter.)
 
 Each root has many materialized **child occurrences** (`parent_id` = root id,
 `recurrence` empty) that the pg_cron `extend_recurring_series` job keeps
@@ -37,8 +37,7 @@ Switch to Sonnet — same quality for this task, much lower token cost than Opus
 
 Then paste:
 
-> Read `scripts/RECURRING_VERIFY_WORKFLOW.md` and execute the workflow for all
-> recurring series.
+> Read `scripts/RECURRING_VERIFY_WORKFLOW.md` and execute the workflow for all recurring series.
 
 `today` comes from the `currentDate` in memory — pass it as `args` when
 invoking the Workflow tool so sub-agents can reason about whether a date that

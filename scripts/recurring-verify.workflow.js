@@ -95,14 +95,15 @@ if (roots.length === 0) {
       venue_id:    { type: 'string' },
     },
   }
-  roots = await agent(
+  const loaded = await agent(
     `Working directory: ${WORKDIR}
 
 Read /tmp/recurring_roots.json (it already exists — the main session ran
 "python3 scripts/verify_recurring_helper.py list" before launching this workflow).
-Return its contents as a JSON array of recurring series root objects.`,
-    { label: 'load-roots', schema: { type: 'array', items: ROOT_SCHEMA } }
+Return its contents as a JSON array of recurring series root objects under the key "roots".`,
+    { label: 'load-roots', schema: { type: 'object', required: ['roots'], properties: { roots: { type: 'array', items: ROOT_SCHEMA } } } }
   )
+  roots = (loaded && loaded.roots) || []
   if (!roots || roots.length === 0) {
     throw new Error('Setup agent returned no roots. Ensure /tmp/recurring_roots.json '
       + 'was produced by running: '
@@ -111,9 +112,9 @@ Return its contents as a JSON array of recurring series root objects.`,
   log(`Loaded ${roots.length} series roots from file.`)
 }
 
-// --- Sub-agent prompt (mirrors the runbook's "Sub-agent prompt template") ---
-// Kept in sync with scripts/RECURRING_VERIFY_WORKFLOW.md — edit the judging
-// rules in BOTH places, or the runbook stops being the source of truth.
+// --- Sub-agent prompt (single source of truth) ---
+// Edit judging rules here only — the runbook links to this function instead of
+// duplicating the prompt.
 function subAgentPrompt(r) {
   return `Working directory: ${WORKDIR}
 
