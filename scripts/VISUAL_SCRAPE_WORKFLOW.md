@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-29 (split per-venue procedure + field rules into scripts/VISUAL_SCRAPE_FIELD_RULES.md so each sub-agent reads ~290 lines, not the whole runbook) -->
+<!-- last-updated: 2026-05-29 (added browser_wait_for to sub-agent tool template; clarified crash-recovery is event-level not venue-level; orchestrator checks insert-error summary count) -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. This file is the
@@ -43,8 +43,13 @@ holds regardless of how many venues there are. Do not run the per-venue loop
 inline in the main session.
 
 **Crash recovery:** if a previous run crashed mid-way, just re-run the same
-prompt. Already-imported venues are automatically skipped via the staged-keys
-dedup in Step 1b — no manual cleanup needed.
+prompt — no manual cleanup needed. Note this dedups at the *event* level, not
+the venue level: already-staged events are skipped on re-import (via the
+staged-keys dedup in Step 1b), so no duplicates are created, but every venue is
+still scraped again from scratch. A re-run is therefore safe, just not faster.
+Venues that only got a placeholder last time (`is_manual=true`) aren't in the
+staged-keys set at all, so they're fully re-scraped (the placeholder insert is
+idempotent).
 
 ### Tools you'll need (deferred — load before using)
 
@@ -150,8 +155,9 @@ below for why agents must not run concurrently.
    ```
    See **"⚠ Shared browser — no parallel browser calls"** below for why.
 4. Each agent gets only its own venue's staged keys — no large JSON blob.
-5. After each agent returns its result, check for `✗ insert error` — stop
-   and report immediately if found.
+5. After each agent returns its result, check for an `✗ insert error` line or
+   `insert-error > 0` in the importer summary — stop and report immediately if
+   found.
 6. Run Step 4 cleanup in the main session once all agents are done.
 
 ### Sub-agent prompt template
@@ -179,7 +185,7 @@ Already-staged keys for this venue:
 [["{date}", "{normalized_title}"], ...]
 
 Load tools first with a single ToolSearch call (one line):
-  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_close"
+  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_wait_for,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_close"
 
 Then:
 - Step 2: navigate to the URL, extract events in [{TODAY}, {WINDOW_END}]

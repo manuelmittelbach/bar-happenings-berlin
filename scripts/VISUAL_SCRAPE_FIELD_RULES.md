@@ -1,6 +1,6 @@
 # Visual Scrape — Per-Venue Manual (procedure + field rules)
 
-<!-- last-updated: 2026-05-29 (split out of VISUAL_SCRAPE_WORKFLOW.md so each sub-agent reads only what it needs) -->
+<!-- last-updated: 2026-05-29 (Step 2: low-text is no longer a skip signal — parse visible text first, then wait/iframe/image fallback ladder; documented separate insert-error count in importer summary) -->
 
 Read by each **venue sub-agent** (referenced from the sub-agent prompt template
 in `scripts/VISUAL_SCRAPE_WORKFLOW.md`). It is everything one agent needs to
@@ -34,11 +34,19 @@ Tips that worked well:
   skip — no need to fetch detail or stage.
 - If a page fails (timeout, 404, anti-bot block): move on, don't retry more
   than once. The next nightly auto-scrape will pick it up if temporary.
-- **If `innerText` yields little or no content (< ~200 chars of real text):**
-  don't skip immediately. Check for two patterns:
-  1. **iFrame**: `document.querySelectorAll('iframe')` — if present, navigate
+- **Low text is NOT an "empty page" signal.** A valid page can be very short
+  (e.g. a one-line list "Fri 21:00 Jazz · Sat 20:00 Quiz" is ~40 chars but IS
+  the events). So your **first move is ALWAYS to parse whatever `innerText` you
+  have** for events — never skip or placeholder just because the text is short.
+  Only if **no** event-related content is recognizable in the visible text,
+  walk this fallback ladder in order and stop at the first that yields events:
+  1. **Still loading?** If the text is only chrome (header, nav, "Loading…",
+     cookie banner), the page may render its events via JS after navigation.
+     Call `mcp__playwright__browser_wait_for` (short time wait, ~2 s) and re-read
+     `innerText` **once** before deciding it's empty.
+  2. **iFrame**: `document.querySelectorAll('iframe')` — if present, navigate
      directly to the `src` URL instead (e.g. Donau115 embeds a Google Sheet).
-  2. **Event image**: `document.querySelectorAll('img')` — if an image with an
+  3. **Event image**: `document.querySelectorAll('img')` — if an image with an
      event-related `alt` or filename (e.g. "Mai Events.png") is found, use
      `mcp__playwright__browser_navigate` to open the image URL directly, then
      `mcp__playwright__browser_take_screenshot` and read the screenshot with the
@@ -48,6 +56,8 @@ Tips that worked well:
      `filename: /tmp/visual_scrape_shot_{venue_id}.png`) — never the default
      location, which dumps PNGs into the repo root. Step 4 cleans `/tmp` shots
      up; stray repo-root PNGs would otherwise show up as untracked files.
+
+  Only after **all** of these come up empty → Step 2b (placeholder).
 
 ## Step 2b — Placeholder when zero events extracted
 
@@ -138,8 +148,12 @@ existing pending staging, and inserts into `venue_events_staging` with
 ```
 Done. {new} new + {update} update inserted, {unchanged} unchanged,
 {recurring} covered-by-recurring, {staged} already-staged,
-{window} out-of-window, {invalid} invalid.
+{window} out-of-window, {invalid} invalid, {insert-error} insert-error.
 ```
+`invalid` = rows skipped before insert (missing required field) — benign.
+`insert-error` = a row that reached the DB and the insert **failed** — this
+is the STOP signal and is counted separately so it can never hide inside the
+`invalid` count. Any `insert-error > 0` → STOP (see decision rules below).
 
 Per-event lines are also printed:
 - `– skipping (covered by recurring)` — silent drop because a recurring
@@ -150,7 +164,8 @@ Per-event lines are also printed:
 - `✗ insert error` — real problem.
 
 Decision rules:
-- Hard crash or any `✗ insert error` → STOP, report to user.
+- Hard crash, any `✗ insert error` line, or `insert-error > 0` in the
+  summary → STOP, report to user.
 - `0 new + 0 update inserted` despite scraping events expected to be new
   (not just updates/dupes) → STOP, check for `venue_id` typo.
 - Otherwise → continue.

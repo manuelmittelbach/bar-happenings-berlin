@@ -17,7 +17,10 @@ JSON format — array of objects, each with these fields:
     start_time    (HH:MM or null)
     end_time      (HH:MM or null)
     doors_time    (HH:MM or null)            — only when page explicitly mentions a separate doors/Einlass time
-    category      (slug-id string or null)   — see CATEGORY_SLUGS below
+    category      (label string or null)     — e.g. "Live Music", "Comedy", "DJ";
+                                                normalize_category maps labels (and
+                                                slug-ids) to internal IDs. See the
+                                                category table in VISUAL_SCRAPE_FIELD_RULES.md.
     language      (string or null)
     description   (string or null)
     entry_info    ("Free" | "Donation" | "X €" | "X,50 €" | free-text ≤80 chars | null)
@@ -104,6 +107,7 @@ def main():
     inserted_new = inserted_update = 0
     skipped_unchanged = skipped_recurring = 0
     skipped_staged = skipped_window = skipped_invalid = 0
+    insert_errors = 0
     for ev in events:
         title = (ev.get("title") or "").strip()
         date_iso = ev.get("date") or ""
@@ -189,7 +193,7 @@ def main():
             staged_keys.setdefault(venue_id, set()).add((date_iso, title_key))
         except Exception as e:
             print(f"  ✗ insert error for {title[:60]}: {e}")
-            skipped_invalid += 1
+            insert_errors += 1
 
     print(
         f"\nDone. {inserted_new} new + {inserted_update} update inserted, "
@@ -197,7 +201,8 @@ def main():
         f"{skipped_recurring} covered-by-recurring, "
         f"{skipped_staged} already-staged, "
         f"{skipped_window} out-of-window, "
-        f"{skipped_invalid} invalid."
+        f"{skipped_invalid} invalid, "
+        f"{insert_errors} insert-error."
     )
 
 
