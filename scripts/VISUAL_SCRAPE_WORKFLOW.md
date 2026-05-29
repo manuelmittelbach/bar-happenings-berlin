@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-28 -->
+<!-- last-updated: 2026-05-29 (fix: serialize browser calls) -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. Designed to be
@@ -23,8 +23,10 @@ Then paste:
 > Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
 > active venues.
 
-That's it. Everything else (dedup rules, staging behavior, field rules) is
-in this document.
+That's it. Claude reads `currentDate` from memory and passes `today` and
+`windowEnd` (today + 14 days) automatically as `args` when invoking the
+Workflow tool. Everything else (dedup rules, staging behavior, field rules)
+is in this document.
 
 **Crash recovery:** if a previous run crashed mid-way, just re-run the same
 prompt. Already-imported venues are automatically skipped via the staged-keys
@@ -33,9 +35,9 @@ dedup in Step 1b — no manual cleanup needed.
 **Context management:** For runs of 10+ venues the main context window fills
 up quickly (browser content is large). Use the **sub-agent orchestration
 model** described in the "Orchestration model" section below. The orchestrator
-runs Step 1, splits venues into batches, spawns parallel sub-agents (one per
-batch), and collects compact summaries. Each sub-agent has its own fresh
-context — browser content never lands in the main session.
+runs Step 1, then spawns sub-agents **sequentially** (one at a time — see the
+shared-browser warning in the Orchestration model). Each sub-agent has its own
+fresh context — browser content never lands in the main session.
 
 ### Tools you'll need (deferred — load before using)
 
@@ -256,7 +258,7 @@ After all venues are done:
 
 1. Close the browser (**single-session runs only** — in the orchestration
    model the main session never opens a browser; each sub-agent closes its
-   own at the end of its batch):
+   own at the end):
    ```
    mcp__playwright__browser_close
    ```
@@ -269,73 +271,91 @@ After all venues are done:
 
 ## Orchestration model
 
-For runs of 10+ venues, the main orchestrator uses **sub-agents per batch**
-so the main context stays small. Browser content accumulates quickly even
-for a handful of venues; sub-agents contain that within their own sessions.
+For runs of 10+ venues, the Workflow tool spawns **one sub-agent per venue
+sequentially**. Each agent handles exactly one venue, so browser content never
+accumulates across venues and peak context stays low (~50–80k per agent vs.
+150k+ with batching). See **"⚠ Shared browser — no parallel browser calls"**
+below for why agents must not run concurrently.
 
 ### Orchestrator flow (replaces the per-venue loop after Step 1)
 
 1. Run Step 1a + 1b (venue list + staged keys) in the main session.
 2. Build `staged_keys_by_venue` as usual.
-3. Split the venue list into batches of **~8 venues each**.
-4. Spawn all batches as **parallel sub-agents** in a single message
-   (multiple `Agent` tool calls at once). Pass each sub-agent a
-   self-contained prompt — see template below.
-5. Wait for all sub-agents to return their compact summaries.
-6. If any sub-agent reports a `✗ insert error` or hard crash, re-run just
-   that batch's venues (the dedup will skip anything already staged).
-7. Run Step 4 cleanup (browser_close + remove .playwright-mcp files) in the
-   main session once all batches are done.
+3. Spawn **one agent per venue sequentially** via a `for` loop — **not**
+   `pipeline()` or `parallel()`:
+   ```js
+   const results = []
+   for (const v of venues) {
+     const r = await agent(subAgentPrompt(v), { label: v.name })
+     if (r) results.push(r)
+   }
+   ```
+   See **"⚠ Shared browser — no parallel browser calls"** below for why.
+4. Each agent gets only its own venue's staged keys — no large JSON blob.
+5. After each agent returns its result, check for `✗ insert error` — stop
+   and report immediately if found.
+6. Run Step 4 cleanup in the main session once all agents are done.
 
-> **No browser_close needed in the main session** — each sub-agent closes
-> its own browser at the end of its batch.
+> **No browser_close needed in the main session** — each agent closes its
+> own browser at the end.
 
 ### Sub-agent prompt template
 
-Fill in `{TODAY}`, `{WINDOW_END}`, the staged-keys subset (only for the
-batch's venue IDs), and the venue list. The project root is
+Fill in `{TODAY}`, `{WINDOW_END}`, the staged-keys for this venue only, and
+the venue details. Use a **unique temp file per venue** to avoid parallel
+write conflicts: `/tmp/visual_scrape_{venue_id}.json`. The project root is
 `/Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin`.
 
 ```
 Working directory: /Users/manuelmittelbach/Documents/Claude/Projects/bar-happenings-berlin
 
-You are scraping a batch of Berlin bar venues. Read
-`scripts/VISUAL_SCRAPE_WORKFLOW.md` for all field rules (Step 2 scraping,
-Step 2b placeholder, Step 3 write+import, field rules, pre-import checklist).
+Read scripts/VISUAL_SCRAPE_WORKFLOW.md for all field rules.
 
 Today: {TODAY}. Window: {TODAY} to {WINDOW_END} (inclusive).
 
-Already-staged keys for YOUR venues only — skip events where
-(date, normalized_title) is already present:
-{JSON map: venue_id → [[date, normalized_title], ...]}
+Your venue (only this one):
+  Name: {name}
+  ID:   {venue_id}
+  URL:  {website_events}
 
-Your venues (process in order, one at a time):
-1. Name — venue_id — website_events URL
-2. ...
+Already-staged keys for this venue:
+[["{date}", "{normalized_title}"], ...]
 
 Load tools first with a single ToolSearch call (one line):
-  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__supabase__execute_sql"
+  ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close"
 
-Then for each venue: Step 2 (scrape) → Step 3a+3b (write+import), or
-Step 2b (placeholder) for zero-event venues. After the last venue, call
-browser_close once.
+Then:
+- Step 2: navigate to the URL, extract events in [{TODAY}, {WINDOW_END}]
+- If events found: write to /tmp/visual_scrape_{venue_id}.json using python3
+  + json.dumps, then run: python3 scripts/import_visual_events.py /tmp/visual_scrape_{venue_id}.json
+- If zero events: run: python3 scripts/stage_visual_placeholder.py {venue_id} {website_events}
+- Call browser_close when done.
 
-Return a compact summary — one line per venue:
-  "Venue Name: N new + M update" or "Venue Name: placeholder" or "Venue Name: all skipped (dedup)"
-Stop and flag immediately on any ✗ insert error.
+Return: {"venue_name": "...", "status": "N new + M update inserted" / "placeholder" / "all skipped (dedup)" / "error: ..."}
 ```
 
-### Notes on parallel execution
+### ⚠ Shared browser — no parallel browser calls
 
-- All batches can run in one parallel message — sub-agents use independent
-  browser sessions, no shared state.
-- Staged-keys passed to each sub-agent only need to cover that batch's
-  venue IDs — filter the full map before building the prompt.
-- Sub-agent summaries are short (1 line per venue), so the orchestrator's
-  context grows very slowly regardless of how many batches there are.
-- If a sub-agent crashes mid-batch, re-run with the same venue list — the
-  dedup skips anything already staged, so only the remaining venues get
-  processed.
+The Playwright MCP server runs **one browser with one current tab** shared
+across every tool call in the session. Running multiple browser agents
+concurrently causes agents to interleave `browser_navigate` /
+`browser_evaluate` calls on the same tab — agent A navigates to URL_A,
+agent B navigates to URL_B before A reads, and A silently reads URL_B's
+content and produces wrong scraped data.
+
+This bug was confirmed in a recurring-series verification run where three
+agents returned page content belonging to other venues that happened to be
+navigated concurrently. The agents are **not** isolated; there is no
+per-agent browser context.
+
+**Always run venue agents sequentially** — one finishes (including
+`browser_close`) before the next starts. Use a `for` loop in the Workflow
+script, **not** `pipeline()` or `parallel()`.
+
+Other notes:
+- Each agent only receives staged keys for its own venue — prompt stays short.
+- If an agent crashes, re-run with the same venue list — the dedup skips
+  anything already staged, so only the unprocessed venue gets scraped again.
 
 ## Field rules — strict, follow exactly
 
