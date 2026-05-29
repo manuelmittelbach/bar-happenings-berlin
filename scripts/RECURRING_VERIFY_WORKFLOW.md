@@ -164,8 +164,9 @@ After all sub-agents are done, in the main session:
 
 1. **No `browser_close` needed in the main session** — the main session never
    opens a browser; each sub-agent already closed its own at the end of its run.
-2. Optional: remove Playwright MCP cache files:
+2. Remove screenshots and Playwright MCP cache files:
    ```
+   rm -rf /tmp/verify-screenshots
    rm -f .playwright-mcp/page-*.yml .playwright-mcp/console-*.log
    ```
 

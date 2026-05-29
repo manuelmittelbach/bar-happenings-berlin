@@ -133,14 +133,21 @@ Series to verify (only this one):
 Load tools first with a single ToolSearch call (one line):
   ToolSearch query="select:mcp__playwright__browser_navigate,mcp__playwright__browser_evaluate,mcp__playwright__browser_close,mcp__playwright__browser_take_screenshot"
 
+Screenshots go to /tmp/verify-screenshots/ — create it before taking any:
+  Bash: mkdir -p /tmp/verify-screenshots
+Use that directory for every browser_take_screenshot call (pass the full path,
+e.g. /tmp/verify-screenshots/${r.id}.png). Never write screenshots to the
+working directory.
+
 Steps:
 1. browser_navigate to the url, then browser_evaluate '() => document.body.innerText'.
 2. If the body is sparse (< ~200 chars): check document.querySelectorAll('iframe')
    — if present, navigate to its src (e.g. a Google Sheet) — or
    document.querySelectorAll('img') for an event image / monthly PNG: navigate
-   to the image URL, browser_take_screenshot, then Read the screenshot to judge
-   visually. Instagram-post URLs (instagram.com/p/...) often show a login wall
-   or empty body → that is \`unreachable\`, not \`not_found\`.
+   to the image URL, browser_take_screenshot (save to /tmp/verify-screenshots/${r.id}.png),
+   then Read the screenshot to judge visually. Instagram-post URLs
+   (instagram.com/p/...) often show a login wall or empty body → that is
+   \`unreachable\`, not \`not_found\`.
 3. If the page fails (timeout / 404 / anti-bot): retry ONCE, then \`unreachable\`.
 4. Judge whether "${r.title}" still appears as a recurring event matching
    "${r.cadence}". Signals, strongest first:
