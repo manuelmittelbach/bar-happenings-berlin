@@ -10,14 +10,18 @@
 //      across the whole session; concurrent agents interleave navigate/evaluate
 //      calls and silently read each other's pages (this really happened — see
 //      the "Shared browser" section in the runbook).
-//   2. DYNAMIC ROOTS. The series list is passed in via `args.roots` (read from
-//      /tmp/recurring_roots.json, produced by `verify_recurring_helper.py list`)
-//      — never hardcoded, so new/removed series are always picked up.
+//   2. DYNAMIC ROOTS. The series list is read from /tmp/recurring_roots.json
+//      (produced by `verify_recurring_helper.py list`) — never hardcoded, so
+//      new/removed series are always picked up.
 //
 // Read-only end to end: no DB writes. The only output is the Markdown report at
 // /tmp/recurring_verify_report.md, which the admin acts on by hand.
 //
-// Invoke (after running Step 1 of the runbook to produce the roots JSON):
+// Invoke (after running Step 1 of the runbook to produce the roots JSON). Both
+// args are OPTIONAL — with none passed, `today` falls back to `date +%F` and
+// `roots` to /tmp/recurring_roots.json, so this is enough:
+//   Workflow({ scriptPath: "scripts/recurring-verify.workflow.js" })
+// Passing them explicitly still works and skips the fallbacks:
 //   Workflow({
 //     scriptPath: "scripts/recurring-verify.workflow.js",
 //     args: { today: "<currentDate>", roots: [ ...parsed /tmp/recurring_roots.json ] }
@@ -49,16 +53,62 @@ const VERDICT_SCHEMA = {
 }
 
 // --- Inputs (from args) -----------------------------------------------------
-const today = (args && args.today) || ''
-const roots = (args && args.roots) || []
+// Both inputs are OPTIONAL: the workflow is self-sufficient and can run with no
+// `args` at all. `today` falls back to `date +%F` via a setup agent; `roots`
+// falls back to /tmp/recurring_roots.json (Step 1's output). Passing them in
+// `args` still works and skips the fallbacks.
+let today = (args && args.today) || ''
+let roots = (args && Array.isArray(args.roots) && args.roots.length > 0) ? args.roots : []
 
+// today fallback: the workflow runtime has no Date access, so a setup agent
+// resolves the current date via the shell.
 if (!today) {
-  throw new Error('args.today is required (pass the currentDate so agents can reason about upcoming dates).')
+  log('args.today absent — resolving today via setup agent (date +%F)…')
+  const resolved = await agent(
+    'Run `date +%F` and return ONLY the resulting date in YYYY-MM-DD format — no other text.',
+    { label: 'resolve-today' }
+  )
+  today = (resolved || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+    throw new Error('Could not resolve today from setup agent (got: ' + JSON.stringify(resolved) + ').')
+  }
+  log(`Resolved today = ${today}`)
 }
-if (!Array.isArray(roots) || roots.length === 0) {
-  throw new Error('args.roots must be a non-empty array. Run Step 1 first: '
-    + 'python3 scripts/verify_recurring_helper.py list --out /tmp/recurring_roots.json, '
-    + 'then read that JSON and pass it as args.roots.')
+
+// If roots weren't passed in args (large payload may be dropped by the runtime),
+// fall back to loading them from /tmp/recurring_roots.json via a setup agent.
+// The helper must have been run in the main session before invoking the workflow.
+if (roots.length === 0) {
+  log('args.roots absent — loading roots from /tmp/recurring_roots.json via setup agent…')
+  const ROOT_SCHEMA = {
+    type: 'object',
+    required: ['id', 'title', 'venue', 'cadence'],
+    properties: {
+      id:          { type: 'string' },
+      title:       { type: 'string' },
+      venue:       { type: 'string' },
+      cadence:     { type: 'string' },
+      url:         { type: ['string', 'null'] },
+      freq:        { type: 'string' },
+      anchor_date: { type: 'string' },
+      until:       { type: ['string', 'null'] },
+      venue_id:    { type: 'string' },
+    },
+  }
+  roots = await agent(
+    `Working directory: ${WORKDIR}
+
+Read /tmp/recurring_roots.json (it already exists — the main session ran
+"python3 scripts/verify_recurring_helper.py list" before launching this workflow).
+Return its contents as a JSON array of recurring series root objects.`,
+    { label: 'load-roots', schema: { type: 'array', items: ROOT_SCHEMA } }
+  )
+  if (!roots || roots.length === 0) {
+    throw new Error('Setup agent returned no roots. Ensure /tmp/recurring_roots.json '
+      + 'was produced by running: '
+      + 'python3 scripts/verify_recurring_helper.py list --out /tmp/recurring_roots.json')
+  }
+  log(`Loaded ${roots.length} series roots from file.`)
 }
 
 // --- Sub-agent prompt (mirrors the runbook's "Sub-agent prompt template") ---
