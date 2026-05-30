@@ -52,15 +52,39 @@ const VENUE_RESULT_SCHEMA = {
   },
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Add `days` to an ISO date (YYYY-MM-DD) using plain integer math — NO Date
+// object. The workflow sandbox blocks Date.now()/new Date() (they would break
+// resume), so we can't use Date arithmetic; this is pure and deterministic, and
+// correctly handles month/year rollover and leap years. Only needs days >= 0.
+function addDaysISO(iso, days) {
+  const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+  const daysInMonth = (y, m) =>
+    [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
+  let [y, m, d] = iso.split('-').map(Number)
+  d += days
+  while (d > daysInMonth(y, m)) {
+    d -= daysInMonth(y, m)
+    m += 1
+    if (m > 12) { m = 1; y += 1 }
+  }
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${y}-${pad(m)}-${pad(d)}`
+}
+
 // --- Inputs (from args, with fallbacks) -------------------------------------
-// The workflow runtime has no Date/filesystem/MCP access, so setup agents
-// resolve anything not passed in `args`. The normal path passes all three and
-// spawns zero setup agents.
+// today must come from OUTSIDE the script — the sandbox can't read the current
+// date. windowEnd is then pure arithmetic (today + 14 days), so the script
+// derives it itself; no setup agent for the window. venues load from /tmp if not
+// passed inline. The normal path passes today (+ optionally venues) and spawns
+// zero or one setup agent.
 let today = (args && args.today) || ''
 let windowEnd = (args && args.windowEnd) || ''
 let venues = (args && Array.isArray(args.venues) && args.venues.length > 0) ? args.venues : []
 
-// today fallback: resolve via the shell.
+// today fallback: the sandbox has no current-date access, so resolve via the
+// shell when not passed in args.
 if (!today) {
   log('args.today absent — resolving today via setup agent (date +%F)…')
   const resolved = await agent(
@@ -68,26 +92,22 @@ if (!today) {
     { label: 'resolve-today' }
   )
   today = (resolved || '').trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
-    throw new Error('Could not resolve today from setup agent (got: ' + JSON.stringify(resolved) + ').')
-  }
   log(`Resolved today = ${today}`)
 }
+// Validate today from any source (args or setup agent) before deriving from it.
+if (!ISO_DATE_RE.test(today)) {
+  throw new Error('today must be YYYY-MM-DD (got: ' + JSON.stringify(today) + ').')
+}
 
-// windowEnd fallback: today + 14 days, computed from the resolved `today` so the
-// two stay consistent even when today came from args.
+// windowEnd: today + 14 days. Pure arithmetic, no current-time access, so the
+// script computes it itself — NO setup agent needed. args.windowEnd is still
+// honored as an optional override if you ever want a different window.
 if (!windowEnd) {
-  log('args.windowEnd absent — computing today + 14 days via setup agent…')
-  const resolved = await agent(
-    `Run exactly this and return ONLY the printed date (YYYY-MM-DD), nothing else:\n`
-    + `python3 -c "from datetime import date,timedelta; print((date.fromisoformat('${today}')+timedelta(days=14)).isoformat())"`,
-    { label: 'resolve-window-end' }
-  )
-  windowEnd = (resolved || '').trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(windowEnd)) {
-    throw new Error('Could not resolve windowEnd from setup agent (got: ' + JSON.stringify(resolved) + ').')
-  }
-  log(`Resolved windowEnd = ${windowEnd}`)
+  windowEnd = addDaysISO(today, 14)
+  log(`Computed windowEnd = ${windowEnd} (today + 14 days).`)
+}
+if (!ISO_DATE_RE.test(windowEnd)) {
+  throw new Error('windowEnd must be YYYY-MM-DD (got: ' + JSON.stringify(windowEnd) + ').')
 }
 
 // venues fallback: load the Step 1 work-list from /tmp (large staged_keys

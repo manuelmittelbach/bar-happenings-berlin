@@ -1,6 +1,6 @@
 # Visual Scrape Workflow
 
-<!-- last-updated: 2026-05-29 (canonical workflow script scripts/visual-scrape.workflow.js is now the single source of truth for the sequential loop + sub-agent dispatch; Step 1 moved to scripts/visual_scrape_helper.py list; runbook references the script instead of duplicating the orchestration) -->
+<!-- last-updated: 2026-05-30 (windowEnd is now computed by the script from today (pure arithmetic), not resolved via a setup agent — orchestrator only passes today; canonical workflow script scripts/visual-scrape.workflow.js is the single source of truth for the sequential loop + sub-agent dispatch; Step 1 in scripts/visual_scrape_helper.py list) -->
 
 Standard runbook for visually scraping all active venue event websites with
 Playwright/MCP and writing results to `venue_events_staging`. This file is the
@@ -28,8 +28,9 @@ Then paste:
 > Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
 > active venues.
 
-Claude reads `currentDate` from memory and passes `today` and `windowEnd`
-(today + 14 days) as `args` when invoking the Workflow tool. Everything else
+Claude reads `currentDate` from memory and passes `today` as `args` when
+invoking the Workflow tool. The script derives `windowEnd` (today + 14 days)
+itself by pure arithmetic, so it does not need to be passed. Everything else
 (dedup rules, staging behavior, field rules) is in this document, the canonical
 workflow script, or the per-venue manual it points to.
 
@@ -158,20 +159,23 @@ that.
 
 1. Run **Step 1** → `/tmp/visual_scrape_venues.json`.
 2. Invoke the **canonical workflow script** via the Workflow tool's `scriptPath`,
-   passing `today` and `windowEnd` as `args` (the venues are loaded from the
-   file by a setup agent, so they don't need to go through `args`):
+   passing `today` as `args` (the venues are loaded from the file by a setup
+   agent, and `windowEnd` is computed by the script, so neither needs to go
+   through `args`):
    ```js
    Workflow({
      scriptPath: "scripts/visual-scrape.workflow.js",
-     args: { today: "<currentDate>", windowEnd: "<currentDate + 14 days>" },
+     args: { today: "<currentDate>" },
    })
    ```
    The script runs **one agent per venue in a strictly sequential `for` loop**
    (never `pipeline()`/`parallel()` — see the shared-browser warning above),
    forces each agent to return a schema-validated `{venue_name, status}` object,
    and returns a summary (counts + any venues whose status looked like an error).
-   All `args` are optional — with none passed, the script resolves `today`/
-   `windowEnd` via setup agents and loads venues from the file.
+   All `args` are optional — with none passed, the script resolves `today` via a
+   setup agent (`date +%F`), derives `windowEnd` from it, and loads venues from
+   the file. `windowEnd` can still be passed in `args` as an explicit override
+   if you ever want a different window.
 3. **Best-effort (see memory `feedback_scraper_best_effort`):** a single venue
    erroring out does NOT stop the fleet — the loop logs it and moves on. Relay
    the returned summary to the user; mention any `errored` venues, but a lost
