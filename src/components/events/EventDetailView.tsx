@@ -233,7 +233,7 @@ export default function EventDetailView({
                 {detailItems.map((item, i) => (
                   <span key={i} className="inline-flex items-center gap-1.5">
                     <item.icon className="h-3.5 w-3.5 shrink-0" />
-                    <span>{item.text}</span>
+                    <span>{renderWithLinks(item.text)}</span>
                   </span>
                 ))}
               </div>
