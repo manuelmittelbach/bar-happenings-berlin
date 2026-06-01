@@ -124,14 +124,16 @@ if (venues.length === 0) {
       staged_keys:    { type: 'array', items: { type: 'array', items: { type: 'string' } } },
     },
   }
-  venues = await agent(
+  const loaded = await agent(
     `Working directory: ${WORKDIR}
 
 Read ${VENUES_FILE} (it already exists — the main session ran
 "python3 scripts/visual_scrape_helper.py list --out ${VENUES_FILE}" before
-launching this workflow). Return its contents as a JSON array of venue objects.`,
-    { label: 'load-venues', schema: { type: 'array', items: VENUE_SCHEMA } }
+launching this workflow). Return its contents as a JSON array of venue objects
+wrapped in an object: { "venues": [ ... ] }.`,
+    { label: 'load-venues', schema: { type: 'object', required: ['venues'], properties: { venues: { type: 'array', items: VENUE_SCHEMA } } } }
   )
+  venues = loaded ? loaded.venues || [] : []
   if (!venues || venues.length === 0) {
     throw new Error('Setup agent returned no venues. Ensure ' + VENUES_FILE + ' was produced by running: '
       + 'python3 scripts/visual_scrape_helper.py list --out ' + VENUES_FILE)

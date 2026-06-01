@@ -25,8 +25,7 @@ run on Sonnet — and the sub-agents are where ~all the tokens go.
 
 Then paste:
 
-> Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all
-> active venues.
+> Read `scripts/VISUAL_SCRAPE_WORKFLOW.md` and execute the workflow for all active venues.
 
 Claude reads `currentDate` from memory and passes `today` as `args` when
 invoking the Workflow tool. The script derives `windowEnd` (today + 14 days)
