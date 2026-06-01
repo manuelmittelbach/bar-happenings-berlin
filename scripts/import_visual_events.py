@@ -46,7 +46,6 @@ from scrape_helpers import (  # noqa: E402
     _trim_time,
     compare_event_fields,
     fetch_existing_events_by_venue_for_match,
-    fetch_existing_staged_keys_by_venue,
     is_acceptable_date,
     load_enabled_categories,
     normalize_category,
@@ -93,14 +92,29 @@ def main():
     CATEGORIES.update(load_enabled_categories(client))
 
     existing_events = fetch_existing_events_by_venue_for_match(client)
-    staged_keys = fetch_existing_staged_keys_by_venue(client)
 
-    # Secondary index keyed by date only (venue_id → date → event_row) so we
-    # can find a live event for a date regardless of its title.
-    date_index: dict[str, dict[str, dict]] = {}
+    # Fetch (date, start_time) pairs already in staging per venue so the dedup
+    # key is (date, start_time): multiple events on the same day at different
+    # times are all accepted; only exact same-day same-time duplicates are dropped.
+    _staged_rows = (
+        client.table("venue_events_staging")
+        .select("venue_id, date, start_time")
+        .eq("is_manual", False)
+        .execute()
+    )
+    staged_time_keys: dict[str, set[tuple[str, str | None]]] = {}
+    for _r in _staged_rows.data:
+        _vid, _d, _t = _r.get("venue_id"), _r.get("date"), _trim_time(_r.get("start_time"))
+        if _vid and _d:
+            staged_time_keys.setdefault(_vid, set()).add((_d, _t))
+
+    # Secondary index keyed by (date, start_time) so multiple events on the same
+    # day at different times each get their own slot for the live-match check.
+    date_index: dict[str, dict[tuple[str, str | None], dict]] = {}
     for vid, events_by_key in existing_events.items():
         for (d, _), row in events_by_key.items():
-            date_index.setdefault(vid, {})[d] = row
+            t = _trim_time(row.get("start_time"))
+            date_index.setdefault(vid, {})[(d, t)] = row
 
     inserted_new = inserted_update = 0
     skipped_unchanged = skipped_recurring = 0
@@ -122,25 +136,23 @@ def main():
             skipped_window += 1
             continue
 
-        title_key = normalize_title(title)
-
-        # Staging dedup: skip if ANY non-manual staging row already exists for
-        # this venue on this date (one date = one slot).
-        if any(d == date_iso for (d, _) in staged_keys.get(venue_id, set())):
-            print(f"  – skipping already-staged (date occupied): {date_iso} {title[:60]}")
-            skipped_staged += 1
-            continue
-
         ev_start = _trim_time(ev.get("start_time"))
         ev_end = _trim_time(ev.get("end_time"))
         ev_doors = _trim_time(ev.get("doors_time"))
         source_url = (ev.get("source_url") or "").strip() or None
 
-        # Live-event match on date alone (one date = one slot). If a live event
-        # exists for this venue on this date, compare all fields including title.
-        # Recurring matches silent-drop as before. Changed fields (incl. title)
-        # surface as an update. Fully unchanged → silent drop.
-        live_match = date_index.get(venue_id, {}).get(date_iso)
+        # Staging dedup: skip if a non-manual staging row with the same
+        # (date, start_time) already exists. Different times on the same day
+        # are treated as distinct events and all get through.
+        if (date_iso, ev_start) in staged_time_keys.get(venue_id, set()):
+            print(f"  – skipping already-staged: {date_iso} {ev_start or '??:??'} {title[:60]}")
+            skipped_staged += 1
+            continue
+
+        # Live-event match on (date, start_time). Multiple events at different
+        # times on the same day each match independently. Changed fields (incl.
+        # title) surface as an update; recurring or unchanged → silent drop.
+        live_match = date_index.get(venue_id, {}).get((date_iso, ev_start))
         replaces_id = None
         if live_match is not None:
             if (live_match.get("recurrence") or "") != "":
@@ -190,7 +202,7 @@ def main():
                 inserted_new += 1
             # Keep dedup set in sync so a duplicate within the same JSON batch
             # is also skipped instead of double-staged.
-            staged_keys.setdefault(venue_id, set()).add((date_iso, title_key))
+            staged_time_keys.setdefault(venue_id, set()).add((date_iso, ev_start))
         except Exception as e:
             print(f"  ✗ insert error for {title[:60]}: {e}")
             insert_errors += 1
