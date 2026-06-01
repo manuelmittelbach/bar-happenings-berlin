@@ -95,6 +95,13 @@ def main():
     existing_events = fetch_existing_events_by_venue_for_match(client)
     staged_keys = fetch_existing_staged_keys_by_venue(client)
 
+    # Secondary index keyed by date only (venue_id → date → event_row) so we
+    # can find a live event for a date regardless of its title.
+    date_index: dict[str, dict[str, dict]] = {}
+    for vid, events_by_key in existing_events.items():
+        for (d, _), row in events_by_key.items():
+            date_index.setdefault(vid, {})[d] = row
+
     inserted_new = inserted_update = 0
     skipped_unchanged = skipped_recurring = 0
     skipped_staged = skipped_window = skipped_invalid = 0
@@ -117,23 +124,23 @@ def main():
 
         title_key = normalize_title(title)
 
-        # Staging dedup. Title is normalized so case/whitespace variations of
-        # the same event don't slip through. Re-runs within the same week
-        # therefore don't duplicate rows still pending review.
-        if (date_iso, title_key) in staged_keys.get(venue_id, set()):
-            print(f"  – skipping already-staged: {date_iso} {title[:60]}")
+        # Staging dedup: skip if ANY non-manual staging row already exists for
+        # this venue on this date (one date = one slot).
+        if any(d == date_iso for (d, _) in staged_keys.get(venue_id, set())):
+            print(f"  – skipping already-staged (date occupied): {date_iso} {title[:60]}")
             skipped_staged += 1
             continue
 
-        # Live-event match-and-compare (3-way decision; see scrape_venue_events.py
-        # for full rationale): no match → new, recurring → silent drop,
-        # non-recurring → diff or silent drop.
         ev_start = _trim_time(ev.get("start_time"))
         ev_end = _trim_time(ev.get("end_time"))
         ev_doors = _trim_time(ev.get("doors_time"))
         source_url = (ev.get("source_url") or "").strip() or None
 
-        live_match = existing_events.get(venue_id, {}).get((date_iso, title_key))
+        # Live-event match on date alone (one date = one slot). If a live event
+        # exists for this venue on this date, compare all fields including title.
+        # Recurring matches silent-drop as before. Changed fields (incl. title)
+        # surface as an update. Fully unchanged → silent drop.
+        live_match = date_index.get(venue_id, {}).get(date_iso)
         replaces_id = None
         if live_match is not None:
             if (live_match.get("recurrence") or "") != "":
@@ -151,7 +158,8 @@ def main():
                 "language": normalize_language(ev.get("language")),
             }
             diff = compare_event_fields(scraped_for_compare, live_match)
-            if not diff:
+            title_changed = normalize_title(title) != normalize_title(live_match.get("title") or "")
+            if not diff and not title_changed:
                 print(f"  – skipping unchanged: {date_iso} {title[:60]}")
                 skipped_unchanged += 1
                 continue
