@@ -606,33 +606,44 @@ export default function AdminDashboard() {
     }
   };
 
-  // Bulk auto-approve for the Scraped tab: only rows whose bar has no other
-  // event on that same day get inserted as new. Rows that clash with an
-  // existing event are left in staging for manual review — never overwritten.
+  // Bulk auto-approve for the Scraped tab. Two kinds of rows are handled:
+  //   • Update rows (replacesEventId set) patch their diverging fields onto the
+  //     existing live event — they share that event's day by definition, so the
+  //     same-bar/same-day clash check is skipped for them.
+  //   • New rows are inserted only when their bar has no other event that day;
+  //     any clash leaves the row in staging for manual review — never overwritten.
   // Operates on currently-pending scraped rows only.
   const handleAutoApproveScraped = async () => {
     if (!user) return;
-    const pending = scrapedEvents.filter(s => s.status === "pending" && s.venueId);
+    // Update rows don't need a venue (they patch an existing event); new rows do.
+    const pending = scrapedEvents.filter(
+      s => s.status === "pending" && (s.venueId || s.replacesEventId),
+    );
     if (pending.length === 0) {
       toast.error("No pending scraped events to approve.");
       return;
     }
     // Quick preview from cached live events (the function recomputes a fresh
-    // map for the actual writes).
+    // map for the actual writes). Updates are previewed by count only.
+    const updates = pending.filter(s => s.replacesEventId);
+    const newRows = pending.filter(s => !s.replacesEventId);
     let clashes = 0;
-    for (const s of pending) {
+    for (const s of newRows) {
       if ((liveEventsByVenue[s.venueId] ?? []).some(e => e.date === s.date)) clashes++;
     }
-    const willApprove = pending.length - clashes;
+    const willApprove = newRows.length - clashes;
     if (!window.confirm(
-      `Auto-approve ${willApprove} new scraped event${willApprove === 1 ? "" : "s"}? `
-      + `${clashes} clash with an existing event (same bar, same day) and will be skipped.`,
+      `Auto-approve ${willApprove} new scraped event${willApprove === 1 ? "" : "s"}`
+      + (updates.length > 0 ? ` and apply ${updates.length} update${updates.length === 1 ? "" : "s"} to existing events` : "")
+      + `? ${clashes} clash with an existing event (same bar, same day) and will be skipped.`,
     )) return;
 
     try {
       const res = await autoApproveScrapedEvents(pending, user.id);
       queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast.success(`Auto-approved ${res.approved} new event${res.approved === 1 ? "" : "s"}`);
+      const parts = [`${res.approved} new event${res.approved === 1 ? "" : "s"} approved`];
+      if (res.updated > 0) parts.push(`${res.updated} update${res.updated === 1 ? "" : "s"} applied`);
+      toast.success(parts.join(", "));
       if (res.skipped.length > 0) {
         toast(`${res.skipped.length} skipped (clash or incomplete) — review manually`);
       }
