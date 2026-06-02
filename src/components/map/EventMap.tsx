@@ -800,17 +800,19 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		<div style={{ position: "absolute", inset: 0 }}>
 			<div ref={containerRef} style={{ height: "100%", width: "100%" }} />
 			{loadFailed && (
-				<div className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-					<p className="font-body font-bold text-base">Map could not be loaded.</p>
-					<p className="text-sm text-muted-foreground max-w-xs">
-						Weak connection or server unreachable.
-					</p>
-					<button
-						onClick={() => setRetryNonce((n) => n + 1)}
-						className="inline-flex h-11 px-6 items-center bg-foreground text-background font-mono font-bold uppercase tracking-widest text-xs hover:bg-foreground/90 transition-colors"
-					>
-						Try again
-					</button>
+				<div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background px-6">
+					<div className="flex max-w-xs flex-col items-center gap-3 border-2 border-foreground bg-background px-6 py-6 text-center shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+						<p className="font-body text-lg font-bold text-foreground">Map could not be loaded</p>
+						<p className="text-sm text-muted-foreground">
+							Weak connection or server unreachable.
+						</p>
+						<button
+							onClick={() => setRetryNonce((n) => n + 1)}
+							className="mt-1 inline-flex h-11 items-center bg-foreground px-6 font-mono text-xs font-bold uppercase tracking-widest text-background transition-colors hover:bg-foreground/90"
+						>
+							Try again
+						</button>
+					</div>
 				</div>
 			)}
 			<button
