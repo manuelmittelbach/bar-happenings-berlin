@@ -29,6 +29,7 @@ import {
   fetchStagedEvents,
   fetchApprovedEvents,
   approveStagedEvent,
+  autoApproveScrapedEvents,
   rejectStagedEvent,
   moveStagedEventToRecurring,
   deleteStagedEvent,
@@ -605,6 +606,45 @@ export default function AdminDashboard() {
     }
   };
 
+  // Bulk auto-approve for the Scraped tab: only rows whose bar has no other
+  // event on that same day get inserted as new. Rows that clash with an
+  // existing event are left in staging for manual review — never overwritten.
+  // Operates on currently-pending scraped rows only.
+  const handleAutoApproveScraped = async () => {
+    if (!user) return;
+    const pending = scrapedEvents.filter(s => s.status === "pending" && s.venueId);
+    if (pending.length === 0) {
+      toast.error("No pending scraped events to approve.");
+      return;
+    }
+    // Quick preview from cached live events (the function recomputes a fresh
+    // map for the actual writes).
+    let clashes = 0;
+    for (const s of pending) {
+      if ((liveEventsByVenue[s.venueId] ?? []).some(e => e.date === s.date)) clashes++;
+    }
+    const willApprove = pending.length - clashes;
+    if (!window.confirm(
+      `Auto-approve ${willApprove} new scraped event${willApprove === 1 ? "" : "s"}? `
+      + `${clashes} clash with an existing event (same bar, same day) and will be skipped.`,
+    )) return;
+
+    try {
+      const res = await autoApproveScrapedEvents(pending, user.id);
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success(`Auto-approved ${res.approved} new event${res.approved === 1 ? "" : "s"}`);
+      if (res.skipped.length > 0) {
+        toast(`${res.skipped.length} skipped (clash or incomplete) — review manually`);
+      }
+      loadScrapedEvents({ silent: true });
+      loadLiveEvents();
+      loadPendingEventCounts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Auto-approve failed.";
+      toast.error(message);
+    }
+  };
+
   const handleRejectStaged = async (staged: StagedEvent) => {
     if (!user) return;
     try {
@@ -1147,6 +1187,7 @@ export default function AdminDashboard() {
                 loadScrapedEvents({ silent: true });
                 loadPendingEventCounts();
               }}
+              onAutoApprove={handleAutoApproveScraped}
               emptyLabel="scraped"
             />
           )}
@@ -3075,6 +3116,7 @@ function StagedEventsList({
   onCancelOccurrence,
   onUpdateApplied,
   onCreateVenue,
+  onAutoApprove,
   allowOneTime,
   emptyLabel,
 }: {
@@ -3104,6 +3146,7 @@ function StagedEventsList({
   onCancelOccurrence?: (s: StagedEvent) => Promise<void>;
   onUpdateApplied?: () => void;
   onCreateVenue?: (s: StagedEvent, submission: SubmissionVenueData) => Promise<void>;
+  onAutoApprove?: () => void;
   allowOneTime?: boolean;
   emptyLabel: string;
 }) {
@@ -3134,6 +3177,15 @@ function StagedEventsList({
               title="Create new manual card"
             >
               <Plus className="h-4 w-4" /> New
+            </button>
+          )}
+          {onAutoApprove && scope === "scraped" && filter === "pending" && events.length > 0 && (
+            <button
+              onClick={onAutoApprove}
+              className="inline-flex items-center gap-1 h-10 px-3 text-xs font-medium border border-foreground bg-foreground text-background rounded-sm hover:opacity-90"
+              title="Approve all pending scraped events (overwrites same-day/same-bar live events)"
+            >
+              <Check className="h-4 w-4" /> Auto-approve
             </button>
           )}
         </div>
