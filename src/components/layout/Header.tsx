@@ -137,7 +137,7 @@ export default function Header() {
             backgroundColor: "hsl(var(--background))",
           }}
         >
-          <nav className="container flex flex-col py-2">
+          <nav className="container flex flex-col items-start py-2">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
