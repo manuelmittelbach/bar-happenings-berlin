@@ -20,8 +20,8 @@ export default function MapPage() {
     activeDate, setActiveDate,
   } = useFilterParams();
 
-  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
-  const { data: venuesData = [], isLoading: venuesLoading } = useVenues();
+  const { data: eventsData = [], isLoading: eventsLoading, refetch: refetchEvents } = useEvents();
+  const { data: venuesData = [], isLoading: venuesLoading, refetch: refetchVenues } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   // `venueMap` empty (venues still loading or fetch failed) silently drops
   // every event from the map layer in EventMap, since each event needs a
@@ -193,10 +193,32 @@ export default function MapPage() {
             though the badge says "19 events tonight", which reads as a
             bug rather than a loading state. */}
         {(stillLoading || venuesMissing) && (
-          <div className="absolute inset-0 z-[150] flex items-center justify-center bg-background/85 pointer-events-none">
-            <div className="font-mono text-xs uppercase tracking-wider text-foreground/70">
-              {venuesMissing ? "Venues unavailable — retry" : "Loading map…"}
-            </div>
+          <div className="absolute inset-0 z-[150] flex items-center justify-center bg-background/90 px-6 pointer-events-none">
+            {venuesMissing ? (
+              // Persistent error — editorial card with a real retry action.
+              <div className="pointer-events-auto flex max-w-xs flex-col items-center gap-3 border-2 border-foreground bg-background px-6 py-5 text-center shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+                <p className="font-body text-base font-bold text-foreground">
+                  Venues unavailable
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Couldn't load venue data. Check your connection and try again.
+                </p>
+                <button
+                  onClick={() => { refetchVenues(); refetchEvents(); }}
+                  className="mt-1 inline-flex h-10 items-center bg-foreground px-5 font-mono text-xs font-bold uppercase tracking-widest text-background transition-colors hover:bg-foreground/90"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              // Transient loading — full-contrast card with a spinner.
+              <div className="flex items-center gap-3 border-2 border-foreground bg-background px-5 py-3.5 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground">
+                  Loading map…
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
