@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Mail, MessageSquareText, Sparkles, Store } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Mail, MessageSquareText, Sparkles, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const topics = [
@@ -135,13 +135,6 @@ export default function Contact() {
       {/* ─── 2 · MAIN GRID — left intent · right form ──────────── */}
       <section className="border-b-2 border-foreground">
         <div className="container relative grid grid-cols-1 gap-12 px-4 py-16 md:grid-cols-[0.95fr_1.05fr] md:gap-0 md:py-20">
-          {/* Vertical 2px rule between intent + form on md+. Same
-              treatment ForBars / About use. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-12 bottom-12 hidden w-[2px] -translate-x-1/2 bg-foreground md:block"
-          />
-
           {/* ── LEFT — intent (collab CTA → chips → email) ──
               md:pt-2 nudges the eyebrow down so it sits on the same
               baseline as the right column's "What's this about?" label. */}
@@ -238,20 +231,6 @@ export default function Contact() {
 
           {/* ── RIGHT — form ── */}
           <div className="md:pl-10 lg:pl-14">
-            {/* Mobile-only heading — the left intent column is hidden on
-                small screens, so this big title introduces the form. */}
-            {submitState !== "sent" && (
-              <h2
-                className="heading-display mb-7 leading-[0.95] md:hidden"
-                style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
-              >
-                Reach{" "}
-                <span className="heading-editorial italic lowercase font-light tracking-tight">
-                  out
-                </span>
-                <span className="text-accent">.</span>
-              </h2>
-            )}
             {submitState === "sent" ? (
               <div className="flex h-full flex-col items-start justify-center border-2 border-foreground bg-card p-8 shadow-[8px_8px_0_0_#0f0f0f]">
                 <div className="mb-3 inline-flex h-10 w-10 items-center justify-center border-2 border-foreground bg-accent text-background">
@@ -288,10 +267,11 @@ export default function Contact() {
                 <label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
                   What's this about?
                 </label>
+                <div className="relative">
                 <select
                   value={topicId}
                   onChange={(e) => setTopicId(e.target.value as TopicId | "")}
-                  className={`h-11 w-full border-2 border-foreground bg-background px-3 font-serif text-base outline-none transition-colors focus:bg-card ${
+                  className={`h-11 w-full appearance-none rounded-none border-2 border-foreground bg-background px-3 pr-10 font-serif text-base outline-none transition-colors focus:bg-card ${
                     topicId === "" ? "text-foreground/45" : "text-foreground"
                   }`}
                 >
@@ -307,6 +287,13 @@ export default function Contact() {
                     <option value="instagram">Help run Instagram / TikTok</option>
                   )}
                 </select>
+                {/* Custom arrow — appearance-none drops the native one
+                    (and its rounded mobile chrome), so we draw our own. */}
+                <ChevronDown
+                  aria-hidden
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/55"
+                />
+                </div>
               </div>
 
               <div className="space-y-1.5">
