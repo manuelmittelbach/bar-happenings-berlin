@@ -1580,6 +1580,67 @@ export async function approveStagedEvent(
   if (deleteError) throw deleteError;
 }
 
+export interface AutoApproveResult {
+  approved: number; // inserted as new live events
+  skipped: { title: string; reason: string }[];
+}
+
+// Bulk-approves pending scraped staging rows without per-card review, but ONLY
+// the unambiguous ones: a row is inserted as a new live event only when its bar
+// has no other event on that same day. Any row that clashes with an existing
+// event (same bar, same day) is left untouched in staging for manual review —
+// nothing is ever overwritten. Scraped-scope rows are always non-recurring, so
+// no series handling is needed. One failing row never aborts the batch.
+export async function autoApproveScrapedEvents(
+  staged: StagedEvent[],
+  adminUserId: string,
+): Promise<AutoApproveResult> {
+  // Fresh map (today-onward, approved + canceled) so the clash check is correct
+  // even if the dashboard's cached liveEventsByVenue is stale.
+  const liveByVenue = await fetchLiveEventsByVenue();
+  const result: AutoApproveResult = { approved: 0, skipped: [] };
+
+  // Occupied (bar|day) slots. Seeded from every existing live event — approved
+  // OR canceled both count as "the bar already has an event that day" — then
+  // extended as we approve, so two scraped rows for the same new slot can't
+  // both land.
+  const claimedSlots = new Set<string>();
+  for (const [venueId, events] of Object.entries(liveByVenue)) {
+    for (const e of events) claimedSlots.add(`${venueId}|${e.date}`);
+  }
+
+  for (const s of staged) {
+    const label = s.title || "(untitled)";
+    try {
+      if (!s.venueId) {
+        result.skipped.push({ title: label, reason: "no venue linked" });
+        continue;
+      }
+      if (!s.title.trim() || !s.date || !s.category) {
+        result.skipped.push({ title: label, reason: "missing title, date or category" });
+        continue;
+      }
+
+      const slot = `${s.venueId}|${s.date}`;
+      if (claimedSlots.has(slot)) {
+        // The bar already has an event that day (live, or another row approved
+        // earlier in this run) — skip, never overwrite.
+        result.skipped.push({ title: label, reason: "another event already exists in this bar that day" });
+        continue;
+      }
+
+      await approveStagedEvent(s, adminUserId);
+      claimedSlots.add(slot);
+      result.approved++;
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "approve failed";
+      result.skipped.push({ title: label, reason });
+    }
+  }
+
+  return result;
+}
+
 // Reject hard-deletes the row from staging — no soft-state. The scraper's
 // dedup is keyed on the live `events` table + remaining staging rows; once
 // gone, a subsequent scrape may re-stage the same event (which is fine, the
