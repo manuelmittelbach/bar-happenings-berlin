@@ -54,12 +54,16 @@ export default function Header() {
     icon,
     ariaLabel,
     onClick,
+    bold,
   }: {
     label?: string;
     path: string;
     icon?: React.ReactNode;
     ariaLabel?: string;
     onClick?: () => void;
+    /* When set (mobile dropdown), the active item is shown bold instead
+       of with an underline — the burger menu rows read cleaner that way. */
+    bold?: boolean;
   }) => {
     const active = isActive(path);
     return (
@@ -72,12 +76,16 @@ export default function Header() {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 12,
-          fontWeight: 400,
+          fontWeight: bold && active ? 700 : 400,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
           color: active ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
           textDecoration: "none",
-          borderBottom: active ? "2px solid hsl(var(--foreground))" : "2px solid transparent",
+          borderBottom: bold
+            ? "none"
+            : active
+              ? "2px solid hsl(var(--foreground))"
+              : "2px solid transparent",
         }}
       >
         {icon}
@@ -143,6 +151,7 @@ export default function Header() {
                 key={item.path}
                 label={item.label}
                 path={item.path}
+                bold
                 onClick={() => setMenuOpen(false)}
               />
             ))}
@@ -151,6 +160,7 @@ export default function Header() {
                 path="/signin"
                 icon={<User className="h-4 w-4" />}
                 label="Sign in"
+                bold
                 onClick={() => setMenuOpen(false)}
               />
             )}
@@ -159,6 +169,7 @@ export default function Header() {
                 path="/profile"
                 icon={<User className="h-4 w-4" />}
                 ariaLabel="Profile"
+                bold
                 onClick={() => setMenuOpen(false)}
               />
             )}
