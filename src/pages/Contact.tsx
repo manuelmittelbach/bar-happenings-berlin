@@ -19,6 +19,11 @@ type SubmitState = "idle" | "sending" | "sent" | "error";
 
 const EMAIL = "hello@insidebars.co";
 
+// Lightweight format check — catches typos like "name@" or "foo.com"
+// before we hit the edge function, so the user gets a clear message
+// instead of a generic send error.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Contact() {
   const [topicId, setTopicId] = useState<TopicId | "">("");
   const [name, setName] = useState("");
@@ -40,6 +45,11 @@ export default function Contact() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
+    if (!EMAIL_RE.test(email.trim())) {
+      setErrorMsg("That email address doesn't look right — please check it and try again.");
+      setSubmitState("error");
+      return;
+    }
     setSubmitState("sending");
     setErrorMsg("");
     try {
@@ -135,7 +145,7 @@ export default function Contact() {
           {/* ── LEFT — intent (collab CTA → chips → email) ──
               md:pt-2 nudges the eyebrow down so it sits on the same
               baseline as the right column's "What's this about?" label. */}
-          <div className="md:pr-10 lg:pr-14 md:pt-2">
+          <div className="hidden md:block md:pr-10 lg:pr-14 md:pt-2">
             <div className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">
               Reach out if you want to
             </div>
