@@ -290,6 +290,10 @@ export default function Contact() {
             ) : (
             <form
               onSubmit={handleSubmit}
+              // Skip the browser's native validation bubbles ("Please
+              // enter an email address") so our own EMAIL_RE check owns
+              // the messaging.
+              noValidate
               className="space-y-5"
             >
               {/* Subject — mirrors the active chip. Editable so power
