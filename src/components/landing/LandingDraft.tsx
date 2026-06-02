@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Apple, ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { /* Apple, ArrowUpRight, Play, */ ArrowRight } from "lucide-react"; // Apple/ArrowUpRight/Play: uncomment with store links
 import { useEvents, useCategories } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
@@ -278,6 +278,7 @@ export default function LandingDraft() {
             {/* tertiary — store links. Hrefs are placeholders ("#") until
                 the App Store and Google Play listings go live; both anchors
                 stay clickable-looking so the row reads as real CTAs. */}
+            {/* TODO: uncomment once App Store + Google Play listings are live
             <motion.div
               className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-foreground/65 md:mt-3"
               initial={{ opacity: 0 }}
@@ -313,6 +314,7 @@ export default function LandingDraft() {
                 <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </a>
             </motion.div>
+            */}
 
             {/* ── Mobile-only preview card ──
                 Single cycling event card that anchors the bottom half of
