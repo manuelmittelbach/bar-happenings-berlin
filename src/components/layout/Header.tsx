@@ -159,7 +159,7 @@ export default function Header() {
               <NavLink
                 path="/signin"
                 icon={<User className="h-4 w-4" />}
-                label="Sign in"
+                ariaLabel="Sign in"
                 bold
                 onClick={() => setMenuOpen(false)}
               />
