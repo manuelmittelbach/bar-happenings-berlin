@@ -238,6 +238,20 @@ export default function Contact() {
 
           {/* ── RIGHT — form ── */}
           <div className="md:pl-10 lg:pl-14">
+            {/* Mobile-only heading — the left intent column is hidden on
+                small screens, so this big title introduces the form. */}
+            {submitState !== "sent" && (
+              <h2
+                className="heading-display mb-7 leading-[0.95] md:hidden"
+                style={{ fontSize: "clamp(36px, 5.6vw, 78px)" }}
+              >
+                Reach{" "}
+                <span className="heading-editorial italic lowercase font-light tracking-tight">
+                  out
+                </span>
+                <span className="text-accent">.</span>
+              </h2>
+            )}
             {submitState === "sent" ? (
               <div className="flex h-full flex-col items-start justify-center border-2 border-foreground bg-card p-8 shadow-[8px_8px_0_0_#0f0f0f]">
                 <div className="mb-3 inline-flex h-10 w-10 items-center justify-center border-2 border-foreground bg-accent text-background">
