@@ -20,7 +20,6 @@ Env (loaded from scripts/.env):
 from __future__ import annotations
 
 import argparse
-import io
 import os
 import sys
 import time
@@ -32,25 +31,21 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from PIL import Image
 from supabase import create_client
+
+# Generic image fetch/normalize lives in image_utils so this scraper and the
+# event-cover scraper can't drift on size caps, UA, or JPEG settings.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from image_utils import (  # noqa: E402
+    USER_AGENT,
+    fetch_image,
+    normalize_to_jpeg,
+)
 
 BUCKET = "venue-images"
 STORAGE_PREFIX = "og"
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
 HTML_TIMEOUT = 15
-IMG_TIMEOUT = 15
 MAX_HTML_BYTES = 1_000_000
-MAX_IMG_BYTES = 8_000_000
-MIN_W, MIN_H = 400, 250
-# Tuned for /bars card thumbnails (~300-400px display width). 900px + q=75
-# produces ~50-100 KB files vs ~200-500 KB at 1600/85, with no perceptible
-# quality drop at card sizes.
-TARGET_LONG_SIDE = 900
-JPEG_QUALITY = 75
 RATE_LIMIT_SECONDS = 1.0
 
 
@@ -160,59 +155,6 @@ def pick_image_url(html: str, base_url: str) -> Optional[str]:
         return urljoin(base_url, best.strip())
 
     return None
-
-
-def fetch_image(url: str) -> Optional[bytes]:
-    """GET image bytes, capped at MAX_IMG_BYTES."""
-    try:
-        r = requests.get(
-            url,
-            headers={"User-Agent": USER_AGENT, "Accept": "image/*"},
-            timeout=IMG_TIMEOUT,
-            allow_redirects=True,
-            stream=True,
-        )
-        r.raise_for_status()
-        ct = r.headers.get("content-type", "").lower()
-        if ct.startswith("image/svg") or "gif" in ct:
-            return None
-        if ct and not ct.startswith("image/"):
-            return None
-        buf = io.BytesIO()
-        total = 0
-        for chunk in r.iter_content(64 * 1024):
-            if not chunk:
-                continue
-            total += len(chunk)
-            if total > MAX_IMG_BYTES:
-                return None
-            buf.write(chunk)
-        return buf.getvalue()
-    except (requests.RequestException, OSError):
-        return None
-
-
-def normalize_to_jpeg(raw: bytes) -> Optional[bytes]:
-    """Decode, reject if too small, resize to TARGET_LONG_SIDE, re-encode JPEG."""
-    try:
-        im = Image.open(io.BytesIO(raw))
-        im.load()
-    except Exception:
-        return None
-    if im.width < MIN_W or im.height < MIN_H:
-        return None
-    if im.mode != "RGB":
-        im = im.convert("RGB")
-    long_side = max(im.width, im.height)
-    if long_side > TARGET_LONG_SIDE:
-        scale = TARGET_LONG_SIDE / long_side
-        im = im.resize(
-            (int(im.width * scale), int(im.height * scale)),
-            Image.LANCZOS,
-        )
-    out = io.BytesIO()
-    im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
-    return out.getvalue()
 
 
 def process_venue(venue: dict, sb, *, dry_run: bool) -> Outcome:

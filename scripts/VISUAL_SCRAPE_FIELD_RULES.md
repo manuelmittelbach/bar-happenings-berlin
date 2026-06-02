@@ -1,6 +1,6 @@
 # Visual Scrape — Per-Venue Manual (procedure + field rules)
 
-<!-- last-updated: 2026-06-02 (Step 2: replaced fallback ladder with mandatory checklist — all four sources must be checked before concluding zero events; added venue-specific notes for Peppi Guggenheim and Trude Ruth und Goldammer) -->
+<!-- last-updated: 2026-06-02 (added optional image_source_url field — agent captures an event cover URL (og:image / largest content img) from the detail page; importer rehosts it into the event-images bucket and sets staging.image. Step 2 checklist + per-venue notes unchanged) -->
 
 Read by each **venue sub-agent** (referenced from the sub-agent prompt template
 in `scripts/VISUAL_SCRAPE_WORKFLOW.md`). It is everything one agent needs to
@@ -127,7 +127,8 @@ events = [
     "language": "English",   # or None
     "description": "verbatim page text",  # or None
     "entry_info": "5 €",     # or None
-    "source_url": "https://venue.example/path/to/this-event"
+    "source_url": "https://venue.example/path/to/this-event",
+    "image_source_url": "https://venue.example/poster.jpg"  # or None
   }
 ]
 with open(f'/tmp/visual_scrape_{venue_id}.json', 'w', encoding='utf-8') as f:
@@ -153,8 +154,12 @@ existing pending staging, and inserts into `venue_events_staging` with
 ```
 Done. {new} new + {update} update inserted, {unchanged} unchanged,
 {recurring} covered-by-recurring, {staged} already-staged,
-{window} out-of-window, {invalid} invalid, {insert-error} insert-error.
+{window} out-of-window, {invalid} invalid, {insert-error} insert-error,
+{cover-image} cover-image.
 ```
+`cover-image` = how many inserted rows got a rehosted cover from
+`image_source_url`. Purely informational — a 0 here is fine (most events have no
+usable cover), never a STOP signal.
 `invalid` = rows skipped before insert (missing required field) — benign.
 `insert-error` = a row that reached the DB and the insert **failed** — this
 is the STOP signal and is counted separately so it can never hide inside the
@@ -316,6 +321,57 @@ The actual URL of the event's detail page that you navigated to. NEVER invent
 a URL — only use one Playwright actually loaded. If the event was only on the
 overview page (no detail page exists), use the venue's `website_events` URL
 as fallback.
+
+### `image_source_url`
+An optional cover image for the event. You only supply the **URL** — the
+importer downloads it, normalizes it, and rehosts it into the `event-images`
+bucket. Never download or upload it yourself.
+
+**Strong bias to `null`.** Set it only when an image is clearly *this event's*
+poster/cover. A site logo, header banner, or generic venue photo is wrong — leave
+`null`.
+
+On the event's detail page (already open in Playwright), pick the best candidate
+with one `browser_evaluate` call, in this order:
+
+1. **Social meta** — `document.querySelector('meta[property="og:image"]')` or
+   `meta[name="twitter:image"]`. Use its `content` if present. This is usually
+   the event-specific share image and is the preferred source.
+2. **Largest content `<img>`** — if there's no usable meta image, scan
+   `document.querySelectorAll('img')` and take the one with the largest rendered
+   area (`naturalWidth * naturalHeight`, or bounding-box area), **excluding**
+   anything that looks like chrome: skip when `width`/`height` < 200px, or when
+   the `src`/`alt`/`class` contains `logo`, `icon`, `favicon`, `sprite`,
+   `avatar`, or `header`.
+
+Rules:
+- Return an **absolute** URL (resolve against the page if the DOM gives a
+  relative path). Only use a URL that actually appeared in the DOM — never invent
+  one.
+- **Skip entirely for the monthly-program-image venues** (Jatz Bar, Peppi
+  Guggenheim): their single image is a whole-month program grid, not a per-event
+  cover — leave `image_source_url` null for every event there.
+- A bad pick is low-cost: the admin reviews a thumbnail in the Scraped tab and
+  can reject it. But when in doubt, prefer `null` over a wrong image.
+
+Example `browser_evaluate` you can adapt:
+
+```js
+() => {
+  const meta = document.querySelector('meta[property="og:image"]')
+    || document.querySelector('meta[name="twitter:image"]');
+  if (meta?.content) return new URL(meta.content, location.href).href;
+  let best = null, bestArea = 0;
+  for (const img of document.querySelectorAll('img')) {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    const s = `${img.src} ${img.alt} ${img.className}`.toLowerCase();
+    if (w < 200 || h < 200) continue;
+    if (/logo|icon|favicon|sprite|avatar|header/.test(s)) continue;
+    if (w * h > bestArea) { bestArea = w * h; best = img.src; }
+  }
+  return best ? new URL(best, location.href).href : null;
+}
+```
 
 ## Rules & constraints
 

@@ -25,6 +25,10 @@ JSON format — array of objects, each with these fields:
     description   (string or null)
     entry_info    ("Free" | "Donation" | "X €" | "X,50 €" | free-text ≤80 chars | null)
     source_url    (string, the actual detail-page URL — never invented)
+    image_source_url (string or null) — a cover image URL seen in the detail
+                                        page DOM. Rehosted into the event-images
+                                        bucket before insert; best-effort, a
+                                        failure just leaves image null.
 
 Inserts with `is_manual=false` so events appear in the "Scraped Events" tab.
 """
@@ -41,6 +45,7 @@ from supabase import create_client
 # Reuse the existing normalizers + dedup logic from scrape_helpers so this
 # helper can't drift out of sync with what the nightly auto-scraper produces.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from event_image import ingest_event_image  # noqa: E402
 from scrape_helpers import (  # noqa: E402
     CATEGORIES,
     _trim_time,
@@ -120,6 +125,7 @@ def main():
     skipped_unchanged = skipped_recurring = 0
     skipped_staged = skipped_window = skipped_invalid = 0
     insert_errors = 0
+    images_ingested = 0
     for ev in events:
         title = (ev.get("title") or "").strip()
         date_iso = ev.get("date") or ""
@@ -177,6 +183,17 @@ def main():
                 continue
             replaces_id = live_match.get("id")
 
+        # Rehost a scraped cover image into the event-images bucket. Best-effort:
+        # any failure leaves image null and the event still inserts. Only for
+        # NEW rows — update rows (replaces_id set) apply via the diff modal,
+        # which doesn't carry image, so a cover there would never reach the live
+        # event and would only show a misleading thumbnail. Skip the download.
+        image_url = None
+        if replaces_id is None:
+            image_url = ingest_event_image(client, ev.get("image_source_url"))
+            if image_url:
+                images_ingested += 1
+
         row = {
             "venue_id":    venue_id,
             "title":       title,
@@ -189,6 +206,8 @@ def main():
             "description": ev.get("description") or "",
             "entry_info":  normalize_entry_info(ev.get("entry_info")),
             "source_url":  source_url,
+            "image":       image_url,
+            "image_position": "50% 50%" if image_url else None,
             "is_manual":   False,
             "replaces_event_id": replaces_id,
         }
@@ -214,7 +233,8 @@ def main():
         f"{skipped_staged} already-staged, "
         f"{skipped_window} out-of-window, "
         f"{skipped_invalid} invalid, "
-        f"{insert_errors} insert-error."
+        f"{insert_errors} insert-error, "
+        f"{images_ingested} cover-image."
     )
 
 
