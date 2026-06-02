@@ -2243,6 +2243,18 @@ function StagedEventCard({
           </button>
         </div>
       )}
+      {/* Cover image (scraped or user-supplied). Read-only QA thumbnail so the
+          admin can spot a wrong scraped pick before approving; covers carry
+          into events.image on approve. Hidden when there's no image. */}
+      {staged.image && (
+        <img
+          src={staged.image}
+          alt=""
+          loading="lazy"
+          style={{ objectPosition: staged.imagePosition ?? "50% 50%" }}
+          className="w-full h-28 object-cover rounded-sm border border-border"
+        />
+      )}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
           {canEditManualFields ? (
