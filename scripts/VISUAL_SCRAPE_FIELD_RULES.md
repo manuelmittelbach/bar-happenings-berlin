@@ -1,6 +1,6 @@
 # Visual Scrape — Per-Venue Manual (procedure + field rules)
 
-<!-- last-updated: 2026-06-02 (added optional image_source_url field — agent captures an event cover URL (og:image / largest content img) from the detail page; importer rehosts it into the event-images bucket and sets staging.image. Step 2 checklist + per-venue notes unchanged) -->
+<!-- last-updated: 2026-06-02 (clarified that staged_keys is a coarse (date, normalized_title) pre-filter to save detail fetches, NOT the authoritative dedup — the importer is the gatekeeper and dedups on (date, start_time); fixed "all four"→"all three" checklist count) -->
 
 Read by each **venue sub-agent** (referenced from the sub-agent prompt template
 in `scripts/VISUAL_SCRAPE_WORKFLOW.md`). It is everything one agent needs to
@@ -42,7 +42,7 @@ Tips that worked well:
   this **mandatory checklist** — you must attempt **every item** before
   concluding zero events. Do NOT stop early because an earlier item gave you a
   "strong" no-events signal (e.g. a near-empty sitemap or an under-construction
-  notice). Only after all four come up empty → Step 2b (placeholder).
+  notice). Only after all three come up empty → Step 2b (placeholder).
 
   - [ ] **Still loading?** If the text is only chrome (header, nav, "Loading…",
     cookie banner), the page may render its events via JS after navigation.
@@ -331,28 +331,26 @@ bucket. Never download or upload it yourself.
 poster/cover. A site logo, header banner, or generic venue photo is wrong — leave
 `null`.
 
-On the event's detail page (already open in Playwright), pick the best candidate
-with one `browser_evaluate` call, in this order:
+Pick the best candidate with one `browser_evaluate` call, in this order:
 
 1. **Social meta** — `document.querySelector('meta[property="og:image"]')` or
-   `meta[name="twitter:image"]`. Use its `content` if present. This is usually
-   the event-specific share image and is the preferred source.
-2. **Largest content `<img>`** — if there's no usable meta image, scan
-   `document.querySelectorAll('img')` and take the one with the largest rendered
-   area (`naturalWidth * naturalHeight`, or bounding-box area), **excluding**
-   anything that looks like chrome: skip when `width`/`height` < 200px, or when
-   the `src`/`alt`/`class` contains `logo`, `icon`, `favicon`, `sprite`,
-   `avatar`, or `header`.
+   `meta[name="twitter:image"]`. Use its `content` if present.
+2. **Largest content `<img>`** — scan `document.querySelectorAll('img')` and
+   take the one with the largest rendered area (`naturalWidth * naturalHeight`),
+   **excluding** chrome: skip when `width`/`height` < 200px, or when
+   `src`/`alt`/`class` contains `logo`, `icon`, `favicon`, `sprite`, `avatar`,
+   or `header`.
+
+If the venue has **no detail pages** (all events inline on the listing page,
+e.g. Z-Bar), scope the `<img>` lookup to each event's own DOM container element
+(the card/`<li>`/wrapper that holds that event's title and date) instead of the
+whole page. Include `image_source_url` in the same `browser_evaluate` call that
+extracts titles/dates.
 
 Rules:
-- Return an **absolute** URL (resolve against the page if the DOM gives a
-  relative path). Only use a URL that actually appeared in the DOM — never invent
-  one.
-- **Skip entirely for the monthly-program-image venues** (Jatz Bar, Peppi
-  Guggenheim): their single image is a whole-month program grid, not a per-event
-  cover — leave `image_source_url` null for every event there.
-- A bad pick is low-cost: the admin reviews a thumbnail in the Scraped tab and
-  can reject it. But when in doubt, prefer `null` over a wrong image.
+- Return an **absolute** URL. Only use a URL that actually appeared in the DOM.
+- A bad pick is low-cost: the admin reviews it in the Scraped tab. But when in
+  doubt, prefer `null` over a wrong image.
 
 Example `browser_evaluate` you can adapt:
 
@@ -377,7 +375,10 @@ Example `browser_evaluate` you can adapt:
 
 - 14-day window `[today, today + 14 days]` inclusive; never include past events,
   even if listed prominently.
-- Title-based dedup against `staged_keys_by_venue` (existing pending staging).
+- `staged_keys_by_venue` is a coarse `(date, normalized_title)` pre-filter to
+  skip detail fetches — **not** the real dedup. The importer is the gatekeeper
+  and dedups on `(date, start_time)`. When in doubt, don't pre-skip; let the
+  importer decide.
 - Never invent titles, dates, times, descriptions, or URLs — every value comes
   from the page.
 - Write via the importer script (Step 3), not raw SQL, so normalization stays
