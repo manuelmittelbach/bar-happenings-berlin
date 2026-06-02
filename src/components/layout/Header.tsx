@@ -100,7 +100,7 @@ export default function Header() {
           <Wordmark onClick={goHome} />
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center ml-auto" style={{ gap: 28 }}>
+          <nav className="hidden min-[480px]:flex items-center ml-auto" style={{ gap: 28 }}>
             {navItems.map((item) => (
               <NavLink key={item.path} label={item.label} path={item.path} />
             ))}
@@ -114,7 +114,7 @@ export default function Header() {
 
           {/* Mobile burger button */}
           <button
-            className="lg:hidden ml-auto flex items-center justify-center"
+            className="min-[480px]:hidden ml-auto flex items-center justify-center"
             style={{ width: 36, height: 36 }}
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -131,7 +131,7 @@ export default function Header() {
       {/* Mobile dropdown — z-[10000] sits above the map's z-[9999] tiles */}
       {menuOpen && (
         <div
-          className="lg:hidden fixed inset-x-0 z-[10000] border-b-2 border-foreground"
+          className="min-[480px]:hidden fixed inset-x-0 z-[10000] border-b-2 border-foreground"
           style={{
             top: `calc(56px + env(safe-area-inset-top))`,
             backgroundColor: "hsl(var(--background))",
