@@ -1433,13 +1433,15 @@ export async function duplicateStagedEvent(
 
 export async function updateStagedEventManualFields(
   stagedId: string,
-  patch: { venueId?: string; sourceUrl?: string | null; recurrence?: string; recurrenceUntil?: string | null },
+  patch: { venueId?: string; sourceUrl?: string | null; recurrence?: string; recurrenceUntil?: string | null; image?: string | null; imagePosition?: string },
 ): Promise<void> {
   const update: TablesUpdate<"venue_events_staging"> = {};
   if (patch.venueId !== undefined) update.venue_id = patch.venueId;
   if (patch.sourceUrl !== undefined) update.source_url = cleanUrl(patch.sourceUrl) || null;
   if (patch.recurrence !== undefined) update.recurrence = patch.recurrence;
   if (patch.recurrenceUntil !== undefined) update.recurrence_until = patch.recurrenceUntil;
+  if (patch.image !== undefined) update.image = patch.image;
+  if (patch.imagePosition !== undefined) update.image_position = patch.imagePosition;
   if (Object.keys(update).length === 0) return;
   const { error } = await supabase
     .from("venue_events_staging")
