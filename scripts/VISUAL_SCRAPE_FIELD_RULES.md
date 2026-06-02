@@ -1,6 +1,6 @@
 # Visual Scrape — Per-Venue Manual (procedure + field rules)
 
-<!-- last-updated: 2026-05-29 (Step 2: low-text is no longer a skip signal — parse visible text first, then wait/iframe/image fallback ladder; documented separate insert-error count in importer summary; corrected admin tab names to "Scraped Events"/"Manual Events") -->
+<!-- last-updated: 2026-06-02 (Step 2: replaced fallback ladder with mandatory checklist — all four sources must be checked before concluding zero events; added venue-specific notes for Peppi Guggenheim and Trude Ruth und Goldammer) -->
 
 Read by each **venue sub-agent** (referenced from the sub-agent prompt template
 in `scripts/VISUAL_SCRAPE_WORKFLOW.md`). It is everything one agent needs to
@@ -38,26 +38,31 @@ Tips that worked well:
   (e.g. a one-line list "Fri 21:00 Jazz · Sat 20:00 Quiz" is ~40 chars but IS
   the events). So your **first move is ALWAYS to parse whatever `innerText` you
   have** for events — never skip or placeholder just because the text is short.
-  Only if **no** event-related content is recognizable in the visible text,
-  walk this fallback ladder in order and stop at the first that yields events:
-  1. **Still loading?** If the text is only chrome (header, nav, "Loading…",
-     cookie banner), the page may render its events via JS after navigation.
-     Call `mcp__playwright__browser_wait_for` (short time wait, ~2 s) and re-read
-     `innerText` **once** before deciding it's empty.
-  2. **iFrame**: `document.querySelectorAll('iframe')` — if present, navigate
-     directly to the `src` URL instead (e.g. Donau115 embeds a Google Sheet).
-  3. **Event image**: `document.querySelectorAll('img')` — if an image with an
-     event-related `alt` or filename (e.g. "Mai Events.png") is found, use
-     `mcp__playwright__browser_navigate` to open the image URL directly, then
-     `mcp__playwright__browser_take_screenshot` and read the screenshot with the
-     `Read` tool to extract events visually (e.g. Jatz Bar publishes a monthly
-     PNG). Use the venue's `website_events` URL as `source_url` in this case.
-     **Always save the screenshot under `/tmp`** (e.g.
-     `filename: /tmp/visual_scrape_shot_{venue_id}.png`) — never the default
-     location, which dumps PNGs into the repo root. Step 4 cleans `/tmp` shots
-     up; stray repo-root PNGs would otherwise show up as untracked files.
+  If no event-related content is recognizable in the visible text, work through
+  this **mandatory checklist** — you must attempt **every item** before
+  concluding zero events. Do NOT stop early because an earlier item gave you a
+  "strong" no-events signal (e.g. a near-empty sitemap or an under-construction
+  notice). Only after all four come up empty → Step 2b (placeholder).
 
-  Only after **all** of these come up empty → Step 2b (placeholder).
+  - [ ] **Still loading?** If the text is only chrome (header, nav, "Loading…",
+    cookie banner), the page may render its events via JS after navigation.
+    Call `mcp__playwright__browser_wait_for` (short time wait, ~2 s) and re-read
+    `innerText` **once**.
+  - [ ] **iFrame**: run `document.querySelectorAll('iframe')` — if present,
+    navigate directly to the `src` URL (e.g. Donau115 embeds a Google Sheet,
+    Trude Ruth und Goldammer uses `programm2.ruthgoldammer.de`).
+  - [ ] **Event image**: run `document.querySelectorAll('img')` — if an image
+    with an event-related `alt` or filename (e.g. "Mai Events.png", "Programm")
+    is found, navigate directly to the image URL, then
+    `mcp__playwright__browser_take_screenshot` and read the screenshot with the
+    `Read` tool to extract events visually (e.g. Jatz Bar and Peppi Guggenheim
+    publish monthly program images). Use the venue's `website_events` URL as
+    `source_url` in this case. **Always save the screenshot under `/tmp`** (e.g.
+    `filename: /tmp/visual_scrape_shot_{venue_id}.png`) — never the default
+    location, which dumps PNGs into the repo root. Step 4 cleans `/tmp` shots
+    up; stray repo-root PNGs would otherwise show up as untracked files.
+
+  Only after **all three checks** come up empty → Step 2b (placeholder).
 
 ## Step 2b — Placeholder when zero events extracted
 
