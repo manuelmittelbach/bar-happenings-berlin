@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type ChangeEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
@@ -37,6 +37,7 @@ import {
   createBlankManualStagedEvent,
   duplicateStagedEvent,
   updateStagedEventManualFields,
+  uploadEventImage,
   updateApprovedEvent,
   deleteApprovedEvent,
   cancelEvent,
@@ -780,6 +781,35 @@ export default function AdminDashboard() {
     }
   };
 
+  // Replace (file) or remove (null) a staging row's cover image. Replace uploads
+  // to the event-images bucket under the admin's id, then persists the URL;
+  // remove just clears the column. The image carries into events.image on
+  // approve, so editing it here is the pre-approval QA step.
+  const handleManualImageChange = async (stagedId: string, file: File | null) => {
+    try {
+      let image: string | null = null;
+      let imagePosition: string | undefined;
+      if (file) {
+        image = await uploadEventImage(file, user.id);
+        imagePosition = "50% 50%";
+      }
+      await updateStagedEventManualFields(stagedId, { image, imagePosition });
+      const apply = (prev: StagedEvent[]) =>
+        prev.map(s =>
+          s.id === stagedId
+            ? { ...s, image, ...(imagePosition ? { imagePosition } : {}) }
+            : s,
+        );
+      setScrapedEvents(apply);
+      setManualEvents(apply);
+      setRecurringEvents(apply);
+      setUserEvents(apply);
+      toast.success(file ? "Image updated" : "Image removed");
+    } catch {
+      toast.error("Failed to update image.");
+    }
+  };
+
   const handleRecurrenceChange = async (
     stagedId: string,
     patch: { recurrence?: string; recurrenceUntil?: string | null },
@@ -1052,6 +1082,7 @@ export default function AdminDashboard() {
               onReject={handleRejectStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
@@ -1107,6 +1138,7 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onMoveToRecurring={handleMoveScrapedToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
@@ -1137,6 +1169,7 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onMoveToRecurring={handleMoveManualToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
@@ -1165,6 +1198,7 @@ export default function AdminDashboard() {
               onDuplicate={handleDuplicateStaged}
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
+              onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
@@ -1799,6 +1833,7 @@ function StagedEventCard({
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
+  onImageChange,
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
@@ -1820,6 +1855,9 @@ function StagedEventCard({
   onDuplicate?: (edits: StagedEventEdits) => Promise<void>;
   onVenueChange: (venueId: string) => Promise<void>;
   onSourceUrlChange: (url: string) => Promise<void>;
+  // Replace (File) or remove (null) the staged cover image. The thumbnail above
+  // the card mirrors what the event-detail hero will look like on approve.
+  onImageChange: (file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
@@ -1861,6 +1899,29 @@ function StagedEventCard({
   const [confirmingClash, setConfirmingClash] = useState(false);
   const [confirmingNoStartTime, setConfirmingNoStartTime] = useState(false);
   const [datesExpanded, setDatesExpanded] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file later
+    if (!file) return;
+    setImageBusy(true);
+    try {
+      await onImageChange(file);
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
+  const handleImageRemove = async () => {
+    setImageBusy(true);
+    try {
+      await onImageChange(null);
+    } finally {
+      setImageBusy(false);
+    }
+  };
 
   // Re-sync local state when the underlying staged row changes from outside
   // (e.g., after a save the parent updates the list — without this the
@@ -2243,17 +2304,57 @@ function StagedEventCard({
           </button>
         </div>
       )}
-      {/* Cover image (scraped or user-supplied). Read-only QA thumbnail so the
-          admin can spot a wrong scraped pick before approving; covers carry
-          into events.image on approve. Hidden when there's no image. */}
-      {staged.image && (
-        <img
-          src={staged.image}
-          alt=""
-          loading="lazy"
-          style={{ objectPosition: staged.imagePosition ?? "50% 50%" }}
-          className="w-full h-28 object-cover rounded-sm border border-border"
-        />
+      {/* Cover image (scraped or user-supplied). Thumbnail uses the same 3:2
+          frame the event-detail hero will use on approve, just smaller — so the
+          admin sees a faithful preview and can remove / replace a wrong scraped
+          pick (or add one when none was scraped). Covers carry into
+          events.image on approve. Edit controls show only for real staging rows
+          (pending): an "approved" card wraps an `events` row whose id is NOT a
+          staging id, so editing here would target the wrong table — those edit
+          their cover via the event detail page instead. */}
+      {(staged.image || !isApproved) && (
+        <div className="flex items-start gap-3">
+          {staged.image ? (
+            <div className="relative w-40 aspect-[3/2] md:aspect-[16/9] flex-shrink-0 overflow-hidden rounded-sm border border-border">
+              <img
+                src={staged.image}
+                alt=""
+                loading="lazy"
+                style={{ objectPosition: staged.imagePosition ?? "50% 50%" }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+          {!isApproved && (
+            <div className="flex flex-col gap-1.5">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageFile}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={imageBusy}
+                className="inline-flex items-center gap-1 h-7 px-2.5 border border-border rounded-sm text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {imageBusy ? "Working…" : staged.image ? "Replace image" : "Add image"}
+              </button>
+              {staged.image && (
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  disabled={imageBusy}
+                  className="inline-flex items-center gap-1 h-7 px-2.5 border border-destructive/40 text-destructive rounded-sm text-xs font-medium hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" /> Remove
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
@@ -2966,6 +3067,7 @@ function StagedEventsList({
   onDuplicate,
   onVenueChange,
   onSourceUrlChange,
+  onImageChange,
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
@@ -2994,6 +3096,7 @@ function StagedEventsList({
   onDuplicate?: (s: StagedEvent, edits: StagedEventEdits, scope: "scraped" | "manual" | "recurring") => Promise<void>;
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
+  onImageChange: (id: string, file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
@@ -3077,6 +3180,7 @@ function StagedEventsList({
               onDuplicate={onDuplicate && scope !== "user" ? (edits) => onDuplicate(staged, edits, scope) : undefined}
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
+              onImageChange={(file) => onImageChange(staged.id, file)}
               onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
