@@ -86,7 +86,7 @@ export default function Contact() {
   return (
     <div className="flex flex-1 flex-col bg-background">
       {/* ─── 1 · HERO ───────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b-2 border-foreground">
+      <section className="relative overflow-hidden border-foreground md:border-b-2">
         {/* Faint dotted-grid wash, masked from the top-left so the
             hero corner has texture and the headline reads against
             calm cream. Same trick used on About + Landing. */}
@@ -134,7 +134,7 @@ export default function Contact() {
 
       {/* ─── 2 · MAIN GRID — left intent · right form ──────────── */}
       <section className="border-b-2 border-foreground">
-        <div className="container relative grid grid-cols-1 gap-12 px-4 py-16 md:grid-cols-[0.95fr_1.05fr] md:gap-0 md:py-20">
+        <div className="container relative grid grid-cols-1 gap-12 px-4 pb-16 pt-6 md:grid-cols-[0.95fr_1.05fr] md:gap-0 md:py-20">
           {/* ── LEFT — intent (collab CTA → chips → email) ──
               md:pt-2 nudges the eyebrow down so it sits on the same
               baseline as the right column's "What's this about?" label. */}
