@@ -326,10 +326,13 @@ export default function EventDetailView({
 
         {/* F. About the event — labelled section so the description reads
             as deliberate editorial copy rather than orphan body text.
-            Hairline above separates it visually from the venue section.
+            Hairline above separates it visually from the venue section —
+            but only when there's no hero image, since the photo above
+            already acts as the editorial divider (a line right under it
+            reads as redundant chrome).
             The Event link sits inside this section as a mono-caps row
             (matches the Open-in-Maps row grammar). */}
-        <section className="mt-6 pt-4 border-t border-foreground/15">
+        <section className={hasRealImage ? "mt-6" : "mt-6 pt-4 border-t border-foreground/15"}>
           <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
             About the event
           </h2>
