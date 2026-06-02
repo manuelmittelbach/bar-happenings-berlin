@@ -1582,15 +1582,50 @@ export async function approveStagedEvent(
 
 export interface AutoApproveResult {
   approved: number; // inserted as new live events
+  updated: number;  // diverging fields patched onto an existing live event
   skipped: { title: string; reason: string }[];
 }
 
-// Bulk-approves pending scraped staging rows without per-card review, but ONLY
-// the unambiguous ones: a row is inserted as a new live event only when its bar
-// has no other event on that same day. Any row that clashes with an existing
-// event (same bar, same day) is left untouched in staging for manual review —
-// nothing is ever overwritten. Scraped-scope rows are always non-recurring, so
-// no series handling is needed. One failing row never aborts the batch.
+// Same normalization as EventDiffModal / compare_event_fields — null vs ""
+// vs whitespace must compare equal so we don't write back phantom diffs.
+function normalizeUpdateField(key: string, value: string | null | undefined): string {
+  const v = (value ?? "").trim();
+  if (key === "description") return v.replace(/\s+/g, " ");
+  if (key === "sourceUrl") return v.toLowerCase();
+  return v;
+}
+
+// Builds the patch an auto-approve run applies to a live event from a scraper
+// update row: only the fields that actually diverge, and only the ones the
+// scraper is allowed to write unattended. category and language are
+// admin-curated (see EventUpdatePatch) — a human picks those in EventDiffModal,
+// so they are deliberately excluded here even when they differ.
+function autoUpdatePatch(staged: StagedEvent, live: BarlinEvent): EventUpdatePatch {
+  const patch: EventUpdatePatch = {};
+  const diff = (key: string, s: string | null, l: string | null) =>
+    normalizeUpdateField(key, s) !== normalizeUpdateField(key, l);
+  if (diff("title", staged.title, live.title)) patch.title = staged.title;
+  if (diff("date", staged.date, live.date)) patch.date = staged.date;
+  if (diff("startTime", staged.startTime, live.startTime)) patch.startTime = staged.startTime;
+  if (diff("endTime", staged.endTime, live.endTime)) patch.endTime = staged.endTime;
+  if (diff("doorsTime", staged.doorsTime, live.doorsTime)) patch.doorsTime = staged.doorsTime;
+  if (diff("description", staged.description, live.description)) patch.description = staged.description;
+  if (diff("entryInfo", staged.entryInfo, live.entryInfo)) patch.entryInfo = staged.entryInfo;
+  if (diff("sourceUrl", staged.sourceUrl, live.url)) patch.sourceUrl = staged.sourceUrl;
+  return patch;
+}
+
+// Bulk-handles pending scraped staging rows without per-card review, but ONLY
+// the unambiguous ones. Two row kinds:
+//   • Update rows (replacesEventId set): the scraper matched this to a live
+//     event, so it patches the diverging fields onto that event instead of
+//     inserting a new one. These "clash" with the very event they replace by
+//     definition, so the same-bar/same-day skip must NOT apply to them.
+//   • New rows: inserted as a new live event only when the bar has no other
+//     event on that same day. Any clash leaves the row untouched for manual
+//     review — nothing is ever overwritten.
+// Scraped-scope rows are always non-recurring, so no series handling is needed.
+// One failing row never aborts the batch.
 export async function autoApproveScrapedEvents(
   staged: StagedEvent[],
   adminUserId: string,
@@ -1598,7 +1633,7 @@ export async function autoApproveScrapedEvents(
   // Fresh map (today-onward, approved + canceled) so the clash check is correct
   // even if the dashboard's cached liveEventsByVenue is stale.
   const liveByVenue = await fetchLiveEventsByVenue();
-  const result: AutoApproveResult = { approved: 0, skipped: [] };
+  const result: AutoApproveResult = { approved: 0, updated: 0, skipped: [] };
 
   // Occupied (bar|day) slots. Seeded from every existing live event — approved
   // OR canceled both count as "the bar already has an event that day" — then
@@ -1612,6 +1647,25 @@ export async function autoApproveScrapedEvents(
   for (const s of staged) {
     const label = s.title || "(untitled)";
     try {
+      // Update rows patch an existing event — never insert, never clash-skip.
+      if (s.replacesEventId) {
+        const live = await fetchEventById(s.replacesEventId);
+        if (!live) {
+          result.skipped.push({ title: label, reason: "live event to update no longer exists" });
+          continue;
+        }
+        const patch = autoUpdatePatch(s, live);
+        if (Object.keys(patch).length === 0) {
+          // Nothing safe to apply — only admin-curated fields (category/
+          // language) diverge, or the row is stale. Leave for manual review.
+          result.skipped.push({ title: label, reason: "only admin-curated fields differ — review manually" });
+          continue;
+        }
+        await applyEventUpdate(live.id, patch, s.id);
+        result.updated++;
+        continue;
+      }
+
       if (!s.venueId) {
         result.skipped.push({ title: label, reason: "no venue linked" });
         continue;
