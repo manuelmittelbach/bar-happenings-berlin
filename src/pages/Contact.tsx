@@ -24,6 +24,34 @@ const EMAIL = "hello@insidebars.co";
 // instead of a generic send error.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// supabase.functions.invoke surfaces the function's real message in
+// awkward places: a non-2xx (FunctionsHttpError) hides the JSON body
+// behind error.context (a Response), and error.message is just the
+// generic "Edge Function returned a non-2xx status code". A true
+// network/CORS failure throws FunctionsFetchError ("Failed to send a
+// request…"). Unwrap both so the user sees something useful.
+async function readInvokeError(error: unknown): Promise<string> {
+  if (error && typeof error === "object" && "context" in error) {
+    const ctx = (error as { context?: unknown }).context;
+    if (ctx instanceof Response) {
+      try {
+        const body = await ctx.clone().json();
+        if (body && typeof body === "object" && "error" in body) {
+          return String((body as { error?: string }).error);
+        }
+      } catch {
+        /* body wasn't JSON — fall through */
+      }
+    }
+  }
+  if (error instanceof Error && error.name === "FunctionsFetchError") {
+    return "Couldn't reach our server. Check your connection and try again.";
+  }
+  return error instanceof Error
+    ? error.message
+    : "Couldn't send right now. Try again?";
+}
+
 export default function Contact() {
   const [topicId, setTopicId] = useState<TopicId | "">("");
   const [name, setName] = useState("");
@@ -65,9 +93,15 @@ export default function Contact() {
           },
         },
       );
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg(await readInvokeError(error));
+        setSubmitState("error");
+        return;
+      }
       if (data && typeof data === "object" && "error" in data) {
-        throw new Error(String((data as { error?: string }).error ?? "Send failed"));
+        setErrorMsg(String((data as { error?: string }).error ?? "Send failed"));
+        setSubmitState("error");
+        return;
       }
       setSubmitState("sent");
       setName("");
@@ -76,9 +110,7 @@ export default function Contact() {
       setHp("");
       setTopicId("");
     } catch (err) {
-      setErrorMsg(
-        err instanceof Error ? err.message : "Couldn't send right now. Try again?",
-      );
+      setErrorMsg(await readInvokeError(err));
       setSubmitState("error");
     }
   }
