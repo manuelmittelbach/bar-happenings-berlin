@@ -80,9 +80,9 @@ export function useVenueById(venueId: string) {
   // Reuses the full-venues list cache so opening multiple bar pages
   // doesn't trigger N separate requests. The list is small (< few
   // hundred bars), so client-side filter is cheap.
-  const { data: venues, isLoading, error } = useVenues();
+  const { data: venues, isLoading, error, refetch, isFetching } = useVenues();
   const venue = venues?.find((v) => v.id === venueId) ?? null;
-  return { venue, isLoading, error };
+  return { venue, isLoading, error, refetch, isFetching };
 }
 
 export function useCategories() {
