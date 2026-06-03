@@ -18,12 +18,17 @@ function normalize(str: string): string {
 /**
  * Check if `text` fuzzy-matches `query`.
  * - Normalizes both strings (case, diacritics, hyphens, etc.)
- * - Each query word must appear as a substring in the normalized text
+ * - Each query word must be a PREFIX of some word in the normalized text.
+ *   Prefix (not substring) so a stray single letter like the "r" in
+ *   "Alter r" can't match the "r" buried inside "alteR" — it has to start
+ *   a word. "Alter Schwede" no longer matches "Alter r"; "Alter Roter" does.
  */
 export function fuzzyMatch(text: string, query: string): boolean {
-  const normalizedText = normalize(text);
-  const words = normalize(query).split(" ").filter(Boolean);
-  return words.every((w) => normalizedText.includes(w));
+  const textWords = normalize(text).split(" ").filter(Boolean);
+  const queryWords = normalize(query).split(" ").filter(Boolean);
+  return queryWords.every((q) =>
+    textWords.some((t) => t.startsWith(q)),
+  );
 }
 
 /**
