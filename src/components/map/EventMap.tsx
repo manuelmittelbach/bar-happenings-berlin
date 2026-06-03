@@ -435,17 +435,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
 					const goToVenue = () => {
 						if (props.venueId) {
-							// Mirror the event-row tap feedback: paint a bold orange
-							// highlight on the name immediately, then navigate after
-							// a beat so the flash is visible (touch has no hover
-							// state). A text-colour-only flash at 80ms was too faint
-							// to notice — use a filled background like the event rows
-							// and 150ms so it actually registers before unmount.
-							nameEl.style.background = "#ED5B1C";
-							nameEl.style.color = "#fff";
-							nameEl.style.padding = "2px 6px";
-							nameEl.style.margin = "-2px -6px";
-							nameEl.style.borderRadius = "3px";
+							// Touch has no :hover, so flash only the venue NAME text to
+							// accent orange (not the whole row background) immediately,
+							// then navigate after a beat so the flash is visible. 150ms
+							// (not 80) so the colour change actually registers before
+							// the popup unmounts.
+							nameEl.style.color = "#ED5B1C";
 							setTimeout(() => onVenueClickRef.current(props.venueId), 150);
 						}
 					};
