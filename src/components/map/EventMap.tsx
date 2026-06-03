@@ -418,7 +418,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					// hover-accent telegraph affordance, mobile users get the
 					// implicit "tap the bar name on a map pin opens the bar"
 					// affordance.
-					const nameEl = document.createElement("h3");
+					// Real anchor (href=/bar/<id>) so Cmd/Ctrl/middle-click opens
+					// the bar in a new tab, matching the links on the event page.
+					const nameEl = document.createElement("a");
 					nameEl.style.cssText =
 						// overflow-wrap:break-word (not :anywhere) — only break
 						// long unhyphenated venue names when truly necessary.
@@ -427,29 +429,24 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// inside otherwise-fitting words, leaving lots of empty
 						// horizontal space. `break-word` keeps words intact when
 						// they can fit and only breaks them as a last resort.
-						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;";
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
-					nameEl.setAttribute("role", "link");
-					nameEl.setAttribute("tabindex", "0");
+					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
-					const goToVenue = () => {
-						if (props.venueId) {
-							// Touch has no :hover, so flash only the venue NAME text to
-							// accent orange (not the whole row background) immediately,
-							// then navigate after a beat so the flash is visible. 80ms
-							// matches the event-row delay so bar + event taps feel
-							// identical, and stays inside the "feels instant" window.
-							nameEl.style.color = "#ED5B1C";
-							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
-						}
-					};
-					nameEl.addEventListener("click", goToVenue);
-					nameEl.addEventListener("keydown", (ev) => {
-						if (ev.key === "Enter" || ev.key === " ") {
-							ev.preventDefault();
-							goToVenue();
-						}
+					nameEl.addEventListener("click", (ev) => {
+						if (!props.venueId) { ev.preventDefault(); return; }
+						// Let the browser open a new tab on modified clicks; only
+						// intercept a plain left-click to stay SPA + keep the flash.
+						if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+						ev.preventDefault();
+						// Touch has no :hover, so flash only the venue NAME text to
+						// accent orange (not the whole row background) immediately,
+						// then navigate after a beat so the flash is visible. 80ms
+						// matches the event-row delay so bar + event taps feel
+						// identical, and stays inside the "feels instant" window.
+						nameEl.style.color = "#ED5B1C";
+						setTimeout(() => onVenueClickRef.current(props.venueId), 80);
 					});
 					nameRow.appendChild(nameEl);
 
@@ -486,10 +483,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						const isLast = i === evts.length - 1;
 						const isCanceled = evt.status === "canceled";
 
-						const btn = document.createElement("button");
+						// Real anchor (href=/event/<id>) so Cmd/Ctrl/middle-click opens
+						// the event in a new tab, matching the links on the event page.
+						const btn = document.createElement("a");
 						btn.className = "map-popup-btn";
+						btn.setAttribute("href", `/event/${evt.id}`);
 						btn.style.cssText =
-							`display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:none;${isLast ? "" : "border-bottom:1px solid #d2cdc2;"}background:none;cursor:pointer;transition:background 0.12s ease;`;
+							`display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:none;${isLast ? "" : "border-bottom:1px solid #d2cdc2;"}background:none;cursor:pointer;transition:background 0.12s ease;text-decoration:none;color:inherit;box-sizing:border-box;`;
 						// `--hover-color` drives the row's :hover background in
 						// index.css. Setting it per-row lets each event hover in
 						// its own category hue.
@@ -570,7 +570,11 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						txtCol.appendChild(metaP);
 						btn.appendChild(txtCol);
 
-						btn.addEventListener("click", () => {
+						btn.addEventListener("click", (ev) => {
+							// Let the browser open a new tab on modified clicks; only
+							// intercept a plain left-click to stay SPA + keep the flash.
+							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+							ev.preventDefault();
 							btn.style.background = evt.categoryColor;
 							titleP.style.color = "white";
 							metaP.style.color = "rgba(255,255,255,0.8)";
