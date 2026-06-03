@@ -435,6 +435,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
 					const goToVenue = () => {
 						if (props.venueId) {
+							// Mirror the event-row tap feedback: flash the name to
+							// accent orange immediately, then navigate after a beat
+							// so the flash is visible (touch has no hover state).
+							nameEl.style.color = "#ED5B1C";
 							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
 						}
 					};
