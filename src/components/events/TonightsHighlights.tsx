@@ -3,6 +3,7 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
+import { prefetchImage } from "@/hooks/usePrefetchImages";
 
 interface TonightsHighlightsProps {
   events: BarlinEvent[];
@@ -83,6 +84,8 @@ function HighlightCard({ event, categories, onClick }: HighlightCardProps) {
   return (
     <button
       onClick={() => onClick(event.id)}
+      onPointerEnter={() => prefetchImage(event.image)}
+      onPointerDown={() => prefetchImage(event.image)}
       className={`group relative flex flex-col text-left bg-background border-2 border-foreground hover:border-accent active:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
         isCanceled ? "opacity-55" : ""
       }`}
