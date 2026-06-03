@@ -429,7 +429,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// inside otherwise-fitting words, leaving lots of empty
 						// horizontal space. `break-word` keeps words intact when
 						// they can fit and only breaks them as a last resort.
-						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;";
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
 					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
@@ -489,7 +489,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						btn.className = "map-popup-btn";
 						btn.setAttribute("href", `/event/${evt.id}`);
 						btn.style.cssText =
-							`display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:none;${isLast ? "" : "border-bottom:1px solid #d2cdc2;"}background:none;cursor:pointer;transition:background 0.12s ease;text-decoration:none;color:inherit;box-sizing:border-box;`;
+							`display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:none;${isLast ? "" : "border-bottom:1px solid #d2cdc2;"}background:none;cursor:pointer;transition:background 0.12s ease;text-decoration:none;color:inherit;box-sizing:border-box;-webkit-touch-callout:default;`;
 						// `--hover-color` drives the row's :hover background in
 						// index.css. Setting it per-row lets each event hover in
 						// its own category hue.
