@@ -195,8 +195,22 @@ export default function BarDetail() {
             {venue.instagram && (
               <a
                 href={venue.instagram}
-                target="_blank"
                 rel="noopener noreferrer"
+                // No target=_blank on purpose: on iOS a _blank universal link
+                // pops the "Open in Instagram?" confirm dialog (Open/Cancel).
+                // A same-tab navigation hands off straight to the app (or the
+                // browser if it isn't installed) — no dialog. Long-press still
+                // offers open-in-new-tab / copy link (that comes from href).
+                // In the Capacitor app we route through window.open so the
+                // in-app webview doesn't navigate away internally.
+                onClick={
+                  isNative
+                    ? (e) => {
+                        e.preventDefault();
+                        window.open(venue.instagram!, "_blank");
+                      }
+                    : undefined
+                }
                 className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
               >
                 <Instagram className="h-3.5 w-3.5 shrink-0" />
