@@ -254,7 +254,7 @@ export default function EventDetailView({
             <Link
               to={`/bar/${event.venueId}`}
               aria-label={`Open ${event.venue} page`}
-              className="md:hidden absolute inset-0 z-10"
+              className="md:hidden absolute inset-0 z-10 transition-colors active:bg-accent/10"
             />
           )}
           {/* Flex wrapper so a Resident-Advisor-style chevron can sit on
@@ -268,7 +268,7 @@ export default function EventDetailView({
                 <Link
                   to={`/bar/${event.venueId}`}
                   lang="de"
-                  className={`font-body block leading-tight break-words text-foreground hover:text-accent transition-colors no-underline ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
+                  className={`font-body block leading-tight break-words text-foreground hover:text-accent active:text-accent transition-colors no-underline ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
                 >
                   {event.venue}
                 </Link>
