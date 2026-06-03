@@ -246,21 +246,15 @@ export default function EventDetailView({
             the venue name reads as a tight bold body line (DM Sans bold
             ~18px), address below in muted body, and the maps affordance
             drops to a small accent text link. Saves a lot of vertical
-            real estate while keeping the data scan-able. The mobile-
-            wide overlay still routes to the bar page; the inline maps
-            link uses z-20 to stay clickable above it. */}
+            real estate while keeping the data scan-able. On mobile the
+            venue name is a stretched-link: its ::after spans this whole
+            relative section so the block is tappable, while the inline
+            maps button uses z-20 to stay clickable above it. */}
         <section className="mt-4 relative">
-          {event.venueId && (
-            <Link
-              to={`/bar/${event.venueId}`}
-              aria-label={`Open ${event.venue} page`}
-              className="md:hidden absolute inset-0 z-10 transition-colors active:bg-accent/10"
-            />
-          )}
           {/* Flex wrapper so a Resident-Advisor-style chevron can sit on
               the right of the venue stack, telegraphing that the whole
               block is tappable on mobile. Without the chevron the
-              absolute-inset link is invisible and users don't realise
+              stretched-link hit area is invisible and users don't realise
               they can drill into the bar page from here. */}
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
@@ -268,7 +262,14 @@ export default function EventDetailView({
                 <Link
                   to={`/bar/${event.venueId}`}
                   lang="de"
-                  className={`font-body block leading-tight break-words text-foreground hover:text-accent active:text-accent transition-colors no-underline ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
+                  aria-label={`Open ${event.venue} page`}
+                  // Stretched-link: the ::after spans the whole venue block
+                  // (the relative <section>) so a tap anywhere on the block
+                  // routes to the bar — but only the NAME text flashes orange
+                  // on tap, never the whole area. md:after:hidden so on desktop
+                  // you click the text itself. The Maps button keeps z-20 to
+                  // stay tappable above the stretched hit area.
+                  className={`font-body block leading-tight break-words text-foreground hover:text-accent active:text-accent transition-colors no-underline after:absolute after:inset-0 after:content-[''] md:after:hidden ${compact ? "text-[17px]" : "text-[18px] md:text-[20px]"} font-bold`}
                 >
                   {event.venue}
                 </Link>
