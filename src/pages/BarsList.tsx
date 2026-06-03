@@ -12,6 +12,7 @@ import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString } from "@/lib/dateFormat";
 import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
+import { ErrorState } from "@/components/ui/error-state";
 import type { Venue, BarlinEvent } from "@/types/event";
 
 // Bars-page filter persistence. Lives in sessionStorage so bar-card →
@@ -49,7 +50,13 @@ export default function BarsList() {
   // resolve first. Call it ONCE at the page level, pass isAdmin down.
   const { role } = useAuth();
   const isAdmin = role === "admin";
-  const { data: venues = [], isLoading: venuesLoading } = useVenues();
+  const {
+    data: venues = [],
+    isLoading: venuesLoading,
+    isError: venuesError,
+    refetch: refetchVenues,
+    isFetching: venuesFetching,
+  } = useVenues();
   // All upcoming events. Same hook the Index page uses, so the shared
   // cache means switching Events ↔ Bars doesn't refetch.
   const { data: events = [], isLoading: eventsLoading } = useEvents();
@@ -254,6 +261,20 @@ export default function BarsList() {
   const showResults = !showNoDirectory && !showNoMatch;
 
   if (venuesLoading || eventsLoading) return <PageSpinner />;
+
+  // The directory query failed and nothing is cached — show a retry surface
+  // rather than "No bars in the directory yet.", which would falsely claim
+  // the directory is empty when the fetch never landed.
+  if (venuesError && venues.length === 0) {
+    return (
+      <ErrorState
+        message="Couldn't load the bar directory. Check your connection and try again."
+        onRetry={() => refetchVenues()}
+        isRetrying={venuesFetching}
+        homeLink
+      />
+    );
+  }
 
   return (
     <div className="bg-background pb-24">

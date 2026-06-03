@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
+import { ErrorState } from "@/components/ui/error-state";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
@@ -95,7 +96,13 @@ export default function Index() {
   // this date is hidden — no "show more" affordance, no infinite scroll.
   const cutoffDate = berlinDateStringOffset(13);
 
-  const { data: eventsData = [], isLoading: eventsLoading } = useEvents();
+  const {
+    data: eventsData = [],
+    isLoading: eventsLoading,
+    isError: eventsError,
+    refetch: refetchEvents,
+    isFetching: eventsFetching,
+  } = useEvents();
   const { data: categoriesData = [] } = useCategories();
   const { data: venuesData = [] } = useVenues();
   const { location: userLocation } = useUserLocation();
@@ -360,6 +367,17 @@ export default function Index() {
           <div className="flex-1">
         {eventsLoading ? (
           <PageSpinner />
+        ) : eventsError && eventsData.length === 0 ? (
+          // The fetch failed AND we have nothing cached to fall back on —
+          // show a retry surface instead of the editorial empty states
+          // ("That's it for tonight."), which would wrongly read as "the
+          // city is quiet" when really the data never loaded.
+          <ErrorState
+            inline
+            message="Couldn't reach the events. Check your connection and try again."
+            onRetry={() => refetchEvents()}
+            isRetrying={eventsFetching}
+          />
         ) : (
           <>
           {/* TONIGHT — editorial sections + All Tonight list, OR a single
