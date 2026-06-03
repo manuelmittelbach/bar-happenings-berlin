@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ChevronLeft, Globe, Instagram, Phone, Share } from "lucide-react";
 import { motion } from "framer-motion";
@@ -31,6 +32,10 @@ export default function BarDetail() {
   const { venue, isLoading } = useVenueById(id || "");
   const todayStr = berlinDateString();
   const { data: venueEvents = [], isLoading: eventsLoading } = useEventsByVenue(id || "", todayStr);
+  // Re-entrancy guard — see EventDetail. Stops a fast double-tap from
+  // re-invoking the share sheet and falling through to a bogus
+  // "Link copied!" toast.
+  const isSharingRef = useRef(false);
 
   // Hide Back when this tab has no prior history (e.g. opened via
   // target="_blank" from the dashboard's View link) — a non-functional
@@ -77,29 +82,43 @@ export default function BarDetail() {
   // clipboard. The shared URL always points at the public origin so a
   // recipient can open it without our app installed.
   const handleShare = async () => {
-    const url = `${PUBLIC_ORIGIN}/bar/${venue.id}`;
-    const title = venue.name || "Inside Bars";
-    if (isNative) {
-      try {
-        await CapacitorShare.share({ title, url, dialogTitle: "Share bar" });
-        return;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "";
-        if (msg.toLowerCase().includes("cancel")) return;
-      }
-    } else if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return;
-      }
-    }
+    // Ignore rapid double-taps while a share sheet is already opening.
+    if (isSharingRef.current) return;
+    isSharingRef.current = true;
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied!");
-    } catch {
-      toast.error("Could not share");
+      const url = `${PUBLIC_ORIGIN}/bar/${venue.id}`;
+      const title = venue.name || "Inside Bars";
+      if (isNative) {
+        try {
+          await CapacitorShare.share({ title, url, dialogTitle: "Share bar" });
+        } catch (err) {
+          // Dismissed or concurrent share → silent. Do NOT fall through to
+          // clipboard on native: the share sheet is always available, so a
+          // failure means "don't copy", not the spurious "Link copied!".
+          const msg = err instanceof Error ? err.message : "";
+          if (!msg.toLowerCase().includes("cancel")) {
+            console.warn("[share] native share failed", err);
+          }
+        }
+        return;
+      }
+      if (typeof navigator.share === "function") {
+        try {
+          await navigator.share({ title, url });
+          return;
+        } catch (err) {
+          if (err instanceof Error && err.name === "AbortError") return;
+        }
+      }
+      // Web fallback only: clipboard.
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied!");
+      } catch {
+        toast.error("Could not share");
+      }
+    } finally {
+      isSharingRef.current = false;
     }
   };
 

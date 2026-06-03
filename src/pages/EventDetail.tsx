@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ChevronLeft, Share } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +21,11 @@ export default function EventDetail() {
 	const isNative = useIsNative();
 	const { role, roleResolved } = useAuth();
 	const { data: event, isLoading, error, refetch, isFetching } = useEventById(id || "");
+	// Guards against a second rapid tap re-invoking the share sheet while
+	// the first is still opening. Without it, the plugin throws "Share
+	// already in progress", which isn't a cancel, so the code fell through
+	// to the clipboard fallback and wrongly toasted "Link copied!".
+	const isSharingRef = useRef(false);
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
 
@@ -68,35 +74,49 @@ export default function EventDetail() {
 	};
 
 	const handleShare = async () => {
-		const url = `${PUBLIC_ORIGIN}/event/${event.id}`;
-		const title = event.title || "Inside Bars";
-		// Native iOS: use Capacitor's Share plugin → invokes UIActivityViewController
-		// (the real native share sheet). navigator.share is unreliable inside
-		// WKWebView, so we always go through the plugin in native context.
-		if (isNative) {
-			try {
-				await CapacitorShare.share({ title, url, dialogTitle: "Share event" });
-				return;
-			} catch (err) {
-				// User dismissed → silent. Anything else falls through to clipboard.
-				const msg = err instanceof Error ? err.message : "";
-				if (msg.toLowerCase().includes("cancel")) return;
-			}
-		} else if (typeof navigator.share === "function") {
-			try {
-				await navigator.share({ title, url });
-				return;
-			} catch (err) {
-				if (err instanceof Error && err.name === "AbortError") return;
-			}
-		}
-		// Fallback: clipboard. Always uses the public origin so the copied
-		// link is openable from any messenger / browser.
+		// Ignore rapid double-taps while a share sheet is already opening.
+		if (isSharingRef.current) return;
+		isSharingRef.current = true;
 		try {
-			await navigator.clipboard.writeText(url);
-			toast.success("Link copied!");
-		} catch {
-			toast.error("Could not share");
+			const url = `${PUBLIC_ORIGIN}/event/${event.id}`;
+			const title = event.title || "Inside Bars";
+			// Native iOS: use Capacitor's Share plugin → invokes UIActivityViewController
+			// (the real native share sheet). navigator.share is unreliable inside
+			// WKWebView, so we always go through the plugin in native context.
+			if (isNative) {
+				try {
+					await CapacitorShare.share({ title, url, dialogTitle: "Share event" });
+				} catch (err) {
+					// User dismissed or a concurrent share was in progress →
+					// silent. We deliberately do NOT fall through to the clipboard
+					// here: the native sheet is always available, so a failure
+					// means "don't copy", not "copy instead" (which produced the
+					// spurious "Link copied!" on fast taps).
+					const msg = err instanceof Error ? err.message : "";
+					if (!msg.toLowerCase().includes("cancel")) {
+						console.warn("[share] native share failed", err);
+					}
+				}
+				return;
+			}
+			if (typeof navigator.share === "function") {
+				try {
+					await navigator.share({ title, url });
+					return;
+				} catch (err) {
+					if (err instanceof Error && err.name === "AbortError") return;
+				}
+			}
+			// Web fallback only: clipboard. Always uses the public origin so the
+			// copied link is openable from any messenger / browser.
+			try {
+				await navigator.clipboard.writeText(url);
+				toast.success("Link copied!");
+			} catch {
+				toast.error("Could not share");
+			}
+		} finally {
+			isSharingRef.current = false;
 		}
 	};
 
