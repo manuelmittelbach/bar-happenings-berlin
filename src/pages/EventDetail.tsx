@@ -66,13 +66,6 @@ export default function EventDetail() {
 	const isLastInSeries = seriesMembers.length > 1 && event.date === seriesLastDate;
 	const recurrenceLabel = isLastInSeries ? null : formatRecurrenceLabel(seriesRule);
 
-	const handleMaps = () => {
-		window.open(
-			`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`,
-			"_blank",
-		);
-	};
-
 	const handleShare = async () => {
 		// Ignore rapid double-taps while a share sheet is already opening.
 		if (isSharingRef.current) return;
@@ -171,7 +164,6 @@ export default function EventDetail() {
 			<EventDetailView
 				event={event}
 				recurrenceLabel={recurrenceLabel}
-				onOpenMaps={handleMaps}
 				/* Share moved to the sticky top bar on every surface
 				   (web + native), so the inline action-row CTA is off. */
 				showShare={false}
