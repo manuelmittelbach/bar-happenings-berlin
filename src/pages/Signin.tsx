@@ -45,6 +45,19 @@ export default function Signin() {
 		if (msg.includes("rate limit") || msg.includes("over_email_send_rate_limit")) {
 			return "Too many attempts. Please wait a few minutes and try again.";
 		}
+		// A failed network fetch surfaces as a platform-specific raw string —
+		// "Load failed" (Safari/WebKit), "Failed to fetch" (Chrome),
+		// "Network request failed" (RN) — plus Supabase's retryable name.
+		// Show one human message instead of leaking any of these.
+		if (
+			msg.includes("Load failed") ||
+			msg.includes("Failed to fetch") ||
+			msg.includes("Network request failed") ||
+			msg.includes("NetworkError") ||
+			msg.includes("AuthRetryableFetchError")
+		) {
+			return "Couldn't reach the server. Check your connection and try again.";
+		}
 		return msg;
 	}
 
@@ -63,7 +76,11 @@ export default function Signin() {
 				navigate("/profile");
 			}
 		} catch (err: unknown) {
-			const message = err instanceof Error ? err.message : "Something went wrong";
+			// Include the error name (e.g. AuthRetryableFetchError) so the
+			// network branch in friendlyError catches it even when the
+			// underlying message string varies by platform.
+			const message =
+				err instanceof Error ? `${err.name}: ${err.message}` : "Something went wrong";
 			setError(friendlyError(message));
 		} finally {
 			setLoading(false);
