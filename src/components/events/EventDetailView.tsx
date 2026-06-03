@@ -56,9 +56,6 @@ export interface EventDetailViewProps {
   // Pre-computed recurrence label (e.g. "Every Tuesday"). null = hide.
   recurrenceLabel: string | null;
 
-  // "Open in Maps" handler.
-  onOpenMaps: () => void;
-
   // ShareMenu visibility (admin preview hides it).
   showShare: boolean;
 
@@ -78,7 +75,6 @@ export interface EventDetailViewProps {
 export default function EventDetailView({
   event,
   recurrenceLabel,
-  onOpenMaps,
   showShare,
   compact = false,
   headerBanner,
@@ -286,12 +282,14 @@ export default function EventDetailView({
                   {event.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "")}
                 </p>
               )}
-              <button
-                onClick={onOpenMaps}
-                className="relative z-20 mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors"
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative z-20 mt-2 inline-flex w-fit items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors no-underline"
               >
                 Open in Maps <span aria-hidden="true">→</span>
-              </button>
+              </a>
             </div>
             {event.venueId && (
               <ChevronRight
