@@ -114,6 +114,12 @@
   * {
     @apply border-border;
   }
+  /* Suppress the default grey/translucent native tap highlight on
+     iOS/Android WebViews so our own orange active: states are the only
+     touch feedback (event cards, bar links, etc.). */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
   html, body {
     overflow-x: clip;
   }
