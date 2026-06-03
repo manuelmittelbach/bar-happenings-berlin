@@ -8,6 +8,21 @@ const prefetched = new Set<string>();
 
 const MAX_PARALLEL = 6;
 
+/**
+ * Imperatively warm the browser cache for a single image, right now (no idle
+ * deferral). Used on event-card interaction (hover / press) so the detail
+ * page's hero photo is often already cached by the time it mounts, instead
+ * of visibly popping in after navigation. Shares the module-level dedupe set
+ * with usePrefetchImages, so a URL warmed here won't be re-requested there.
+ */
+export function prefetchImage(url: string | null | undefined): void {
+  if (!url || prefetched.has(url)) return;
+  prefetched.add(url);
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+}
+
 type IdleScheduler = (cb: () => void) => void;
 
 const scheduleIdle: IdleScheduler =
