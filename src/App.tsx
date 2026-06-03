@@ -208,7 +208,16 @@ const queryClient = new QueryClient({
       // queries get garbage-collected normally and won't bloat the
       // localStorage payload.
       gcTime: 30 * 60 * 1000,
-      retry: 0,
+      // One quick retry rides out the most common transient failure (a
+      // single network/DB blip), so the user never sees a misleading empty
+      // state for a momentary hiccup. Anything longer surfaces fast as the
+      // ErrorState retry button — the human is the second "retry", and a
+      // second auto-retry rarely succeeds against a real outage anyway
+      // (diminishing returns). ~600ms base with jitter (400–800ms) so many
+      // clients recovering from the same blip don't re-hit the DB in
+      // lockstep ("thundering herd").
+      retry: 1,
+      retryDelay: () => 400 + Math.random() * 400,
     },
   },
 });

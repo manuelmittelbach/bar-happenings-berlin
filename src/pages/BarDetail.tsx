@@ -10,6 +10,7 @@ import { berlinDateString } from "@/lib/dateFormat";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { PageSpinner } from "@/components/ui/page-spinner";
+import { ErrorState } from "@/components/ui/error-state";
 
 // Production origin for share links. Mirrors EventDetail — keeping it
 // local to each detail surface (instead of a shared constant) keeps the
@@ -29,9 +30,21 @@ export default function BarDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNative = useIsNative();
-  const { venue, isLoading } = useVenueById(id || "");
+  const {
+    venue,
+    isLoading,
+    error: venueError,
+    refetch: refetchVenue,
+    isFetching: venueFetching,
+  } = useVenueById(id || "");
   const todayStr = berlinDateString();
-  const { data: venueEvents = [], isLoading: eventsLoading } = useEventsByVenue(id || "", todayStr);
+  const {
+    data: venueEvents = [],
+    isLoading: eventsLoading,
+    isError: venueEventsError,
+    refetch: refetchVenueEvents,
+    isFetching: venueEventsFetching,
+  } = useEventsByVenue(id || "", todayStr);
   // Re-entrancy guard — see EventDetail. Stops a fast double-tap from
   // re-invoking the share sheet and falling through to a bogus
   // "Link copied!" toast.
@@ -44,6 +57,19 @@ export default function BarDetail() {
   const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
 
   if (isLoading) return <PageSpinner />;
+
+  // Venue lookup failed (the directory never loaded) — retry surface instead
+  // of "Bar not found", which would wrongly imply this bar doesn't exist.
+  if (venueError && !venue) {
+    return (
+      <ErrorState
+        message="Couldn't load this bar. Check your connection and try again."
+        onRetry={() => refetchVenue()}
+        isRetrying={venueFetching}
+        homeLink
+      />
+    );
+  }
 
   if (!venue) {
     return (
@@ -261,6 +287,16 @@ export default function BarDetail() {
               query resolves. */}
           {eventsLoading ? (
             <div className="py-4 h-12" aria-hidden />
+          ) : venueEventsError ? (
+            // Events fetch failed — don't claim the calendar is empty when
+            // we simply couldn't load it.
+            <ErrorState
+              inline
+              title="Couldn't load events"
+              message="Check your connection and try again."
+              onRetry={() => refetchVenueEvents()}
+              isRetrying={venueEventsFetching}
+            />
           ) : upcomingEvents.length === 0 ? (
             <p className="font-body italic text-[16px] text-muted-foreground py-4 m-0">
               Nothing on the calendar yet. Check back soon.
