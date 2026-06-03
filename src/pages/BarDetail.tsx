@@ -67,6 +67,14 @@ export default function BarDetail() {
     });
 
   const cleanAddress = venue.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address || venue.name)}`;
+  // Hybrid Open-in-Maps (see EventDetailView): real <a> for long-press /
+  // new-tab, but a normal tap routes through window.open for the cleaner
+  // redirect on both mobile web and the Capacitor app.
+  const openMaps = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  };
   // Share — mirrors EventDetail's handler. Native iOS routes through
   // Capacitor's Share plugin (real UIActivityViewController), web uses
   // navigator.share when available, and everything else falls back to
@@ -220,9 +228,10 @@ export default function BarDetail() {
             </p>
           )}
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address || venue.name)}`}
+            href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={openMaps}
             className="mt-2 inline-flex w-fit items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors no-underline"
           >
             Open in Maps <span aria-hidden="true">→</span>

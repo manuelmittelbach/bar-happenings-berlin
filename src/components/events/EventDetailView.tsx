@@ -87,6 +87,17 @@ export default function EventDetailView({
   const categoryColor = categoryInfo?.color;
   const categoryLabel = categoryInfo?.label ?? event.category;
   const isCanceled = event.status === "canceled";
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`;
+  // Hybrid Open-in-Maps: render a real <a> (so long-press / right-click
+  // offer "open in new tab", copy link) but route a normal click through
+  // window.open. In the Capacitor app window.open hands off cleanly to the
+  // system browser / Maps app, whereas a bare target=_blank anchor opens a
+  // clunky in-app webview. preventDefault doesn't fire on long-press, so
+  // the context menu still works.
+  const openMaps = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+  };
   const canceledLabel = event.canceledBy === "admin" ? "Canceled" : "Canceled by the organizer";
 
   // Strip € from price text since the Euro icon already conveys it.
@@ -283,9 +294,10 @@ export default function EventDetailView({
                 </p>
               )}
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.address || event.venue)}`}
+                href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={openMaps}
                 className="relative z-20 mt-2 inline-flex w-fit items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors no-underline"
               >
                 Open in Maps <span aria-hidden="true">→</span>
