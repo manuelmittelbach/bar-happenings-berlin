@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
@@ -31,6 +31,22 @@ export default function MapPage() {
   // map while events appear to be present.
   const venuesMissing = !venuesLoading && venuesData.length === 0;
   const stillLoading = eventsLoading || venuesLoading;
+
+  // Don't flash the overlay from the very first frame — on a fast (or
+  // cached) load the data arrives within a few hundred ms, so showing
+  // "Loading map…"/"Venues unavailable" immediately just causes a
+  // jarring flicker. Wait out a short grace period and only surface the
+  // overlay if we're STILL loading / venues are still missing by then.
+  const overlayPending = stillLoading || venuesMissing;
+  const [showOverlay, setShowOverlay] = useState(false);
+  useEffect(() => {
+    if (!overlayPending) {
+      setShowOverlay(false);
+      return;
+    }
+    const t = setTimeout(() => setShowOverlay(true), 700);
+    return () => clearTimeout(t);
+  }, [overlayPending]);
   // Slug-IDs (categories.id) — passed to CategoryPill and used as activeCategory value.
   const categories = useMemo(
     () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
@@ -192,7 +208,7 @@ export default function MapPage() {
             fetch failed entirely. Without this, the map looks empty even
             though the badge says "19 events tonight", which reads as a
             bug rather than a loading state. */}
-        {(stillLoading || venuesMissing) && (
+        {showOverlay && overlayPending && (
           <div className="absolute inset-0 z-[150] flex items-center justify-center bg-background/90 px-6 pointer-events-none">
             {venuesMissing ? (
               // Persistent error — editorial card with a real retry action.
