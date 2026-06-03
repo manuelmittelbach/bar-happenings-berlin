@@ -67,14 +67,9 @@ export default function BarDetail() {
     });
 
   const cleanAddress = venue.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
+  // Standard external link — plain <a target="_blank">; let the OS decide
+  // whether to hand off to the Maps app or open the web.
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address || venue.name)}`;
-  // Hybrid Open-in-Maps (see EventDetailView): real <a> for long-press /
-  // new-tab, but a normal tap routes through window.open for the cleaner
-  // redirect on both mobile web and the Capacitor app.
-  const openMaps = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.open(mapsUrl, "_blank", "noopener,noreferrer");
-  };
   // Share — mirrors EventDetail's handler. Native iOS routes through
   // Capacitor's Share plugin (real UIActivityViewController), web uses
   // navigator.share when available, and everything else falls back to
@@ -195,22 +190,8 @@ export default function BarDetail() {
             {venue.instagram && (
               <a
                 href={venue.instagram}
+                target="_blank"
                 rel="noopener noreferrer"
-                // No target=_blank on purpose: on iOS a _blank universal link
-                // pops the "Open in Instagram?" confirm dialog (Open/Cancel).
-                // A same-tab navigation hands off straight to the app (or the
-                // browser if it isn't installed) — no dialog. Long-press still
-                // offers open-in-new-tab / copy link (that comes from href).
-                // In the Capacitor app we route through window.open so the
-                // in-app webview doesn't navigate away internally.
-                onClick={
-                  isNative
-                    ? (e) => {
-                        e.preventDefault();
-                        window.open(venue.instagram!, "_blank");
-                      }
-                    : undefined
-                }
                 className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
               >
                 <Instagram className="h-3.5 w-3.5 shrink-0" />
@@ -245,7 +226,6 @@ export default function BarDetail() {
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={openMaps}
             className="mt-2 inline-flex w-fit items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground active:opacity-70 transition-colors no-underline"
           >
             Open in Maps <span aria-hidden="true">→</span>
