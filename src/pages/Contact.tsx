@@ -314,14 +314,11 @@ export default function Contact() {
                   <option value="" disabled>
                     Select a topic
                   </option>
-                  {topics.filter((t) => t.id !== "instagram").map((t) => (
+                  {topics.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
                     </option>
                   ))}
-                  {topicId === "instagram" && (
-                    <option value="instagram">Help run Instagram / TikTok</option>
-                  )}
                 </select>
                 {/* Custom arrow — appearance-none drops the native one
                     (and its rounded mobile chrome), so we draw our own. */}
