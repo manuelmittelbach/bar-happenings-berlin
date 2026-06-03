@@ -4,6 +4,7 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
 import type { BarlinEvent } from "@/types/event";
 import { useCategories } from "@/hooks/useEvents";
+import { prefetchImage } from "@/hooks/usePrefetchImages";
 
 interface EventCardProps {
   event: BarlinEvent;
@@ -43,6 +44,12 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
     }
   };
 
+  // Warm the detail page's hero photo before navigation: hover gives desktop
+  // a generous head start, pointer-down covers the tap on touch. Deduped, so
+  // firing on both is free. By the time EventDetailView mounts, the image is
+  // usually already in cache and fades in instead of popping.
+  const warmImage = () => prefetchImage(event.image);
+
   const venueLine = hideVenue ? null : (
     /* Bumped to 15px/foreground-80 so the venue + neighborhood read as
        a clear secondary tier between the 22px title above and the 13px
@@ -65,6 +72,8 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
+        onPointerEnter={warmImage}
+        onPointerDown={warmImage}
         className={`group relative flex flex-col gap-1.5 py-4 border-b-2 border-border no-underline text-foreground ${
           isCanceled ? "opacity-55" : ""
         }`}
@@ -93,6 +102,8 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
       <Link
         to={`/event/${event.id}`}
         onClick={handleClick}
+        onPointerEnter={warmImage}
+        onPointerDown={warmImage}
         className={`relative grid grid-cols-[1fr_auto] items-center gap-4 md:gap-5 px-4 md:px-5 py-4 md:py-[18px] bg-background border-2 border-foreground hover:border-accent active:border-accent transition-all no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
           isCanceled ? "opacity-50" : ""
         }`}
@@ -117,6 +128,8 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
     <Link
       to={`/event/${event.id}`}
       onClick={handleClick}
+      onPointerEnter={warmImage}
+      onPointerDown={warmImage}
       className={`relative block bg-background border-2 border-foreground hover:border-accent active:border-accent transition-all overflow-hidden no-underline text-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] ${
         isCanceled ? "opacity-55" : ""
       }`}
