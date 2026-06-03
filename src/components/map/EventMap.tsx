@@ -437,11 +437,11 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						if (props.venueId) {
 							// Touch has no :hover, so flash only the venue NAME text to
 							// accent orange (not the whole row background) immediately,
-							// then navigate after a beat so the flash is visible. 150ms
-							// (not 80) so the colour change actually registers before
-							// the popup unmounts.
+							// then navigate after a beat so the flash is visible. 80ms
+							// matches the event-row delay so bar + event taps feel
+							// identical, and stays inside the "feels instant" window.
 							nameEl.style.color = "#ED5B1C";
-							setTimeout(() => onVenueClickRef.current(props.venueId), 150);
+							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
 						}
 					};
 					nameEl.addEventListener("click", goToVenue);
