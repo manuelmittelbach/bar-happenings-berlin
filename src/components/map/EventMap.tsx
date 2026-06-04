@@ -825,40 +825,101 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					</div>
 				</div>
 			)}
-			<button
-				onClick={flyToUser}
-				title="My location"
+			<div
 				style={{
 					position: "absolute",
 					bottom: "var(--fab-bottom)",
 					left: 16,
 					zIndex: 1000,
-					width: 44,
-					height: 44,
-					borderRadius: "50%",
-					background: "white",
-					border: "1.5px solid #d1d5db",
-					boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
 					display: "flex",
+					flexDirection: "column",
 					alignItems: "center",
-					justifyContent: "center",
-					cursor: "pointer",
+					gap: 12,
 				}}
 			>
-				<svg
-					width="20" height="20" viewBox="0 0 24 24"
-					fill={locating ? "none" : "#2563eb"}
-					stroke={locating ? "#2563eb" : "none"}
-					strokeWidth="2.5"
-					strokeLinecap="round"
-					className={locating ? "animate-spin" : ""}
+				<button
+					onClick={flyToUser}
+					title="My location"
+					style={{
+						width: 44,
+						height: 44,
+						borderRadius: "50%",
+						background: "white",
+						border: "1.5px solid #d1d5db",
+						boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						cursor: "pointer",
+					}}
 				>
-					{locating
-						? <path d="M12 2a10 10 0 0 1 10 10" />
-						: <path d="M12 2L4 20l8-4 8 4L12 2z" transform="rotate(40 12 12)" />
-					}
-				</svg>
-			</button>
+					<svg
+						width="20" height="20" viewBox="0 0 24 24"
+						fill={locating ? "none" : "#2563eb"}
+						stroke={locating ? "#2563eb" : "none"}
+						strokeWidth="2.5"
+						strokeLinecap="round"
+						className={locating ? "animate-spin" : ""}
+					>
+						{locating
+							? <path d="M12 2a10 10 0 0 1 10 10" />
+							: <path d="M12 2L4 20l8-4 8 4L12 2z" transform="rotate(40 12 12)" />
+						}
+					</svg>
+				</button>
+				<div
+					style={{
+						width: 44,
+						background: "white",
+						border: "1.5px solid #d1d5db",
+						borderRadius: 22,
+						boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+						display: "flex",
+						flexDirection: "column",
+						overflow: "hidden",
+					}}
+				>
+					<button
+						onClick={() => mapRef.current?.zoomIn({ duration: 200 })}
+						title="Zoom in"
+						style={{
+							width: 44,
+							height: 44,
+							background: "transparent",
+							border: "none",
+							borderBottom: "1px solid #e5e7eb",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							cursor: "pointer",
+							color: "#374151",
+						}}
+					>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+							<path d="M12 5v14M5 12h14" />
+						</svg>
+					</button>
+					<button
+						onClick={() => mapRef.current?.zoomOut({ duration: 200 })}
+						title="Zoom out"
+						style={{
+							width: 44,
+							height: 44,
+							background: "transparent",
+							border: "none",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							cursor: "pointer",
+							color: "#374151",
+						}}
+					>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+							<path d="M5 12h14" />
+						</svg>
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }
