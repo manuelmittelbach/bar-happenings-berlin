@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigationType } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -32,6 +32,7 @@ export const SCROLL_HOME_EVENT = "inside-bars:scroll-home";
 
 export default function Index() {
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const {
     searchQuery,
     activeCategory, setActiveCategory,
@@ -251,7 +252,15 @@ export default function Index() {
     return result;
   }, [searchQuery, activeCategory, activeDate, today, tomorrow, eventsData, cutoffDate]);
 
+  // Restore the internal scroll position ONLY on back/forward navigation
+  // (POP) — that's the browser-native convention. A fresh PUSH/REPLACE into
+  // the page (link click, new visit) starts at the top, so we drop any stale
+  // saved value instead of restoring it.
   useLayoutEffect(() => {
+    if (navigationType !== "POP") {
+      sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
+      return;
+    }
     const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
     if (!savedScrollY) return;
     const scrollY = Number(savedScrollY);
@@ -268,13 +277,23 @@ export default function Index() {
       });
     });
     return () => cancelAnimationFrame(firstFrame);
+  }, [navigationType]);
+
+  // Persist the internal scroll position whenever the page unmounts — i.e.
+  // ANY navigation away (nav tab, event click, browser back). The window-level
+  // ScrollManager in App.tsx can't see this locked-viewport container's
+  // scrollTop, so we snapshot it here for the POP-restore above to pick up.
+  useEffect(() => {
+    const node = scrollRef.current;
+    return () => {
+      sessionStorage.setItem(
+        EXPLORE_SCROLL_KEY,
+        String(node?.scrollTop ?? 0),
+      );
+    };
   }, []);
 
   const handleEventClick = useCallback((eventId: string) => {
-    sessionStorage.setItem(
-      EXPLORE_SCROLL_KEY,
-      String(scrollRef.current?.scrollTop ?? 0),
-    );
     navigate(`/event/${eventId}`);
   }, [navigate]);
 
