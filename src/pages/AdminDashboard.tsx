@@ -40,6 +40,7 @@ import {
   updateStagedEventManualFields,
   uploadEventImage,
   updateApprovedEvent,
+  updateApprovedEventImage,
   deleteApprovedEvent,
   cancelEvent,
   fetchEventsByCreator,
@@ -861,6 +862,29 @@ export default function AdminDashboard() {
     }
   };
 
+  // Approved cards wrap a live `events` row (not a staging row), so their cover
+  // is written straight to `events`. For a series we cascade to the root + all
+  // children so every date shares one image; replace overwrites, null clears.
+  const handleApprovedSeriesImageChange = async (staged: StagedEvent, file: File | null) => {
+    const seriesId = staged.parentId || (staged.recurrence ? staged.id : null);
+    try {
+      let image: string | null = null;
+      if (file) image = await uploadEventImage(file, user.id);
+      await updateApprovedEventImage(staged.id, seriesId, image);
+      const apply = (prev: StagedEvent[]) =>
+        prev.map(s =>
+          s.id === staged.id
+            ? { ...s, image, ...(image ? { imagePosition: "50% 50%" } : {}) }
+            : s,
+        );
+      setRecurringEvents(apply);
+      setManualEvents(apply);
+      toast.success(file ? "Series image updated" : "Series image removed");
+    } catch {
+      toast.error("Failed to update the series image.");
+    }
+  };
+
   const handleRecurrenceChange = async (
     stagedId: string,
     patch: { recurrence?: string; recurrenceUntil?: string | null },
@@ -1251,6 +1275,7 @@ export default function AdminDashboard() {
               onVenueChange={handleManualVenueChange}
               onSourceUrlChange={handleManualSourceUrlChange}
               onImageChange={handleManualImageChange}
+              onApprovedSeriesImageChange={handleApprovedSeriesImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
@@ -1886,6 +1911,7 @@ function StagedEventCard({
   onVenueChange,
   onSourceUrlChange,
   onImageChange,
+  onApprovedSeriesImageChange,
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
@@ -1910,6 +1936,10 @@ function StagedEventCard({
   // Replace (File) or remove (null) the staged cover image. The thumbnail above
   // the card mirrors what the event-detail hero will look like on approve.
   onImageChange: (file: File | null) => Promise<void>;
+  // Approved-card cover edit, written to the live `events` row series-wide.
+  // Only wired for the recurring scope; when absent, approved cards stay
+  // read-only for images (the previous behaviour).
+  onApprovedSeriesImageChange?: (file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
@@ -1954,13 +1984,18 @@ function StagedEventCard({
   const [imageBusy, setImageBusy] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  // Approved cards target the live `events` row (series-wide); pending cards
+  // target their staging row. Same UI, different write path.
+  const applyImageChange = (file: File | null) =>
+    staged.status === "approved" ? onApprovedSeriesImageChange?.(file) : onImageChange(file);
+
   const handleImageFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-picking the same file later
     if (!file) return;
     setImageBusy(true);
     try {
-      await onImageChange(file);
+      await applyImageChange(file);
     } finally {
       setImageBusy(false);
     }
@@ -1969,7 +2004,7 @@ function StagedEventCard({
   const handleImageRemove = async () => {
     setImageBusy(true);
     try {
-      await onImageChange(null);
+      await applyImageChange(null);
     } finally {
       setImageBusy(false);
     }
@@ -2084,6 +2119,9 @@ function StagedEventCard({
 
   const isPending = staged.status === "pending";
   const isApproved = staged.status === "approved";
+  // Approved cover editing is opt-in per scope (recurring passes the handler).
+  // When on, the same thumbnail controls write the cover to the whole series.
+  const seriesImageMode = isApproved && !!onApprovedSeriesImageChange;
   const canEdit = isPending || isApproved;
   const isManual = staged.isManual;
   const canEditManualFields = canEdit && (isManual || isApproved);
@@ -2364,7 +2402,7 @@ function StagedEventCard({
           (pending): an "approved" card wraps an `events` row whose id is NOT a
           staging id, so editing here would target the wrong table — those edit
           their cover via the event detail page instead. */}
-      {(staged.image || !isApproved) && (
+      {(staged.image || !isApproved || seriesImageMode) && (
         <div className="flex items-start gap-3">
           {staged.image ? (
             <div className="relative w-40 aspect-[3/2] md:aspect-[16/9] flex-shrink-0 overflow-hidden rounded-sm border border-border">
@@ -2377,7 +2415,7 @@ function StagedEventCard({
               />
             </div>
           ) : null}
-          {!isApproved && (
+          {(!isApproved || seriesImageMode) && (
             <div className="flex flex-col gap-1.5">
               <input
                 ref={imageInputRef}
@@ -2403,6 +2441,11 @@ function StagedEventCard({
                 >
                   <Trash2 className="h-3 w-3" /> Remove
                 </button>
+              )}
+              {seriesImageMode && (
+                <span className="text-[11px] leading-tight text-muted-foreground max-w-[160px]">
+                  Applies to all dates in this series.
+                </span>
               )}
             </div>
           )}
@@ -3120,6 +3163,7 @@ function StagedEventsList({
   onVenueChange,
   onSourceUrlChange,
   onImageChange,
+  onApprovedSeriesImageChange,
   onVenueWebsiteEventsChange,
   onMoveToRecurring,
   onSaveApproved,
@@ -3150,6 +3194,7 @@ function StagedEventsList({
   onVenueChange: (id: string, venueId: string) => Promise<void>;
   onSourceUrlChange: (id: string, url: string) => Promise<void>;
   onImageChange: (id: string, file: File | null) => Promise<void>;
+  onApprovedSeriesImageChange?: (s: StagedEvent, file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
@@ -3244,6 +3289,11 @@ function StagedEventsList({
               onVenueChange={(venueId) => onVenueChange(staged.id, venueId)}
               onSourceUrlChange={(url) => onSourceUrlChange(staged.id, url)}
               onImageChange={(file) => onImageChange(staged.id, file)}
+              onApprovedSeriesImageChange={
+                onApprovedSeriesImageChange
+                  ? (file) => onApprovedSeriesImageChange(staged, file)
+                  : undefined
+              }
               onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}

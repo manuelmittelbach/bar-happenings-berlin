@@ -2195,3 +2195,24 @@ export async function updateApprovedEvent(
   const { error } = await supabase.from("events").update(update).eq("id", displayedId);
   if (error) throw error;
 }
+
+/** Set, replace or clear the cover image across a whole approved series (root +
+ *  every child) so all occurrences share one cover — or a single approved event
+ *  when `seriesId` is null. This is an admin override: unlike the image-backfill
+ *  workflow (which only fills where `image IS NULL`), it overwrites existing
+ *  covers. A new image resets `image_position` to the default; clearing leaves
+ *  the column untouched. */
+export async function updateApprovedEventImage(
+  displayedId: string,
+  seriesId: string | null,
+  image: string | null,
+): Promise<void> {
+  const update: TablesUpdate<"events"> = { image };
+  if (image) update.image_position = "50% 50%";
+  const builder = supabase.from("events").update(update);
+  const scoped = seriesId
+    ? builder.or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
+    : builder.eq("id", displayedId);
+  const { error } = await scoped;
+  if (error) throw error;
+}
