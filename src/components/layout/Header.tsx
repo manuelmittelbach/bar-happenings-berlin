@@ -131,8 +131,8 @@ export default function Header() {
             <WordmarkLogo onClick={goHome} />
           </span>
 
-          {/* Nav — always visible; tighter gap on small screens, no burger */}
-          <nav className="flex items-center ml-auto gap-4 min-[480px]:gap-[28px]">
+          {/* Nav — always visible; same gap on all screens, no burger */}
+          <nav className="flex items-center ml-auto gap-[28px]">
             {navItems.map((item) => (
               <NavLink key={item.path} label={item.label} path={item.path} />
             ))}
