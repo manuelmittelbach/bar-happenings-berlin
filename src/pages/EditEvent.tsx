@@ -17,6 +17,7 @@ import {
   uploadEventImage,
 } from "@/lib/supabaseQueries";
 import { hasEventStarted } from "@/lib/eventStatus";
+import { editorReturnTo } from "@/lib/roleNav";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import EventForm, { type EventFormData } from "@/components/events/EventForm";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -33,15 +34,11 @@ export default function EditEvent() {
   const isAdmin = role === "admin";
 
   // Where Cancel lands when there's no in-app history to pop (deep link /
-  // fresh load). Mirrors the entry points the editor is reached from.
-  const cancelFallback =
-    fromParam === "admin"
-      ? "/profile/admin?tab=recurring&filter=approved"
-      : fromParam === "admin-all-bars"
-      ? "/profile/admin?tab=all-bars"
-      : isAdmin
-      ? `/event/${id}`
-      : "/profile/events";
+  // fresh load / opened in a new tab). Derived from the `?from=` source the
+  // entry point tagged the URL with — NOT the live role. The live-role branch
+  // used to mis-route admins to "/profile/events" during the brief window
+  // before `roleResolved` flips (see roleNav.ts).
+  const cancelFallback = editorReturnTo(fromParam, id);
 
   // Cancel = step back to where they came from. Going back (rather than
   // pushing/replacing the /profile/events URL) avoids stranding a duplicate

@@ -359,7 +359,7 @@ export default function OrganizerDashboard() {
                           canExpand ? (
                             displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
                               <Link
-                                to={`/edit-event/${displayEvent.id}?scope=future`}
+                                to={`/edit-event/${displayEvent.id}?scope=future&from=my-events`}
                                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Pencil className="h-4 w-4" /> Edit series
@@ -379,7 +379,7 @@ export default function OrganizerDashboard() {
                               )}
                               {displayEvent.status !== "canceled" && !hasEventStarted(displayEvent) && (
                                 <Link
-                                  to={`/edit-event/${displayEvent.id}`}
+                                  to={`/edit-event/${displayEvent.id}?from=my-events`}
                                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   <Pencil className="h-4 w-4" /> Edit
@@ -457,7 +457,7 @@ export default function OrganizerDashboard() {
                                 </Link>
                                 {canEdit && (
                                   <Link
-                                    to={`/edit-event/${m.id}?scope=single`}
+                                    to={`/edit-event/${m.id}?scope=single&from=my-events`}
                                     className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
                                   >
                                     <Pencil className="h-4 w-4" /> Edit
