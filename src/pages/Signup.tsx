@@ -157,7 +157,7 @@ export default function Signup() {
 				<div className="w-full px-4 py-12 md:py-20">
 				<div className="max-w-sm mx-auto text-center mb-8">
 					<h1 className="heading-display text-2xl">Create account</h1>
-					<p className="text-sm text-muted-foreground mt-1">Create your account</p>
+					<p className="text-sm text-muted-foreground mt-1">Create an account to publish events</p>
 				</div>
 
 				<form onSubmit={handleSubmit} className="max-w-sm mx-auto space-y-4">
