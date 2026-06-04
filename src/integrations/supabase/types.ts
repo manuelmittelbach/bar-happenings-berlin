@@ -611,6 +611,7 @@ export type Database = {
           inside_image_position: string
           inside_image_url: string | null
           instagram: string | null
+          instagram_scrape_enabled: boolean
           lat: number
           lng: number
           name: string
@@ -638,6 +639,7 @@ export type Database = {
           inside_image_position?: string
           inside_image_url?: string | null
           instagram?: string | null
+          instagram_scrape_enabled?: boolean
           lat: number
           lng: number
           name: string
@@ -665,6 +667,7 @@ export type Database = {
           inside_image_position?: string
           inside_image_url?: string | null
           instagram?: string | null
+          instagram_scrape_enabled?: boolean
           lat?: number
           lng?: number
           name?: string

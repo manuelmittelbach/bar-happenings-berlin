@@ -24,6 +24,7 @@ import {
   approveOrganizerWithNewBar,
   approveOrganizerWithVenueClaim,
   setVenueScrapeEnabled,
+  setVenueInstagramScrapeEnabled,
   setVenueVisible,
   updateVenueLinks,
   fetchStagedEvents,
@@ -190,6 +191,7 @@ export default function AdminDashboard() {
   const [allBarsLoading, setAllBarsLoading] = useState(true);
   const [allBarsQuery, setAllBarsQuery] = useState("");
   const [allBarsScrapeFilter, setAllBarsScrapeFilter] = useState<"all" | "yes" | "no">("all");
+  const [allBarsIgScrapeFilter, setAllBarsIgScrapeFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsClaimFilter, setAllBarsClaimFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
   const [scrapedLoading, setScrapedLoading] = useState(true);
@@ -566,6 +568,28 @@ export default function AdminDashboard() {
         ),
       );
       toast.error("Couldn't update scraping status. Please try again.");
+    }
+  };
+
+  const handleToggleInstagramScrapeEnabled = async (venueId: string, next: boolean) => {
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId
+          ? { ...item, venue: { ...item.venue, instagramScrapeEnabled: next } }
+          : item,
+      ),
+    );
+    try {
+      await setVenueInstagramScrapeEnabled(venueId, next);
+    } catch {
+      setAllBars(prev =>
+        prev.map(item =>
+          item.venue.id === venueId
+            ? { ...item, venue: { ...item.venue, instagramScrapeEnabled: !next } }
+            : item,
+        ),
+      );
+      toast.error("Couldn't update Instagram scraping status. Please try again.");
     }
   };
 
@@ -1297,6 +1321,8 @@ export default function AdminDashboard() {
                   )) return false;
                   if (allBarsScrapeFilter === "yes" && !venue.scrapeEnabled) return false;
                   if (allBarsScrapeFilter === "no" && venue.scrapeEnabled) return false;
+                  if (allBarsIgScrapeFilter === "yes" && !venue.instagramScrapeEnabled) return false;
+                  if (allBarsIgScrapeFilter === "no" && venue.instagramScrapeEnabled) return false;
                   if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
                   if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
                   return true;
@@ -1312,7 +1338,7 @@ export default function AdminDashboard() {
                     />
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs mb-2">
                       <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground">Scraping:</span>
+                        <span className="text-muted-foreground">Web:</span>
                         {(["all", "yes", "no"] as const).map((v) => (
                           <button
                             key={v}
@@ -1320,6 +1346,23 @@ export default function AdminDashboard() {
                             onClick={() => setAllBarsScrapeFilter(v)}
                             className={`px-2 h-7 rounded-sm border ${
                               allBarsScrapeFilter === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">IG:</span>
+                        {(["all", "yes", "no"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setAllBarsIgScrapeFilter(v)}
+                            className={`px-2 h-7 rounded-sm border ${
+                              allBarsIgScrapeFilter === v
                                 ? "border-foreground bg-foreground text-background"
                                 : "border-border hover:bg-muted"
                             }`}
@@ -1359,6 +1402,7 @@ export default function AdminDashboard() {
                           hasOwner={hasOwner}
                           events={(liveEventsByVenue[venue.id] ?? []).filter(e => e.status === "approved")}
                           onToggleScrapeEnabled={handleToggleScrapeEnabled}
+                          onToggleInstagramScrapeEnabled={handleToggleInstagramScrapeEnabled}
                           onToggleVisible={handleToggleVisible}
                           onLinkChange={handleVenueLinkChange}
                           onDeleteEvent={handleDeleteApprovedSingle}
@@ -1379,6 +1423,7 @@ function BarCard({
   hasOwner,
   events,
   onToggleScrapeEnabled,
+  onToggleInstagramScrapeEnabled,
   onToggleVisible,
   onLinkChange,
   onDeleteEvent,
@@ -1387,6 +1432,7 @@ function BarCard({
   hasOwner: boolean;
   events: LiveEventInfo[];
   onToggleScrapeEnabled: (venueId: string, next: boolean) => void;
+  onToggleInstagramScrapeEnabled: (venueId: string, next: boolean) => void;
   onToggleVisible: (venueId: string, next: boolean) => void;
   onLinkChange: (
     venueId: string,
@@ -1542,10 +1588,23 @@ function BarCard({
               ? "bg-green-500/10 text-green-600 border-green-500/40 hover:bg-green-500/20"
               : "bg-red-500/10 text-red-600 border-red-500/40 hover:bg-red-500/20"
           }`}
-          title={`Scraping: ${venue.scrapeEnabled ? "yes" : "no"}. Click to toggle.`}
+          title={`Web scraping: ${venue.scrapeEnabled ? "yes" : "no"}. Click to toggle.`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${venue.scrapeEnabled ? "bg-green-500" : "bg-red-500"}`} />
-          Scraping: {venue.scrapeEnabled ? "yes" : "no"}
+          Web scraping: {venue.scrapeEnabled ? "yes" : "no"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleInstagramScrapeEnabled(venue.id, !venue.instagramScrapeEnabled)}
+          className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border transition-colors ${
+            venue.instagramScrapeEnabled
+              ? "bg-green-500/10 text-green-600 border-green-500/40 hover:bg-green-500/20"
+              : "bg-red-500/10 text-red-600 border-red-500/40 hover:bg-red-500/20"
+          }`}
+          title={`IG scraping: ${venue.instagramScrapeEnabled ? "yes" : "no"}. Click to toggle.`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${venue.instagramScrapeEnabled ? "bg-green-500" : "bg-red-500"}`} />
+          IG scraping: {venue.instagramScrapeEnabled ? "yes" : "no"}
         </button>
         <button
           type="button"

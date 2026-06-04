@@ -107,6 +107,7 @@ function mapVenueRow(row: Tables<"venues">): Venue {
     websiteEvents: row.website_events ?? undefined,
     phone: row.phone ?? undefined,
     scrapeEnabled: row.scrape_enabled,
+    instagramScrapeEnabled: row.instagram_scrape_enabled,
     isVisible: row.is_visible,
     lat: Number(row.lat),
     lng: Number(row.lng),
@@ -131,6 +132,17 @@ export async function setVenueScrapeEnabled(
   const { error } = await supabase
     .from("venues")
     .update({ scrape_enabled: scrapeEnabled })
+    .eq("id", venueId);
+  if (error) throw error;
+}
+
+export async function setVenueInstagramScrapeEnabled(
+  venueId: string,
+  instagramScrapeEnabled: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from("venues")
+    .update({ instagram_scrape_enabled: instagramScrapeEnabled })
     .eq("id", venueId);
   if (error) throw error;
 }
