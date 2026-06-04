@@ -110,7 +110,7 @@ def cmd_list(args):
     # Roots only: empty/NULL parent_id, non-empty recurrence, still live.
     rows = (
         c.table("events")
-        .select("id,parent_id,title,venue,venue_id,date,recurrence,url,status")
+        .select("id,parent_id,title,venue,venue_id,date,recurrence,url,status,image")
         .eq("status", "approved")
         .order("venue")
         .order("title")
@@ -123,6 +123,9 @@ def cmd_list(args):
         rec = (r.get("recurrence") or "").strip()
         parent = (r.get("parent_id") or "") if "parent_id" in r else ""
         if not rec or parent:
+            continue
+        # --missing-image: only roots that have no cover yet (for the image scrape).
+        if getattr(args, "missing_image", False) and (r.get("image") or "").strip():
             continue
         freq, until = parse_rule(rec)
         roots.append({
@@ -223,6 +226,8 @@ def parse_args():
 
     pl = sub.add_parser("list", help="Print recurring series roots as JSON.")
     pl.add_argument("--out", help="Write JSON to this path instead of stdout.")
+    pl.add_argument("--missing-image", action="store_true",
+                    help="Only roots whose `image` is empty (for the image scrape).")
     pl.set_defaults(func=cmd_list)
 
     pr = sub.add_parser("report", help="Write a Markdown report from a verdicts JSON.")
