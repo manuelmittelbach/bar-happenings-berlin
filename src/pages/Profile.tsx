@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { accountLinks } from "@/lib/roleNav";
 import { PageSpinner } from "@/components/ui/page-spinner";
 
 /* Account hub. The web header no longer surfaces role-specific tabs
@@ -10,7 +11,7 @@ import { PageSpinner } from "@/components/ui/page-spinner";
  * role; the listed links depend on the role. */
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, loading, roleResolved, signOut } = useAuth();
 
   useEffect(() => {
     if (loading) return;
@@ -26,22 +27,15 @@ export default function Profile() {
     navigate("/signin");
   };
 
-  if (loading || !user) {
+  // Hold the spinner until the role is authoritative. Without this the page
+  // renders the plain-user links for a beat (admin role lands a tick later
+  // from the DB lookup), so "Your events" flashes and is briefly clickable
+  // before it swaps to "Admin". See roleNav.ts for the why.
+  if (loading || !user || !roleResolved) {
     return <PageSpinner />;
   }
 
-  const links: { label: string; to: string }[] = [];
-  if (role === "user") {
-    links.push({ label: "Your events", to: "/profile/events" });
-  }
-  if (role === "organizer") {
-    links.push({ label: "Your events", to: "/profile/events" });
-    links.push({ label: "Your bar", to: "/profile/bar" });
-  }
-  if (role === "admin") {
-    links.push({ label: "Admin", to: "/profile/admin" });
-  }
-  links.push({ label: "Your profile", to: "/profile/details" });
+  const links = accountLinks(role);
 
   return (
     <div className="container max-w-2xl pt-6 md:pt-8 pb-24">

@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "@/hooks/useAuth";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
+import { homeForRole } from "@/lib/roleNav";
 import { Spinner } from "@/components/ui/spinner";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -149,10 +150,9 @@ function AuthCallbackGate({ children }: { children: React.ReactNode }) {
     } else {
       markEmailJustConfirmed();
       // Confirmed accounts land on their role's home: admins → /profile/admin,
-      // organizers → /profile/events, plain users → the events list.
-      const destination =
-        role === "admin" ? "/profile/admin" : role === "organizer" ? "/profile/events" : "/events";
-      navigate(destination, { replace: true });
+      // organizers → /profile/events, plain users → the events list. Gated on
+      // `roleResolved` above, so `role` is authoritative here.
+      navigate(homeForRole(role), { replace: true });
     }
     setPending(false);
   }, [pending, loading, roleResolved, user, role, emailChange, navigate]);
