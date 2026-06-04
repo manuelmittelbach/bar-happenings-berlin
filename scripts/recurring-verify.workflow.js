@@ -141,33 +141,57 @@ working directory.
 
 Steps:
 1. browser_navigate to the url, then browser_evaluate '() => document.body.innerText'.
-2. If the body is sparse (< ~200 chars): check document.querySelectorAll('iframe')
-   — if present, navigate to its src (e.g. a Google Sheet) — or
-   document.querySelectorAll('img') for an event image / monthly PNG: navigate
-   to the image URL, browser_take_screenshot (save to /tmp/verify-screenshots/${r.id}.png),
+2. EMBED CHECK (do this whenever "${r.title}" is NOT already plainly visible in
+   the top-level text — not just when the body is short). Many venues render
+   their actual programme inside an embedded widget whose text is INVISIBLE to
+   the top page's document.body.innerText (cross-origin iframes don't contribute
+   their text to the parent). A 500-char body of opening hours / football / menu
+   with NO event listing is the classic tell — do NOT conclude \`not_found\` from
+   it before following the embeds. Enumerate every iframe AND drill through
+   nested ones — Wix/Squarespace wrap a Google Calendar TWO iframes deep:
+
+     browser_evaluate '() => Array.from(document.querySelectorAll("iframe")).map(f => f.src)'
+
+   Then for each iframe src: browser_navigate to it and read its body.innerText;
+   if THAT page itself has iframes (e.g. a filesusr.com / *.wixsite.com wrapper),
+   read THEIR srcs too and navigate one level deeper. Follow the chain until you
+   reach the real content. In particular:
+     - calendar.google.com/calendar/embed?... — an AGENDA-mode embed lists every
+       upcoming dated occurrence as plain text ("7  JUN, SUN  8:15 – 9:45pm  Tatort").
+       Reading it directly confirms title + weekday + future dates in one shot.
+       This is the single most common false-\`not_found\` cause — always chase it.
+     - a Google Sheet / generic embed — navigate to its src and read the text.
+   If instead the content is an image (event flyer / monthly PNG): navigate to
+   the image URL, browser_take_screenshot (save to /tmp/verify-screenshots/${r.id}.png),
    then Read the screenshot to judge visually. Instagram-post URLs
    (instagram.com/p/...) often show a login wall or empty body → that is
    \`unreachable\`, not \`not_found\`.
-3. If the page fails (timeout / 404 / anti-bot): retry ONCE, then \`unreachable\`.
+3. If the page (or an embed you needed to read) fails (timeout / 404 / anti-bot):
+   retry ONCE, then \`unreachable\`.
 4. Judge whether "${r.title}" still appears as a recurring event matching
    "${r.cadence}". Signals, strongest first:
      a. Cadence wording matching ${r.cadence} — match GERMAN phrasings too
         ("jeden Donnerstag", "2. Samstag im Monat", "monatlich", "Do. 20:00").
      b. The title (or close variant) present as a regular/series item.
-     c. A future-dated occurrence consistent with the rule (right weekday/date).
+     c. A future-dated occurrence consistent with the rule (right weekday/date) —
+        including dated rows inside an embedded calendar/agenda.
 5. Pick EXACTLY ONE verdict:
      confirmed       — signal (a) or (c) clearly present; alive & matches rule.
      confirmed_weak  — only signal (b); cadence not restated, no matching future
                        date confirmed. Probably fine, low confidence.
      changed         — clearly still recurring but on a DIFFERENT day/cadence
                        (note old vs. new in evidence).
-     not_found       — page loaded, right page, but the event is NOT on it as a
+     not_found       — page loaded, right page, AND you followed every embed/
+                       iframe to its real content, but the event is NOT there as a
                        recurring item (only one-offs, or gone). Review for removal.
-     unreachable     — page failed / blocked / login wall / OCR failed.
-                       INCONCLUSIVE — never infer removal from a page you couldn't read.
+     unreachable     — page failed / blocked / login wall / OCR failed, OR an
+                       embed you needed to read wouldn't load. INCONCLUSIVE —
+                       never infer removal from content you couldn't read.
    Bias rules: when the page loaded but you're unsure → confirmed_weak, NEVER
-   not_found (a false not_found risks deleting a live series). Never not_found
-   for a page you couldn't actually read — that's unreachable.
+   not_found (a false not_found risks deleting a live series). If the top page
+   had an embed/iframe you could NOT successfully read → confirmed_weak or
+   unreachable, NEVER not_found — the listing may live inside it. Never not_found
+   for a page (or embed) you couldn't actually read — that's unreachable.
 6. browser_close.
 
 Return the verdict object: id/title/venue/url/cadence carried through verbatim,
