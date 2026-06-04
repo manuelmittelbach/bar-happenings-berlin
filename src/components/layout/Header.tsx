@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, User, X } from "lucide-react";
+import { User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems: { label: string; path: string }[] = [
@@ -28,19 +27,38 @@ function Wordmark({ onClick }: { onClick: () => void }) {
   );
 }
 
-/* WordmarkCompact ("iB") kept for reference — currently unused.
-   Restore by swapping the md:hidden block below back to use it. */
-// function WordmarkCompact({ onClick }: { onClick: () => void }) { ... }
+/* Compact bordered "iB" logo — mirrors the confirmation-email monogram.
+   Shown below 480px in place of the full wordmark to keep the nav tabs
+   visible instead of collapsing into a burger menu. */
+function WordmarkLogo({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center justify-center border-2 border-foreground shrink-0"
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        fontFamily: "'Helvetica Neue', Arial, sans-serif",
+        fontSize: 22,
+        fontWeight: 900,
+        letterSpacing: "-1px",
+        lineHeight: 1,
+      }}
+      aria-label="Inside Bars — home"
+    >
+      iB
+    </button>
+  );
+}
 
 export default function Header() {
   const location = useLocation();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const goHome = () => {
     navigate("/");
-    setMenuOpen(false);
   };
 
   const isActive = (path: string) =>
@@ -104,11 +122,17 @@ export default function Header() {
         }}
       >
         <div className="container flex items-center gap-4" style={{ height: 56 }}>
-          {/* Wordmark — always full "Inside · Bars" on all viewports */}
-          <Wordmark onClick={goHome} />
+          {/* Brand: full "Inside · Bars" wordmark from 480px up,
+              compact bordered "iB" logo below to make room for the tabs */}
+          <span className="hidden min-[480px]:inline-flex">
+            <Wordmark onClick={goHome} />
+          </span>
+          <span className="min-[480px]:hidden inline-flex">
+            <WordmarkLogo onClick={goHome} />
+          </span>
 
-          {/* Desktop nav */}
-          <nav className="hidden min-[480px]:flex items-center ml-auto" style={{ gap: 28 }}>
+          {/* Nav — always visible; tighter gap on small screens, no burger */}
+          <nav className="flex items-center ml-auto gap-4 min-[480px]:gap-[28px]">
             {navItems.map((item) => (
               <NavLink key={item.path} label={item.label} path={item.path} />
             ))}
@@ -119,63 +143,8 @@ export default function Header() {
               <NavLink path="/profile" icon={<User className="h-4 w-4" />} />
             )}
           </nav>
-
-          {/* Mobile burger button */}
-          <button
-            className="min-[480px]:hidden ml-auto flex items-center justify-center"
-            style={{ width: 36, height: 36 }}
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-          >
-            {menuOpen ? (
-              <X className="h-5 w-5" strokeWidth={2} />
-            ) : (
-              <Menu className="h-5 w-5" strokeWidth={2} />
-            )}
-          </button>
         </div>
       </header>
-
-      {/* Mobile dropdown — z-[10000] sits above the map's z-[9999] tiles */}
-      {menuOpen && (
-        <div
-          className="min-[480px]:hidden fixed inset-x-0 z-[10000] border-b-2 border-foreground"
-          style={{
-            top: `calc(56px + env(safe-area-inset-top))`,
-            backgroundColor: "hsl(var(--background))",
-          }}
-        >
-          <nav className="container flex flex-col items-start py-2">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                label={item.label}
-                path={item.path}
-                bold
-                onClick={() => setMenuOpen(false)}
-              />
-            ))}
-            {!loading && !user && (
-              <NavLink
-                path="/signin"
-                icon={<User className="h-4 w-4" />}
-                ariaLabel="Sign in"
-                bold
-                onClick={() => setMenuOpen(false)}
-              />
-            )}
-            {!loading && user && (
-              <NavLink
-                path="/profile"
-                icon={<User className="h-4 w-4" />}
-                ariaLabel="Profile"
-                bold
-                onClick={() => setMenuOpen(false)}
-              />
-            )}
-          </nav>
-        </div>
-      )}
     </>
   );
 }
