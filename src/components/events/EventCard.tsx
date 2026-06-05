@@ -71,6 +71,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
     return (
       <Link
         to={`/event/${event.id}`}
+        data-event-id={event.id}
         onClick={handleClick}
         onPointerEnter={warmImage}
         onPointerDown={warmImage}
@@ -101,6 +102,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
     return (
       <Link
         to={`/event/${event.id}`}
+        data-event-id={event.id}
         onClick={handleClick}
         onPointerEnter={warmImage}
         onPointerDown={warmImage}
@@ -127,6 +129,7 @@ export default function EventCard({ event, layout = "list", onClick, hideVenue =
   return (
     <Link
       to={`/event/${event.id}`}
+      data-event-id={event.id}
       onClick={handleClick}
       onPointerEnter={warmImage}
       onPointerDown={warmImage}

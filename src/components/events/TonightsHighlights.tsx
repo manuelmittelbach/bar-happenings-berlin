@@ -83,6 +83,7 @@ function HighlightCard({ event, categories, onClick }: HighlightCardProps) {
 
   return (
     <button
+      data-event-id={event.id}
       onClick={() => onClick(event.id)}
       onPointerEnter={() => prefetchImage(event.image)}
       onPointerDown={() => prefetchImage(event.image)}

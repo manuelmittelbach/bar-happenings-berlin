@@ -60,6 +60,14 @@ export default function LandingDraft() {
     navigate("/events");
   };
 
+  // Tap a hero preview card → land on /events with that card's tab selected,
+  // and hand the event id to Index via router state so it scrolls the list
+  // straight to (and briefly flags) the matching card.
+  const goToEvent = (eventId: string) => {
+    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    navigate("/events", { state: { scrollToEventId: eventId } });
+  };
+
   // Hero card seed — stable across renders within a single visit, fresh
   // on each page load. Lets the landing show different events each visit
   // without re-shuffling on every re-render.
@@ -228,13 +236,12 @@ export default function LandingDraft() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.15 }}
             >
-              EVERY SMALL<br />
-              THING{" "}
+              WHAT'S ON{" "}
               <span
                 className="heading-editorial italic lowercase text-accent"
                 style={{ letterSpacing: "-0.01em" }}
               >
-                happening
+                tonight
               </span>
               <br />
               IN BERLIN BARS<span className="text-accent">.</span>
@@ -262,7 +269,7 @@ export default function LandingDraft() {
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                <span>{mode === "tomorrow" ? "Events tomorrow" : "Events tonight"}</span>
+                <span>All events</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
               <button
@@ -357,11 +364,20 @@ export default function LandingDraft() {
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={visibleCards[0].event.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => goToEvent(visibleCards[0].event.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          goToEvent(visibleCards[0].event.id);
+                        }
+                      }}
                       initial={{ opacity: 0, y: 14, rotate: -3 }}
                       animate={{ opacity: 1, y: 0, rotate: -1.2 }}
                       exit={{ opacity: 0, y: -10, rotate: 1.5 }}
                       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                      className="relative border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
+                      className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
                       style={{
                         padding: "20px 18px 16px",
                         transformOrigin: "left center",
@@ -416,6 +432,15 @@ export default function LandingDraft() {
                 return (
                   <motion.div
                     key={event.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => goToEvent(event.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        goToEvent(event.id);
+                      }
+                    }}
                     initial={initialPose}
                     animate={slotPose}
                     // Exit applies the same per-slot delta (Δx≈-90,
@@ -442,7 +467,7 @@ export default function LandingDraft() {
                       },
                     }}
                     transition={{ duration: 28, ease: "linear" }}
-                    className="absolute left-0 top-0 w-[360px] border-2 border-foreground bg-background shadow-[12px_12px_0_0_#0f0f0f]"
+                    className="absolute left-0 top-0 w-[360px] cursor-pointer border-2 border-foreground bg-background shadow-[12px_12px_0_0_#0f0f0f]"
                     style={{
                       padding: "22px 20px 18px",
                       zIndex: slot.z,
