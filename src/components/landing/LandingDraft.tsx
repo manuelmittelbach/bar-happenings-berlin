@@ -113,7 +113,15 @@ export default function LandingDraft() {
   // hidden below lg), so it can step through the pool far more often than
   // the slow desktop drift. Tracked via matchMedia so resizing across the
   // lg breakpoint re-paces the timer.
-  const [isMobile, setIsMobile] = useState(false);
+  // Resolve synchronously on first render — initialising to false would make
+  // the very first cycle effect run think it's desktop and fire the immediate
+  // drift kick, so navigating onto the landing page on a phone swapped the
+  // card instantly instead of after a full cycle.
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1023px)").matches,
+  );
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1023px)");
     const update = () => setIsMobile(mq.matches);
