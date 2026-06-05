@@ -109,11 +109,24 @@ export default function LandingDraft() {
     return picks;
   }, [pool, shuffleSeed]);
 
-  // Carousel cycle — the stack advances one slot every CYCLE_MS. With a
-  // linear easing and a transition duration matching the interval, the
-  // cards drift in continuous, constant-velocity motion: no perceptible
-  // "rest" at each slot. Skips entirely when the pool is too small.
-  const CYCLE_MS = 28000;
+  // Phones render a single crossfading card (the desktop drift deck is
+  // hidden below lg), so it can step through the pool far more often than
+  // the slow desktop drift. Tracked via matchMedia so resizing across the
+  // lg breakpoint re-paces the timer.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Carousel cycle — the stack advances one slot every CYCLE_MS. On desktop,
+  // linear easing + a transition duration matching the interval keeps the
+  // cards drifting at constant velocity with no perceptible "rest". On
+  // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
+  const CYCLE_MS = isMobile ? 5500 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
   // Wall-clock anchor for the cycle phase. Without this, every visibility
   // resume would queue the next tick CYCLE_MS into the future, regardless
@@ -168,7 +181,7 @@ export default function LandingDraft() {
       document.removeEventListener("visibilitychange", handleVisibility);
       stop();
     };
-  }, [heroPool.length]);
+  }, [heroPool.length, CYCLE_MS]);
 
   // Visible slice — three events visible at any time. With a pool of N,
   // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
@@ -376,7 +389,7 @@ export default function LandingDraft() {
                       initial={{ opacity: 0, y: 14, rotate: -3 }}
                       animate={{ opacity: 1, y: 0, rotate: -1.2 }}
                       exit={{ opacity: 0, y: -10, rotate: 1.5 }}
-                      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
                       className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
                       style={{
                         padding: "20px 18px 16px",
