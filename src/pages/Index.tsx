@@ -336,12 +336,14 @@ export default function Index() {
               targetRect.top - containerRect.top + container.scrollTop - clearance;
             container.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
           }
-          // Brief accent wash over the whole card/row so the eye catches
-          // which one it landed on, then fades back out.
-          target.style.transition = "background-color 0.4s ease";
-          target.style.backgroundColor = "hsl(var(--accent) / 0.22)";
+          // Brief accent outline so the eye catches which card it landed on,
+          // then fades back out.
+          target.style.outline = "2px solid hsl(var(--accent))";
+          target.style.outlineOffset = "-2px";
+          target.style.transition = "outline-color 0.4s ease";
           window.setTimeout(() => {
-            target.style.backgroundColor = "";
+            target.style.outline = "";
+            target.style.outlineOffset = "";
           }, 1600);
         }
         // Clear the one-shot target only AFTER scrolling — doing it earlier
