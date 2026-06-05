@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { useNavigate, useNavigationType } from "react-router-dom";
+import { useNavigate, useNavigationType, useLocation } from "react-router-dom";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
 import EventCard from "@/components/events/EventCard";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -33,6 +33,7 @@ export const SCROLL_HOME_EVENT = "inside-bars:scroll-home";
 export default function Index() {
   const navigate = useNavigate();
   const navigationType = useNavigationType();
+  const location = useLocation();
   const {
     searchQuery,
     activeCategory, setActiveCategory,
@@ -292,6 +293,66 @@ export default function Index() {
       );
     };
   }, []);
+
+  // Deep-scroll target handed over by a landing-page hero card tap (router
+  // state). Once the list has painted, scroll the internal container straight
+  // to that event's card and flash it, then strip the state so a later
+  // re-render / back-nav doesn't re-trigger the jump.
+  const scrollToEventId =
+    (location.state as { scrollToEventId?: string } | null)?.scrollToEventId ?? null;
+  useEffect(() => {
+    if (!scrollToEventId || eventsLoading) return;
+    // Two rAFs: the first lands after the list commits, the second after
+    // layout settles (sticky headers, images reserving space) so the
+    // measured offset is final. Mirrors the POP-restore timing above.
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const container = scrollRef.current;
+        const target = container?.querySelector(
+          `[data-event-id="${CSS.escape(scrollToEventId)}"]`,
+        ) as HTMLElement | null;
+        if (container && target) {
+          // The target card's own section header (e.g. "More events") is
+          // sticky at the container's top edge. Land the card so its top edge
+          // sits flush against the header's bottom hairline (the grey line) —
+          // no gap, nothing tucked behind it. Subtract the header's rendered
+          // height (measured off the element, so it's correct at any scroll
+          // position). Strips without a sticky header (Editor's picks grid)
+          // yield 0 and the card just lands at the container top.
+          const stickyHeader =
+            target.closest("section")?.querySelector<HTMLElement>(".sticky");
+          const clearance = stickyHeader ? stickyHeader.offsetHeight : 0;
+          const containerRect = container.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          // Only scroll when the card isn't already fully on screen — its top
+          // must clear the sticky header and its bottom must sit above the
+          // container's bottom edge. If it's visible, leave the list put and
+          // just flag the card.
+          const fullyVisible =
+            targetRect.top >= containerRect.top + clearance &&
+            targetRect.bottom <= containerRect.bottom;
+          if (!fullyVisible) {
+            const offset =
+              targetRect.top - containerRect.top + container.scrollTop - clearance;
+            container.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+          }
+          // Brief accent wash over the whole card/row so the eye catches
+          // which one it landed on, then fades back out.
+          target.style.transition = "background-color 0.4s ease";
+          target.style.backgroundColor = "hsl(var(--accent) / 0.22)";
+          window.setTimeout(() => {
+            target.style.backgroundColor = "";
+          }, 1600);
+        }
+        // Clear the one-shot target only AFTER scrolling — doing it earlier
+        // would re-render with no state and the effect cleanup would cancel
+        // this very frame before it runs.
+        navigate(location.pathname, { replace: true, state: null });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollToEventId, eventsLoading]);
 
   const handleEventClick = useCallback((eventId: string) => {
     navigate(`/event/${eventId}`);

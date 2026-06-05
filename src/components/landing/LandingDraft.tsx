@@ -60,6 +60,14 @@ export default function LandingDraft() {
     navigate("/events");
   };
 
+  // Tap a hero preview card → land on /events with that card's tab selected,
+  // and hand the event id to Index via router state so it scrolls the list
+  // straight to (and briefly flags) the matching card.
+  const goToEvent = (eventId: string) => {
+    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    navigate("/events", { state: { scrollToEventId: eventId } });
+  };
+
   // Hero card seed — stable across renders within a single visit, fresh
   // on each page load. Lets the landing show different events each visit
   // without re-shuffling on every re-render.
@@ -101,11 +109,24 @@ export default function LandingDraft() {
     return picks;
   }, [pool, shuffleSeed]);
 
-  // Carousel cycle — the stack advances one slot every CYCLE_MS. With a
-  // linear easing and a transition duration matching the interval, the
-  // cards drift in continuous, constant-velocity motion: no perceptible
-  // "rest" at each slot. Skips entirely when the pool is too small.
-  const CYCLE_MS = 28000;
+  // Phones render a single crossfading card (the desktop drift deck is
+  // hidden below lg), so it can step through the pool far more often than
+  // the slow desktop drift. Tracked via matchMedia so resizing across the
+  // lg breakpoint re-paces the timer.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Carousel cycle — the stack advances one slot every CYCLE_MS. On desktop,
+  // linear easing + a transition duration matching the interval keeps the
+  // cards drifting at constant velocity with no perceptible "rest". On
+  // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
+  const CYCLE_MS = isMobile ? 10000 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
   // Wall-clock anchor for the cycle phase. Without this, every visibility
   // resume would queue the next tick CYCLE_MS into the future, regardless
@@ -130,13 +151,16 @@ export default function LandingDraft() {
     const start = () => {
       if (interval || pendingTick) return;
       const now = performance.now();
-      // First start (next anchor is 0) → kick on the next frame so the
-      // initial slot poses get one paint, then drift begins. Resumes
-      // after a hidden phase pay only the remaining time until the
-      // anchor; if we're already past it, fire immediately.
+      // First start (next anchor is 0): desktop kicks on the next frame so
+      // the continuous drift begins immediately; mobile instead holds the
+      // first card for a full CYCLE_MS so every card (including the first)
+      // gets the same dwell time. Resumes after a hidden phase pay only the
+      // remaining time until the anchor; if we're already past it, fire now.
       const delay =
         nextTickAtRef.current === 0
-          ? 0
+          ? isMobile
+            ? CYCLE_MS
+            : 0
           : Math.max(0, nextTickAtRef.current - now);
       pendingTick = setTimeout(() => {
         pendingTick = undefined;
@@ -160,7 +184,7 @@ export default function LandingDraft() {
       document.removeEventListener("visibilitychange", handleVisibility);
       stop();
     };
-  }, [heroPool.length]);
+  }, [heroPool.length, CYCLE_MS, isMobile]);
 
   // Visible slice — three events visible at any time. With a pool of N,
   // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
@@ -228,13 +252,12 @@ export default function LandingDraft() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.15 }}
             >
-              EVERY SMALL<br />
-              THING{" "}
+              WHAT'S ON{" "}
               <span
                 className="heading-editorial italic lowercase text-accent"
                 style={{ letterSpacing: "-0.01em" }}
               >
-                happening
+                tonight
               </span>
               <br />
               IN BERLIN BARS<span className="text-accent">.</span>
@@ -262,7 +285,7 @@ export default function LandingDraft() {
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                <span>{mode === "tomorrow" ? "Events tomorrow" : "Events tonight"}</span>
+                <span>All events</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
               <button
@@ -357,11 +380,20 @@ export default function LandingDraft() {
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={visibleCards[0].event.id}
-                      initial={{ opacity: 0, y: 14, rotate: -3 }}
-                      animate={{ opacity: 1, y: 0, rotate: -1.2 }}
-                      exit={{ opacity: 0, y: -10, rotate: 1.5 }}
-                      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                      className="relative border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => goToEvent(visibleCards[0].event.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          goToEvent(visibleCards[0].event.id);
+                        }
+                      }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.9, ease: "easeInOut" }}
+                      className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
                       style={{
                         padding: "20px 18px 16px",
                         transformOrigin: "left center",
@@ -416,6 +448,15 @@ export default function LandingDraft() {
                 return (
                   <motion.div
                     key={event.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => goToEvent(event.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        goToEvent(event.id);
+                      }
+                    }}
                     initial={initialPose}
                     animate={slotPose}
                     // Exit applies the same per-slot delta (Δx≈-90,
@@ -442,7 +483,7 @@ export default function LandingDraft() {
                       },
                     }}
                     transition={{ duration: 28, ease: "linear" }}
-                    className="absolute left-0 top-0 w-[360px] border-2 border-foreground bg-background shadow-[12px_12px_0_0_#0f0f0f]"
+                    className="absolute left-0 top-0 w-[360px] cursor-pointer border-2 border-foreground bg-background shadow-[12px_12px_0_0_#0f0f0f]"
                     style={{
                       padding: "22px 20px 18px",
                       zIndex: slot.z,
