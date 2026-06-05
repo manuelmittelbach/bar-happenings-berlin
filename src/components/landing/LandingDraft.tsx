@@ -126,7 +126,7 @@ export default function LandingDraft() {
   // linear easing + a transition duration matching the interval keeps the
   // cards drifting at constant velocity with no perceptible "rest". On
   // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
-  const CYCLE_MS = isMobile ? 5500 : 28000;
+  const CYCLE_MS = isMobile ? 10000 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
   // Wall-clock anchor for the cycle phase. Without this, every visibility
   // resume would queue the next tick CYCLE_MS into the future, regardless
@@ -151,13 +151,16 @@ export default function LandingDraft() {
     const start = () => {
       if (interval || pendingTick) return;
       const now = performance.now();
-      // First start (next anchor is 0) → kick on the next frame so the
-      // initial slot poses get one paint, then drift begins. Resumes
-      // after a hidden phase pay only the remaining time until the
-      // anchor; if we're already past it, fire immediately.
+      // First start (next anchor is 0): desktop kicks on the next frame so
+      // the continuous drift begins immediately; mobile instead holds the
+      // first card for a full CYCLE_MS so every card (including the first)
+      // gets the same dwell time. Resumes after a hidden phase pay only the
+      // remaining time until the anchor; if we're already past it, fire now.
       const delay =
         nextTickAtRef.current === 0
-          ? 0
+          ? isMobile
+            ? CYCLE_MS
+            : 0
           : Math.max(0, nextTickAtRef.current - now);
       pendingTick = setTimeout(() => {
         pendingTick = undefined;
@@ -181,7 +184,7 @@ export default function LandingDraft() {
       document.removeEventListener("visibilitychange", handleVisibility);
       stop();
     };
-  }, [heroPool.length, CYCLE_MS]);
+  }, [heroPool.length, CYCLE_MS, isMobile]);
 
   // Visible slice — three events visible at any time. With a pool of N,
   // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
@@ -386,10 +389,10 @@ export default function LandingDraft() {
                           goToEvent(visibleCards[0].event.id);
                         }
                       }}
-                      initial={{ opacity: 0, y: 14, rotate: -3 }}
-                      animate={{ opacity: 1, y: 0, rotate: -1.2 }}
-                      exit={{ opacity: 0, y: -10, rotate: 1.5 }}
-                      transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.9, ease: "easeInOut" }}
                       className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
                       style={{
                         padding: "20px 18px 16px",
