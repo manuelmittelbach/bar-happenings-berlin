@@ -331,52 +331,12 @@ export default function Index() {
           const fullyVisible =
             targetRect.top >= containerRect.top + clearance &&
             targetRect.bottom <= containerRect.bottom;
-          // Flash the accent outline three times so the eye catches which
-          // card it landed on, then clear it. Width/style stay fixed; only
-          // the outline color is animated (transparent → accent) per blink.
-          const runFlash = () => {
-            target.style.outline = "2px solid transparent";
-            target.style.outlineOffset = "-2px";
-            const flash = target.animate(
-              [
-                { outlineColor: "transparent" },
-                { outlineColor: "hsl(var(--accent))" },
-                { outlineColor: "transparent" },
-                { outlineColor: "hsl(var(--accent))" },
-                { outlineColor: "transparent" },
-                { outlineColor: "hsl(var(--accent))" },
-                { outlineColor: "transparent" },
-              ],
-              { duration: 1300, easing: "ease-in-out" },
-            );
-            flash.onfinish = () => {
-              target.style.outline = "";
-              target.style.outlineOffset = "";
-            };
-          };
           if (!fullyVisible) {
             const dest = Math.max(
               0,
               targetRect.top - containerRect.top + container.scrollTop - clearance,
             );
             container.scrollTo({ top: dest, behavior: "smooth" });
-            // Hold the blink until the smooth scroll lands on the card (or a
-            // safety timeout) so it never flashes mid-scroll while the card
-            // is still off-screen.
-            const startedAt = performance.now();
-            const flashWhenSettled = () => {
-              const arrived = Math.abs(container.scrollTop - dest) < 2;
-              const timedOut = performance.now() - startedAt > 1200;
-              if (arrived || timedOut) {
-                runFlash();
-              } else {
-                requestAnimationFrame(flashWhenSettled);
-              }
-            };
-            requestAnimationFrame(flashWhenSettled);
-          } else {
-            // Already fully on screen — blink right away.
-            runFlash();
           }
         }
         // Clear the one-shot target only AFTER scrolling — doing it earlier
