@@ -336,15 +336,25 @@ export default function Index() {
               targetRect.top - containerRect.top + container.scrollTop - clearance;
             container.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
           }
-          // Brief accent outline so the eye catches which card it landed on,
-          // then fades back out.
-          target.style.outline = "2px solid hsl(var(--accent))";
+          // Flash the accent outline twice so the eye catches which card
+          // it landed on, then clear it. Width/style stay fixed; only the
+          // outline color is animated (transparent → accent) for the blink.
+          target.style.outline = "2px solid transparent";
           target.style.outlineOffset = "-2px";
-          target.style.transition = "outline-color 0.4s ease";
-          window.setTimeout(() => {
+          const flash = target.animate(
+            [
+              { outlineColor: "transparent" },
+              { outlineColor: "hsl(var(--accent))" },
+              { outlineColor: "transparent" },
+              { outlineColor: "hsl(var(--accent))" },
+              { outlineColor: "transparent" },
+            ],
+            { duration: 1000, easing: "ease-in-out" },
+          );
+          flash.onfinish = () => {
             target.style.outline = "";
             target.style.outlineOffset = "";
-          }, 1600);
+          };
         }
         // Clear the one-shot target only AFTER scrolling — doing it earlier
         // would re-render with no state and the effect cleanup would cancel
