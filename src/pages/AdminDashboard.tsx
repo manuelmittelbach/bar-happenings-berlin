@@ -1801,11 +1801,20 @@ function OrganizerCard({
               Bar not yet in table
             </span>
           )}
-          {isClaim && (
-            <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-yellow-500/10 text-yellow-700">
-              Bar already in table — organizer might have changed: email, website, instagram, phone
-            </span>
-          )}
+          {isClaim && (() => {
+            const c = organizer.pendingClaim!;
+            const changes: string[] = [];
+            if (c.proposedWebsite   && c.proposedWebsite   !== c.venueWebsite)   changes.push(`website → ${c.proposedWebsite}`);
+            if (c.proposedInstagram && c.proposedInstagram !== c.venueInstagram) changes.push(`instagram → ${c.proposedInstagram}`);
+            if (c.proposedPhone     && c.proposedPhone     !== c.venuePhone)     changes.push(`phone → ${c.proposedPhone}`);
+            return (
+              <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-yellow-500/10 text-yellow-700">
+                {changes.length > 0
+                  ? `Claim — proposed: ${changes.join(" · ")}`
+                  : "Claim — no changes proposed"}
+              </span>
+            );
+          })()}
           {organizer.orphaned && (
             <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-red-500/10 text-red-600">
               Orphaned — venue was deleted
