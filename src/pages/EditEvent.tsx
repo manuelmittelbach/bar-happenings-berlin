@@ -163,21 +163,21 @@ export default function EditEvent() {
         }
         queryClient.invalidateQueries({ queryKey: ["events"] });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
-        if (isAdmin) {
-          // Replace the editor entry so the back button on the event-detail
-          // page returns to wherever they came from (admin dashboard / detail),
-          // NOT back into the editor they just saved.
-          navigate(`/event/${id}`, { replace: true });
-        } else if (location.key !== "default") {
+        // Mirror Cancel exactly: step back to wherever the editor was opened
+        // from — the admin recurring/approved list, the event detail, "Your
+        // events" — so Save and Cancel always land in the same spot. navigate(-1)
+        // is a POP, so the ScrollManager also restores the saved scroll position
+        // there. Deep-load (no in-app history) falls back by `?from=` source.
+        if (location.key !== "default") {
           navigate(-1);
         } else {
-          navigate("/profile/events", { replace: true });
+          navigate(cancelFallback, { replace: true });
         }
       } catch {
         toast.error("Something went wrong. Please try again.");
       }
     },
-    [id, user, isAdmin, navigate, seriesInfo, applyToSeries, queryClient, venueId, source, location.key],
+    [navigate, cancelFallback, id, user, seriesInfo, applyToSeries, queryClient, venueId, source, location.key],
   );
 
   const handleDelete = async () => {
