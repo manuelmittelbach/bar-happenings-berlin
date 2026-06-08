@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { formatDateWithDay, berlinDateString } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, Pencil, Plus, Users, CalendarDays, CalendarPlus, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
@@ -25,8 +26,6 @@ export default function OrganizerDashboard() {
   const { user, role, approvalStatus, loading, roleResolved } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-  const [myEvents, setMyEvents] = useState<BarlinEvent[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
   const [venue, setVenue] = useState<OrganizerVenue>(null);
   const [venueLoading, setVenueLoading] = useState(true);
 
@@ -51,23 +50,31 @@ export default function OrganizerDashboard() {
   // Plain users' pending submissions now live in venue_events_staging, not
   // `events`, so merge their own staging rows (pending) with their approved
   // events. Organizers/admins publish straight to `events` and have none.
-  const loadMyEvents = useCallback(async () => {
-    if (!user || !isApprovedAccess) return;
-    const approved = fetchEventsByCreator(user.id);
-    const pending = role === "user" ? fetchMyStagedSubmissions(user.id) : Promise.resolve<BarlinEvent[]>([]);
-    try {
-      const [approvedEvents, pendingSubmissions] = await Promise.all([approved, pending]);
-      setMyEvents([...pendingSubmissions, ...approvedEvents]);
-    } catch {
-      toast.error("Failed to load your events.");
-    } finally {
-      setEventsLoading(false);
-    }
-  }, [user, isApprovedAccess, role]);
+  //
+  // Keyed under ["events", …] so the invalidateQueries(["events"]) that
+  // PublishEvent (on create) and the event editor (on save/cancel/delete)
+  // already fire refetches this list — that's what makes a freshly submitted
+  // event appear here without a manual page refresh.
+  const {
+    data: myEvents = [],
+    isLoading: eventsLoading,
+    isError: myEventsError,
+    refetch: refetchMyEvents,
+  } = useQuery({
+    queryKey: ["events", "by-creator", user?.id, role],
+    enabled: !!user && isApprovedAccess,
+    queryFn: async () => {
+      const [approvedEvents, pendingSubmissions] = await Promise.all([
+        fetchEventsByCreator(user!.id),
+        role === "user" ? fetchMyStagedSubmissions(user!.id) : Promise.resolve<BarlinEvent[]>([]),
+      ]);
+      return [...pendingSubmissions, ...approvedEvents];
+    },
+  });
 
   useEffect(() => {
-    void loadMyEvents();
-  }, [loadMyEvents]);
+    if (myEventsError) toast.error("Failed to load your events.");
+  }, [myEventsError]);
 
   useEffect(() => {
     if (!user || !isApprovedAccess) return;
@@ -157,7 +164,7 @@ export default function OrganizerDashboard() {
       const added = await extendEventSeries(parent.id);
       if (added > 0) {
         toast.success(`${added} neue${added === 1 ? "r Termin" : " Termine"} hinzugefügt.`);
-        await loadMyEvents();
+        await refetchMyEvents();
       } else {
         toast("Bereits bis zum Maximum (6 Monate) verlängert.");
       }

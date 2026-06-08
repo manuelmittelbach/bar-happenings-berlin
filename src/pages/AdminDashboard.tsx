@@ -203,11 +203,20 @@ export default function AdminDashboard() {
   const [manualQuery, setManualQuery] = useState("");
   const [recurringEvents, setRecurringEvents] = useState<StagedEvent[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(true);
-  const [recurringFilter, setRecurringFilter] = useState<StagedEventStatusFilter>(
-    // Read once at mount so back-navigation from EditEvent (?filter=approved)
-    // lands on the right view. Subsequent changes stay component-local.
+  const [recurringFilter, _setRecurringFilter] = useState<StagedEventStatusFilter>(
     () => (searchParams.get("filter") === "approved" ? "approved" : "pending"),
   );
+  // Mirror the recurring filter into the URL (replace, no extra history entry)
+  // so that returning to the dashboard via the back-stack — e.g. Cancel in the
+  // series editor, which only lives in the approved view — restores the exact
+  // filter the admin was on, not the default "pending".
+  const setRecurringFilter = (f: StagedEventStatusFilter) => {
+    _setRecurringFilter(f);
+    const next = new URLSearchParams(searchParams);
+    if (f === "approved") next.set("filter", "approved");
+    else next.delete("filter");
+    setSearchParams(next, { replace: true });
+  };
   const [recurringQuery, setRecurringQuery] = useState("");
   const [liveEventsByVenue, setLiveEventsByVenue] = useState<Record<string, LiveEventInfo[]>>({});
   // Plain-user submissions — staged in venue_events_staging (created_by set),
