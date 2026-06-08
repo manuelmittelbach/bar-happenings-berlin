@@ -268,7 +268,7 @@ export default function LandingDraft() {
                 tonight
               </span>
               <br />
-              IN BERLIN BARS<span className="text-accent">.</span>
+              IN BERLIN BARS<span className="text-accent">?</span>
             </motion.h1>
 
             <motion.p
