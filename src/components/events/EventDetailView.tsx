@@ -35,6 +35,7 @@ function renderWithLinks(text: string) {
 function FadeInImage({
   src,
   alt,
+  objectPosition,
 }: {
   src: string;
   alt: string;
@@ -55,7 +56,8 @@ function FadeInImage({
           if (node?.complete && node.naturalWidth > 0) setLoaded(true);
         }}
         onLoad={() => setLoaded(true)}
-        className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${
+        style={{ objectPosition }}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -345,10 +347,11 @@ export default function EventDetailView({
             starts, keeping the masthead + chip + venue stack at the top
             cleanly typographic when an event has a photo. */}
         {hasRealImage && (
-          <figure className={`relative border-2 border-foreground overflow-hidden mt-6 bg-muted/30 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
+          <figure className={`relative border-2 border-foreground overflow-hidden mt-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
             <FadeInImage
               src={event.image!}
               alt={displayTitle}
+              objectPosition={event.imagePosition}
             />
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">

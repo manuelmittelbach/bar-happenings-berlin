@@ -2508,12 +2508,13 @@ function StagedEventCard({
       {(staged.image || !isApproved || seriesImageMode) && (
         <div className="flex items-start gap-3">
           {staged.image ? (
-            <div className="relative w-40 aspect-[3/2] flex-shrink-0 overflow-hidden rounded-sm border border-border bg-muted/30">
+            <div className="relative w-40 aspect-[3/2] flex-shrink-0 overflow-hidden rounded-sm border border-border">
               <img
                 src={staged.image}
                 alt=""
                 loading="lazy"
-                className="absolute inset-0 w-full h-full object-contain"
+                style={{ objectPosition: staged.imagePosition ?? "50% 50%" }}
+                className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
           ) : null}
