@@ -95,8 +95,8 @@ export default function EditEvent() {
         setNotFound(true);
         return;
       }
-      if (event.status === "canceled" || hasEventStarted(event)) {
-        navigate(isAdmin ? "/profile/admin" : "/profile/events", { replace: true });
+      if (!isAdmin && (event.status === "canceled" || hasEventStarted(event))) {
+        navigate("/profile/events", { replace: true });
         return;
       }
       setSource(loadedSource);
