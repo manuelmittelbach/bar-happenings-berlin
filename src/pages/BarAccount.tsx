@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Eye, Globe, Instagram, Mail, Phone, Save, Upload, X } from "lucide-react";
+import { ChevronLeft, Clock3, Eye, Globe, Instagram, Mail, Phone, Save, Upload, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -251,17 +251,29 @@ export default function BarAccount() {
   if (role === "organizer" && approvalStatus !== "approved") {
     const rejected = approvalStatus === "rejected";
     return (
-      <div className="container max-w-2xl py-10 md:py-14">
-        <header className="mb-6 md:mb-8">
-          <div className="pt-2.5 pb-2.5 flex items-baseline border-b-2 border-border">
-            <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your bar</h1>
+      <div className="flex-1 flex items-center justify-center py-16">
+        <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
+          <div className="flex justify-center">
+            {rejected ? (
+              <XCircle className="h-10 w-10 text-accent" />
+            ) : (
+              <Clock3 className="h-10 w-10 text-muted-foreground" />
+            )}
           </div>
-        </header>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {rejected
-            ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
-            : "Your bar account is awaiting admin approval. Once approved you'll be able to manage your bar details and upload a cover image here."}
-        </p>
+          <h1 className="heading-display text-2xl">
+            {rejected ? "Application not approved" : "Awaiting admin approval"}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {rejected
+              ? "Your bar account application was not approved. If you think this is a mistake, please contact us."
+              : "Thanks for signing up! An admin needs to review your bar details before you can manage your bar and upload a cover image here. You'll get access automatically as soon as your account is approved."}
+          </p>
+          {!rejected && (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We do this to protect you and the bar community — only real owners or staff should be able to publish events for a bar.
+            </p>
+          )}
+        </div>
       </div>
     );
   }
