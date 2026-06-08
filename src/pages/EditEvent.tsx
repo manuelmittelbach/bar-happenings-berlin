@@ -164,7 +164,10 @@ export default function EditEvent() {
         queryClient.invalidateQueries({ queryKey: ["events"] });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
         if (isAdmin) {
-          navigate(`/event/${id}`);
+          // Replace the editor entry so the back button on the event-detail
+          // page returns to wherever they came from (admin dashboard / detail),
+          // NOT back into the editor they just saved.
+          navigate(`/event/${id}`, { replace: true });
         } else if (location.key !== "default") {
           navigate(-1);
         } else {
@@ -202,7 +205,10 @@ export default function EditEvent() {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       if (isAdmin) {
-        navigate("/");
+        // Event still exists (now canceled) but the editor is stale. Replace
+        // the editor entry with the source view so the back button doesn't
+        // re-open the editor of a canceled event.
+        navigate(cancelFallback, { replace: true });
       } else if (location.key !== "default") {
         navigate(-1);
       } else {
@@ -242,7 +248,10 @@ export default function EditEvent() {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       toast.success(seriesId ? "Series deleted" : "Event deleted");
-      navigate("/events");
+      // The event is gone for good — never route back to /event/:id (would be
+      // Not Found). Drop the `id` so an `from=event` source degrades to the
+      // events list, and replace so the dead editor isn't in the back history.
+      navigate(editorReturnTo(fromParam), { replace: true });
     } catch {
       toast.error("Couldn't delete the event. Please try again.");
     }
