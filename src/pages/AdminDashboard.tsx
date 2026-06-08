@@ -551,6 +551,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleVenueInstagramChange = async (venueId: string, value: string | null) => {
+    const next = value && value.trim() ? value.trim() : null;
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId
+          ? { ...item, venue: { ...item.venue, instagram: next ?? undefined } }
+          : item,
+      ),
+    );
+    setVenues(prev =>
+      prev.map(v => (v.id === venueId ? { ...v, instagram: next ?? undefined } : v)),
+    );
+    try {
+      await updateVenueLinks(venueId, { instagram: next });
+      toast.success(next ? "Instagram updated." : "Instagram cleared.");
+    } catch {
+      toast.error("Failed to update Instagram.");
+      loadAllBars();
+      loadVenues();
+    }
+  };
+
   const handleToggleScrapeEnabled = async (venueId: string, next: boolean) => {
     setAllBars(prev =>
       prev.map(item =>
@@ -1183,6 +1205,7 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onVenueInstagramChange={handleVenueInstagramChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
               onCancelOccurrence={handleCancelOccurrence}
@@ -1239,6 +1262,7 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onVenueInstagramChange={handleVenueInstagramChange}
               onMoveToRecurring={handleMoveScrapedToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
@@ -1271,6 +1295,7 @@ export default function AdminDashboard() {
               onSourceUrlChange={handleManualSourceUrlChange}
               onImageChange={handleManualImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onVenueInstagramChange={handleVenueInstagramChange}
               onMoveToRecurring={handleMoveManualToRecurring}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
@@ -1301,6 +1326,7 @@ export default function AdminDashboard() {
               onImageChange={handleManualImageChange}
               onApprovedSeriesImageChange={handleApprovedSeriesImageChange}
               onVenueWebsiteEventsChange={handleVenueWebsiteEventsChange}
+              onVenueInstagramChange={handleVenueInstagramChange}
               onSaveApproved={handleSaveApprovedStaged}
               onDeleteApproved={handleDeleteApproved}
               onCancelOccurrence={handleCancelOccurrence}
@@ -1972,6 +1998,7 @@ function StagedEventCard({
   onImageChange,
   onApprovedSeriesImageChange,
   onVenueWebsiteEventsChange,
+  onVenueInstagramChange,
   onMoveToRecurring,
   onSaveApproved,
   onDeleteApproved,
@@ -2000,6 +2027,7 @@ function StagedEventCard({
   // read-only for images (the previous behaviour).
   onApprovedSeriesImageChange?: (file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
+  onVenueInstagramChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: () => Promise<void>;
   onSaveApproved: (edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: () => Promise<void>;
@@ -2136,6 +2164,13 @@ function StagedEventCard({
   useEffect(() => {
     setEventsUrlInput(currentVenue?.websiteEvents ?? "");
   }, [staged.venueId, currentVenue?.websiteEvents]);
+
+  const [instagramOpen, setInstagramOpen] = useState(false);
+  const [instagramInput, setInstagramInput] = useState(currentVenue?.instagram ?? "");
+  const [instagramSubmitting, setInstagramSubmitting] = useState(false);
+  useEffect(() => {
+    setInstagramInput(currentVenue?.instagram ?? "");
+  }, [staged.venueId, currentVenue?.instagram]);
 
   // Diff-modal state for staging rows that propose updates to a live event
   // (replaces_event_id is set). Modal opens on demand; we lazily fetch the
@@ -2551,6 +2586,28 @@ function StagedEventCard({
               <ExternalLink className="h-3 w-3" />
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setInstagramOpen(o => !o)}
+            title="Change venues.instagram for this bar"
+            className="text-xs px-2 py-0.5 border border-border rounded-sm hover:bg-muted"
+          >
+            change instagram
+          </button>
+          {currentVenue?.instagram && (
+            <button
+              type="button"
+              onClick={() => openSourceWindow(
+                /^https?:\/\//i.test(currentVenue.instagram!)
+                  ? currentVenue.instagram!
+                  : `https://instagram.com/${currentVenue.instagram!.replace(/^@/, "")}`
+              )}
+              title="Open bar's Instagram"
+              className="inline-flex items-center justify-center h-5 w-5 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </button>
+          )}
           <span className="text-xs text-muted-foreground">
             {staged.venueAddress
               ? staged.venueAddress.replace(/,\s*(Germany|Deutschland)\s*$/i, "")
@@ -2685,6 +2742,61 @@ function StagedEventCard({
             onClick={() => {
               setEventsUrlInput(currentVenue?.websiteEvents ?? "");
               setEventsUrlOpen(false);
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {instagramOpen && (
+        <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-sm">
+          <input
+            type="text"
+            value={instagramInput}
+            onChange={e => setInstagramInput(e.target.value)}
+            placeholder="Instagram handle or URL (leave empty + Set NULL to clear)"
+            className="flex-1 h-9 px-2 bg-background border border-border rounded-sm text-sm outline-none focus:border-foreground"
+          />
+          <button
+            type="button"
+            disabled={instagramSubmitting}
+            onClick={async () => {
+              setInstagramSubmitting(true);
+              try {
+                await onVenueInstagramChange(staged.venueId, instagramInput);
+                setInstagramOpen(false);
+              } finally {
+                setInstagramSubmitting(false);
+              }
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted disabled:opacity-50"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            disabled={instagramSubmitting}
+            onClick={async () => {
+              setInstagramSubmitting(true);
+              try {
+                await onVenueInstagramChange(staged.venueId, null);
+                setInstagramInput("");
+                setInstagramOpen(false);
+              } finally {
+                setInstagramSubmitting(false);
+              }
+            }}
+            className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted text-muted-foreground disabled:opacity-50"
+          >
+            Set NULL
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setInstagramInput(currentVenue?.instagram ?? "");
+              setInstagramOpen(false);
             }}
             className="h-9 px-3 text-sm border border-border rounded-sm hover:bg-muted"
           >
@@ -3224,6 +3336,7 @@ function StagedEventsList({
   onImageChange,
   onApprovedSeriesImageChange,
   onVenueWebsiteEventsChange,
+  onVenueInstagramChange,
   onMoveToRecurring,
   onSaveApproved,
   onDeleteApproved,
@@ -3255,6 +3368,7 @@ function StagedEventsList({
   onImageChange: (id: string, file: File | null) => Promise<void>;
   onApprovedSeriesImageChange?: (s: StagedEvent, file: File | null) => Promise<void>;
   onVenueWebsiteEventsChange: (venueId: string, value: string | null) => Promise<void>;
+  onVenueInstagramChange: (venueId: string, value: string | null) => Promise<void>;
   onMoveToRecurring?: (s: StagedEvent) => Promise<void>;
   onSaveApproved: (s: StagedEvent, edits: StagedEventEdits) => Promise<void>;
   onDeleteApproved?: (s: StagedEvent) => Promise<void>;
@@ -3354,6 +3468,7 @@ function StagedEventsList({
                   : undefined
               }
               onVenueWebsiteEventsChange={onVenueWebsiteEventsChange}
+              onVenueInstagramChange={onVenueInstagramChange}
               onMoveToRecurring={onMoveToRecurring ? () => onMoveToRecurring(staged) : undefined}
               onSaveApproved={(edits) => onSaveApproved(staged, edits)}
               onDeleteApproved={onDeleteApproved ? () => onDeleteApproved(staged) : undefined}
