@@ -381,7 +381,7 @@ export default function EventForm({
               onPointerMove={handlePreviewPointerMove}
               onPointerUp={handlePreviewPointerUp}
               onPointerCancel={handlePreviewPointerUp}
-              className="relative h-64 border-2 border-foreground overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
+              className="relative aspect-[3/2] md:aspect-[16/9] border-2 border-foreground overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
             >
               <img
                 src={imagePreview}
