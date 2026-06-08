@@ -167,7 +167,7 @@ export default function EventDetail() {
 				/* Share moved to the sticky top bar on every surface
 				   (web + native), so the inline action-row CTA is off. */
 				showShare={false}
-				onEdit={canEdit ? () => window.open(`/edit-event/${event.id}?from=event`, "_blank", "noopener,noreferrer") : undefined}
+				onEdit={canEdit ? () => navigate(`/edit-event/${event.id}?from=event`) : undefined}
 			/>
 		</div>
 	);
