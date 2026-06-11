@@ -280,13 +280,15 @@ export default function BarDetail() {
           <h2 className="heading-editorial text-[22px] md:text-[24px] leading-tight mb-3">
             Upcoming events
           </h2>
-          {/* While the events fetch is still in flight render nothing —
-              showing the empty-state copy during initial load briefly
-              flashes "Nothing on the calendar yet" even for bars that
-              do have events. Only commit to the empty state after the
-              query resolves. */}
+          {/* While the events fetch is still in flight show a spinner — the
+              per-venue events query runs on demand and can take a while on a
+              cold load, so blank space read as "nothing here". The spinner
+              signals "more is coming"; its built-in 100ms delay keeps fast
+              (cached) loads from flashing it. Only commit to the empty state
+              after the query resolves, so bars that DO have events never
+              briefly show "Nothing on the calendar yet". */}
           {eventsLoading ? (
-            <div className="py-4 h-12" aria-hidden />
+            <PageSpinner inline />
           ) : venueEventsError ? (
             // Events fetch failed — don't claim the calendar is empty when
             // we simply couldn't load it.
