@@ -198,6 +198,7 @@ import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Layout from "@/components/layout/Layout";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
+import { FaviconSpinner } from "@/components/FaviconSpinner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -252,6 +253,7 @@ const App = () => (
       <Sonner />
       {!Capacitor.isNativePlatform() && <UpdatePrompt />}
       {!Capacitor.isNativePlatform() && <Analytics />}
+      {!Capacitor.isNativePlatform() && <FaviconSpinner />}
       <BrowserRouter>
         <ScrollManager />
         <AuthCallbackGate>
