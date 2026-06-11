@@ -2506,9 +2506,10 @@ function StagedEventCard({
           </button>
         </div>
       )}
-      {/* Cover image (scraped or user-supplied). Thumbnail uses the same 3:2
-          frame the event-detail hero will use on approve, just smaller — so the
-          admin sees a faithful preview and can remove / replace a wrong scraped
+      {/* Cover image (scraped or user-supplied). Thumbnail mirrors the exact
+          event-detail hero frame (3:2 on mobile, 16:9 on desktop, sharp corners),
+          just smaller — so the admin sees a faithful preview and can remove /
+          replace a wrong scraped
           pick (or add one when none was scraped). Covers carry into
           events.image on approve. Edit controls show only for real staging rows
           (pending): an "approved" card wraps an `events` row whose id is NOT a
@@ -2517,7 +2518,7 @@ function StagedEventCard({
       {(staged.image || !isApproved || seriesImageMode) && (
         <div className="flex items-start gap-3">
           {staged.image ? (
-            <div className="relative w-40 aspect-[3/2] flex-shrink-0 overflow-hidden rounded-sm border border-border">
+            <div className="relative w-40 aspect-[3/2] md:aspect-[16/9] flex-shrink-0 overflow-hidden border border-border">
               <img
                 src={staged.image}
                 alt=""
