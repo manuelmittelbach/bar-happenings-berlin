@@ -312,6 +312,7 @@ export default function EditEvent() {
       optionalStartTime={isAdmin}
       optionalEndTime={isAdmin}
       optionalDescription={isAdmin}
+      optionalEntryInfo={isAdmin}
       secondaryActions={
         <button
           type="button"

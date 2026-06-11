@@ -84,6 +84,10 @@ interface EventFormProps {
   optionalStartTime?: boolean;
   optionalEndTime?: boolean;
   optionalDescription?: boolean;
+  /* When true, entry info isn't required — leaving it empty is saved as a
+   * blank string, which the detail view renders as "Check at the door".
+   * Only admins get this; organizers and plain users must pick an option. */
+  optionalEntryInfo?: boolean;
   /* When provided, render the Location picker (choose an existing bar OR enter
    * a free-text venue). Omit it to keep the venue prefilled/read-only. */
   venueOptions?: VenueOption[];
@@ -123,6 +127,7 @@ export default function EventForm({
   optionalStartTime = false,
   optionalEndTime = false,
   optionalDescription = false,
+  optionalEntryInfo = false,
   venueOptions,
 }: EventFormProps) {
   const { data: categoriesData = [] } = useCategories();
@@ -609,9 +614,11 @@ export default function EventForm({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className={labelClass}>Entry info <span className="text-accent">*</span></label>
+            <label className={labelClass}>
+              Entry info{optionalEntryInfo ? "" : <span className="text-accent"> *</span>}
+            </label>
             <select
-              required
+              required={!optionalEntryInfo}
               value={entryCustomMode ? CUSTOM_ENTRY_SENTINEL : formData.entryInfo}
               onChange={(e) => {
                 const v = e.target.value;
@@ -625,7 +632,12 @@ export default function EventForm({
               }}
               className={inputClass}
             >
-              <option value="" disabled hidden>Select entry info</option>
+              {/* Admins may leave it blank — saved empty, shown as "Check at the
+                  door". Everyone else must pick, so the blank stays a hidden
+                  placeholder. */}
+              <option value="" disabled={!optionalEntryInfo} hidden={!optionalEntryInfo}>
+                {optionalEntryInfo ? "Check at the door" : "Select entry info"}
+              </option>
               <option value="Free">Free</option>
               <option value="Donation">Donation</option>
               <option value={CUSTOM_ENTRY_SENTINEL}>Custom…</option>
@@ -636,7 +648,7 @@ export default function EventForm({
             {entryCustomMode && (
               <input
                 type="text"
-                required
+                required={!optionalEntryInfo}
                 value={formData.entryInfo}
                 onChange={(e) => update("entryInfo", e.target.value)}
                 placeholder="e.g. First drink costs double"

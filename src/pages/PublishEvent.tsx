@@ -169,6 +169,7 @@ export default function PublishEvent() {
 				venueOptions={isPlainUser ? venueOptions : undefined}
 				submitLabel={isPlainUser ? "Submit for review" : "Publish Event"}
 				onSubmit={handleSubmit}
+				optionalEntryInfo={role === "admin"}
 				secondaryActions={
 					// Go back rather than pushing a new /profile/events entry — otherwise
 					// the stack becomes events → publish → events, and pressing
