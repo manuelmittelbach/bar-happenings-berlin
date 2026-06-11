@@ -16,11 +16,15 @@ interface AuthState {
 }
 
 async function fetchRoleAndStatus(user: User): Promise<{ role: "user" | "organizer" | "admin"; approvalStatus: ApprovalStatus }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("role, approval_status")
     .eq("id", user.id)
     .maybeSingle();
+  // A failed query must NOT be read as "this user has no elevated role" — that
+  // would silently downgrade an admin/organizer to "user" and bounce them off
+  // role-gated pages on a transient network blip. Throw so the caller retries.
+  if (error) throw error;
   const r = data?.role;
   const rawStatus = data?.approval_status;
   const approvalStatus: ApprovalStatus =
@@ -30,6 +34,28 @@ async function fetchRoleAndStatus(user: User): Promise<{ role: "user" | "organiz
   const meta = user.user_metadata?.role;
   if (meta === "organizer" || meta === "admin") return { role: meta, approvalStatus };
   return { role: "user", approvalStatus };
+}
+
+// Resolve the role with a few short retries so a transient failure (Safari
+// HTTP/2 stall, brief offline blip, token-refresh hiccup) doesn't get treated
+// as a final answer. Without this, one failed profiles fetch was enough to
+// bounce a working admin to the landing page.
+async function fetchRoleWithRetry(
+  user: User,
+  attempts = 3,
+): Promise<{ role: "user" | "organizer" | "admin"; approvalStatus: ApprovalStatus }> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fetchRoleAndStatus(user);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise(resolve => setTimeout(resolve, 400 * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 export function useAuth() {
@@ -80,14 +106,17 @@ export function useAuth() {
       if (sameUser) return;
       lastFetchedUserId = user.id;
       const fetchedForUserId = user.id;
-      fetchRoleAndStatus(user)
+      fetchRoleWithRetry(user)
         .then(({ role, approvalStatus }) => {
           if (lastFetchedUserId !== fetchedForUserId) return;
           setState(prev => ({ ...prev, role, approvalStatus, roleResolved: true }));
         })
         .catch((err) => {
           if (lastFetchedUserId !== fetchedForUserId) return;
-          console.error("[useAuth] fetchRoleAndStatus failed", err);
+          console.error("[useAuth] fetchRoleAndStatus failed after retries", err);
+          // Keep whatever role we already had (don't clobber a cached admin with
+          // the "user" fallback); just mark resolution done so guards stop
+          // spinning. Retries above already cover the common transient blip.
           setState(prev => ({ ...prev, roleResolved: true }));
         });
     });
