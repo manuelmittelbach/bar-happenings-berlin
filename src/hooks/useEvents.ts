@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useQueryClient, keepPreviousData, type QueryClient } from "@tanstack/react-query";
 import {
   fetchEvents,
@@ -8,6 +9,7 @@ import {
   fetchCategories,
   fetchProfile,
 } from "@/lib/supabaseQueries";
+import { berlinDateString } from "@/lib/dateFormat";
 import type { BarlinEvent } from "@/types/event";
 
 // Seed individual event cache entries from a list result. When the user later
@@ -70,6 +72,32 @@ export function useEventsByVenue(venueId: string, fromDate: string) {
     },
     enabled: !!venueId && !!fromDate,
   });
+}
+
+// Warm a venue's upcoming-events query before the user opens its page. Called
+// on pointer-enter / pointer-down of a bar card, so by the time BarDetail
+// mounts the data is usually already in cache and the "Upcoming events"
+// spinner never has to show. Uses the SAME queryKey + queryFn as
+// useEventsByVenue so BarDetail reads the prefetched entry directly.
+// prefetchQuery is a no-op when the data is already fresh (respects staleTime),
+// so repeated hovers don't re-hit the DB.
+export function usePrefetchVenueEvents() {
+  const queryClient = useQueryClient();
+  return useCallback(
+    (venueId: string) => {
+      if (!venueId) return;
+      const fromDate = berlinDateString();
+      queryClient.prefetchQuery({
+        queryKey: ["events", "venue", venueId, fromDate],
+        queryFn: async () => {
+          const events = await fetchEventsByVenue(venueId, fromDate);
+          seedEvents(queryClient, events);
+          return events;
+        },
+      });
+    },
+    [queryClient],
+  );
 }
 
 export function useVenues() {

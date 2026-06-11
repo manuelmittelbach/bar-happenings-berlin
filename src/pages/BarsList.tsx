@@ -4,7 +4,7 @@ import { Search, Shuffle, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useVenues, useEvents } from "@/hooks/useEvents";
+import { useVenues, useEvents, usePrefetchVenueEvents } from "@/hooks/useEvents";
 import { setVenueActiveImage } from "@/lib/supabaseQueries";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
@@ -537,6 +537,7 @@ function BarCard({
   isAdmin?: boolean;
 }) {
   const queryClient = useQueryClient();
+  const prefetchVenueEvents = usePrefetchVenueEvents();
   const [swapping, setSwapping] = useState(false);
 
   // Identify which archived source the live `image` currently points to.
@@ -589,7 +590,14 @@ function BarCard({
       : `${tonightEvents.length} events tonight`;
 
   return (
-    <article className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]">
+    <article
+      // Warm the bar's events on hover (desktop) and on press (mobile fires
+      // pointerdown before navigation) so BarDetail usually has them cached by
+      // the time it mounts — no "Upcoming events" spinner on the common path.
+      onPointerEnter={() => prefetchVenueEvents(venue.id)}
+      onPointerDown={() => prefetchVenueEvents(venue.id)}
+      className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]"
+    >
       {/* Admin-only image-source toggle. Sits OUTSIDE the cover-link area
           (the Link below only covers the visual block), so the button is
           a normal in-flow interactive element with its own hit area. */}
