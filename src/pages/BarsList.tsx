@@ -13,6 +13,7 @@ import { berlinDateString } from "@/lib/dateFormat";
 import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { ErrorState } from "@/components/ui/error-state";
+import FadeInImage from "@/components/ui/FadeInImage";
 import type { Venue, BarlinEvent } from "@/types/event";
 
 // Bars-page filter persistence. Lives in sessionStorage so bar-card →
@@ -492,6 +493,38 @@ function HoodPill({
  * to whichever link owns the pixel under the cursor. The article
  * carries `group` so group-hover styles on the title still fire when
  * the user hovers anywhere on the card. */
+// Quiet editorial placeholder for venues with no image — and the fallback
+// shown when an image fails to load after a retry. Warm radial tint, hairline
+// crosshairs, 8px accent dot, mono "Inside · Bars" caption in the corner.
+function BarImagePlaceholder() {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(circle at 28% 32%, hsla(28, 85%, 55%, 0.20), hsla(18, 85%, 52%, 0.06) 65%)",
+      }}
+    >
+      <span
+        className="absolute inset-x-0 top-1/2 h-px bg-foreground/10"
+        style={{ transform: "translateY(-0.5px)" }}
+      />
+      <span
+        className="absolute inset-y-0 left-1/2 w-px bg-foreground/10"
+        style={{ transform: "translateX(-0.5px)" }}
+      />
+      <span
+        className="absolute left-1/2 top-1/2 rounded-full bg-accent"
+        style={{ width: 8, height: 8, transform: "translate(-50%, -50%)" }}
+      />
+      <span className="absolute right-3 bottom-2.5 font-mono text-[9px] uppercase tracking-[0.18em] text-foreground/45">
+        Inside · Bars
+      </span>
+    </div>
+  );
+}
+
 function BarCard({
   venue,
   tonightEvents,
@@ -505,10 +538,6 @@ function BarCard({
 }) {
   const queryClient = useQueryClient();
   const [swapping, setSwapping] = useState(false);
-  // Hero photo fades in once decoded instead of popping in. A warmed/cached
-  // image is caught by the ref callback so it shows instantly without a flash;
-  // mirrors the event detail FadeInImage behaviour.
-  const [imgLoaded, setImgLoaded] = useState(false);
 
   // Identify which archived source the live `image` currently points to.
   // "other" covers manual uploads or images set before the og/google
@@ -595,56 +624,17 @@ function BarCard({
       <div className="relative pointer-events-none">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted border-b-2 border-foreground">
           {venue.image ? (
-            <>
-              {!imgLoaded && (
-                <div className="absolute inset-0 bg-muted animate-pulse" aria-hidden="true" />
-              )}
-              <img
-                src={venue.image}
-                alt={venue.name}
-                loading={priority ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={priority ? "high" : "auto"}
-                // A warmed/cached image can finish before React attaches onLoad —
-                // the ref callback catches that so it doesn't stay at opacity-0.
-                ref={(node) => {
-                  if (node?.complete && node.naturalWidth > 0) setImgLoaded(true);
-                }}
-                onLoad={() => setImgLoaded(true)}
-                style={venue.imagePosition ? { objectPosition: venue.imagePosition } : undefined}
-                className={`absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-500 group-hover:scale-[1.03] ${
-                  imgLoaded ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            </>
+            <FadeInImage
+              src={venue.image}
+              alt={venue.name}
+              loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : "auto"}
+              objectPosition={venue.imagePosition || undefined}
+              className="absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-500 group-hover:scale-[1.03]"
+              fallback={<BarImagePlaceholder />}
+            />
           ) : (
-            // Quiet editorial placeholder for missing images: warm
-            // radial tint, hairline crosshairs, 8px accent dot, mono
-            // "Inside · Bars" caption in the corner.
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at 28% 32%, hsla(28, 85%, 55%, 0.20), hsla(18, 85%, 52%, 0.06) 65%)",
-              }}
-            >
-              <span
-                className="absolute inset-x-0 top-1/2 h-px bg-foreground/10"
-                style={{ transform: "translateY(-0.5px)" }}
-              />
-              <span
-                className="absolute inset-y-0 left-1/2 w-px bg-foreground/10"
-                style={{ transform: "translateX(-0.5px)" }}
-              />
-              <span
-                className="absolute left-1/2 top-1/2 rounded-full bg-accent"
-                style={{ width: 8, height: 8, transform: "translate(-50%, -50%)" }}
-              />
-              <span className="absolute right-3 bottom-2.5 font-mono text-[9px] uppercase tracking-[0.18em] text-foreground/45">
-                Inside · Bars
-              </span>
-            </div>
+            <BarImagePlaceholder />
           )}
         </div>
         <div className="p-4 md:p-5">

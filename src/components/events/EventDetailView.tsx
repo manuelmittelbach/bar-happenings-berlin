@@ -1,8 +1,9 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Euro, Repeat, Languages, Clock, Calendar, ChevronRight, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import ShareMenu from "@/components/events/ShareMenu";
+import FadeInImage from "@/components/ui/FadeInImage";
 import { cleanEventTitle, addSoftHyphens } from "@/lib/cleanTitle";
 import type { BarlinEvent } from "@/types/event";
 import { useCategories } from "@/hooks/useEvents";
@@ -25,44 +26,6 @@ function renderWithLinks(text: string) {
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts;
-}
-
-/* Hero photo that fades in once decoded instead of popping in after the
-   detail page has already opened. The figure reserves the aspect ratio, so
-   while the image loads the slot shows a pulsing skeleton rather than a jump.
-   onPointerEnter/Down on the originating card usually warms the cache first,
-   in which case onLoad fires near-instantly and the skeleton never flashes. */
-function FadeInImage({
-  src,
-  alt,
-  objectPosition,
-}: {
-  src: string;
-  alt: string;
-  objectPosition?: string;
-}) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <>
-      {!loaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse" aria-hidden="true" />
-      )}
-      <img
-        src={src}
-        alt={alt}
-        loading="eager"
-        decoding="async"
-        ref={(node) => {
-          if (node?.complete && node.naturalWidth > 0) setLoaded(true);
-        }}
-        onLoad={() => setLoaded(true)}
-        style={{ objectPosition }}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-          loaded ? "opacity-100" : "opacity-0"
-        }`}
-      />
-    </>
-  );
 }
 
 export interface EventDetailViewProps {
@@ -352,6 +315,7 @@ export default function EventDetailView({
               src={event.image!}
               alt={displayTitle}
               objectPosition={event.imagePosition}
+              fallback={<div className="absolute inset-0 bg-muted" aria-hidden="true" />}
             />
             {isCanceled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
