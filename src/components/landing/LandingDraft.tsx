@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { /* Apple, ArrowUpRight, Play, */ ArrowRight } from "lucide-react"; // Apple/ArrowUpRight/Play: uncomment with store links
-import { useEvents, useCategories } from "@/hooks/useEvents";
+import { useEvents, useCategories, useVenues } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
@@ -27,6 +27,12 @@ export default function LandingDraft() {
   // re-fetch. Falls back gracefully to empty arrays while loading.
   const { data: eventsData = [] } = useEvents();
   const { data: categoriesData = [] } = useCategories();
+  // Warm the venues cache while the user reads the landing. The hero doesn't
+  // render venues, but `/events` and `/map` both need them (venueMap, walking
+  // distance, map pins) — fetching here means those tabs open with data in
+  // cache instead of showing a spinner. Same `["venues"]` queryKey, so the
+  // result is read directly. Result intentionally unused on this page.
+  useVenues();
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
 
