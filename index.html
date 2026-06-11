@@ -7,6 +7,13 @@
     <meta name="description" content="Find live music, quiz nights, open mics, and community events in small independent bars across Berlin.">
     <meta name="author" content="Inside Bars" />
     <meta name="theme-color" content="#0F0F0F" />
+    <!-- Warm the connection to the map tile CDN before MapPage mounts, so the
+         first style/tile request skips the TCP+TLS handshake. crossorigin
+         because MapLibre fetches tiles with CORS; dns-prefetch is the fallback
+         for browsers that ignore preconnect. -->
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+    <link rel="dns-prefetch" href="https://tiles.openfreemap.org" />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=5" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
