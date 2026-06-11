@@ -6,6 +6,8 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
 import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
 import EventMap from "@/components/map/EventMap";
+import { Spinner } from "@/components/ui/spinner";
+import { ErrorState } from "@/components/ui/error-state";
 import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
@@ -21,7 +23,7 @@ export default function MapPage() {
   } = useFilterParams();
 
   const { data: eventsData = [], isLoading: eventsLoading, refetch: refetchEvents } = useEvents();
-  const { data: venuesData = [], isLoading: venuesLoading, refetch: refetchVenues } = useVenues();
+  const { data: venuesData = [], isLoading: venuesLoading, refetch: refetchVenues, isFetching: venuesFetching } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   // `venueMap` empty (venues still loading or fetch failed) silently drops
   // every event from the map layer in EventMap, since each event needs a
@@ -171,9 +173,13 @@ export default function MapPage() {
               "linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.85) 35%, hsl(var(--background) / 0) 100%)",
           }}
         />
-        <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
-          {filtered.length} {filtered.length === 1 ? "event" : "events"} {dayTab}
-        </div>
+        {/* Count badge — only after events have loaded, otherwise it would
+            flash "0 events" during the fetch before any are counted. */}
+        {!eventsLoading && (
+          <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
+            {filtered.length} {filtered.length === 1 ? "event" : "events"} {dayTab}
+          </div>
+        )}
         {(searchQuery || activeNeighborhood) && (
           <div className="absolute top-2 left-2 z-[9999] flex flex-wrap items-center gap-2 max-w-[calc(100%-7rem)]">
             {searchQuery && (
@@ -213,29 +219,23 @@ export default function MapPage() {
         {showOverlay && overlayPending && (
           <div className="absolute inset-0 z-[150] flex items-center justify-center bg-background/90 px-6 pointer-events-none">
             {venuesMissing ? (
-              // Persistent error — editorial card with a real retry action.
-              <div className="pointer-events-auto flex max-w-xs flex-col items-center gap-3 border-2 border-foreground bg-background px-6 py-5 text-center shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-                <p className="font-body text-base font-bold text-foreground">
-                  Venues unavailable
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Couldn't load venue data. Check your connection and try again.
-                </p>
-                <button
-                  onClick={() => { refetchVenues(); refetchEvents(); }}
-                  className="mt-1 inline-flex h-10 items-center bg-foreground px-5 font-mono text-xs font-bold uppercase tracking-widest text-background transition-colors hover:bg-foreground/90"
-                >
-                  Try again
-                </button>
+              // Persistent error — shared ErrorState so the map speaks the same
+              // error language as the rest of the app (calm card, no brutalist
+              // offset shadow). pointer-events-auto re-enables the retry button
+              // inside the otherwise click-through overlay.
+              <div className="pointer-events-auto">
+                <ErrorState
+                  inline
+                  title="Venues unavailable"
+                  message="Couldn't load venue data. Check your connection and try again."
+                  onRetry={() => { refetchVenues(); refetchEvents(); }}
+                  isRetrying={venuesFetching}
+                />
               </div>
             ) : (
-              // Transient loading — full-contrast card with a spinner.
-              <div className="flex items-center gap-3 border-2 border-foreground bg-background px-5 py-3.5 shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-                <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground">
-                  Loading map…
-                </span>
-              </div>
+              // Transient loading — calm centered spinner (with the shared
+              // slow-connection hint after 5s), matching every other page.
+              <Spinner size="lg" />
             )}
           </div>
         )}

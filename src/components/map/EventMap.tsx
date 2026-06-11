@@ -8,6 +8,7 @@ import { cleanEventTitle } from "@/lib/cleanTitle";
 import { requestLocationOnce } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 import { isLiveNow } from "@/lib/eventStatus";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface EventMapProps {
 	events: BarlinEvent[];
@@ -823,18 +824,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 			<div ref={containerRef} style={{ height: "100%", width: "100%" }} />
 			{loadFailed && (
 				<div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background px-6">
-					<div className="flex max-w-xs flex-col items-center gap-3 border-2 border-foreground bg-background px-6 py-6 text-center shadow-[4px_4px_0_0_hsl(var(--foreground))]">
-						<p className="font-body text-lg font-bold text-foreground">Map could not be loaded</p>
-						<p className="text-sm text-muted-foreground">
-							Weak connection or server unreachable.
-						</p>
-						<button
-							onClick={() => setRetryNonce((n) => n + 1)}
-							className="mt-1 inline-flex h-11 items-center bg-foreground px-6 font-mono text-xs font-bold uppercase tracking-widest text-background transition-colors hover:bg-foreground/90"
-						>
-							Try again
-						</button>
-					</div>
+					{/* Shared ErrorState so a failed map matches the rest of the
+					    app's error language instead of a brutalist card. */}
+					<ErrorState
+						inline
+						title="Map could not be loaded"
+						message="Weak connection or server unreachable."
+						onRetry={() => setRetryNonce((n) => n + 1)}
+					/>
 				</div>
 			)}
 			<div
