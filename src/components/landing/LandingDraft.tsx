@@ -136,40 +136,47 @@ export default function LandingDraft() {
   // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
   const CYCLE_MS = isMobile ? 10000 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
-  // Wall-clock anchor for the cycle phase. Without this, every visibility
-  // resume would queue the next tick CYCLE_MS into the future, regardless
-  // of how long the tab had been hidden — so after a long absence the
-  // cards just sat at their slot poses for up to 28s before drifting
-  // again, which read as "rotation stopped". Tracking the next tick's
-  // wall-clock time lets us catch up (fire immediately if overdue) or
-  // resume mid-cycle with only the remaining time to wait.
-  const nextTickAtRef = useRef(0);
+  // How much of the current cycle's wait is still pending, in ms. The timer
+  // pauses *together with* the tab: while hidden, the browser also freezes
+  // framer's rAF-driven animations, so the timer must NOT advance by wall-clock
+  // time while away. The old code did exactly that — it anchored to
+  // performance.now() and fired a "catch-up" tick on resume, which retargeted
+  // every card while the animations were still frozen at their old phase. That
+  // retarget-against-frozen-state is what collapsed the fanned stack into a
+  // pile. Instead we snapshot the remaining time on hide and resume from
+  // exactly there, keeping the timer and the animations in lockstep so the
+  // drift simply continues where it left off. null = never started, so the
+  // first start uses the initial cadence below.
+  const remainingRef = useRef<number | null>(null);
   useEffect(() => {
     if (heroPool.length < 2) return;
-    // Cycle ticks pause while the tab is hidden so that DOM and framer's
-    // rAF-driven animation loop stay in lockstep (otherwise the throttled
-    // setInterval keeps firing while rAF is asleep, queueing transitions
-    // that all snap into chaos on resume).
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
+    // Wall-clock bookkeeping for the *currently pending* wait, so stop() can
+    // work out how much of it is left and start() can resume from there.
+    let waitStart = 0;
+    let waitDuration = 0;
     const tick = () => {
-      nextTickAtRef.current = performance.now() + CYCLE_MS;
       setCycleIndex((i) => i + 1);
+      // Each interval tick restarts a full-cycle wait.
+      waitStart = performance.now();
+      waitDuration = CYCLE_MS;
+      remainingRef.current = CYCLE_MS;
     };
     const start = () => {
       if (interval || pendingTick) return;
-      const now = performance.now();
-      // First start (next anchor is 0): desktop kicks on the next frame so
-      // the continuous drift begins immediately; mobile instead holds the
-      // first card for a full CYCLE_MS so every card (including the first)
-      // gets the same dwell time. Resumes after a hidden phase pay only the
-      // remaining time until the anchor; if we're already past it, fire now.
+      // First ever start: desktop kicks on the next frame so the continuous
+      // drift begins immediately; mobile holds the first card a full CYCLE_MS
+      // so every card gets equal dwell. Later resumes continue from the time
+      // that remained when the tab was hidden — no catch-up, no pile.
       const delay =
-        nextTickAtRef.current === 0
+        remainingRef.current === null
           ? isMobile
             ? CYCLE_MS
             : 0
-          : Math.max(0, nextTickAtRef.current - now);
+          : remainingRef.current;
+      waitStart = performance.now();
+      waitDuration = delay;
       pendingTick = setTimeout(() => {
         pendingTick = undefined;
         tick();
@@ -177,6 +184,11 @@ export default function LandingDraft() {
       }, delay);
     };
     const stop = () => {
+      // Snapshot how much of the pending wait is left so resume continues in
+      // lockstep with the (also-paused) animations instead of catching up.
+      if (pendingTick || interval) {
+        remainingRef.current = Math.max(0, waitDuration - (performance.now() - waitStart));
+      }
       if (pendingTick) clearTimeout(pendingTick);
       if (interval) clearInterval(interval);
       pendingTick = undefined;
