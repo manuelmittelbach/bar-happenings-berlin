@@ -43,7 +43,7 @@ export default function EventDetail() {
 				<button
 					onClick={() => refetch()}
 					disabled={isFetching}
-					className="mt-4 px-5 py-2.5 rounded-full border-2 border-foreground bg-background text-foreground font-mono font-bold text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
+					className="mt-4 px-5 py-2.5 border-2 border-foreground bg-background text-foreground font-mono font-bold text-sm uppercase tracking-wider hover:bg-foreground hover:text-background transition-colors disabled:opacity-50"
 				>
 					{isFetching ? "Retrying…" : "Retry"}
 				</button>
