@@ -705,6 +705,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 				map.remove();
 				mapRef.current = null;
 				sourceReadyRef.current = false;
+				// The marker belonged to the now-removed map; drop the ref so the
+				// user-location effect recreates it on the rebuilt map instead of
+				// calling setLngLat on a detached marker.
+				userMarkerRef.current = null;
 			}
 		};
 	}, [retryNonce]);
@@ -754,13 +758,21 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		})();
 	}, [geojson, categoryInfos, categoryById]);
 
-	// User location dot
+	// User location dot — live-tracked, so it can update many times as the
+	// user moves. Reuse the existing marker and just move it (setLngLat) instead
+	// of tearing down + recreating the DOM node every fix, which would flicker.
 	useEffect(() => {
 		const map = mapRef.current;
 		if (!map) return;
-		userMarkerRef.current?.remove();
-		userMarkerRef.current = null;
-		if (!userLocation) return;
+		if (!userLocation) {
+			userMarkerRef.current?.remove();
+			userMarkerRef.current = null;
+			return;
+		}
+		if (userMarkerRef.current) {
+			userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]);
+			return;
+		}
 		const el = document.createElement("div");
 		el.style.cssText =
 			"width:16px;height:16px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(59,130,246,0.3);";

@@ -95,6 +95,84 @@ export function triggerLocationRequest() {
   );
 }
 
+// --- Live tracking (watchPosition) -----------------------------------------
+// getCurrentPosition above resolves a single fix; watchPosition keeps firing as
+// the device moves so the blue dot follows the user like Google Maps. We
+// reference-count watchers (the Map page is the only consumer today, but a
+// second mount shouldn't open a second OS watch) and tear the watch down when
+// the last watcher unmounts so we don't drain battery off-screen.
+let watchActive = false;
+let watchCount = 0;
+let webWatchId: number | null = null;
+let nativeWatchId: string | null = null;
+
+function publishPosition(lat: number, lng: number) {
+  cached = { lat, lng };
+  writeStoredLocation(cached);
+  // A successful watch fix means permission is granted — flip the status if a
+  // prior getCurrentPosition hadn't already (e.g. watch was the first ask).
+  if (permissionStatus !== "granted") notifyStatus("granted");
+  subscribers.forEach((fn) => fn(cached));
+}
+
+function startWatch() {
+  if (watchActive) return;
+  watchActive = true;
+
+  if (Capacitor.isNativePlatform()) {
+    Geolocation.watchPosition(
+      { enableHighAccuracy: true, timeout: 10000 },
+      (pos, err) => {
+        // Transient errors (lost signal, indoors) just skip a frame — we keep
+        // the last known dot rather than dropping it to "denied".
+        if (err || !pos) return;
+        publishPosition(pos.coords.latitude, pos.coords.longitude);
+      },
+    )
+      .then((id) => {
+        // If stopWatch ran before the plugin resolved the id, clear it now so
+        // we don't leak a watch with no handle.
+        if (!watchActive) {
+          Geolocation.clearWatch({ id });
+          return;
+        }
+        nativeWatchId = id;
+      })
+      .catch(() => {
+        watchActive = false;
+      });
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    watchActive = false;
+    return;
+  }
+
+  webWatchId = navigator.geolocation.watchPosition(
+    (pos) => publishPosition(pos.coords.latitude, pos.coords.longitude),
+    () => {
+      // Keep the last known position on transient errors; only an explicit
+      // permission revocation surfaces via permissions.query elsewhere.
+    },
+    // maximumAge: 0 forces fresh fixes so the dot tracks real movement instead
+    // of replaying a cached point.
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+  );
+}
+
+function stopWatch() {
+  watchActive = false;
+  if (webWatchId !== null) {
+    navigator.geolocation.clearWatch(webWatchId);
+    webWatchId = null;
+  }
+  if (nativeWatchId !== null) {
+    Geolocation.clearWatch({ id: nativeWatchId });
+    nativeWatchId = null;
+  }
+}
+
 export function requestLocationOnce(): Promise<UserLocation | null> {
   if (permissionStatus === "granted" && cached) return Promise.resolve(cached);
   if (permissionStatus === "denied") return Promise.resolve(null);
@@ -111,11 +189,12 @@ export function requestLocationOnce(): Promise<UserLocation | null> {
   });
 }
 
-export function useUserLocation(): {
+export function useUserLocation(opts?: { watch?: boolean }): {
   location: UserLocation | null;
   status: LocationPermissionStatus;
   request: () => void;
 } {
+  const watch = opts?.watch ?? false;
   const [location, setLocation] = useState<UserLocation | null>(cached);
   const [status, setStatus] = useState<LocationPermissionStatus>(permissionStatus);
 
@@ -159,6 +238,27 @@ export function useUserLocation(): {
       statusSubscribers.delete(setStatus);
     };
   }, []);
+
+  // Live tracking: while a consumer opts into `watch`, follow the device via
+  // watchPosition so the dot moves as the user does. We never start the watch
+  // until permission is granted — on web that keeps watchPosition from firing
+  // its own permission popup before the user has asked for location.
+  useEffect(() => {
+    if (!watch) return;
+    watchCount++;
+
+    if (permissionStatus === "granted") startWatch();
+    const onStatus = (s: LocationPermissionStatus) => {
+      if (s === "granted") startWatch();
+    };
+    statusSubscribers.add(onStatus);
+
+    return () => {
+      statusSubscribers.delete(onStatus);
+      watchCount = Math.max(0, watchCount - 1);
+      if (watchCount === 0) stopWatch();
+    };
+  }, [watch]);
 
   return { location, status, request: triggerLocationRequest };
 }

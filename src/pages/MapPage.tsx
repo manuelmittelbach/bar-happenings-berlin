@@ -52,7 +52,9 @@ export default function MapPage() {
     () => categoriesData.filter((c) => c.enabled).map((c) => c.id),
     [categoriesData],
   );
-  const { location: userLocation } = useUserLocation();
+  // watch: true → live-track the device so the blue dot follows the user as
+  // they move (like Google Maps), instead of only updating on a manual locate.
+  const { location: userLocation } = useUserLocation({ watch: true });
 
   const venueMap = useMemo(
     () => Object.fromEntries(venuesData.map((v) => [v.id, v])),
