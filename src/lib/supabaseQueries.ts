@@ -361,7 +361,14 @@ export async function createEvent(
   if (error) throw error;
 }
 
-function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | undefined, includeDateTime: boolean): TablesUpdate<"events"> {
+// Date and time are gated separately: a single-event edit updates both, while a
+// series edit unifies the time across all upcoming occurrences (so a series can
+// be shifted, e.g. 20:00 → 21:00) but never the date, which stays per-occurrence.
+function buildUpdatePatch(
+  formData: EventWriteData,
+  imageUrl: string | null | undefined,
+  opts: { includeDate: boolean; includeTime: boolean },
+): TablesUpdate<"events"> {
   const update: TablesUpdate<"events"> = {
     title: formData.title,
     venue: formData.venue,
@@ -375,12 +382,14 @@ function buildUpdatePatch(formData: EventWriteData, imageUrl: string | null | un
     url: cleanUrl(formData.website) || null,
     image_position: formData.imagePosition,
   };
-  if (includeDateTime) {
+  if (opts.includeTime) {
     const times = normalizeStartDoors(formData.startTime, formData.doorsTime);
-    update.date = formData.date;
     update.start_time = times.start;
     update.end_time = formData.endTime ? trimTime(formData.endTime) : null;
     update.doors_time = times.doors;
+  }
+  if (opts.includeDate) {
+    update.date = formData.date;
   }
   if (imageUrl !== undefined) update.image = imageUrl;
   return update;
@@ -391,23 +400,31 @@ export async function updateEvent(
   formData: EventWriteData,
   imageUrl?: string | null,
 ): Promise<void> {
-  const update = buildUpdatePatch(formData, imageUrl, true);
+  const update = buildUpdatePatch(formData, imageUrl, { includeDate: true, includeTime: true });
   const { error } = await supabase.from("events").update(update).eq("id", id);
   if (error) throw error;
 }
 
+// Series-wide field edit ("this and all upcoming events"). Shared fields and the
+// time are rewritten (so a series can be shifted, e.g. 20:00 → 21:00); the date
+// stays per-occurrence (includeDate:false). We scope to the series, then to
+// occurrences on/after fromDate — but ALWAYS include the parent (the earliest
+// row, id === seriesId) even though its date is in the past: the parent is the
+// template the auto-extend cron copies forward, so leaving it stale would make
+// future occurrences revert to the old image/fields/time. Past child
+// occurrences are still left untouched.
 export async function updateEventSeries(
   seriesId: string,
   fromDate: string,
   formData: EventWriteData,
   imageUrl?: string | null,
 ): Promise<void> {
-  const update = buildUpdatePatch(formData, imageUrl, false);
+  const update = buildUpdatePatch(formData, imageUrl, { includeDate: false, includeTime: true });
   const { error } = await supabase
     .from("events")
     .update(update)
     .or(`id.eq.${seriesId},parent_id.eq.${seriesId}`)
-    .gte("date", fromDate);
+    .or(`date.gte.${fromDate},id.eq.${seriesId}`);
   if (error) throw error;
 }
 
