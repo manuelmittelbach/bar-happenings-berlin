@@ -1,6 +1,6 @@
 import { addDays, addMonths, addWeeks, format, getDate, getDay, getDaysInMonth, parse, startOfMonth } from "date-fns";
 
-export type RecurrenceFreq = "weekly" | "biweekly" | "monthly_by_weekday" | "monthly_last_weekday";
+export type RecurrenceFreq = "daily" | "weekly" | "biweekly" | "monthly_by_weekday" | "monthly_last_weekday";
 
 export interface RecurrenceRule {
   freq: RecurrenceFreq;
@@ -12,7 +12,7 @@ export interface RecurrenceRule {
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const ORDINAL_NAMES = ["", "1st", "2nd", "3rd", "4th", "5th"];
 
-const FREQ_VALUES: RecurrenceFreq[] = ["weekly", "biweekly", "monthly_by_weekday", "monthly_last_weekday"];
+const FREQ_VALUES: RecurrenceFreq[] = ["daily", "weekly", "biweekly", "monthly_by_weekday", "monthly_last_weekday"];
 
 export function parseRule(recurrence: string | null | undefined): RecurrenceRule | null {
   if (!recurrence) return null;
@@ -65,6 +65,15 @@ export function generateOccurrences(startDate: string, freq: RecurrenceFreq, unt
   if (endDate < start) return [];
 
   const dates: string[] = [];
+
+  if (freq === "daily") {
+    let cursor = start;
+    while (cursor <= endDate && dates.length < cap) {
+      dates.push(toIso(cursor));
+      cursor = addDays(cursor, 1);
+    }
+    return dates;
+  }
 
   if (freq === "weekly") {
     let cursor = start;
@@ -138,6 +147,7 @@ export function generateOccurrences(startDate: string, freq: RecurrenceFreq, unt
 export function formatRecurrenceLabel(recurrence: string | null | undefined): string | null {
   const parsed = parseRule(recurrence);
   if (!parsed) return null;
+  if (parsed.freq === "daily") return "daily";
   if (parsed.freq === "weekly") return "weekly";
   if (parsed.freq === "biweekly") return "every second week";
   return "monthly";
@@ -146,6 +156,7 @@ export function formatRecurrenceLabel(recurrence: string | null | undefined): st
 export function describeRule(startDate: string, freq: RecurrenceFreq): string {
   const start = fromIso(startDate);
   const weekdayName = WEEKDAY_NAMES[getDay(start)];
+  if (freq === "daily") return "every day";
   if (freq === "weekly") return `every ${weekdayName}`;
   if (freq === "biweekly") {
     const nth = ordinalOfWeekdayInMonth(start);

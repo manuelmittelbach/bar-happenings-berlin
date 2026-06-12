@@ -49,6 +49,7 @@ function todayLocalISO(): string {
 
 const RECURRENCE_OPTIONS: { value: "" | RecurrenceFreq; label: string }[] = [
   { value: "", label: "Does not repeat" },
+  { value: "daily", label: "Daily — every day" },
   { value: "weekly", label: "Weekly — every week" },
   { value: "biweekly", label: "Biweekly — 1st+3rd or 2nd+4th weekday" },
   { value: "monthly_by_weekday", label: "Monthly — same weekday of month" },
