@@ -3037,6 +3037,7 @@ function StagedEventCard({
               {/* User events mix single + recurring submissions; let the admin
                   mark one as non-repeating. Other scopes keep this off. */}
               {allowOneTime && <option value="">— One-time (no repeat) —</option>}
+              <option value="daily">Daily — every day</option>
               <option value="weekly">Weekly — every week</option>
               <option value="biweekly">Biweekly — 1st+3rd or 2nd+4th weekday</option>
               <option value="monthly_by_weekday">Monthly — same weekday of month</option>
