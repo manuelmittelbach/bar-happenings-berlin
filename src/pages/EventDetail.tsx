@@ -20,7 +20,7 @@ export default function EventDetail() {
 	const navigate = useNavigate();
 	const isNative = useIsNative();
 	const { role, roleResolved } = useAuth();
-	const { data: event, isLoading, error, refetch, isFetching } = useEventById(id || "");
+	const { data: event, isPending, error, refetch, isFetching } = useEventById(id || "");
 	// Guards against a second rapid tap re-invoking the share sheet while
 	// the first is still opening. Without it, the plugin throws "Share
 	// already in progress", which isn't a cancel, so the code fell through
@@ -29,7 +29,14 @@ export default function EventDetail() {
 	const seriesId = event ? (event.parentId || event.id) : "";
 	const { data: seriesMembers = [] } = useEventSeries(seriesId);
 
-	if (isLoading) {
+	// Gate on isPending (no data + no error yet), NOT isLoading. isLoading is
+	// `isPending && isFetching`, which is briefly false while the persisted
+	// query cache is being restored on a fresh load (fetchStatus is 'idle'
+	// during the restore pause). That window let the "Event not found" branch
+	// flash before the fetch even started — most visible on mobile, where the
+	// boot/localStorage restore is slower. isPending stays true until the
+	// event actually resolves or errors, so the spinner covers the gap.
+	if (isPending) {
 		return <PageSpinner />;
 	}
 
