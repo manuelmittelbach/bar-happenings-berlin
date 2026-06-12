@@ -310,7 +310,7 @@ export default function EventDetailView({
             starts, keeping the masthead + chip + venue stack at the top
             cleanly typographic when an event has a photo. */}
         {hasRealImage && (
-          <figure className={`relative border-2 border-foreground overflow-hidden mt-6 aspect-[3/2] shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "" : "md:aspect-[16/9]"}`}>
+          <figure className={`relative border-2 border-foreground overflow-hidden mt-6 shadow-[0_30px_60px_-30px_hsla(18,85%,52%,0.35)] ${compact ? "aspect-[3/2]" : "aspect-[16/9]"}`}>
             <FadeInImage
               src={event.image!}
               alt={displayTitle}

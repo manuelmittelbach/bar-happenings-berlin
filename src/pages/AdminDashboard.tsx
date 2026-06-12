@@ -2518,7 +2518,7 @@ function StagedEventCard({
       {(staged.image || !isApproved || seriesImageMode) && (
         <div className="flex items-start gap-3">
           {staged.image ? (
-            <div className="relative w-40 aspect-[3/2] md:aspect-[16/9] flex-shrink-0 overflow-hidden border border-border">
+            <div className="relative w-40 aspect-[16/9] flex-shrink-0 overflow-hidden border border-border">
               <img
                 src={staged.image}
                 alt=""
