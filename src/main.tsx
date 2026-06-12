@@ -42,4 +42,17 @@ if (Capacitor.isNativePlatform()) {
   }
 }
 
+// In the browser dev server, tear down any service worker (and its caches)
+// left over from a production visit. The PWA registers with autoUpdate, so a
+// lingering SW serves stale assets even after a hard refresh — which hides
+// freshly-edited code while developing. Native already unregisters above.
+if (import.meta.env.DEV && !Capacitor.isNativePlatform() && "serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then((regs) => regs.forEach((r) => r.unregister()))
+    .catch(() => {});
+  if ("caches" in window) {
+    caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+  }
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
