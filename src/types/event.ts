@@ -64,11 +64,13 @@ export interface Venue {
   imageOg?: string;
   imageGoogle?: string;
   instagram?: string;
+  telegram?: string;
   website?: string;
   websiteEvents?: string;
   phone?: string;
   scrapeEnabled: boolean;
   instagramScrapeEnabled: boolean;
+  telegramScrapeEnabled: boolean;
   isVisible: boolean;
   lat: number;
   lng: number;

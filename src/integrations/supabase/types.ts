@@ -621,6 +621,7 @@ export type Database = {
           is_visible: boolean
           scrape_enabled: boolean
           telegram: string | null
+          telegram_scrape_enabled: boolean
           updated_at: string | null
           website: string | null
           website_events: string | null
@@ -649,6 +650,7 @@ export type Database = {
           is_visible?: boolean
           scrape_enabled?: boolean
           telegram?: string | null
+          telegram_scrape_enabled?: boolean
           updated_at?: string | null
           website?: string | null
           website_events?: string | null
@@ -677,6 +679,7 @@ export type Database = {
           is_visible?: boolean
           scrape_enabled?: boolean
           telegram?: string | null
+          telegram_scrape_enabled?: boolean
           updated_at?: string | null
           website?: string | null
           website_events?: string | null

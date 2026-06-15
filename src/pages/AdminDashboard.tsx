@@ -25,6 +25,7 @@ import {
   approveOrganizerWithVenueClaim,
   setVenueScrapeEnabled,
   setVenueInstagramScrapeEnabled,
+  setVenueTelegramScrapeEnabled,
   setVenueVisible,
   updateVenueLinks,
   fetchStagedEvents,
@@ -192,6 +193,7 @@ export default function AdminDashboard() {
   const [allBarsQuery, setAllBarsQuery] = useState("");
   const [allBarsScrapeFilter, setAllBarsScrapeFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsIgScrapeFilter, setAllBarsIgScrapeFilter] = useState<"all" | "yes" | "no">("all");
+  const [allBarsTgScrapeFilter, setAllBarsTgScrapeFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsClaimFilter, setAllBarsClaimFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
   const [scrapedLoading, setScrapedLoading] = useState(true);
@@ -621,6 +623,28 @@ export default function AdminDashboard() {
         ),
       );
       toast.error("Couldn't update Instagram scraping status. Please try again.");
+    }
+  };
+
+  const handleToggleTelegramScrapeEnabled = async (venueId: string, next: boolean) => {
+    setAllBars(prev =>
+      prev.map(item =>
+        item.venue.id === venueId
+          ? { ...item, venue: { ...item.venue, telegramScrapeEnabled: next } }
+          : item,
+      ),
+    );
+    try {
+      await setVenueTelegramScrapeEnabled(venueId, next);
+    } catch {
+      setAllBars(prev =>
+        prev.map(item =>
+          item.venue.id === venueId
+            ? { ...item, venue: { ...item.venue, telegramScrapeEnabled: !next } }
+            : item,
+        ),
+      );
+      toast.error("Couldn't update Telegram scraping status. Please try again.");
     }
   };
 
@@ -1358,6 +1382,8 @@ export default function AdminDashboard() {
                   if (allBarsScrapeFilter === "no" && venue.scrapeEnabled) return false;
                   if (allBarsIgScrapeFilter === "yes" && !venue.instagramScrapeEnabled) return false;
                   if (allBarsIgScrapeFilter === "no" && venue.instagramScrapeEnabled) return false;
+                  if (allBarsTgScrapeFilter === "yes" && !venue.telegramScrapeEnabled) return false;
+                  if (allBarsTgScrapeFilter === "no" && venue.telegramScrapeEnabled) return false;
                   if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
                   if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
                   return true;
@@ -1407,6 +1433,23 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                       <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">TG:</span>
+                        {(["all", "yes", "no"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setAllBarsTgScrapeFilter(v)}
+                            className={`px-2 h-7 rounded-sm border ${
+                              allBarsTgScrapeFilter === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1">
                         <span className="text-muted-foreground">Claim:</span>
                         {(["all", "claimed", "unclaimed"] as const).map((v) => (
                           <button
@@ -1438,6 +1481,7 @@ export default function AdminDashboard() {
                           events={(liveEventsByVenue[venue.id] ?? []).filter(e => e.status === "approved")}
                           onToggleScrapeEnabled={handleToggleScrapeEnabled}
                           onToggleInstagramScrapeEnabled={handleToggleInstagramScrapeEnabled}
+                          onToggleTelegramScrapeEnabled={handleToggleTelegramScrapeEnabled}
                           onToggleVisible={handleToggleVisible}
                           onLinkChange={handleVenueLinkChange}
                           onDeleteEvent={handleDeleteApprovedSingle}
@@ -1459,6 +1503,7 @@ function BarCard({
   events,
   onToggleScrapeEnabled,
   onToggleInstagramScrapeEnabled,
+  onToggleTelegramScrapeEnabled,
   onToggleVisible,
   onLinkChange,
   onDeleteEvent,
@@ -1468,6 +1513,7 @@ function BarCard({
   events: LiveEventInfo[];
   onToggleScrapeEnabled: (venueId: string, next: boolean) => void;
   onToggleInstagramScrapeEnabled: (venueId: string, next: boolean) => void;
+  onToggleTelegramScrapeEnabled: (venueId: string, next: boolean) => void;
   onToggleVisible: (venueId: string, next: boolean) => void;
   onLinkChange: (
     venueId: string,
@@ -1640,6 +1686,19 @@ function BarCard({
         >
           <span className={`h-1.5 w-1.5 rounded-full ${venue.instagramScrapeEnabled ? "bg-green-500" : "bg-red-500"}`} />
           IG scraping: {venue.instagramScrapeEnabled ? "yes" : "no"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleTelegramScrapeEnabled(venue.id, !venue.telegramScrapeEnabled)}
+          className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-sm text-xs font-medium border transition-colors ${
+            venue.telegramScrapeEnabled
+              ? "bg-green-500/10 text-green-600 border-green-500/40 hover:bg-green-500/20"
+              : "bg-red-500/10 text-red-600 border-red-500/40 hover:bg-red-500/20"
+          }`}
+          title={`TG scraping: ${venue.telegramScrapeEnabled ? "yes" : "no"}. Click to toggle.`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${venue.telegramScrapeEnabled ? "bg-green-500" : "bg-red-500"}`} />
+          TG scraping: {venue.telegramScrapeEnabled ? "yes" : "no"}
         </button>
         <button
           type="button"
