@@ -10,19 +10,40 @@ import { useCategories } from "@/hooks/useEvents";
 
 
 function renderWithLinks(text: string) {
-  const urlRegex = /https?:\/\/[^\s]+/g;
+  // Matches either a full URL, or an @handle that starts at the beginning of
+  // the text or right after whitespace. Requiring that leading boundary keeps
+  // email addresses (info@gmail.com — the @ follows a word char) out of the
+  // @handle branch. @handles resolve to an Instagram profile.
+  const tokenRegex = /(https?:\/\/[^\s]+)|(^|\s)@([a-zA-Z0-9._]{1,30})/g;
   const parts: (string | React.ReactElement)[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = urlRegex.exec(text)) !== null) {
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const [full, url, lead, rawHandle] = match;
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    parts.push(
-      <a key={match.index} href={match[0]} target="_blank" rel="noopener noreferrer"
-        className="underline underline-offset-2 hover:text-foreground break-all">
-        {match[0]}
-      </a>
-    );
-    lastIndex = match.index + match[0].length;
+    if (url) {
+      parts.push(
+        <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground break-all">
+          {url}
+        </a>
+      );
+    } else {
+      // Re-emit the whitespace we consumed as the leading boundary.
+      if (lead) parts.push(lead);
+      // A trailing dot is sentence punctuation, not part of the handle
+      // ("Hosted by @anotherroundquiz.") — strip it back out as plain text.
+      const handle = rawHandle.replace(/\.+$/, "");
+      const trailing = rawHandle.slice(handle.length);
+      parts.push(
+        <a key={`${match.index}-h`} href={`https://instagram.com/${handle}`} target="_blank" rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-foreground break-all">
+          {`@${handle}`}
+        </a>
+      );
+      if (trailing) parts.push(trailing);
+    }
+    lastIndex = match.index + full.length;
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts;
