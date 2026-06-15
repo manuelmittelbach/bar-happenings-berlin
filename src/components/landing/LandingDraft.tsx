@@ -164,7 +164,9 @@ export default function LandingDraft() {
   // 0 = auto-cycle (plain crossfade, no horizontal slide).
   const [swipeDir, setSwipeDir] = useState(0);
   useEffect(() => {
-    if (heroPool.length < 2) return;
+    // Mobile no longer auto-cycles — the card only changes on a manual swipe.
+    // Desktop keeps its slow continuous drift.
+    if (heroPool.length < 2 || isMobile) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
     // Wall-clock bookkeeping for the *currently pending* wait, so stop() can
