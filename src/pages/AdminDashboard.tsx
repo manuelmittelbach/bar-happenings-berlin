@@ -194,6 +194,7 @@ export default function AdminDashboard() {
   const [allBarsScrapeFilter, setAllBarsScrapeFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsIgScrapeFilter, setAllBarsIgScrapeFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsTgScrapeFilter, setAllBarsTgScrapeFilter] = useState<"all" | "yes" | "no">("all");
+  const [allBarsOnlineFilter, setAllBarsOnlineFilter] = useState<"all" | "yes" | "no">("all");
   const [allBarsClaimFilter, setAllBarsClaimFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [scrapedEvents, setScrapedEvents] = useState<StagedEvent[]>([]);
   const [scrapedLoading, setScrapedLoading] = useState(true);
@@ -1385,6 +1386,8 @@ export default function AdminDashboard() {
                   if (allBarsIgScrapeFilter === "no" && venue.instagramScrapeEnabled) return false;
                   if (allBarsTgScrapeFilter === "yes" && !venue.telegramScrapeEnabled) return false;
                   if (allBarsTgScrapeFilter === "no" && venue.telegramScrapeEnabled) return false;
+                  if (allBarsOnlineFilter === "yes" && !venue.isVisible) return false;
+                  if (allBarsOnlineFilter === "no" && venue.isVisible) return false;
                   if (allBarsClaimFilter === "claimed" && !hasOwner) return false;
                   if (allBarsClaimFilter === "unclaimed" && hasOwner) return false;
                   return true;
@@ -1442,6 +1445,23 @@ export default function AdminDashboard() {
                             onClick={() => setAllBarsTgScrapeFilter(v)}
                             className={`px-2 h-7 rounded-sm border ${
                               allBarsTgScrapeFilter === v
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {v === "all" ? "All" : v === "yes" ? "On" : "Off"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Online:</span>
+                        {(["all", "yes", "no"] as const).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setAllBarsOnlineFilter(v)}
+                            className={`px-2 h-7 rounded-sm border ${
+                              allBarsOnlineFilter === v
                                 ? "border-foreground bg-foreground text-background"
                                 : "border-border hover:bg-muted"
                             }`}
@@ -1570,7 +1590,8 @@ function BarCard({
 
   return (
     <div className="border border-border rounded-sm">
-    <div className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+    <div className="p-4 space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-serif text-sm font-semibold">{venue.name}</p>
@@ -1586,92 +1607,6 @@ function BarCard({
           {venue.neighborhood || "(no neighborhood)"}
           {venue.address ? ` · ${venue.address}` : ""}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              value={website}
-              onChange={e => setWebsite(e.target.value)}
-              placeholder="Website…"
-              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
-            />
-            {venue.website && (
-              <a
-                href={venue.website}
-                target="_blank"
-                rel="noreferrer"
-                title="Open"
-                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <Instagram className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              value={instagram}
-              onChange={e => setInstagram(e.target.value)}
-              placeholder="Instagram…"
-              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
-            />
-            {instagramHref && (
-              <a
-                href={instagramHref}
-                target="_blank"
-                rel="noreferrer"
-                title="Open"
-                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <CalendarDays className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              value={websiteEvents}
-              onChange={e => setWebsiteEvents(e.target.value)}
-              placeholder="Events page URL…"
-              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
-            />
-            {venue.websiteEvents && (
-              <a
-                href={venue.websiteEvents}
-                target="_blank"
-                rel="noreferrer"
-                title="Open"
-                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <Send className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              value={telegram}
-              onChange={e => setTelegram(e.target.value)}
-              placeholder="Telegram…"
-              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
-            />
-            {telegramHref && (
-              <a
-                href={telegramHref}
-                target="_blank"
-                rel="noreferrer"
-                title="Open"
-                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-        </div>
       </div>
       <div className="flex gap-2 flex-shrink-0 flex-wrap">
         {dirty && (
@@ -1745,6 +1680,93 @@ function BarCard({
           <span className={`h-1.5 w-1.5 rounded-full ${venue.isVisible ? "bg-green-500" : "bg-red-500"}`} />
           Online: {venue.isVisible ? "yes" : "no"}
         </button>
+      </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 text-xs">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            value={website}
+            onChange={e => setWebsite(e.target.value)}
+            placeholder="Website…"
+            className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+          />
+          {venue.website && (
+            <a
+              href={venue.website}
+              target="_blank"
+              rel="noreferrer"
+              title="Open"
+              className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Instagram className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            value={instagram}
+            onChange={e => setInstagram(e.target.value)}
+            placeholder="Instagram…"
+            className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+          />
+          {instagramHref && (
+            <a
+              href={instagramHref}
+              target="_blank"
+              rel="noreferrer"
+              title="Open"
+              className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <CalendarDays className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            value={websiteEvents}
+            onChange={e => setWebsiteEvents(e.target.value)}
+            placeholder="Events page URL…"
+            className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+          />
+          {venue.websiteEvents && (
+            <a
+              href={venue.websiteEvents}
+              target="_blank"
+              rel="noreferrer"
+              title="Open"
+              className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Send className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+          <input
+            type="text"
+            value={telegram}
+            onChange={e => setTelegram(e.target.value)}
+            placeholder="Telegram…"
+            className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+          />
+          {telegramHref && (
+            <a
+              href={telegramHref}
+              target="_blank"
+              rel="noreferrer"
+              title="Open"
+              className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
       </div>
     </div>
     {showEvents && (
