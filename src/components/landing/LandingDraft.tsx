@@ -79,11 +79,10 @@ export default function LandingDraft() {
   // without re-shuffling on every re-render.
   const [shuffleSeed] = useState(() => Math.random());
 
-  // Carousel pool — up to 8 events from the active day (tonight, or tomorrow
-  // when tonight is empty), shuffled deterministically per visit. The hero
-  // stack cycles through this pool every few seconds; smaller cap keeps
-  // the loop short enough to feel intentional rather than an endless slideshow.
-  const HERO_POOL_SIZE = 8;
+  // Carousel pool — every event from the active day (tonight, or tomorrow when
+  // tonight is empty), shuffled deterministically per visit. The hero stack
+  // cycles through the whole pool, and the mobile card can be swiped through
+  // all of it, so the counter ("X of N") reflects the real total.
   const heroPool = useMemo(() => {
     let seed = Math.floor(shuffleSeed * 1e9);
     const rand = () => {
@@ -94,9 +93,9 @@ export default function LandingDraft() {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     const shuffled = [...pool].sort(() => rand() - 0.5);
-    // Spread across distinct venues first so consecutive cards in the
-    // cycle don't share a bar — pad with remaining events if the pool
-    // still has room.
+    // First pass: one card per distinct venue, in shuffled order, so the start
+    // of the loop never repeats a bar. Second pass: append everything still
+    // left so the cycle covers the full day's events.
     const picks: BarlinEvent[] = [];
     const seenVenues = new Set<string>();
     for (const e of shuffled) {
@@ -104,13 +103,9 @@ export default function LandingDraft() {
         picks.push(e);
         seenVenues.add(e.venue);
       }
-      if (picks.length === HERO_POOL_SIZE) break;
     }
-    if (picks.length < HERO_POOL_SIZE) {
-      for (const e of shuffled) {
-        if (!picks.includes(e)) picks.push(e);
-        if (picks.length === HERO_POOL_SIZE) break;
-      }
+    for (const e of shuffled) {
+      if (!picks.includes(e)) picks.push(e);
     }
     return picks;
   }, [pool, shuffleSeed]);
@@ -140,8 +135,12 @@ export default function LandingDraft() {
   // linear easing + a transition duration matching the interval keeps the
   // cards drifting at constant velocity with no perceptible "rest". On
   // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
-  const CYCLE_MS = isMobile ? 10000 : 28000;
+  const CYCLE_MS = isMobile ? 5000 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
+  // Bumped on a manual swipe to force the cycle effect to re-run (resetting
+  // the timer) so a hand-advanced card still gets a full dwell before the
+  // auto-cycle takes over again.
+  const [manualNudge, setManualNudge] = useState(0);
   // How much of the current cycle's wait is still pending, in ms. The timer
   // pauses *together with* the tab: while hidden, the browser also freezes
   // framer's rAF-driven animations, so the timer must NOT advance by wall-clock
@@ -154,6 +153,14 @@ export default function LandingDraft() {
   // drift simply continues where it left off. null = never started, so the
   // first start uses the initial cadence below.
   const remainingRef = useRef<number | null>(null);
+  // Set by a manual swipe: tells the next start() to ignore whatever wait was
+  // pending and begin a fresh full cycle instead of resuming mid-wait.
+  const forceResetRef = useRef(false);
+  // Horizontal swipe tracking for the mobile card. swipedRef suppresses the
+  // tap-to-open click that a touchend would otherwise also fire.
+  const touchStartXRef = useRef<number | null>(null);
+  const touchDeltaXRef = useRef(0);
+  const swipedRef = useRef(false);
   useEffect(() => {
     if (heroPool.length < 2) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
@@ -175,12 +182,20 @@ export default function LandingDraft() {
       // drift begins immediately; mobile holds the first card a full CYCLE_MS
       // so every card gets equal dwell. Later resumes continue from the time
       // that remained when the tab was hidden — no catch-up, no pile.
-      const delay =
-        remainingRef.current === null
+      // A manual swipe always restarts the dwell from scratch; otherwise the
+      // first ever start uses the initial cadence and later resumes continue
+      // from the time that remained when the tab was hidden.
+      const delay = forceResetRef.current
+        ? CYCLE_MS
+        : remainingRef.current === null
           ? isMobile
             ? CYCLE_MS
             : 0
           : remainingRef.current;
+      if (forceResetRef.current) {
+        forceResetRef.current = false;
+        remainingRef.current = CYCLE_MS;
+      }
       waitStart = performance.now();
       waitDuration = delay;
       pendingTick = setTimeout(() => {
@@ -210,7 +225,17 @@ export default function LandingDraft() {
       document.removeEventListener("visibilitychange", handleVisibility);
       stop();
     };
-  }, [heroPool.length, CYCLE_MS, isMobile]);
+  }, [heroPool.length, CYCLE_MS, isMobile, manualNudge]);
+
+  // Manual hero navigation — swipe left advances to the next card, swipe right
+  // steps back. Bumping manualNudge restarts the auto-cycle timer (via the
+  // effect deps) so the hand-picked card gets a full dwell before auto-cycling.
+  const advanceHero = (dir: 1 | -1) => {
+    if (heroPool.length < 2) return;
+    forceResetRef.current = true;
+    setCycleIndex((i) => i + dir);
+    setManualNudge((n) => n + 1);
+  };
 
   // Visible slice — three events visible at any time. With a pool of N,
   // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
@@ -222,7 +247,9 @@ export default function LandingDraft() {
     const slots: ("primary" | "secondary" | "tertiary")[] = ["primary", "secondary", "tertiary"];
     const count = Math.min(3, N);
     return slots.slice(0, count).map((role, offset) => ({
-      event: heroPool[(cycleIndex + offset) % N],
+      // (((…) % N) + N) % N keeps the index in range even after a backward
+      // swipe pushes cycleIndex negative.
+      event: heroPool[(((cycleIndex + offset) % N) + N) % N],
       role,
     }));
   }, [heroPool, cycleIndex]);
@@ -243,6 +270,13 @@ export default function LandingDraft() {
   useEffect(() => {
     if (hasVisibleCards) cardsHaveMountedRef.current = true;
   }, [hasVisibleCards]);
+
+  // 1-based position of the front card within the pool, for the "X of N"
+  // counter. Wraps with cycleIndex, including backward swipes (negative-safe).
+  const heroPosition =
+    heroPool.length > 0
+      ? (((cycleIndex % heroPool.length) + heroPool.length) % heroPool.length) + 1
+      : 0;
 
   return (
     <div className="flex flex-1 min-h-0 flex-col bg-background text-foreground">
@@ -398,7 +432,7 @@ export default function LandingDraft() {
                     {mode === "tomorrow" ? "Tomorrow" : "Tonight"}
                   </span>
                   <span className="text-foreground/25">·</span>
-                  <span>1 of {count}</span>
+                  <span>{heroPosition} / {count}</span>
                 </div>
                 {/* Reservation slot — min-h is the *outer* container,
                     not the card. Each card renders at its natural
@@ -406,13 +440,42 @@ export default function LandingDraft() {
                     description → tall card — that variation is the
                     point), and the slot absorbs the difference so the
                     footer stays put when a taller card cycles in. */}
-                <div className="min-h-[200px]">
+                <div
+                  className="min-h-[200px] touch-pan-y"
+                  onTouchStart={(e) => {
+                    touchStartXRef.current = e.touches[0].clientX;
+                    touchDeltaXRef.current = 0;
+                    swipedRef.current = false;
+                  }}
+                  onTouchMove={(e) => {
+                    if (touchStartXRef.current !== null)
+                      touchDeltaXRef.current =
+                        e.touches[0].clientX - touchStartXRef.current;
+                  }}
+                  onTouchEnd={() => {
+                    const dx = touchDeltaXRef.current;
+                    touchStartXRef.current = null;
+                    if (Math.abs(dx) > 40) {
+                      swipedRef.current = true;
+                      // swipe left → next card, swipe right → previous
+                      advanceHero(dx < 0 ? 1 : -1);
+                    }
+                  }}
+                >
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={visibleCards[0].event.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => goToEvent(visibleCards[0].event.id)}
+                      onClick={() => {
+                        // A swipe also fires a click on touchend — ignore it so
+                        // a horizontal drag doesn't open the event.
+                        if (swipedRef.current) {
+                          swipedRef.current = false;
+                          return;
+                        }
+                        goToEvent(visibleCards[0].event.id);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
