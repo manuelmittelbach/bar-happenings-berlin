@@ -1586,7 +1586,7 @@ function BarCard({
           {venue.neighborhood || "(no neighborhood)"}
           {venue.address ? ` · ${venue.address}` : ""}
         </p>
-        <div className="flex flex-col sm:flex-row gap-1.5 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <Globe className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <input
