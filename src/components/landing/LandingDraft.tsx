@@ -486,7 +486,7 @@ export default function LandingDraft() {
                       transition={
                         swipeDir === 0
                           ? { duration: 0.9, ease: "easeInOut" }
-                          : { type: "spring", stiffness: 320, damping: 34 }
+                          : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
                       }
                       className="relative cursor-grab touch-pan-y border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f] active:cursor-grabbing"
                       style={{
@@ -629,7 +629,18 @@ export default function LandingDraft() {
 const HERO_SWIPE_VARIANTS = {
   enter: (dir: number) => ({ x: dir > 0 ? 90 : dir < 0 ? -90 : 0, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -90 : dir < 0 ? 90 : 0, opacity: 0 }),
+  exit: (dir: number) => ({
+    x: dir > 0 ? -90 : dir < 0 ? 90 : 0,
+    opacity: 0,
+    // Carry the timing here (not the component's `transition` prop, which the
+    // exiting card freezes at its last render) so the outgoing card uses the
+    // CURRENT swipe direction — otherwise the first swipe after an auto-cycle
+    // exits with the slow 0.9s crossfade.
+    transition:
+      dir === 0
+        ? { duration: 0.9, ease: "easeInOut" }
+        : { duration: 0.22, ease: [0.4, 0, 0.2, 1] },
+  }),
 };
 
 const SLOT_TRANSFORMS = {
