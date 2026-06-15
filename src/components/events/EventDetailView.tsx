@@ -401,7 +401,7 @@ function DescriptionBlock({
     <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6] max-w-[65ch]`}>
       <div className="space-y-5">
         {description.split("\n\n").map((p, i) => (
-          <p key={i}>{renderWithLinks(p)}</p>
+          <p key={i} className="whitespace-pre-line">{renderWithLinks(p)}</p>
         ))}
       </div>
       {eventLinkEl && <div>{eventLinkEl}</div>}
