@@ -170,12 +170,13 @@ export async function setVenueVisible(venueId: string, visible: boolean): Promis
 
 export async function updateVenueLinks(
   venueId: string,
-  patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+  patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null; telegram?: string | null },
 ): Promise<void> {
   const update: TablesUpdate<"venues"> = {};
   if (patch.website !== undefined) update.website = patch.website;
   if (patch.instagram !== undefined) update.instagram = patch.instagram;
   if (patch.websiteEvents !== undefined) update.website_events = patch.websiteEvents;
+  if (patch.telegram !== undefined) update.telegram = patch.telegram;
   if (Object.keys(update).length === 0) return;
   const { error } = await supabase
     .from("venues")

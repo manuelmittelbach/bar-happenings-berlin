@@ -6,7 +6,7 @@ import { generateOccurrences, formatRecurrenceLabel, describeRule, parseRule, ty
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban } from "lucide-react";
+import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
@@ -510,7 +510,7 @@ export default function AdminDashboard() {
 
   const handleVenueLinkChange = async (
     venueId: string,
-    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null; telegram?: string | null },
   ) => {
     setAllBars(prev =>
       prev.map(item =>
@@ -522,6 +522,7 @@ export default function AdminDashboard() {
                 ...(patch.website !== undefined ? { website: patch.website ?? undefined } : {}),
                 ...(patch.instagram !== undefined ? { instagram: patch.instagram ?? undefined } : {}),
                 ...(patch.websiteEvents !== undefined ? { websiteEvents: patch.websiteEvents ?? undefined } : {}),
+                ...(patch.telegram !== undefined ? { telegram: patch.telegram ?? undefined } : {}),
               },
             }
           : item,
@@ -1517,32 +1518,36 @@ function BarCard({
   onToggleVisible: (venueId: string, next: boolean) => void;
   onLinkChange: (
     venueId: string,
-    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null },
+    patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null; telegram?: string | null },
   ) => Promise<void>;
   onDeleteEvent: (eventId: string) => Promise<void>;
 }) {
   const [website, setWebsite] = useState(venue.website ?? "");
   const [instagram, setInstagram] = useState(venue.instagram ?? "");
   const [websiteEvents, setWebsiteEvents] = useState(venue.websiteEvents ?? "");
+  const [telegram, setTelegram] = useState(venue.telegram ?? "");
   const [saving, setSaving] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
 
   useEffect(() => { setWebsite(venue.website ?? ""); }, [venue.website]);
   useEffect(() => { setInstagram(venue.instagram ?? ""); }, [venue.instagram]);
   useEffect(() => { setWebsiteEvents(venue.websiteEvents ?? ""); }, [venue.websiteEvents]);
+  useEffect(() => { setTelegram(venue.telegram ?? ""); }, [venue.telegram]);
 
   const normalize = (v: string) => v.trim() || null;
   const websiteDirty = normalize(website) !== (venue.website ?? null);
   const instagramDirty = normalize(instagram) !== (venue.instagram ?? null);
   const websiteEventsDirty = normalize(websiteEvents) !== (venue.websiteEvents ?? null);
-  const dirty = websiteDirty || instagramDirty || websiteEventsDirty;
+  const telegramDirty = normalize(telegram) !== (venue.telegram ?? null);
+  const dirty = websiteDirty || instagramDirty || websiteEventsDirty || telegramDirty;
 
   const handleSave = async () => {
     if (!dirty || saving) return;
-    const patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null } = {};
+    const patch: { website?: string | null; instagram?: string | null; websiteEvents?: string | null; telegram?: string | null } = {};
     if (websiteDirty) patch.website = normalize(website);
     if (instagramDirty) patch.instagram = normalize(instagram);
     if (websiteEventsDirty) patch.websiteEvents = normalize(websiteEvents);
+    if (telegramDirty) patch.telegram = normalize(telegram);
     setSaving(true);
     try {
       await onLinkChange(venue.id, patch);
@@ -1555,6 +1560,12 @@ function BarCard({
     ? /^https?:\/\//i.test(instagram)
       ? instagram
       : `https://instagram.com/${instagram.replace(/^@/, "")}`
+    : null;
+
+  const telegramHref = telegram
+    ? /^https?:\/\//i.test(telegram)
+      ? telegram
+      : `https://t.me/${telegram.replace(/^@/, "")}`
     : null;
 
   return (
@@ -1630,6 +1641,27 @@ function BarCard({
             {venue.websiteEvents && (
               <a
                 href={venue.websiteEvents}
+                target="_blank"
+                rel="noreferrer"
+                title="Open"
+                className="inline-flex items-center justify-center h-7 w-7 border border-border rounded-sm hover:bg-muted flex-shrink-0"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <Send className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={telegram}
+              onChange={e => setTelegram(e.target.value)}
+              placeholder="Telegram…"
+              className="flex-1 min-w-0 h-7 px-2 bg-muted/50 border border-border rounded-sm text-xs outline-none focus:border-foreground transition-colors"
+            />
+            {telegramHref && (
+              <a
+                href={telegramHref}
                 target="_blank"
                 rel="noreferrer"
                 title="Open"
