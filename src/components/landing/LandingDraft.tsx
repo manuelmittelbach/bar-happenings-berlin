@@ -156,11 +156,10 @@ export default function LandingDraft() {
   // Set by a manual swipe: tells the next start() to ignore whatever wait was
   // pending and begin a fresh full cycle instead of resuming mid-wait.
   const forceResetRef = useRef(false);
-  // Horizontal swipe tracking for the mobile card. swipedRef suppresses the
-  // tap-to-open click that a touchend would otherwise also fire.
-  const touchStartXRef = useRef<number | null>(null);
-  const touchDeltaXRef = useRef(0);
-  const swipedRef = useRef(false);
+  // Direction of the last card change, for the swipe animation: +1 = next
+  // (new card slides in from the right, old exits left), -1 = previous,
+  // 0 = auto-cycle (plain crossfade, no horizontal slide).
+  const [swipeDir, setSwipeDir] = useState(0);
   useEffect(() => {
     if (heroPool.length < 2) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
@@ -170,6 +169,7 @@ export default function LandingDraft() {
     let waitStart = 0;
     let waitDuration = 0;
     const tick = () => {
+      setSwipeDir(0); // auto-cycle crossfades; only manual swipes slide
       setCycleIndex((i) => i + 1);
       // Each interval tick restarts a full-cycle wait.
       waitStart = performance.now();
@@ -233,6 +233,7 @@ export default function LandingDraft() {
   const advanceHero = (dir: 1 | -1) => {
     if (heroPool.length < 2) return;
     forceResetRef.current = true;
+    setSwipeDir(dir);
     setCycleIndex((i) => i + dir);
     setManualNudge((n) => n + 1);
   };
@@ -440,53 +441,41 @@ export default function LandingDraft() {
                     description → tall card — that variation is the
                     point), and the slot absorbs the difference so the
                     footer stays put when a taller card cycles in. */}
-                <div
-                  className="min-h-[200px] touch-pan-y"
-                  onTouchStart={(e) => {
-                    touchStartXRef.current = e.touches[0].clientX;
-                    touchDeltaXRef.current = 0;
-                    swipedRef.current = false;
-                  }}
-                  onTouchMove={(e) => {
-                    if (touchStartXRef.current !== null)
-                      touchDeltaXRef.current =
-                        e.touches[0].clientX - touchStartXRef.current;
-                  }}
-                  onTouchEnd={() => {
-                    const dx = touchDeltaXRef.current;
-                    touchStartXRef.current = null;
-                    if (Math.abs(dx) > 40) {
-                      swipedRef.current = true;
-                      // swipe left → next card, swipe right → previous
-                      advanceHero(dx < 0 ? 1 : -1);
-                    }
-                  }}
-                >
-                  <AnimatePresence mode="wait" initial={false}>
+                <div className="min-h-[200px]">
+                  <AnimatePresence mode="wait" initial={false} custom={swipeDir}>
                     <motion.div
                       key={visibleCards[0].event.id}
+                      custom={swipeDir}
                       role="button"
                       tabIndex={0}
-                      onClick={() => {
-                        // A swipe also fires a click on touchend — ignore it so
-                        // a horizontal drag doesn't open the event.
-                        if (swipedRef.current) {
-                          swipedRef.current = false;
-                          return;
-                        }
-                        goToEvent(visibleCards[0].event.id);
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.5}
+                      onDragEnd={(_, info) => {
+                        // Dragged past the threshold → step a card in that
+                        // direction; otherwise it springs back to center.
+                        if (info.offset.x < -60) advanceHero(1); // drag left → next
+                        else if (info.offset.x > 60) advanceHero(-1); // drag right → previous
                       }}
+                      // onTap (not onClick) so a drag gesture never also opens
+                      // the event — framer suppresses the tap after a drag.
+                      onTap={() => goToEvent(visibleCards[0].event.id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           goToEvent(visibleCards[0].event.id);
                         }
                       }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.9, ease: "easeInOut" }}
-                      className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
+                      variants={HERO_SWIPE_VARIANTS}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={
+                        swipeDir === 0
+                          ? { duration: 0.9, ease: "easeInOut" }
+                          : { type: "spring", stiffness: 320, damping: 34 }
+                      }
+                      className="relative cursor-grab touch-pan-y border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f] active:cursor-grabbing"
                       style={{
                         padding: "20px 18px 16px",
                         transformOrigin: "left center",
@@ -620,6 +609,16 @@ export default function LandingDraft() {
  * from the container's top-left corner; the cards share a 360px base
  * width and differ only in scale/rotation/position so the inner chrome
  * stays identical across slots. */
+/* Mobile card swipe variants — `custom` carries the swipe direction.
+ * dir > 0 (next): new card enters from the right, old exits left.
+ * dir < 0 (previous): mirrored. dir === 0 (auto-cycle): pure crossfade,
+ * no horizontal travel. */
+const HERO_SWIPE_VARIANTS = {
+  enter: (dir: number) => ({ x: dir > 0 ? 90 : dir < 0 ? -90 : 0, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -90 : dir < 0 ? 90 : 0, opacity: 0 }),
+};
+
 const SLOT_TRANSFORMS = {
   primary:   { x:  20, y: 130, rotate:  -3, scale: 1.00, z: 3 },
   secondary: { x: 110, y:  60, rotate:   5, scale: 0.88, z: 2 },
