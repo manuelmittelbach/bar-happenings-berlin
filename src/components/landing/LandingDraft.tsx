@@ -156,6 +156,9 @@ export default function LandingDraft() {
   // Set by a manual swipe: tells the next start() to ignore whatever wait was
   // pending and begin a fresh full cycle instead of resuming mid-wait.
   const forceResetRef = useRef(false);
+  // True while/just after a drag, so the trailing tap that a pointer-up emits
+  // doesn't also open the event. Reset shortly after the drag ends.
+  const draggedRef = useRef(false);
   // Direction of the last card change, for the swipe animation: +1 = next
   // (new card slides in from the right, old exits left), -1 = previous,
   // 0 = auto-cycle (plain crossfade, no horizontal slide).
@@ -451,15 +454,25 @@ export default function LandingDraft() {
                       drag="x"
                       dragConstraints={{ left: 0, right: 0 }}
                       dragElastic={0.5}
+                      onDragStart={() => {
+                        draggedRef.current = true;
+                      }}
                       onDragEnd={(_, info) => {
                         // Dragged past the threshold → step a card in that
                         // direction; otherwise it springs back to center.
                         if (info.offset.x < -60) advanceHero(1); // drag left → next
                         else if (info.offset.x > 60) advanceHero(-1); // drag right → previous
+                        // Keep the flag up until after the trailing tap fires.
+                        window.setTimeout(() => {
+                          draggedRef.current = false;
+                        }, 60);
                       }}
-                      // onTap (not onClick) so a drag gesture never also opens
-                      // the event — framer suppresses the tap after a drag.
-                      onTap={() => goToEvent(visibleCards[0].event.id)}
+                      // Ignore the tap that follows a drag so swiping never
+                      // also opens the event.
+                      onTap={() => {
+                        if (draggedRef.current) return;
+                        goToEvent(visibleCards[0].event.id);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
