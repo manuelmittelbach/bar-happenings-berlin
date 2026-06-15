@@ -141,6 +141,12 @@ export default function LandingDraft() {
   // the timer) so a hand-advanced card still gets a full dwell before the
   // auto-cycle takes over again.
   const [manualNudge, setManualNudge] = useState(0);
+  // Bumped when the desktop tab becomes visible again: remounts the card deck
+  // so the cards snap cleanly to their slot poses instead of resuming the
+  // half-frozen, possibly-jumbled drift animations. snapNextRef makes that one
+  // remount skip the entrance drift (cards appear pre-placed at their slots).
+  const [resyncSeq, setResyncSeq] = useState(0);
+  const snapNextRef = useRef(false);
   // How much of the current cycle's wait is still pending, in ms. The timer
   // pauses *together with* the tab: while hidden, the browser also freezes
   // framer's rAF-driven animations, so the timer must NOT advance by wall-clock
@@ -221,8 +227,17 @@ export default function LandingDraft() {
       interval = undefined;
     };
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") start();
-      else stop();
+      if (document.visibilityState === "visible") {
+        // Re-anchor cleanly: snap the cards to their slots and restart the
+        // drift + timer from a full fresh cycle, rather than resuming frozen
+        // mid-flight animations (which can stall or jumble the stack).
+        snapNextRef.current = true;
+        forceResetRef.current = true;
+        setResyncSeq((s) => s + 1);
+        start();
+      } else {
+        stop();
+      }
     };
     if (document.visibilityState === "visible") start();
     document.addEventListener("visibilitychange", handleVisibility);
@@ -276,6 +291,12 @@ export default function LandingDraft() {
   useEffect(() => {
     if (hasVisibleCards) cardsHaveMountedRef.current = true;
   }, [hasVisibleCards]);
+
+  // Clear the one-shot snap flag after the resync remount has committed, so
+  // subsequent cycle ticks animate (drift in) normally again.
+  useEffect(() => {
+    snapNextRef.current = false;
+  }, [resyncSeq]);
 
   // 1-based position of the front card within the pool, for the "X of N"
   // counter. Wraps with cycleIndex, including backward swipes (negative-safe).
@@ -521,7 +542,7 @@ export default function LandingDraft() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
+            <AnimatePresence key={resyncSeq} mode="popLayout" initial={false}>
               {visibleCards.map(({ event, role }) => {
                 const slot = SLOT_TRANSFORMS[role];
                 const slotPose = {
@@ -540,9 +561,13 @@ export default function LandingDraft() {
                 // so it visibly drifts in from off-stage. Framer only
                 // reads `initial` on mount; recomputing it on
                 // already-mounted cards is a no-op.
-                const initialPose = cardsHaveMountedRef.current
-                  ? SLOT_TRANSFORMS.enter
-                  : false;
+                // On a resync remount (snapNextRef) every card appears
+                // pre-placed at its slot (initial=false) so nothing drifts in;
+                // otherwise a newly-mounted card drifts in from the enter pose.
+                const initialPose =
+                  cardsHaveMountedRef.current && !snapNextRef.current
+                    ? SLOT_TRANSFORMS.enter
+                    : false;
                 return (
                   <motion.div
                     key={event.id}
