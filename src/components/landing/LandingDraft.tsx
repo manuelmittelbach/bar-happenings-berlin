@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { /* Apple, ArrowUpRight, Play, */ ArrowRight } from "lucide-react"; // Apple/ArrowUpRight/Play: uncomment with store links
 import { useEvents, useCategories, useVenues } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
@@ -159,30 +159,10 @@ export default function LandingDraft() {
   // True while/just after a drag, so the trailing tap that a pointer-up emits
   // doesn't also open the event. Reset shortly after the drag ends.
   const draggedRef = useRef(false);
-  // Mobile swipe carousel: dragX is the track's horizontal offset (the current
-  // card plus its peeking neighbors all ride it); cardWidth (measured) is how
-  // far one card-step travels.
-  const dragX = useMotionValue(0);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const cardWidthRef = useRef(0);
-  const [cardWidth, setCardWidth] = useState(0);
-  // Animate the track one card-width and swap the centered card. The card that
-  // slides into view and the resulting new current card are the same event, so
-  // snapping the offset back to 0 after the swap is seamless.
-  const commitSlide = (dir: 1 | -1) => {
-    const w = cardWidthRef.current || 1;
-    animate(dragX, -dir * w, {
-      duration: 0.26,
-      ease: [0.4, 0, 0.2, 1],
-      onComplete: () => {
-        setCycleIndex((i) => i + dir);
-        dragX.set(0);
-      },
-    });
-  };
-  // Stable ref so the auto-cycle effect always calls the latest commitSlide.
-  const commitSlideRef = useRef(commitSlide);
-  commitSlideRef.current = commitSlide;
+  // Direction of the last card change, for the swipe animation: +1 = next
+  // (new card slides in from the right, old exits left), -1 = previous,
+  // 0 = auto-cycle (plain crossfade, no horizontal slide).
+  const [swipeDir, setSwipeDir] = useState(0);
   useEffect(() => {
     if (heroPool.length < 2) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
@@ -192,9 +172,8 @@ export default function LandingDraft() {
     let waitStart = 0;
     let waitDuration = 0;
     const tick = () => {
-      // Auto-advance slides exactly like a manual swipe — unless the user is
-      // mid-drag, in which case we skip this beat.
-      if (!draggedRef.current) commitSlideRef.current(1);
+      setSwipeDir(0); // auto-cycle crossfades; only manual swipes slide
+      setCycleIndex((i) => i + 1);
       // Each interval tick restarts a full-cycle wait.
       waitStart = performance.now();
       waitDuration = CYCLE_MS;
@@ -251,13 +230,15 @@ export default function LandingDraft() {
     };
   }, [heroPool.length, CYCLE_MS, isMobile, manualNudge]);
 
-  // Manual swipe — advances like the auto-cycle and restarts the auto timer so
-  // the hand-picked card still gets a full dwell before auto-cycling resumes.
-  const handleSwipe = (dir: 1 | -1) => {
+  // Manual hero navigation — swipe left advances to the next card, swipe right
+  // steps back. Bumping manualNudge restarts the auto-cycle timer (via the
+  // effect deps) so the hand-picked card gets a full dwell before auto-cycling.
+  const advanceHero = (dir: 1 | -1) => {
     if (heroPool.length < 2) return;
     forceResetRef.current = true;
+    setSwipeDir(dir);
+    setCycleIndex((i) => i + dir);
     setManualNudge((n) => n + 1);
-    commitSlide(dir);
   };
 
   // Visible slice — three events visible at any time. With a pool of N,
@@ -300,26 +281,6 @@ export default function LandingDraft() {
     heroPool.length > 0
       ? (((cycleIndex % heroPool.length) + heroPool.length) % heroPool.length) + 1
       : 0;
-
-  // Measure the card width so a swipe / auto-slide travels exactly one card.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const measure = () => {
-      cardWidthRef.current = el.offsetWidth;
-      setCardWidth(el.offsetWidth);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [hasVisibleCards]);
-
-  // Neighboring cards for the mobile carousel — they sit one card-width to each
-  // side and peek in as the track is dragged.
-  const N = heroPool.length;
-  const nextEvent = N > 1 ? heroPool[(((cycleIndex + 1) % N) + N) % N] : undefined;
-  const prevEvent = N > 1 ? heroPool[(((cycleIndex - 1) % N) + N) % N] : undefined;
 
   return (
     <div className="flex flex-1 min-h-0 flex-col bg-background text-foreground">
@@ -483,84 +444,63 @@ export default function LandingDraft() {
                     description → tall card — that variation is the
                     point), and the slot absorbs the difference so the
                     footer stays put when a taller card cycles in. */}
-                <div ref={viewportRef} className="relative min-h-[200px]">
-                  <motion.div
-                    className="relative cursor-grab active:cursor-grabbing"
-                    style={{ x: dragX, touchAction: "pan-y" }}
-                    drag="x"
-                    dragConstraints={{ left: -cardWidth, right: cardWidth }}
-                    dragElastic={0.12}
-                    onDragStart={() => {
-                      draggedRef.current = true;
-                    }}
-                    onDragEnd={(_, info) => {
-                      // Past the threshold → step a card in the drag direction;
-                      // otherwise spring the track back to center.
-                      if (heroPool.length > 1 && info.offset.x < -60) handleSwipe(1);
-                      else if (heroPool.length > 1 && info.offset.x > 60) handleSwipe(-1);
-                      else animate(dragX, 0, { duration: 0.22, ease: [0.4, 0, 0.2, 1] });
-                      // Keep the flag up until after the trailing tap fires.
-                      window.setTimeout(() => {
-                        draggedRef.current = false;
-                      }, 60);
-                    }}
-                    // onTap (guarded) so a drag never also opens the event.
-                    onTap={() => {
-                      if (draggedRef.current) return;
-                      goToEvent(visibleCards[0].event.id);
-                    }}
-                  >
-                    {/* Previous card — sits one width to the left; peeks in
-                        when the track is dragged to the right. */}
-                    {prevEvent && (
-                      <div
-                        aria-hidden
-                        className="absolute inset-x-0 top-0 -translate-x-full border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
-                        style={{ padding: "20px 18px 16px" }}
-                      >
-                        <HeroEventCard
-                          event={prevEvent}
-                          categories={categoriesData}
-                          variant="primary"
-                        />
-                      </div>
-                    )}
-                    {/* Current card — in normal flow, so it defines the slot
-                        height the way the old single card did. */}
-                    <div
+                <div className="min-h-[200px]">
+                  <AnimatePresence mode="wait" initial={false} custom={swipeDir}>
+                    <motion.div
+                      key={visibleCards[0].event.id}
+                      custom={swipeDir}
                       role="button"
                       tabIndex={0}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.5}
+                      onDragStart={() => {
+                        draggedRef.current = true;
+                      }}
+                      onDragEnd={(_, info) => {
+                        // Dragged past the threshold → step a card in that
+                        // direction; otherwise it springs back to center.
+                        if (info.offset.x < -60) advanceHero(1); // drag left → next
+                        else if (info.offset.x > 60) advanceHero(-1); // drag right → previous
+                        // Keep the flag up until after the trailing tap fires.
+                        window.setTimeout(() => {
+                          draggedRef.current = false;
+                        }, 60);
+                      }}
+                      // Ignore the tap that follows a drag so swiping never
+                      // also opens the event.
+                      onTap={() => {
+                        if (draggedRef.current) return;
+                        goToEvent(visibleCards[0].event.id);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           goToEvent(visibleCards[0].event.id);
                         }
                       }}
-                      className="relative z-10 border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
-                      style={{ padding: "20px 18px 16px" }}
+                      variants={HERO_SWIPE_VARIANTS}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={
+                        swipeDir === 0
+                          ? { duration: 0.9, ease: "easeInOut" }
+                          : { type: "spring", stiffness: 320, damping: 34 }
+                      }
+                      className="relative cursor-grab touch-pan-y border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f] active:cursor-grabbing"
+                      style={{
+                        padding: "20px 18px 16px",
+                        transformOrigin: "left center",
+                      }}
                     >
                       <HeroEventCard
                         event={visibleCards[0].event}
                         categories={categoriesData}
                         variant="primary"
                       />
-                    </div>
-                    {/* Next card — sits one width to the right; peeks in when
-                        the track is dragged to the left. */}
-                    {nextEvent && (
-                      <div
-                        aria-hidden
-                        className="absolute inset-x-0 top-0 translate-x-full border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
-                        style={{ padding: "20px 18px 16px" }}
-                      >
-                        <HeroEventCard
-                          event={nextEvent}
-                          categories={categoriesData}
-                          variant="primary"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </motion.div>
               )}
@@ -682,6 +622,16 @@ export default function LandingDraft() {
  * from the container's top-left corner; the cards share a 360px base
  * width and differ only in scale/rotation/position so the inner chrome
  * stays identical across slots. */
+/* Mobile card swipe variants — `custom` carries the swipe direction.
+ * dir > 0 (next): new card enters from the right, old exits left.
+ * dir < 0 (previous): mirrored. dir === 0 (auto-cycle): pure crossfade,
+ * no horizontal travel. */
+const HERO_SWIPE_VARIANTS = {
+  enter: (dir: number) => ({ x: dir > 0 ? 90 : dir < 0 ? -90 : 0, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -90 : dir < 0 ? 90 : 0, opacity: 0 }),
+};
+
 const SLOT_TRANSFORMS = {
   primary:   { x:  20, y: 130, rotate:  -3, scale: 1.00, z: 3 },
   secondary: { x: 110, y:  60, rotate:   5, scale: 0.88, z: 2 },
