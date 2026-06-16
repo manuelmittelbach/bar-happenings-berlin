@@ -180,8 +180,10 @@ export default function LandingDraft() {
     let waitStart = 0;
     let waitDuration = 0;
     // How long the deck stays snapped-but-static after the tab regains focus
-    // before the drift resumes. Just enough for the resync remount to commit.
-    const RESUME_DELAY_MS = 700;
+    // before the drift resumes. Just enough for the resync remount to commit —
+    // kept short so the on-return stall is barely perceptible (the snap itself
+    // doesn't matter; standing still does).
+    const RESUME_DELAY_MS = 150;
     const tick = () => {
       setSwipeDir(0); // auto-cycle crossfades; only manual swipes slide
       setCycleIndex((i) => i + 1);
@@ -234,26 +236,77 @@ export default function LandingDraft() {
       pendingTick = undefined;
       interval = undefined;
     };
+    // Resume helper, shared by every "became active again" signal. It always
+    // tears down whatever timer state exists — including a Safari-frozen
+    // interval our JS still holds a (dead) handle to — and schedules a fresh
+    // tick, so the drift is guaranteed to be moving again within
+    // RESUME_DELAY_MS. Snapping the deck on the way back is fine; never standing
+    // still is what matters.
+    let lastReanchor = -Infinity;
+    const reanchor = () => {
+      // Coalesce the burst of events a single tab switch emits (Chrome fires
+      // visibilitychange *and* focus) so we don't remount the deck twice — but
+      // only while a timer is actually scheduled. If nothing is pending we may
+      // be frozen, so always re-anchor regardless of how recent the last one was.
+      const now = performance.now();
+      if ((interval || pendingTick) && now - lastReanchor < 250) return;
+      lastReanchor = now;
+      snapNextRef.current = true;
+      setResyncSeq((s) => s + 1);
+      stop();
+      start(RESUME_DELAY_MS);
+    };
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        // Re-anchor cleanly: snap the cards to their slots (remount), then
-        // resume the drift after a short beat — long enough for the remount to
-        // commit, short enough that the deck doesn't visibly stall. We must NOT
-        // force a full CYCLE_MS wait here: that left the snapped deck frozen for
-        // up to 28s on desktop, and indefinitely if you tabbed away and back
-        // again before that wait elapsed.
-        snapNextRef.current = true;
-        setResyncSeq((s) => s + 1);
-        stop();
-        start(RESUME_DELAY_MS);
-      } else {
-        stop();
-      }
+      // Pause ONLY on a genuine hide. We deliberately do NOT pause on window
+      // `blur`: blur also fires for an address-bar click or a transient focus
+      // blip during a minimize→restore, and pausing there is exactly what left
+      // the deck frozen indefinitely (no matching focus came to wake it).
+      if (document.visibilityState === "visible") reanchor();
+      else stop();
     };
     if (document.visibilityState === "visible") start();
     document.addEventListener("visibilitychange", handleVisibility);
+    // Resume fallbacks. On a Safari tab/app switch — and on a Chrome window
+    // minimize→restore — visibilitychange is unreliable, but window `focus` and
+    // bfcache `pageshow` fire. Routing them through reanchor() guarantees the
+    // drift restarts no matter which signal the browser actually delivers.
+    window.addEventListener("focus", reanchor);
+    window.addEventListener("pageshow", reanchor);
+    // Watchdog — the final guarantee. Whatever the cause (a visibility/focus
+    // event the browser never fired, a Safari-frozen rAF, a thawed-but-stale
+    // timer), if the deck hasn't moved for a beat *while the page is visible*,
+    // force a re-anchor. It observes the symptom (no motion) directly, so it
+    // self-heals every freeze the event handlers above might miss. In normal
+    // foreground operation the drift is continuous (~16px/s), so this never
+    // fires; it only ever kicks a genuine stall.
+    let lastSig: number | null = null;
+    let stillFor = 0;
+    const WATCH_STEP = 300;
+    const STALL_LIMIT = 600; // > RESUME_DELAY_MS (150), so a normal resume isn't flagged
+    const probe = () => {
+      let sig = 0;
+      for (const el of document.querySelectorAll<HTMLElement>("[data-hero-card]")) {
+        const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        sig += m.m41 * 131 + m.m42 * 17;
+      }
+      return sig;
+    };
+    const watchdog = setInterval(() => {
+      if (document.visibilityState !== "visible") { lastSig = null; stillFor = 0; return; }
+      const sig = probe();
+      if (lastSig !== null && Math.abs(sig - lastSig) < 0.5) {
+        stillFor += WATCH_STEP;
+        if (stillFor >= STALL_LIMIT) { stillFor = 0; reanchor(); }
+      } else {
+        stillFor = 0;
+      }
+      lastSig = sig;
+    }, WATCH_STEP);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", reanchor);
+      window.removeEventListener("pageshow", reanchor);
+      clearInterval(watchdog);
       stop();
     };
   }, [heroPool.length, CYCLE_MS, isMobile, manualNudge]);
@@ -582,6 +635,7 @@ export default function LandingDraft() {
                 return (
                   <motion.div
                     key={event.id}
+                    data-hero-card=""
                     role="button"
                     tabIndex={0}
                     onClick={() => goToEvent(event.id)}
