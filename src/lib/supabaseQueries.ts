@@ -1660,6 +1660,22 @@ function autoUpdatePatch(staged: StagedEvent, live: BarlinEvent): EventUpdatePat
   return patch;
 }
 
+// Venues that are allowed to have MORE than one event on the same day during
+// auto-approve. By default a bar that already has an event that day blocks any
+// new same-day row (it gets left for manual review). For the venues listed
+// here that same-day check is skipped, so every scraped row is approved even
+// when the bar already has events that day — useful for multi-stage venues,
+// festivals, or programmes with several acts per night.
+//
+// Keyed by venue UUID (not name) so accents/typos can't break the match — same
+// pattern as the category overrides in scripts/scrape_helpers.py. Add the
+// venue's id from the `bars`/`venues` table to allow same-day stacking.
+const MULTI_EVENT_PER_DAY_VENUE_IDS = new Set<string>([
+  "e905bf80-afdb-417a-bba4-6aaa6962097d", // Comedy Café Berlin
+  "54609d56-759b-444c-88ac-4766bf2ec71c", // Mein Freund Harvey
+  "a4855d6d-2f68-4c97-bd98-759e4628aa8b", // Paloma Bar
+]);
+
 // Bulk-handles pending scraped staging rows without per-card review, but ONLY
 // the unambiguous ones. Two row kinds:
 //   • Update rows (replacesEventId set): the scraper matched this to a live
@@ -1721,7 +1737,9 @@ export async function autoApproveScrapedEvents(
       }
 
       const slot = `${s.venueId}|${s.date}`;
-      if (claimedSlots.has(slot)) {
+      // Whitelisted venues may stack multiple events on the same day, so the
+      // clash check is bypassed for them.
+      if (!MULTI_EVENT_PER_DAY_VENUE_IDS.has(s.venueId) && claimedSlots.has(slot)) {
         // The bar already has an event that day (live, or another row approved
         // earlier in this run) — skip, never overwrite.
         result.skipped.push({ title: label, reason: "another event already exists in this bar that day" });
