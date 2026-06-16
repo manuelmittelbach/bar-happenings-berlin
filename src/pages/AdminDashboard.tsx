@@ -91,6 +91,10 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     status: "approved",
     scrapedAt: "",
     isManual: event.isManual,
+    // Approved events are never empty placeholders (placeholders are pending
+    // staging rows only), so the reason badge never shows on this adapter.
+    placeholderReason: null,
+    placeholderNote: null,
     createdByAdmin: false,
     recurrence: parsedRule?.freq ?? "",
     recurrenceUntil: parsedRule?.until ?? null,
@@ -2114,6 +2118,17 @@ function OrganizerCard({
   );
 }
 
+// Scraper placeholder reasons → admin badge label + tone. A placeholder is an
+// empty staging row (title null) a scraper stages when it found no event;
+// `placeholderReason` says why nothing was staged. Unknown/missing codes fall
+// back to "No events found" so the badge survives new codes added scraper-side.
+const PLACEHOLDER_REASONS: Record<string, { label: string; tone: "warn" | "neutral" }> = {
+  no_events:   { label: "No events found", tone: "neutral" },
+  unreachable: { label: "Page unreachable", tone: "warn" },
+  blocked:     { label: "Scraper blocked", tone: "warn" },
+  unparseable: { label: "Couldn't read page", tone: "warn" },
+};
+
 function StagedEventCard({
   staged,
   liveEvents,
@@ -2597,12 +2612,36 @@ function StagedEventCard({
     );
   }
 
+  // Scraper placeholder banner: only shows when a scraper staged this empty
+  // row and recorded WHY (placeholderReason). Unknown codes fall back to the
+  // neutral "No events found" label.
+  const placeholderInfo = staged.placeholderReason
+    ? (PLACEHOLDER_REASONS[staged.placeholderReason] ?? PLACEHOLDER_REASONS.no_events)
+    : null;
+
   return (
     <div className={`border rounded-sm p-4 space-y-3 ${
       staged.replacesEventId
         ? "border-amber-400 dark:border-amber-500/60 bg-amber-50/40 dark:bg-amber-500/5"
         : "border-border"
     }`}>
+      {placeholderInfo && (
+        <div className={`flex items-center gap-2 -mx-4 -mt-4 mb-3 px-4 py-2 border-b ${
+          placeholderInfo.tone === "warn"
+            ? "bg-destructive/10 border-destructive/40 text-destructive"
+            : "bg-muted border-border text-muted-foreground"
+        }`}>
+          <Ban className="h-4 w-4 flex-shrink-0" />
+          <span className="text-xs font-mono uppercase tracking-wider font-bold">
+            {placeholderInfo.label}
+          </span>
+          {staged.placeholderNote && (
+            <span className="text-xs font-normal normal-case opacity-80 truncate">
+              — {staged.placeholderNote}
+            </span>
+          )}
+        </div>
+      )}
       {staged.replacesEventId && (
         <div className="flex items-center gap-2 -mx-4 -mt-4 mb-3 px-4 py-2 bg-amber-100/70 dark:bg-amber-500/10 border-b border-amber-300/60 dark:border-amber-500/40">
           <Repeat className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />

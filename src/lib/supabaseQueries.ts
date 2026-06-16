@@ -1130,6 +1130,8 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     status: "pending",
     scrapedAt: row.scraped_at,
     isManual: row.is_manual ?? false,
+    placeholderReason: row.placeholder_reason ?? null,
+    placeholderNote: row.placeholder_note ?? null,
     createdByAdmin: row.created_by_admin ?? false,
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,

@@ -106,6 +106,12 @@ export interface StagedEvent {
   status: StagedEventStatus;
   scrapedAt: string;
   isManual: boolean;
+  // Why a scraper staged THIS as an empty placeholder (no event found). Fixed
+  // code (no_events / unreachable / blocked / unparseable) driving a badge in
+  // the admin Manual Events tab; null for real staged events. `placeholderNote`
+  // is an optional free-text detail set by the scraper.
+  placeholderReason: string | null;
+  placeholderNote: string | null;
   createdByAdmin: boolean;
   recurrence: string;
   recurrenceUntil: string | null;

@@ -489,6 +489,8 @@ export type Database = {
           manual_venue_address: string | null
           manual_venue_name: string | null
           manual_venue_neighborhood: string | null
+          placeholder_note: string | null
+          placeholder_reason: string | null
           recurrence: string
           recurrence_until: string | null
           replaces_event_id: string | null
@@ -515,6 +517,8 @@ export type Database = {
           manual_venue_address?: string | null
           manual_venue_name?: string | null
           manual_venue_neighborhood?: string | null
+          placeholder_note?: string | null
+          placeholder_reason?: string | null
           recurrence?: string
           recurrence_until?: string | null
           replaces_event_id?: string | null
@@ -541,6 +545,8 @@ export type Database = {
           manual_venue_address?: string | null
           manual_venue_name?: string | null
           manual_venue_neighborhood?: string | null
+          placeholder_note?: string | null
+          placeholder_reason?: string | null
           recurrence?: string
           recurrence_until?: string | null
           replaces_event_id?: string | null
