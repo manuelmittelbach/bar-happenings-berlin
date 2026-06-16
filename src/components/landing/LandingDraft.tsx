@@ -179,6 +179,9 @@ export default function LandingDraft() {
     // work out how much of it is left and start() can resume from there.
     let waitStart = 0;
     let waitDuration = 0;
+    // How long the deck stays snapped-but-static after the tab regains focus
+    // before the drift resumes. Just enough for the resync remount to commit.
+    const RESUME_DELAY_MS = 700;
     const tick = () => {
       setSwipeDir(0); // auto-cycle crossfades; only manual swipes slide
       setCycleIndex((i) => i + 1);
@@ -187,7 +190,7 @@ export default function LandingDraft() {
       waitDuration = CYCLE_MS;
       remainingRef.current = CYCLE_MS;
     };
-    const start = () => {
+    const start = (explicitDelay?: number) => {
       if (interval || pendingTick) return;
       // First ever start: desktop kicks on the next frame so the continuous
       // drift begins immediately; mobile holds the first card a full CYCLE_MS
@@ -196,7 +199,12 @@ export default function LandingDraft() {
       // A manual swipe always restarts the dwell from scratch; otherwise the
       // first ever start uses the initial cadence and later resumes continue
       // from the time that remained when the tab was hidden.
-      const delay = forceResetRef.current
+      // An explicitDelay overrides all of that — used by the visibility resume
+      // so the snapped deck starts drifting again after a short beat instead of
+      // sitting frozen for a whole CYCLE_MS.
+      const delay = explicitDelay != null
+        ? explicitDelay
+        : forceResetRef.current
         ? CYCLE_MS
         : remainingRef.current === null
           ? isMobile
@@ -228,13 +236,16 @@ export default function LandingDraft() {
     };
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        // Re-anchor cleanly: snap the cards to their slots and restart the
-        // drift + timer from a full fresh cycle, rather than resuming frozen
-        // mid-flight animations (which can stall or jumble the stack).
+        // Re-anchor cleanly: snap the cards to their slots (remount), then
+        // resume the drift after a short beat — long enough for the remount to
+        // commit, short enough that the deck doesn't visibly stall. We must NOT
+        // force a full CYCLE_MS wait here: that left the snapped deck frozen for
+        // up to 28s on desktop, and indefinitely if you tabbed away and back
+        // again before that wait elapsed.
         snapNextRef.current = true;
-        forceResetRef.current = true;
         setResyncSeq((s) => s + 1);
-        start();
+        stop();
+        start(RESUME_DELAY_MS);
       } else {
         stop();
       }
