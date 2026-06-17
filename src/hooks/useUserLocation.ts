@@ -39,7 +39,13 @@ function writeStoredLocation(loc: UserLocation) {
 // Seed from sessionStorage so a page reload doesn't lose distances until the
 // browser permission check + getCurrentPosition round-trip completes.
 let cached: UserLocation | null = typeof window !== "undefined" ? readStoredLocation() : null;
-let permissionStatus: LocationPermissionStatus = cached ? "granted" : "idle";
+// Permission starts UNKNOWN, never inferred from a cached fix. A stored
+// position only means "we located the user at some point", NOT that the
+// browser permission is still granted — on mobile it silently reverts to
+// "prompt" per session. Seeding "granted" off the cache made the live-watch
+// fire an unsolicited popup and the locate button return a stale position.
+// The real state is established via navigator.permissions.query / a fresh fix.
+let permissionStatus: LocationPermissionStatus = "idle";
 const subscribers = new Set<(loc: UserLocation | null) => void>();
 const statusSubscribers = new Set<(status: LocationPermissionStatus) => void>();
 
@@ -173,19 +179,49 @@ function stopWatch() {
   }
 }
 
-export function requestLocationOnce(): Promise<UserLocation | null> {
-  if (permissionStatus === "granted" && cached) return Promise.resolve(cached);
-  if (permissionStatus === "denied") return Promise.resolve(null);
-
+// Always resolves a CURRENT fix — never the (possibly 30-min-old) cache. Used
+// by the locate button, where "take me to where I am now" must mean now.
+// maximumAge: 10000 keeps it instant while live-tracking is running (the
+// platform already holds a seconds-fresh fix) but forces a fresh GPS read when
+// the known position is stale. On web a missing permission surfaces the OS
+// popup here — which is correct, since the user just tapped the button.
+// publishPosition flips the status to "granted" on success, so a button grant
+// also (re)starts the live watch via its status subscriber.
+export function requestLocationFresh(): Promise<UserLocation | null> {
   return new Promise((resolve) => {
-    const listener = (s: LocationPermissionStatus) => {
-      if (s === "granted" || s === "denied") {
-        statusSubscribers.delete(listener);
-        resolve(s === "granted" ? cached : null);
-      }
-    };
-    statusSubscribers.add(listener);
-    triggerLocationRequest();
+    if (Capacitor.isNativePlatform()) {
+      notifyStatus("loading");
+      Geolocation.getCurrentPosition({ timeout: 8000, maximumAge: 10000 })
+        .then((pos) => {
+          publishPosition(pos.coords.latitude, pos.coords.longitude);
+          resolve(cached);
+        })
+        .catch(() => {
+          notifyStatus("denied");
+          subscribers.forEach((fn) => fn(null));
+          resolve(null);
+        });
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+
+    notifyStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        publishPosition(pos.coords.latitude, pos.coords.longitude);
+        resolve(cached);
+      },
+      () => {
+        notifyStatus("denied");
+        subscribers.forEach((fn) => fn(null));
+        resolve(null);
+      },
+      { timeout: 8000, maximumAge: 10000 },
+    );
   });
 }
 

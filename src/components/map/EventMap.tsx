@@ -5,7 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { useCategories } from "@/hooks/useEvents";
 import type { BarlinEvent, Venue } from "@/types/event";
 import { cleanEventTitle } from "@/lib/cleanTitle";
-import { requestLocationOnce } from "@/hooks/useUserLocation";
+import { requestLocationFresh } from "@/hooks/useUserLocation";
 import { haversineMeters, walkingMinutes } from "@/lib/distance";
 import { isLiveNow } from "@/lib/eventStatus";
 import { ErrorState } from "@/components/ui/error-state";
@@ -811,17 +811,17 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 	async function flyToUser() {
 		const map = mapRef.current;
 		if (!map) return;
-		if (userLocation) {
-			map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 1200 });
-			return;
-		}
+		// Always fetch a CURRENT fix rather than flying to a possibly-stale
+		// cached position — a "my location" button must mean now. requestLocationFresh
+		// stays instant while live-tracking is active (a seconds-fresh fix is
+		// already cached at platform level) and only forces a GPS read when stale.
 		// On native (Capacitor) the @capacitor/geolocation plugin handles
 		// its own availability check, so we skip the navigator-geolocation
 		// guard — the WebView has the API but it's a non-functional stub on
 		// Android until the plugin bridges it.
 		if (!Capacitor.isNativePlatform() && !navigator.geolocation) return;
 		setLocating(true);
-		const loc = await requestLocationOnce();
+		const loc = await requestLocationFresh();
 		setLocating(false);
 		if (!loc) {
 			// Three recovery paths: native apps direct to OS app-settings,
