@@ -247,11 +247,34 @@ export function useUserLocation(opts?: { watch?: boolean }): {
     if (!watch) return;
     watchCount++;
 
-    if (permissionStatus === "granted") startWatch();
     const onStatus = (s: LocationPermissionStatus) => {
       if (s === "granted") startWatch();
     };
     statusSubscribers.add(onStatus);
+
+    // Start the watch ONLY when permission is really granted — never just
+    // because a cached fix made `permissionStatus` assume it is. On mobile
+    // (esp. iOS Safari) the browser permission is often per-session and
+    // silently reverts to "prompt" while our 30-min cache still says
+    // "granted"; trusting that cache made watchPosition fire and surface an
+    // unsolicited permission popup the user never asked for.
+    if (Capacitor.isNativePlatform()) {
+      // Native: trust the plugin status (its own dialog is the intended UX).
+      if (permissionStatus === "granted") startWatch();
+    } else if (navigator.permissions) {
+      // Web: ask the browser for the real state instead of believing the cache.
+      navigator.permissions.query({ name: "geolocation" })
+        .then((result) => {
+          if (result.state === "granted") startWatch();
+          // "prompt" / "denied" → do nothing → no ungated watchPosition popup.
+          // The watch still starts later via onStatus once the user grants
+          // explicitly through the locate button.
+        })
+        .catch(() => {
+          // Permissions API unsupported — stay silent and wait for an explicit
+          // grant via onStatus rather than risk an unsolicited popup.
+        });
+    }
 
     return () => {
       statusSubscribers.delete(onStatus);
