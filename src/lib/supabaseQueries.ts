@@ -2088,6 +2088,8 @@ export type EventUpdatePatch = Partial<{
   sourceUrl: string | null;
   category: string;
   language: string | null;
+  image: string | null;
+  imagePosition: string;
 }>;
 
 // Patches selected fields onto a live event row, then deletes the staging
@@ -2129,6 +2131,8 @@ export async function applyEventUpdate(
   if (patch.sourceUrl !== undefined) update.url = cleanUrl(patch.sourceUrl) || null;
   if (patch.category !== undefined) update.category = patch.category;
   if (patch.language !== undefined) update.language = patch.language || null;
+  if (patch.image !== undefined) update.image = patch.image;
+  if (patch.imagePosition !== undefined) update.image_position = patch.imagePosition;
 
   if (Object.keys(update).length > 0) {
     const { error } = await supabase.from("events").update(update).eq("id", eventId);

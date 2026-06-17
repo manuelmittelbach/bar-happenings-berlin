@@ -17,7 +17,8 @@ type FieldKey =
   | "entryInfo"
   | "sourceUrl"
   | "category"
-  | "language";
+  | "language"
+  | "image";
 
 const FIELD_LABELS: Record<FieldKey, string> = {
   title: "Title",
@@ -30,6 +31,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   sourceUrl: "Source URL",
   category: "Category",
   language: "Language",
+  image: "Cover image",
 };
 
 function getLive(event: BarlinEvent, key: FieldKey): string {
@@ -44,6 +46,7 @@ function getLive(event: BarlinEvent, key: FieldKey): string {
     case "sourceUrl": return event.url ?? "";
     case "category": return event.category;
     case "language": return event.language ?? "";
+    case "image": return event.image ?? "";
   }
 }
 
@@ -59,6 +62,7 @@ function getStaged(event: StagedEvent, key: FieldKey): string {
     case "sourceUrl": return event.sourceUrl ?? "";
     case "category": return event.category ?? "";
     case "language": return event.language;
+    case "image": return event.image ?? "";
   }
 }
 
@@ -69,6 +73,25 @@ function normalize(key: FieldKey, value: string): string {
   if (key === "description") return v.replace(/\s+/g, " ");
   if (key === "sourceUrl") return v.toLowerCase();
   return v;
+}
+
+function ImageCell({ url }: { url: string }) {
+  if (!url) {
+    return (
+      <div className="bg-muted/40 border border-border rounded-sm px-2 py-1.5">
+        <span className="italic text-muted-foreground text-sm">empty</span>
+      </div>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="block">
+      <img
+        src={url}
+        alt="cover"
+        className="w-full max-h-40 object-cover border border-border rounded-sm bg-muted/40"
+      />
+    </a>
+  );
 }
 
 export interface EventDiffModalProps {
@@ -90,7 +113,7 @@ export default function EventDiffModal({
 }: EventDiffModalProps) {
   const allFields: FieldKey[] = [
     "title", "date", "startTime", "endTime", "doorsTime",
-    "description", "entryInfo", "sourceUrl", "category", "language",
+    "description", "entryInfo", "sourceUrl", "category", "language", "image",
   ];
 
   const divergingFields = useMemo(() => {
@@ -132,6 +155,10 @@ export default function EventDiffModal({
       if (selected.has("sourceUrl")) patch.sourceUrl = stagedEvent.sourceUrl;
       if (selected.has("category") && stagedEvent.category) patch.category = stagedEvent.category;
       if (selected.has("language")) patch.language = stagedEvent.language;
+      if (selected.has("image")) {
+        patch.image = stagedEvent.image ?? null;
+        patch.imagePosition = stagedEvent.imagePosition ?? "50% 50%";
+      }
       await applyEventUpdate(liveEvent.id, patch, stagedEvent.id);
       toast.success(`${selected.size} field(s) applied`);
       onApplied();
@@ -201,15 +228,23 @@ export default function EventDiffModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6">
                       <div>
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Live (current)</div>
-                        <div className="bg-muted/40 border border-border rounded-sm px-2 py-1.5 break-words whitespace-pre-wrap">
-                          {getLive(liveEvent, key) || <span className="italic text-muted-foreground">empty</span>}
-                        </div>
+                        {key === "image" ? (
+                          <ImageCell url={getLive(liveEvent, key)} />
+                        ) : (
+                          <div className="bg-muted/40 border border-border rounded-sm px-2 py-1.5 break-words whitespace-pre-wrap">
+                            {getLive(liveEvent, key) || <span className="italic text-muted-foreground">empty</span>}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Scraped (new)</div>
-                        <div className="bg-muted/40 border border-border rounded-sm px-2 py-1.5 break-words whitespace-pre-wrap">
-                          {getStaged(stagedEvent, key) || <span className="italic text-muted-foreground">empty</span>}
-                        </div>
+                        {key === "image" ? (
+                          <ImageCell url={getStaged(stagedEvent, key)} />
+                        ) : (
+                          <div className="bg-muted/40 border border-border rounded-sm px-2 py-1.5 break-words whitespace-pre-wrap">
+                            {getStaged(stagedEvent, key) || <span className="italic text-muted-foreground">empty</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
