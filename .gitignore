@@ -28,6 +28,10 @@ dist-ssr
 .playwright-mcp/
 test*.png
 visual_scrape_shot_*.png
+# Stray scrape screenshots / OCR crops that escaped /tmp into the repo root
+# (agents sometimes improvise filenames like dc7a30dd-m01.png, *-crop.txt)
+/*.png
+/*-crop.txt
 
 # Local design mockups / screenshots that shouldn't end up in the repo
 /hero-*.png
@@ -41,8 +45,6 @@ __pycache__/
 
 # Scraper secrets
 scripts/.env
-# Instagram session (live cookies — never commit)
-scripts/.ig-storage-state.json
 
 # Claude Code local permissions (per-machine, not shared)
 .claude/settings.local.json
