@@ -2636,7 +2636,7 @@ function StagedEventCard({
             {placeholderInfo.label}
           </span>
           {staged.placeholderNote && (
-            <span className="text-xs font-normal normal-case opacity-80 truncate">
+            <span className="text-xs font-normal normal-case opacity-80">
               — {staged.placeholderNote}
             </span>
           )}
