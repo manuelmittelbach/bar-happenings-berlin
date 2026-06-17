@@ -111,6 +111,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 	const onVenueClickRef = useRef(onVenueClick);
 	const geojsonRef = useRef<GeoJSON.FeatureCollection>({ type: "FeatureCollection", features: [] });
 	const sourceReadyRef = useRef(false);
+	// Counts watchdog-triggered auto re-inits. After returning from a
+	// backgrounded tab (esp. mobile), the FIRST map build often stalls — the
+	// page's GL/network layer isn't fully "awake" yet — but an immediate
+	// rebuild loads instantly. So instead of dumping a manual retry on the
+	// user, the watchdog silently rebuilds a couple of times first; the
+	// manual ErrorState only surfaces if even those fail (a real outage).
+	const autoRetryRef = useRef(0);
 	const [locating, setLocating] = useState(false);
 
 	const [loadFailed, setLoadFailed] = useState(false);
@@ -235,18 +242,35 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		});
 
 		// Watchdog: if MapLibre never fires "load" in time, the style or tiles
-		// likely failed (carrier blocking openfreemap, dropped CDN, etc.).
-		// Tear the silent half-rendered map down and surface a retry UI.
-		// Native (Capacitor) gets a longer timeout — mobile connections plus
-		// a cold WebView cache can push first-tile-paint past 10s.
-		const watchdogMs = Capacitor.isNativePlatform() ? 20000 : 10000;
+		// likely failed (carrier blocking openfreemap, dropped CDN, etc.) —
+		// OR the page just resumed from background and the first build stalled.
+		// While auto-retries remain, use a SHORT timeout and rebuild silently
+		// (the resume stall clears on the next attempt). Once they're spent,
+		// fall back to the LONG timeout (a genuinely slow connection deserves
+		// a fair shot) before surfacing the manual retry UI. Native (Capacitor)
+		// gets a longer ceiling — mobile + cold WebView cache pushes first paint.
+		const MAX_AUTO_RETRIES = 2;
+		const hasAutoRetriesLeft = autoRetryRef.current < MAX_AUTO_RETRIES;
+		// 3s for auto-retries: a hung resume never paints (so shorter heals
+		// faster), but a healthy cold mobile load needs ~1–3s — going below 3s
+		// risks aborting a load that was merely slow, causing a rebuild flicker.
+		const watchdogMs = hasAutoRetriesLeft
+			? 3000
+			: Capacitor.isNativePlatform() ? 20000 : 10000;
 		const watchdogId = window.setTimeout(() => {
 			if (mapRef.current === map) {
 				map.remove();
 				mapRef.current = null;
 				sourceReadyRef.current = false;
 			}
-			setLoadFailed(true);
+			if (autoRetryRef.current < MAX_AUTO_RETRIES) {
+				// Self-heal: bump the counter and re-run this effect via
+				// retryNonce. No error UI — the user just sees a brief blank.
+				autoRetryRef.current += 1;
+				setRetryNonce((n) => n + 1);
+			} else {
+				setLoadFailed(true);
+			}
 		}, watchdogMs);
 
 		// requestAnimationFrame id for the pulse animation — closed over the
@@ -263,6 +287,8 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 
 		map.on("load", () => {
 			window.clearTimeout(watchdogId);
+			// Loaded cleanly — give the next resume a fresh auto-retry budget.
+			autoRetryRef.current = 0;
 			(async () => {
 				// Register base category images (uses refs so we see latest data
 				// even though this callback was captured at mount time)
@@ -830,7 +856,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						inline
 						title="Map could not be loaded"
 						message="Weak connection or server unreachable."
-						onRetry={() => setRetryNonce((n) => n + 1)}
+						onRetry={() => { autoRetryRef.current = 0; setRetryNonce((n) => n + 1); }}
 					/>
 				</div>
 			)}
