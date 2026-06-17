@@ -107,7 +107,11 @@ export default function Index() {
   } = useEvents();
   const { data: categoriesData = [] } = useCategories();
   const { data: venuesData = [] } = useVenues();
-  const { location: userLocation } = useUserLocation();
+  const isNative = useIsNative();
+  // Nearby is native-only: web never asks for location on the home page (the
+  // browser only requests it on the Map). On native, refresh every 60s (and on
+  // app re-focus) so the feed tracks the user as they move — no continuous watch.
+  const { location: userLocation } = useUserLocation({ enabled: isNative, refreshMs: 60_000 });
   // venueId → Venue lookup so NearbyStrip can resolve coords cheaply on
   // every render. Map (not Record) since we only need .get/.has.
   const venueMap = useMemo(() => {
@@ -354,7 +358,6 @@ export default function Index() {
   }, [navigate]);
 
   const showEditorial = dayTab === "tonight";
-  const isNative = useIsNative();
 
   return (
     /* Map-style locked viewport — the outer container fills Layout's main

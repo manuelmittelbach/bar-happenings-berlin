@@ -225,16 +225,29 @@ export function requestLocationFresh(): Promise<UserLocation | null> {
   });
 }
 
-export function useUserLocation(opts?: { watch?: boolean }): {
+export function useUserLocation(opts?: {
+  watch?: boolean;
+  // When false the hook is fully inert: no subscribe, no fetch, returns null.
+  // Lets a consumer (e.g. the web home page, where Nearby is native-only) opt
+  // out of location entirely so the browser is never asked for it.
+  enabled?: boolean;
+  // When set (and enabled), periodically re-fetch a fresh fix every refreshMs
+  // and on app re-focus — for a feed that should track the user as they move
+  // without the battery cost of a continuous watch.
+  refreshMs?: number;
+}): {
   location: UserLocation | null;
   status: LocationPermissionStatus;
   request: () => void;
 } {
   const watch = opts?.watch ?? false;
+  const enabled = opts?.enabled ?? true;
+  const refreshMs = opts?.refreshMs;
   const [location, setLocation] = useState<UserLocation | null>(cached);
   const [status, setStatus] = useState<LocationPermissionStatus>(permissionStatus);
 
   useEffect(() => {
+    if (!enabled) return;
     subscribers.add(setLocation);
     statusSubscribers.add(setStatus);
 
@@ -273,14 +286,14 @@ export function useUserLocation(opts?: { watch?: boolean }): {
       subscribers.delete(setLocation);
       statusSubscribers.delete(setStatus);
     };
-  }, []);
+  }, [enabled]);
 
   // Live tracking: while a consumer opts into `watch`, follow the device via
   // watchPosition so the dot moves as the user does. We never start the watch
   // until permission is granted — on web that keeps watchPosition from firing
   // its own permission popup before the user has asked for location.
   useEffect(() => {
-    if (!watch) return;
+    if (!enabled || !watch) return;
     watchCount++;
 
     const onStatus = (s: LocationPermissionStatus) => {
@@ -317,7 +330,31 @@ export function useUserLocation(opts?: { watch?: boolean }): {
       watchCount = Math.max(0, watchCount - 1);
       if (watchCount === 0) stopWatch();
     };
-  }, [watch]);
+  }, [watch, enabled]);
 
-  return { location, status, request: triggerLocationRequest };
+  // Periodic + on-focus refresh: keep a feed (e.g. native home "Nearby")
+  // tracking the user as they move WITHOUT a continuous watch. We only refresh
+  // once permission is already granted, so an auto-refresh can never surface an
+  // unsolicited permission popup. requestLocationFresh respects maximumAge, so
+  // each tick is cheap (reuses a recent fix) yet fresh enough at minute scale.
+  useEffect(() => {
+    if (!enabled || !refreshMs) return;
+
+    const refresh = () => {
+      if (permissionStatus === "granted") requestLocationFresh();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+
+    const intervalId = window.setInterval(refresh, refreshMs);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [enabled, refreshMs]);
+
+  return { location: enabled ? location : null, status, request: triggerLocationRequest };
 }
