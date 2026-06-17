@@ -10,7 +10,6 @@ interface FreeTonightStripProps {
   events: BarlinEvent[];
   categories: CategoryRow[];
   onEventClick: (eventId: string) => void;
-  limit?: number;
   // When an event id is in this map, its card renders a walking chip in
   // the meta row. Index passes a map covering every event whose venue is
   // ≤ 15 min from the user — so a free event that's ALSO nearby shows
@@ -27,7 +26,6 @@ export default function FreeTonightStrip({
   events,
   categories,
   onEventClick,
-  limit = 10,
   walkingMinByEventId,
 }: FreeTonightStripProps) {
   const freeEvents = useMemo(() => {
@@ -38,13 +36,17 @@ export default function FreeTonightStrip({
       // consistently. The Free vs Donation distinction is already
       // carried by the pill on each card, no need to bake it into the
       // sort order. Events without a start time fall to the end.
+      //
+      // No cap: "More events" excludes ALL free/donation events, so any
+      // free event hidden by a slice here would vanish from the page
+      // entirely (shown nowhere, yet still counted on the map). Render
+      // every free event so the section stays the complete free list.
       .sort((a, b) => {
         const tA = a.startTime || "99:99";
         const tB = b.startTime || "99:99";
         return tA.localeCompare(tB);
-      })
-      .slice(0, limit);
-  }, [events, limit]);
+      });
+  }, [events]);
 
   if (freeEvents.length === 0) return null;
 
