@@ -412,7 +412,6 @@ function DescriptionBlock({
   if (!description) {
     return (
       <div className={`font-body ${compact ? "text-[15px]" : "text-[17px] md:text-[18px]"} leading-[1.6] max-w-[65ch]`}>
-        <p className="italic text-muted-foreground/70 text-sm">(no description)</p>
         {eventLinkEl && <div>{eventLinkEl}</div>}
       </div>
     );
