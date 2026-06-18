@@ -24,6 +24,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Stray tmp/ dir in repo root (screenshots should go to /tmp, not ./tmp)
+tmp/
+
 # Playwright / local test artifacts
 .playwright-mcp/
 test*.png
