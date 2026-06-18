@@ -52,7 +52,7 @@ const desktopShortLabels: Record<string, string> = {
 /* Priority order — controls filter-bar order on desktop and mobile.
    Values are category slug-IDs (categories.id). */
 const desktopCategoryOrder: string[] = [
-  "live-music", "open-mic", "comedy", "dj-music", "pub-quiz",
+  "live-music", "comedy", "dj-music", "open-mic", "pub-quiz",
   "karaoke", "drag-cabaret", "screening", "other",
   // Inactive (kept for fast re-enable):
   "singles", "social", "language-exchange", "games", "sports",
