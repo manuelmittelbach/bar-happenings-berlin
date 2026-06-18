@@ -7,6 +7,7 @@ import { Share as CapacitorShare } from "@capacitor/share";
 import { useVenueById, useEventsByVenue } from "@/hooks/useEvents";
 import { useIsNative } from "@/hooks/useIsNative";
 import { berlinDateString } from "@/lib/dateFormat";
+import { isEventStillOnline } from "@/lib/eventStatus";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -82,8 +83,11 @@ export default function BarDetail() {
     );
   }
 
+  // Drop already-over events the same way the homepage and events list do
+  // (isEventStillOnline) instead of just checking the date — so an event
+  // with no start time falls off at 22:00 here too, not at midnight.
   const upcomingEvents = venueEvents
-    .filter((e) => e.status !== "canceled" && e.date >= todayStr)
+    .filter((e) => e.status !== "canceled" && isEventStillOnline(e))
     .sort((a, b) => {
       const dateCmp = a.date.localeCompare(b.date);
       if (dateCmp !== 0) return dateCmp;
