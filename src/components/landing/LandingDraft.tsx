@@ -63,7 +63,15 @@ export default function LandingDraft() {
   // override the CTA's promise.
   const goToEvents = () => {
     setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    setFilter("activeCategory", "");
     navigate("/events");
+  };
+
+  // Same promise as the events CTA: the map should open showing every
+  // category, so reset a stale category filter before navigating.
+  const goToMap = () => {
+    setFilter("activeCategory", "");
+    navigate("/map");
   };
 
   // Tap a hero preview card → land on /events with that card's tab selected,
@@ -71,6 +79,7 @@ export default function LandingDraft() {
   // straight to (and briefly flags) the matching card.
   const goToEvent = (eventId: string) => {
     setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    setFilter("activeCategory", "");
     navigate("/events", { state: { scrollToEventId: eventId } });
   };
 
@@ -432,7 +441,7 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={() => navigate("/map")}
+                onClick={goToMap}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
