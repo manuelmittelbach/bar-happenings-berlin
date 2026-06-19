@@ -432,20 +432,20 @@ export default function LandingDraft() {
             >
               <button
                 type="button"
-                onClick={goToEvents}
+                onClick={() => navigate("/map")}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-foreground px-6 font-mono font-bold uppercase text-background transition-all hover:bg-background hover:text-foreground active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                <span>All events</span>
+                <span>Open the map</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/map")}
+                onClick={goToEvents}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border-2 border-foreground bg-background px-6 font-mono font-bold uppercase text-foreground transition-all hover:bg-foreground hover:text-background active:scale-[0.98]"
                 style={{ fontSize: 12, letterSpacing: "0.14em" }}
               >
-                Open the map
+                All events
               </button>
             </motion.div>
 

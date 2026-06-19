@@ -3,8 +3,8 @@ import { User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems: { label: string; path: string }[] = [
-  { label: "Events", path: "/events" },
   { label: "Map", path: "/map" },
+  { label: "Events", path: "/events" },
   { label: "Bars", path: "/bars" },
 ];
 
