@@ -261,28 +261,55 @@ export default function Index() {
   // (POP) — that's the browser-native convention. A fresh PUSH/REPLACE into
   // the page (link click, new visit) starts at the top, so we drop any stale
   // saved value instead of restoring it.
+  //
+  // Done in two steps so the restore can't lose the position to a timing
+  // race: capture the saved offset once on mount, then apply it only after
+  // the list has actually rendered (eventsLoading === false). An earlier
+  // scrollTo would clamp against a still-too-short container (Spinner only)
+  // and the target would be silently lost.
+  const restoreTargetRef = useRef<number | null>(null);
+  const restoreCapturedRef = useRef(false);
   useLayoutEffect(() => {
-    if (navigationType !== "POP") {
-      sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-      return;
+    if (restoreCapturedRef.current) return;
+    restoreCapturedRef.current = true;
+    if (navigationType === "POP") {
+      const saved = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
+      restoreTargetRef.current = saved !== null ? Number(saved) : null;
     }
-    const savedScrollY = sessionStorage.getItem(EXPLORE_SCROLL_KEY);
-    if (!savedScrollY) return;
-    const scrollY = Number(savedScrollY);
+    // Consume it either way so a later re-render / PUSH can't replay it.
     sessionStorage.removeItem(EXPLORE_SCROLL_KEY);
-    // Two rAFs because the list content (sections, EventCards) only
-    // mounts after eventsLoading flips false on the next paint — the
-    // first frame restores onto a possibly-shorter list (Spinner only),
-    // the second catches the real list once it's in the DOM. Same logic
-    // as before, just targeting the internal scroll container.
-    const firstFrame = requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
-      });
-    });
-    return () => cancelAnimationFrame(firstFrame);
   }, [navigationType]);
+
+  useLayoutEffect(() => {
+    const target = restoreTargetRef.current;
+    if (target === null || eventsLoading) return;
+    // Re-attempt across frames until the container is tall enough to honor
+    // the saved offset (images, sticky headers and sections settle over a
+    // few paints), then stop. Without the retry, a single scrollTo onto a
+    // not-yet-final layout is exactly what dropped us back to the top.
+    let attempts = 0;
+    let frame = 0;
+    const tryRestore = () => {
+      const node = scrollRef.current;
+      if (node) {
+        node.scrollTo({ top: target, left: 0, behavior: "auto" });
+        const reachedTarget = Math.abs(node.scrollTop - target) <= 1;
+        const atMaxScroll =
+          node.scrollTop >= node.scrollHeight - node.clientHeight - 1;
+        if (reachedTarget || atMaxScroll) {
+          restoreTargetRef.current = null;
+          return;
+        }
+      }
+      if (attempts++ < 20) {
+        frame = requestAnimationFrame(tryRestore);
+      } else {
+        restoreTargetRef.current = null;
+      }
+    };
+    frame = requestAnimationFrame(tryRestore);
+    return () => cancelAnimationFrame(frame);
+  }, [eventsLoading]);
 
   // Persist the internal scroll position whenever the page unmounts — i.e.
   // ANY navigation away (nav tab, event click, browser back). The window-level
