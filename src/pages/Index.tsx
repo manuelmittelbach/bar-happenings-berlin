@@ -315,12 +315,26 @@ export default function Index() {
   // ANY navigation away (nav tab, event click, browser back). The window-level
   // ScrollManager in App.tsx can't see this locked-viewport container's
   // scrollTop, so we snapshot it here for the POP-restore above to pick up.
+  //
+  // We can't read scrollTop in the unmount cleanup directly: React detaches
+  // the container from the DOM BEFORE this passive-effect cleanup runs, and a
+  // detached scrollable element reports scrollTop === 0 — so the cleanup would
+  // always save 0 (the original bug). Instead we mirror the live scrollTop
+  // into a ref on every scroll while the container is mounted, and persist
+  // that last-known value on unmount.
+  const lastScrollTopRef = useRef(0);
   useEffect(() => {
     const node = scrollRef.current;
+    if (!node) return;
+    const handleScroll = () => {
+      lastScrollTopRef.current = node.scrollTop;
+    };
+    node.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
+      node.removeEventListener("scroll", handleScroll);
       sessionStorage.setItem(
         EXPLORE_SCROLL_KEY,
-        String(node?.scrollTop ?? 0),
+        String(lastScrollTopRef.current),
       );
     };
   }, []);
