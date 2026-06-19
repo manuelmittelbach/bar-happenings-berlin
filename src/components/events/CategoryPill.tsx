@@ -1,5 +1,5 @@
 import { useCategories } from "@/hooks/useEvents";
-import { Mic, Brain, Globe, Handshake, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Crown, Dice5, Laugh } from "lucide-react";
+import { Mic, Brain, Globe, UsersRound, Heart, Headphones, Guitar, Sparkles, MicVocal, Film, Trophy, LayoutGrid, Crown, Dice5, Laugh } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface CategoryPillProps {
@@ -16,7 +16,7 @@ const categoryIcons: Record<string, LucideIcon> = {
   "open-mic": MicVocal,
   "karaoke": Mic,
   "drag-cabaret": Crown,
-  "social": Handshake,
+  "social": UsersRound,
   "language-exchange": Globe,
   "singles": Heart,
   "games": Dice5,
