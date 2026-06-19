@@ -53,9 +53,12 @@ const desktopShortLabels: Record<string, string> = {
    Values are category slug-IDs (categories.id). */
 const desktopCategoryOrder: string[] = [
   "live-music", "comedy", "dj-music", "open-mic", "pub-quiz",
-  "karaoke", "drag-cabaret", "screening", "other",
+  "karaoke", "drag-cabaret", "screening",
   // Inactive (kept for fast re-enable):
   "singles", "social", "language-exchange", "games", "sports",
+  // "Other" always sorts last so it stays far right regardless of which
+  // categories are currently active:
+  "other",
 ];
 
 /* ── Desktop icon-based category row ──
