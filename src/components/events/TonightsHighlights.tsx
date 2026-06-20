@@ -41,7 +41,9 @@ export default function TonightsHighlights({
     <section>
       <div className="container py-6 md:py-8">
         <div className="mb-2.5">
-          <div className="mono-label text-accent mb-1.5">Editor's picks</div>
+          <div className="mono-label text-accent mb-1.5">
+            {sorted.length === 1 ? "Editor's pick" : "Editor's picks"}
+          </div>
           {/* Counter sits on the same row as the h2 (not the eyebrow above)
               so its baseline lines up with "Highlights tonight" instead of
               "Editor's picks". */}

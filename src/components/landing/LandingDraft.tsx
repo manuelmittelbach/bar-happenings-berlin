@@ -102,12 +102,26 @@ export default function LandingDraft() {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     const shuffled = [...pool].sort(() => rand() - 0.5);
+    // Editor's picks (is_highlight) always lead the carousel, sorted by
+    // highlight_priority (lower first), then start time — same tie-break as
+    // the /events Highlights section. The shuffle only orders everything
+    // after them, so a curated event reliably opens the deck each visit.
+    const pinned = pool
+      .filter((e) => e.isHighlight)
+      .sort((a, b) => {
+        const p = a.highlightPriority - b.highlightPriority;
+        if (p !== 0) return p;
+        return (a.startTime || "99:99").localeCompare(b.startTime || "99:99");
+      });
     // First pass: one card per distinct venue, in shuffled order, so the start
     // of the loop never repeats a bar. Second pass: append everything still
-    // left so the cycle covers the full day's events.
-    const picks: BarlinEvent[] = [];
-    const seenVenues = new Set<string>();
+    // left so the cycle covers the full day's events. Pinned highlights seed
+    // both `picks` and `seenVenues` so they neither repeat nor get a duplicate
+    // venue card right behind them.
+    const picks: BarlinEvent[] = [...pinned];
+    const seenVenues = new Set<string>(pinned.map((e) => e.venue));
     for (const e of shuffled) {
+      if (picks.includes(e)) continue;
       if (!seenVenues.has(e.venue)) {
         picks.push(e);
         seenVenues.add(e.venue);
