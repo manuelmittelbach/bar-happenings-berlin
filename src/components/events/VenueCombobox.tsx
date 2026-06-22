@@ -36,7 +36,7 @@ export default function VenueCombobox({ options, value, onSelect }: VenueCombobo
           className="flex w-full h-11 items-center justify-between gap-2 px-3 bg-background border-2 border-foreground font-serif text-base text-left outline-none focus:bg-card transition-colors"
         >
           <span className={cn("truncate", !selected && "text-foreground/30")}>
-            {selected ? selected.name : "Select a bar…"}
+            {selected ? selected.name : "Search bar…"}
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
@@ -66,6 +66,7 @@ export default function VenueCombobox({ options, value, onSelect }: VenueCombobo
                   onSelect(v.id);
                   setOpen(false);
                 }}
+                className="rounded-none data-[selected='true']:bg-muted data-[selected=true]:text-foreground"
               >
                 <Check
                   className={cn("mr-2 h-4 w-4 shrink-0", value === v.id ? "opacity-100" : "opacity-0")}
