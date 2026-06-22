@@ -20,9 +20,8 @@ export function consumeJustConfirmed(): boolean {
   return true;
 }
 
-export function clearJustConfirmedSoon(): () => void {
-  const t = setTimeout(() => localStorage.removeItem(KEY), TTL_MS);
-  return () => clearTimeout(t);
+export function clearJustConfirmed(): void {
+  localStorage.removeItem(KEY);
 }
 
 export function markEmailJustChanged(): void {

@@ -4,6 +4,7 @@ import { ArrowRight, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { accountLinks } from "@/lib/roleNav";
 import { PageSpinner } from "@/components/ui/page-spinner";
+import { EmailConfirmedBadge } from "@/components/EmailConfirmedBadge";
 
 /* Account hub. The web header no longer surfaces role-specific tabs
  * ("Your Bar", "Admin") — they live here instead, alongside the account
@@ -39,6 +40,7 @@ export default function Profile() {
 
   return (
     <div className="container max-w-2xl pt-6 md:pt-8 pb-24">
+      <EmailConfirmedBadge className="mb-6" />
       {/* Masthead — same compact pattern as the Bars directory: a
           heading-display 24/30px on a hairline rule. */}
       <header className="mb-6 md:mb-8">

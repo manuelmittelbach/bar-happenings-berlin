@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Mail, XCircle } from "lucide-react";
+import { Mail, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUserRole } from "@/lib/supabaseQueries";
 import { markEmailJustConfirmed } from "@/lib/justConfirmed";
 import { Spinner } from "@/components/ui/spinner";
 
-type Status = "idle" | "verifying" | "success" | "error";
+type Status = "idle" | "verifying" | "error";
 
 type EmailOtpType = "email" | "signup" | "invite" | "magiclink" | "recovery" | "email_change";
 
@@ -60,7 +60,8 @@ export default function ConfirmEmail() {
       const { data: { user } } = await supabase.auth.getUser();
       const role = user ? await fetchUserRole(user.id) : "user";
       markEmailJustConfirmed();
-      setStatus("success");
+      // Straight to the landing page — the green "Email confirmed" badge shows
+      // there. No interstitial success screen (it only flashed for a frame).
       navigate(defaultTargetForRole(role), { replace: true });
     } catch (err) {
       setStatus("error");
@@ -85,15 +86,6 @@ export default function ConfirmEmail() {
             >
               Back to bar signup
             </button>
-          </>
-        ) : status === "success" ? (
-          <>
-            <div className="flex justify-center">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
-            </div>
-            <h1 className="heading-display text-2xl">Email confirmed!</h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">Redirecting…</p>
-            <div className="flex justify-center"><Spinner /></div>
           </>
         ) : status === "verifying" ? (
           <>

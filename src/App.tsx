@@ -190,6 +190,7 @@ import BarDetail from "./pages/BarDetail";
 import BarsList from "./pages/BarsList";
 import Profile from "./pages/Profile";
 import ProfileDetails from "./pages/ProfileDetails";
+import { ProfileGate } from "@/components/ProfileGate";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import Info from "./pages/Info";
@@ -278,7 +279,6 @@ const App = () => (
             {/* Legacy: old "Create account" buttons and email templates may
                 still link to /login. Forward (preserving query) to /signup. */}
             <Route path="/login" element={<LoginLegacyRedirect />} />
-            <Route path="/profile/events" element={<OrganizerDashboard />} />
             <Route path="/dashboard" element={<DashboardLegacyRedirect />} />
             <Route path="/profile/admin" element={<AdminDashboard />} />
             <Route path="/admin" element={<AdminLegacyRedirect />} />
@@ -292,12 +292,18 @@ const App = () => (
             <Route path="/edit-event/:id" element={<EditEvent />} />
             <Route path="/profile/admin/bar-account/:id" element={<EditBarAccount />} />
             <Route path="/admin/bar-account/:id" element={<AdminBarAccountLegacyRedirect />} />
-            <Route path="/profile/bar" element={<BarAccount />} />
             <Route path="/bar-account" element={<BarAccountLegacyRedirect />} />
             <Route path="/reset-password" element={<UpdatePassword />} />
             <Route path="/confirm" element={<ConfirmEmail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/details" element={<ProfileDetails />} />
+            {/* Signed-in profile pages. ProfileGate blocks pending/rejected
+                organizers — every profile URL shows AwaitingApproval until an
+                admin approves. */}
+            <Route element={<ProfileGate />}>
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/events" element={<OrganizerDashboard />} />
+              <Route path="/profile/bar" element={<BarAccount />} />
+              <Route path="/profile/details" element={<ProfileDetails />} />
+            </Route>
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/info" element={<Info />} />
