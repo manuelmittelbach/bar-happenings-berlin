@@ -22,7 +22,12 @@ export default function MapPage() {
     activeDate, setActiveDate,
   } = useFilterParams();
 
-  const { data: eventsData = [], isLoading: eventsLoading, refetch: refetchEvents } = useEvents();
+  // `isPending` (not `isLoading`) — during the PersistQueryClient cache
+  // restore on refresh the query is paused (fetchStatus 'idle') with no data
+  // yet, so `isLoading` (= isPending && isFetching) is briefly false. That
+  // window is exactly when the count badge would flash "0 events" before the
+  // fetch even starts. `isPending` stays true until events actually arrive.
+  const { data: eventsData = [], isPending: eventsPending, isLoading: eventsLoading, refetch: refetchEvents } = useEvents();
   const { data: venuesData = [], isLoading: venuesLoading, refetch: refetchVenues, isFetching: venuesFetching } = useVenues();
   const { data: categoriesData = [] } = useCategories();
   // `venueMap` empty (venues still loading or fetch failed) silently drops
@@ -173,9 +178,10 @@ export default function MapPage() {
               "linear-gradient(to bottom, hsl(var(--background)) 0%, hsl(var(--background) / 0.85) 35%, hsl(var(--background) / 0) 100%)",
           }}
         />
-        {/* Count badge — only after events have loaded, otherwise it would
-            flash "0 events" during the fetch before any are counted. */}
-        {!eventsLoading && (
+        {/* Count badge — only once events have actually arrived (isPending
+            false), otherwise it would flash "0 events" during the fetch (or
+            the cache-restore pause on refresh) before any are counted. */}
+        {!eventsPending && (
           <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
             {filtered.length} {filtered.length === 1 ? "event" : "events"} {dayTab}
           </div>
