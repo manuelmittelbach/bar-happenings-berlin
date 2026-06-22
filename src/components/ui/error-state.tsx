@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 interface ErrorStateProps {
   /** Heading — short statement of what failed. */
   title?: string;
@@ -11,8 +9,6 @@ interface ErrorStateProps {
   isRetrying?: boolean;
   /** Compact variant for use inside an existing page section (no full-height centering). */
   inline?: boolean;
-  /** Adds a "Back to home" link under the button — for full-page detail errors. */
-  homeLink?: boolean;
 }
 
 /* Shared "couldn't load — retry" surface. Distinguishes a genuine failure
@@ -26,7 +22,6 @@ export function ErrorState({
   onRetry,
   isRetrying = false,
   inline = false,
-  homeLink = false,
 }: ErrorStateProps) {
   const body = (
     <>
@@ -40,11 +35,6 @@ export function ErrorState({
         >
           {isRetrying ? "Retrying…" : "Retry"}
         </button>
-      )}
-      {homeLink && (
-        <Link to="/" className="text-sm text-accent mt-4 inline-block">
-          Back to home
-        </Link>
       )}
     </>
   );

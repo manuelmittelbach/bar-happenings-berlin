@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Globe, Instagram, Phone, Share } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -67,7 +67,6 @@ export default function BarDetail() {
         message="Couldn't load this bar. Check your connection and try again."
         onRetry={() => refetchVenue()}
         isRetrying={venueFetching}
-        homeLink
       />
     );
   }
@@ -76,9 +75,6 @@ export default function BarDetail() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background px-6 text-center">
         <h1 className="font-body text-2xl font-bold">Bar not found</h1>
-        <Link to="/" className="text-sm text-accent mt-2 inline-block">
-          Back to home
-        </Link>
       </div>
     );
   }

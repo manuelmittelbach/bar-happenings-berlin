@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Share } from "lucide-react";
 import { toast } from "sonner";
 import { Share as CapacitorShare } from "@capacitor/share";
@@ -54,7 +54,6 @@ export default function EventDetail() {
 				>
 					{isFetching ? "Retrying…" : "Retry"}
 				</button>
-				<Link to="/" className="text-sm text-accent mt-4 inline-block">Back to home</Link>
 			</div>
 		);
 	}
@@ -63,7 +62,6 @@ export default function EventDetail() {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center bg-background">
 				<h1 className="font-body text-2xl font-bold">Event not found</h1>
-				<Link to="/" className="text-sm text-accent mt-2 inline-block">Back to home</Link>
 			</div>
 		);
 	}

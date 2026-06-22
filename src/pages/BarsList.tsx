@@ -272,7 +272,6 @@ export default function BarsList() {
         message="Couldn't load the bar directory. Check your connection and try again."
         onRetry={() => refetchVenues()}
         isRetrying={venuesFetching}
-        homeLink
       />
     );
   }
