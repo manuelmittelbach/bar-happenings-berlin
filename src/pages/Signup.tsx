@@ -135,11 +135,6 @@ export default function Signup() {
 					<p className="text-sm text-muted-foreground">
 						We sent a confirmation link to <strong>{email}</strong>. Please confirm your email address before signing in.
 					</p>
-					{isBarOwner && (
-						<p className="text-sm text-muted-foreground">
-							After confirming your email, an admin will review your bar details. You'll be able to publish events once your account is approved.
-						</p>
-					)}
 					<button
 						onClick={() => navigate("/signin")}
 						className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors"
