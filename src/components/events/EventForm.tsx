@@ -455,7 +455,8 @@ export default function EventForm({
                 onEnterManual={() => changeVenueMode("manual")}
               />
             ) : (
-              <div className="space-y-3">
+              // Set the manual block apart: indented with a vertical rule.
+              <div className="space-y-3 border-l-2 border-foreground/20 pl-4">
                 <VenueAddressFields
                   value={{ name: formData.venue, street: manualStreet, plz: manualPlz, city: manualCity }}
                   onChange={setManualVenue}
