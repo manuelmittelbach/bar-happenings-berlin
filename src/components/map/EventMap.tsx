@@ -556,44 +556,19 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					});
 					nameRow.appendChild(nameEl);
 
-					// Right cluster — chevron then walk-distance, kept together as
+					// Right cluster — walk-distance then chevron, kept together as
 					// one nowrap flex sibling of the name. Because nameRow is a
 					// single (non-wrapping) flex line, this cluster always shares
 					// the line with the venue name: the chevron is never orphaned
 					// on its own row, and the walk-distance stays glued to the
-					// chevron's right. The name itself may still wrap internally
-					// inside its own flex:1 column.
+					// chevron's left. The name itself may still wrap internally
+					// inside its own flex:1 column. The chevron sits LAST (trailing
+					// edge) so its right-pointing tip reads as "open / onward"
+					// rather than pointing at the walk-distance beside it — same
+					// trailing-chevron position the event rows use.
 					const rightGroup = document.createElement("div");
 					rightGroup.style.cssText =
 						"display:flex;align-items:center;gap:8px;flex-shrink:0;";
-
-					// Chevron is its own link to /bar/<id> — the trailing "opens a
-					// page" cue for the venue. Reuses .map-popup-venue-link so the
-					// existing hover/active rule flips the inner .map-popup-chevron
-					// to accent. Only rendered when we have a venue to open.
-					if (props.venueId) {
-						const chevronLink = document.createElement("a");
-						chevronLink.className = "map-popup-venue-link";
-						chevronLink.style.cssText =
-							"display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;flex-shrink:0;";
-						chevronLink.setAttribute("href", `/bar/${props.venueId}`);
-						chevronLink.setAttribute("aria-label", `Open ${props.venueName} page`);
-						const chevronIcon = document.createElement("span");
-						chevronIcon.className = "map-popup-chevron";
-						chevronIcon.style.cssText =
-							"display:inline-flex;color:#9a958a;transition:color 0.12s ease;";
-						chevronIcon.innerHTML = CHEVRON_SVG;
-						chevronLink.appendChild(chevronIcon);
-						chevronLink.addEventListener("click", (ev) => {
-							// Let the browser open a new tab on modified clicks; only
-							// intercept a plain left-click to stay SPA + keep the flash.
-							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-							ev.preventDefault();
-							chevronIcon.style.color = "#ED5B1C";
-							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
-						});
-						rightGroup.appendChild(chevronLink);
-					}
 
 					const ul = userLocationRef.current;
 					if (ul) {
@@ -613,6 +588,35 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 							rightGroup.appendChild(walkEl);
 						}
 					}
+
+					// Chevron is its own link to /bar/<id> — the trailing "opens a
+					// page" cue for the venue. Reuses .map-popup-venue-link so the
+					// existing hover/active rule flips the inner .map-popup-chevron
+					// to accent. Only rendered when we have a venue to open.
+					if (props.venueId) {
+						const chevronLink = document.createElement("a");
+						chevronLink.className = "map-popup-venue-link";
+						chevronLink.style.cssText =
+							"display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;flex-shrink:0;";
+						chevronLink.setAttribute("href", `/bar/${props.venueId}`);
+						chevronLink.setAttribute("aria-label", `Open ${props.venueName} page`);
+						const chevronIcon = document.createElement("span");
+						chevronIcon.className = "map-popup-chevron";
+						chevronIcon.style.cssText =
+							"display:inline-flex;color:#6b6b6b;transition:color 0.12s ease;";
+						chevronIcon.innerHTML = CHEVRON_SVG;
+						chevronLink.appendChild(chevronIcon);
+						chevronLink.addEventListener("click", (ev) => {
+							// Let the browser open a new tab on modified clicks; only
+							// intercept a plain left-click to stay SPA + keep the flash.
+							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+							ev.preventDefault();
+							chevronIcon.style.color = "#ED5B1C";
+							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
+						});
+						rightGroup.appendChild(chevronLink);
+					}
+
 					nameRow.appendChild(rightGroup);
 					headerEl.appendChild(nameRow);
 					popupEl.appendChild(headerEl);
@@ -724,7 +728,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						const rowChevron = document.createElement("span");
 						rowChevron.className = "map-popup-row-chevron";
 						rowChevron.style.cssText =
-							"flex:0 0 auto;display:inline-flex;align-items:center;color:#9a958a;transition:color 0.12s ease;";
+							"flex:0 0 auto;display:inline-flex;align-items:center;color:#6b6b6b;transition:color 0.12s ease;";
 						rowChevron.innerHTML = CHEVRON_SVG;
 						btn.appendChild(rowChevron);
 
