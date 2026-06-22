@@ -538,17 +538,6 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
-					// Chevron right after the name — same "opens a page" cue the
-					// event rows carry, so the bar reads as tappable too. Kept
-					// inline (vertical-align:middle) so it trails the last line
-					// when a long name wraps. Muted ink by default; the
-					// .map-popup-chevron hover/active rule flips it to accent.
-					const nameChevron = document.createElement("span");
-					nameChevron.className = "map-popup-chevron";
-					nameChevron.style.cssText =
-						"display:inline-flex;vertical-align:middle;margin-left:5px;color:#9a958a;transition:color 0.12s ease;";
-					nameChevron.innerHTML = CHEVRON_SVG;
-					nameEl.appendChild(nameChevron);
 					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
 					nameEl.addEventListener("click", (ev) => {
@@ -563,10 +552,48 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// matches the event-row delay so bar + event taps feel
 						// identical, and stays inside the "feels instant" window.
 						nameEl.style.color = "#ED5B1C";
-						nameChevron.style.color = "#ED5B1C";
 						setTimeout(() => onVenueClickRef.current(props.venueId), 80);
 					});
 					nameRow.appendChild(nameEl);
+
+					// Right cluster — chevron then walk-distance, kept together as
+					// one nowrap flex sibling of the name. Because nameRow is a
+					// single (non-wrapping) flex line, this cluster always shares
+					// the line with the venue name: the chevron is never orphaned
+					// on its own row, and the walk-distance stays glued to the
+					// chevron's right. The name itself may still wrap internally
+					// inside its own flex:1 column.
+					const rightGroup = document.createElement("div");
+					rightGroup.style.cssText =
+						"display:flex;align-items:center;gap:8px;flex-shrink:0;";
+
+					// Chevron is its own link to /bar/<id> — the trailing "opens a
+					// page" cue for the venue. Reuses .map-popup-venue-link so the
+					// existing hover/active rule flips the inner .map-popup-chevron
+					// to accent. Only rendered when we have a venue to open.
+					if (props.venueId) {
+						const chevronLink = document.createElement("a");
+						chevronLink.className = "map-popup-venue-link";
+						chevronLink.style.cssText =
+							"display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;flex-shrink:0;";
+						chevronLink.setAttribute("href", `/bar/${props.venueId}`);
+						chevronLink.setAttribute("aria-label", `Open ${props.venueName} page`);
+						const chevronIcon = document.createElement("span");
+						chevronIcon.className = "map-popup-chevron";
+						chevronIcon.style.cssText =
+							"display:inline-flex;color:#9a958a;transition:color 0.12s ease;";
+						chevronIcon.innerHTML = CHEVRON_SVG;
+						chevronLink.appendChild(chevronIcon);
+						chevronLink.addEventListener("click", (ev) => {
+							// Let the browser open a new tab on modified clicks; only
+							// intercept a plain left-click to stay SPA + keep the flash.
+							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+							ev.preventDefault();
+							chevronIcon.style.color = "#ED5B1C";
+							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
+						});
+						rightGroup.appendChild(chevronLink);
+					}
 
 					const ul = userLocationRef.current;
 					if (ul) {
@@ -580,12 +607,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						if (min <= 15) {
 							const walkEl = document.createElement("span");
 							walkEl.style.cssText =
-								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;padding-bottom:2px;text-transform:uppercase;letter-spacing:0.08em;";
+								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;text-transform:uppercase;letter-spacing:0.08em;";
 							walkEl.setAttribute("title", `~${min} min walking from your location`);
 							walkEl.innerHTML = `${PERSON_SVG}<span>${min} MIN</span>`;
-							nameRow.appendChild(walkEl);
+							rightGroup.appendChild(walkEl);
 						}
 					}
+					nameRow.appendChild(rightGroup);
 					headerEl.appendChild(nameRow);
 					popupEl.appendChild(headerEl);
 
