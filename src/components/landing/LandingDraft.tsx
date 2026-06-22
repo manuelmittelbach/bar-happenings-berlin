@@ -160,10 +160,6 @@ export default function LandingDraft() {
   // mobile it's a quicker crossfade cadence. Skips when the pool is too small.
   const CYCLE_MS = isMobile ? 5000 : 28000;
   const [cycleIndex, setCycleIndex] = useState(0);
-  // Bumped on a manual swipe to force the cycle effect to re-run (resetting
-  // the timer) so a hand-advanced card still gets a full dwell before the
-  // auto-cycle takes over again.
-  const [manualNudge, setManualNudge] = useState(0);
   // Bumped when the desktop tab becomes visible again: remounts the card deck
   // so the cards snap cleanly to their slot poses instead of resuming the
   // half-frozen, possibly-jumbled drift animations. snapNextRef makes that one
@@ -185,17 +181,15 @@ export default function LandingDraft() {
   // Set by a manual swipe: tells the next start() to ignore whatever wait was
   // pending and begin a fresh full cycle instead of resuming mid-wait.
   const forceResetRef = useRef(false);
-  // True while/just after a drag, so the trailing tap that a pointer-up emits
-  // doesn't also open the event. Reset shortly after the drag ends.
-  const draggedRef = useRef(false);
   // Direction of the last card change, for the swipe animation: +1 = next
   // (new card slides in from the right, old exits left), -1 = previous,
   // 0 = auto-cycle (plain crossfade, no horizontal slide).
   const [swipeDir, setSwipeDir] = useState(0);
   useEffect(() => {
-    // Mobile no longer auto-cycles — the card only changes on a manual swipe.
-    // Desktop keeps its slow continuous drift.
-    if (heroPool.length < 2 || isMobile) return;
+    // Both mobile and desktop auto-cycle: mobile crossfades to the next card
+    // every CYCLE_MS (5s), desktop keeps its slow continuous drift. The card
+    // can no longer be advanced by hand — it only changes on the auto-cycle.
+    if (heroPool.length < 2) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
     // Wall-clock bookkeeping for the *currently pending* wait, so stop() can
@@ -332,18 +326,7 @@ export default function LandingDraft() {
       clearInterval(watchdog);
       stop();
     };
-  }, [heroPool.length, CYCLE_MS, isMobile, manualNudge]);
-
-  // Manual hero navigation — swipe left advances to the next card, swipe right
-  // steps back. Bumping manualNudge restarts the auto-cycle timer (via the
-  // effect deps) so the hand-picked card gets a full dwell before auto-cycling.
-  const advanceHero = (dir: 1 | -1) => {
-    if (heroPool.length < 2) return;
-    forceResetRef.current = true;
-    setSwipeDir(dir);
-    setCycleIndex((i) => i + dir);
-    setManualNudge((n) => n + 1);
-  };
+  }, [heroPool.length, CYCLE_MS, isMobile]);
 
   // Visible slice — three events visible at any time. With a pool of N,
   // (cycleIndex, cycleIndex+1, cycleIndex+2) modulo N gives us primary,
@@ -577,26 +560,9 @@ export default function LandingDraft() {
                       custom={swipeDir}
                       role="button"
                       tabIndex={0}
-                      drag="x"
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={0.5}
-                      onDragStart={() => {
-                        draggedRef.current = true;
-                      }}
-                      onDragEnd={(_, info) => {
-                        // Dragged past the threshold → step a card in that
-                        // direction; otherwise it springs back to center.
-                        if (info.offset.x < -60) advanceHero(1); // drag left → next
-                        else if (info.offset.x > 60) advanceHero(-1); // drag right → previous
-                        // Keep the flag up until after the trailing tap fires.
-                        window.setTimeout(() => {
-                          draggedRef.current = false;
-                        }, 60);
-                      }}
-                      // Ignore the tap that follows a drag so swiping never
-                      // also opens the event.
+                      // No manual swipe — the card only advances on the
+                      // auto-cycle. A tap opens the event.
                       onTap={() => {
-                        if (draggedRef.current) return;
                         goToEvent(visibleCards[0].event.id);
                       }}
                       onKeyDown={(e) => {
@@ -614,7 +580,7 @@ export default function LandingDraft() {
                           ? { duration: 0.9, ease: "easeInOut" }
                           : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
                       }
-                      className="relative cursor-grab touch-pan-y border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f] active:cursor-grabbing"
+                      className="relative cursor-pointer border-2 border-foreground bg-background shadow-[8px_8px_0_0_#0f0f0f]"
                       style={{
                         padding: "20px 18px 16px",
                         transformOrigin: "left center",
