@@ -385,6 +385,22 @@ export default function LandingDraft() {
     snapNextRef.current = false;
   }, [resyncSeq]);
 
+  // Midnight rollover guard. `today` is recomputed every render from the wall
+  // clock, so a tab left open across midnight flips it to the new day. That
+  // swaps the entire pool wholesale (yesterday's events drop out, today's come
+  // in), so all three visible cards re-key at once and start their 28s exits
+  // simultaneously — the leftover "yesterday" pile that drifts down-left. Treat
+  // a date change exactly like a tab resume: snap-remount the deck so the new
+  // day's cards appear pre-placed at their slots instead of animating in over a
+  // whole cycle. Skip the initial mount (the deck places itself there already).
+  const prevTodayRef = useRef(today);
+  useEffect(() => {
+    if (prevTodayRef.current === today) return;
+    prevTodayRef.current = today;
+    snapNextRef.current = true;
+    setResyncSeq((s) => s + 1);
+  }, [today]);
+
   // 1-based position of the front card within the pool, for the "X of N"
   // counter. Wraps with cycleIndex, including backward swipes (negative-safe).
   const heroPosition =
