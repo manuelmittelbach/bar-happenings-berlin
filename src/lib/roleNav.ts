@@ -21,7 +21,8 @@ export type Role = "user" | "organizer" | "admin" | null;
 export function homeForRole(role: Role): string {
   if (role === "admin") return "/profile/admin";
   if (role === "organizer") return "/profile/events";
-  return "/events";
+  // Plain users land on their profile hub (matches ConfirmEmail), not the events list.
+  return "/profile";
 }
 
 /** The account-hub links a fully-resolved role may see. Only call once

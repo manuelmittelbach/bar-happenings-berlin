@@ -22,8 +22,8 @@ const VALID_TYPES: ReadonlySet<EmailOtpType> = new Set([
 function defaultTargetForRole(role: "user" | "organizer" | "admin"): string {
   if (role === "admin") return "/profile/admin";
   if (role === "organizer") return "/profile/events";
-  // Plain users land on the events list, not their own events page.
-  return "/events";
+  // Freshly-confirmed plain users land on their profile hub, not the events list.
+  return "/profile";
 }
 
 export default function ConfirmEmail() {
