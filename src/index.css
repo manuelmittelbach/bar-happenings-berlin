@@ -163,6 +163,11 @@
 @media (hover: hover) {
   .map-popup-venue-link:hover { color: #ED5B1C !important; }
   .map-popup-venue-link:hover .map-popup-chevron { color: #ED5B1C !important; }
+  /* The whole header is the venue tap target, so hovering anywhere in it
+     (not just the name/chevron) accents the name + chevron to telegraph
+     that the entire field opens the bar. */
+  .map-popup-header:hover .map-popup-venue-link { color: #ED5B1C !important; }
+  .map-popup-header:hover .map-popup-chevron { color: #ED5B1C !important; }
 }
 /* Touch press — there's no :hover on touch, so mirror the accent on
    :active. A press (incl. the hold before a long-press menu) then gives
@@ -317,8 +322,8 @@ textarea:-webkit-autofill:focus {
   background: transparent;
   border: none;
   border-radius: 0;
-  top: 4px;
-  right: 4px;
+  top: 0px;
+  right: 0px;
   padding: 0;
   transition: color 0.12s ease;
 }

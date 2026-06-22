@@ -510,8 +510,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					// aligned. 40px right padding leaves room for the
 					// absolutely-positioned close button.
 					const headerEl = document.createElement("div");
+					headerEl.className = "map-popup-header";
+					// The whole header is the venue's tap target (not just the
+					// name/chevron) — cursor:pointer when there's a bar to open.
+					// The close button is a separate element painted on top, so
+					// its own clicks never reach this header handler.
 					headerEl.style.cssText =
-						"padding:14px 44px 12px 14px;border-bottom:1px solid #d2cdc2;background:#f8f5ef;";
+						`padding:14px 44px 12px 14px;border-bottom:1px solid #d2cdc2;background:#f8f5ef;${props.venueId ? "cursor:pointer;" : ""}`;
 
 					const nameRow = document.createElement("div");
 					nameRow.style.cssText =
@@ -538,22 +543,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
+					// Real anchor (href=/bar/<id>) for Cmd/Ctrl/middle-click → new
+					// tab + keyboard/screen-reader access. The plain-click handling
+					// lives on the whole header (see below) so tapping anywhere in
+					// the header opens the bar, not only the name itself.
 					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
-					nameEl.addEventListener("click", (ev) => {
-						if (!props.venueId) { ev.preventDefault(); return; }
-						// Let the browser open a new tab on modified clicks; only
-						// intercept a plain left-click to stay SPA + keep the flash.
-						if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-						ev.preventDefault();
-						// Touch has no :hover, so flash only the venue NAME text to
-						// accent orange (not the whole row background) immediately,
-						// then navigate after a beat so the flash is visible. 80ms
-						// matches the event-row delay so bar + event taps feel
-						// identical, and stays inside the "feels instant" window.
-						nameEl.style.color = "#ED5B1C";
-						setTimeout(() => onVenueClickRef.current(props.venueId), 80);
-					});
 					nameRow.appendChild(nameEl);
 
 					// Right cluster — walk-distance then chevron, kept together as
@@ -606,19 +601,31 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 							"display:inline-flex;color:#6b6b6b;transition:color 0.12s ease;";
 						chevronIcon.innerHTML = CHEVRON_SVG;
 						chevronLink.appendChild(chevronIcon);
-						chevronLink.addEventListener("click", (ev) => {
-							// Let the browser open a new tab on modified clicks; only
-							// intercept a plain left-click to stay SPA + keep the flash.
-							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-							ev.preventDefault();
-							chevronIcon.style.color = "#ED5B1C";
-							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
-						});
 						rightGroup.appendChild(chevronLink);
 					}
 
 					nameRow.appendChild(rightGroup);
 					headerEl.appendChild(nameRow);
+
+					// Whole-header tap → open the bar. Tapping anywhere in the
+					// header (empty space, walk chip, name or chevron) navigates,
+					// not just the name/chevron. The close button is a separate
+					// element painted over the corner, so its clicks never bubble
+					// here. The inner anchors keep their href for modified-click
+					// new-tab + keyboard activation (Enter dispatches a click that
+					// bubbles here for SPA nav).
+					if (props.venueId) {
+						headerEl.addEventListener("click", (ev) => {
+							// Let the browser handle modified clicks on a real anchor
+							// (new tab); plain clicks stay SPA + keep the flash.
+							if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+							ev.preventDefault();
+							nameEl.style.color = "#ED5B1C";
+							const chev = headerEl.querySelector<HTMLElement>(".map-popup-chevron");
+							if (chev) chev.style.color = "#ED5B1C";
+							setTimeout(() => onVenueClickRef.current(props.venueId), 80);
+						});
+					}
 					popupEl.appendChild(headerEl);
 
 					// SCROLL ROWS — each event is a flex row: 36px category disc
