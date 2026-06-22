@@ -235,7 +235,10 @@ export async function uploadEventImage(file: File, userId: string): Promise<stri
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("event-images").upload(path, file, {
-    cacheControl: "3600",
+    // 1 year: storage paths are immutable UUIDs, so a URL never changes
+    // content. A long TTL lets returning visitors reuse the browser-cached
+    // copy instead of re-downloading (cuts Supabase cached egress).
+    cacheControl: "31536000",
     upsert: false,
   });
   if (error) throw error;
@@ -247,7 +250,8 @@ export async function uploadVenueImage(file: File, userId: string): Promise<stri
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("venue-images").upload(path, file, {
-    cacheControl: "3600",
+    // 1 year: immutable UUID path, see uploadEventImage note above.
+    cacheControl: "31536000",
     upsert: false,
   });
   if (error) throw error;

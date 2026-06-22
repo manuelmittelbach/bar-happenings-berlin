@@ -6,22 +6,37 @@ import BottomTabBar from "@/components/layout/BottomTabBar";
 import { useIsNative } from "@/hooks/useIsNative";
 import { useVenues } from "@/hooks/useEvents";
 import { usePrefetchImages } from "@/hooks/usePrefetchImages";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Layout() {
   const { pathname } = useLocation();
   const isMap = pathname === "/map";
 
-  // Warm the browser image cache for bar cover photos from any Layout-
-  // wrapped surface (events, map, bars itself, detail pages) so the Bars
-  // tab renders covers instantly from cache. useVenues shares the React
-  // Query cache with /events so this adds no extra network for the venue
-  // list itself — only the cover images. requestIdleCallback gates the
-  // queue to genuine idle moments, so the map's tile fetches still win
-  // when the user is actively panning.
+  // Warm the browser image cache for the bar covers most likely to sit
+  // above the fold on /bars — ~4 on phone, ~6 on desktop — so the Bars tab
+  // renders its first screen instantly from cache. Everything below the
+  // fold loads lazily on scroll once the user is actually there.
+  //
+  // We deliberately prefetch only this handful, not all ~200 covers:
+  // Layout wraps every route (incl. the landing page most visitors never
+  // click past), so prefetching the full set warmed 200 full-res images on
+  // every visit and was the bulk of Supabase "cached egress". Note the
+  // slice uses raw venue order, which won't exactly match the hood-grouped
+  // order /bars displays — that's fine, it's a best-effort warm and the
+  // page's own eager/lazy loading covers any miss. useVenues shares the
+  // React Query cache with /events so this adds no extra network for the
+  // list data itself. requestIdleCallback gates the queue to genuine idle
+  // moments, so the map's tile fetches still win when the user is panning.
   const { data: venuesData = [] } = useVenues();
+  const isMobile = useIsMobile();
+  const prefetchCount = isMobile ? 4 : 6;
   const venueImageUrls = useMemo(
-    () => venuesData.map((v) => v.image).filter((u): u is string => !!u),
-    [venuesData],
+    () =>
+      venuesData
+        .map((v) => v.image)
+        .filter((u): u is string => !!u)
+        .slice(0, prefetchCount),
+    [venuesData, prefetchCount],
   );
   usePrefetchImages(venueImageUrls);
 
