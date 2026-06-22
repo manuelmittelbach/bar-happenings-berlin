@@ -66,7 +66,7 @@ export default function VenueCombobox({ options, value, onSelect }: VenueCombobo
                   onSelect(v.id);
                   setOpen(false);
                 }}
-                className="rounded-none data-[selected='true']:bg-muted data-[selected=true]:text-foreground"
+                className="rounded-none data-[selected='true']:bg-foreground data-[selected=true]:text-background"
               >
                 <Check
                   className={cn("mr-2 h-4 w-4 shrink-0", value === v.id ? "opacity-100" : "opacity-0")}
