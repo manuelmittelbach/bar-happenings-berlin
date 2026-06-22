@@ -143,8 +143,8 @@ export default function EditEvent() {
           const { updated } = await updateUserStagedSubmission(id, dataWithVenueId, imageUrl);
           if (!updated) {
             // Admin approved the row between load and save — it moved into the
-            // `events` table under a new id. Send them back to "Your events"
-            // where the now-live event is reachable.
+            // `events` table under a new id. Send them back to "Manage your
+            // events" where the now-live event is reachable.
             toast.info("This event was just approved. Reload to edit the live version.");
             navigate("/profile/events", { replace: true });
             return;

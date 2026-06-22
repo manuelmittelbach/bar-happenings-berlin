@@ -2,18 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDateWithDay, berlinDateString } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Plus, Users, CalendarDays, CalendarPlus, Clock, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
+import { Eye, Pencil, Users, CalendarDays, CalendarPlus, Clock, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchEventsByCreator, fetchMyStagedSubmissions, fetchOrganizerById, extendEventSeries } from "@/lib/supabaseQueries";
+import { fetchEventsByCreator, fetchMyStagedSubmissions, extendEventSeries } from "@/lib/supabaseQueries";
 import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventStatus";
 import { formatRecurrenceLabel, parseRule, generateOccurrences, defaultUntil } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import type { BarlinEvent } from "@/types/event";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
-
-type OrganizerVenue = { name: string; address: string | null; neighborhood: string | null } | null;
 
 const STATUS_STYLE: Record<string, string> = {
   approved: "border-green-600/40 bg-green-500/10 text-green-700",
@@ -25,10 +23,8 @@ export default function OrganizerDashboard() {
   const { user, role, approvalStatus, loading, roleResolved } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-  const [venue, setVenue] = useState<OrganizerVenue>(null);
-  const [venueLoading, setVenueLoading] = useState(true);
 
-  // Who may load + see the "Your events" content: admins, approved bar
+  // Who may load + see the "Manage your events" content: admins, approved bar
   // owners, and now plain users (who see their own submitted events).
   const isApprovedAccess =
     role === "admin" || role === "user" || (role === "organizer" && approvalStatus === "approved");
@@ -67,15 +63,6 @@ export default function OrganizerDashboard() {
   useEffect(() => {
     if (myEventsError) toast.error("Failed to load your events.");
   }, [myEventsError]);
-
-  useEffect(() => {
-    if (!user || !isApprovedAccess) return;
-    fetchOrganizerById(user.id)
-      .then((organizer) => {
-        if (organizer?.venue) setVenue(organizer.venue);
-      })
-      .finally(() => setVenueLoading(false));
-  }, [user, isApprovedAccess]);
 
   const membersBySeries = useMemo(() => {
     const map = new Map<string, BarlinEvent[]>();
@@ -175,7 +162,7 @@ export default function OrganizerDashboard() {
   // Pending/rejected organizers never reach here — ProfileGate renders the
   // AwaitingApproval screen in place of every /profile page until approval.
 
-  if (eventsLoading || venueLoading) {
+  if (eventsLoading) {
     return <PageSpinner />;
   }
 
@@ -201,7 +188,7 @@ export default function OrganizerDashboard() {
               a hairline rule. */}
           <header className="mb-6 md:mb-8">
             <div className="pt-2.5 pb-2.5 border-b-2 border-border">
-              <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your events</h1>
+              <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Manage your events</h1>
             </div>
           </header>
           {/* Stats */}
@@ -218,15 +205,6 @@ export default function OrganizerDashboard() {
                 <p className="font-serif text-3xl font-bold">{stat.value}</p>
               </div>
             ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <Link
-              to="/publish"
-              className="group inline-flex items-center gap-2 h-11 px-5 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
-            >
-              <Plus className="h-4 w-4" /> {venue?.name ? `Publish event in ${venue.name}` : "Publish an event"}
-            </Link>
           </div>
 
           {/* Tabs */}

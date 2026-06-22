@@ -1898,7 +1898,7 @@ export async function fetchMyStagedSubmissions(userId: string): Promise<BarlinEv
 }
 
 // Single staging row by id, scoped to the owner — backs the editor when a
-// pending submission is opened from "Your events". Returns null if the row
+// pending submission is opened from "Manage your events". Returns null if the row
 // isn't there (admin already approved it, or it never belonged to the user).
 export async function fetchMyStagedSubmissionById(
   stagingId: string,

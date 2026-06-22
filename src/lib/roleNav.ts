@@ -6,7 +6,7 @@
  * `user_metadata` (it's promoted in the `profiles` table), `useAuth` reports
  * `role === "user"` for a beat until the DB lookup resolves — so any route
  * decision taken on the live role during that window sends an admin down the
- * plain-user path (the "Your events" flash + wrong Cancel target).
+ * plain-user path (the "Manage your events" flash + wrong Cancel target).
  *
  * The fixes that flow from this file:
  *   1. Role-dependent UI must wait for `roleResolved` (see Profile).
@@ -30,7 +30,7 @@ export function homeForRole(role: Role): string {
 export function accountLinks(role: Role): { label: string; to: string }[] {
   const links: { label: string; to: string }[] = [];
   if (role === "user" || role === "organizer") {
-    links.push({ label: "Your events", to: "/profile/events" });
+    links.push({ label: "Manage your events", to: "/profile/events" });
   }
   if (role === "organizer") {
     links.push({ label: "Your bar", to: "/profile/bar" });

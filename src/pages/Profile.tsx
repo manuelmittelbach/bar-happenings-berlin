@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, LogOut } from "lucide-react";
+import { ArrowRight, LogOut, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { accountLinks } from "@/lib/roleNav";
+import { fetchOrganizerById } from "@/lib/supabaseQueries";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { EmailConfirmedBadge } from "@/components/EmailConfirmedBadge";
 
@@ -13,6 +14,7 @@ import { EmailConfirmedBadge } from "@/components/EmailConfirmedBadge";
 export default function Profile() {
   const navigate = useNavigate();
   const { user, role, loading, roleResolved, signOut } = useAuth();
+  const [venueName, setVenueName] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -20,6 +22,15 @@ export default function Profile() {
       navigate("/signin", { replace: true });
     }
   }, [user, loading, navigate]);
+
+  // Organizers reaching this hub are always approved (ProfileGate blocks the
+  // rest), so loading their bar name to personalise the publish CTA is safe.
+  useEffect(() => {
+    if (!user || role !== "organizer") return;
+    fetchOrganizerById(user.id).then((organizer) => {
+      if (organizer?.venue?.name) setVenueName(organizer.venue.name);
+    });
+  }, [user, role]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,16 +41,25 @@ export default function Profile() {
 
   // Hold the spinner until the role is authoritative. Without this the page
   // renders the plain-user links for a beat (admin role lands a tick later
-  // from the DB lookup), so "Your events" flashes and is briefly clickable
-  // before it swaps to "Admin". See roleNav.ts for the why.
+  // from the DB lookup), so "Manage your events" flashes and is briefly
+  // clickable before it swaps to "Admin". See roleNav.ts for the why.
   if (loading || !user || !roleResolved) {
     return <PageSpinner />;
   }
 
   const links = accountLinks(role);
+  const publishLabel =
+    role === "organizer" && venueName ? `Publish an event in ${venueName}` : "Publish an event";
 
   return (
     <div className="container max-w-2xl pt-6 md:pt-8 pb-24">
+      {/* Primary CTA — first thing on the hub: publish straight from here. */}
+      <Link
+        to="/publish"
+        className="group flex items-center justify-center gap-2 h-12 px-5 mb-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
+      >
+        <Plus className="h-4 w-4" /> {publishLabel}
+      </Link>
       <EmailConfirmedBadge className="mb-6" />
       {/* Masthead — same compact pattern as the Bars directory: a
           heading-display 24/30px on a hairline rule. */}

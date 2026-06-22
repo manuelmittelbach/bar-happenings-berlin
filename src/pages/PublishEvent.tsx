@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Clock3, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,6 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 
 export default function PublishEvent() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const queryClient = useQueryClient();
 	const { user, role, approvalStatus, loading, roleResolved } = useAuth();
 	const [venuePrefill, setVenuePrefill] = useState<Partial<EventFormData>>({});
@@ -95,21 +94,14 @@ export default function PublishEvent() {
 				} else {
 					toast.success("Event published!", { description: "Your event is now live on Inside Bars." });
 				}
-				// Pop /publish off the history instead of pushing /profile/events
-				// on top of it. /profile/events is already the previous entry in
-				// the normal flow, so back from it after publish lands wherever
-				// the user came from. `location.key === "default"` means deep-link
-				// (nothing to pop) — fall back to a replace-nav onto /profile/events.
-				if (location.key !== "default") {
-					navigate(-1);
-				} else {
-					navigate("/profile/events", { replace: true });
-				}
+				// Back to the account hub after publishing (replace so /publish
+				// doesn't linger in the history).
+				navigate("/profile", { replace: true });
 			} catch {
 				toast.error("Something went wrong. Please try again.");
 			}
 		},
-		[user, navigate, queryClient, venueId, isPlainUser, location.key]
+		[user, navigate, queryClient, venueId, isPlainUser]
 	);
 
 	if (loading || !roleResolved) {
@@ -171,9 +163,7 @@ export default function PublishEvent() {
 				onSubmit={handleSubmit}
 				optionalEntryInfo={role === "admin"}
 				secondaryActions={
-					// Go back rather than pushing a new /profile/events entry — otherwise
-					// the stack becomes events → publish → events, and pressing
-					// Back on "Your events" would return to the publish form.
+					// Cancel just pops back to wherever the user came from.
 					<button
 						type="button"
 						onClick={() => navigate(-1)}
