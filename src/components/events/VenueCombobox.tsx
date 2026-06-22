@@ -1,14 +1,6 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import type { VenueOption } from "@/components/events/EventForm";
 
 interface VenueComboboxProps {
@@ -18,65 +10,91 @@ interface VenueComboboxProps {
   onSelect: (id: string) => void;
 }
 
-/* Searchable + scrollable bar picker. Replaces the plain <select>: a button
- * shows the current choice, clicking it opens a popover with a search box on
- * top and the scrollable list below. Typing filters by bar name; the data flow
- * is unchanged — onSelect(id) fires exactly like the old <select> did. */
+/* Searchable + scrollable bar picker as a single field. Click it to focus,
+ * then either type to filter by name OR scroll the list and click a bar. The
+ * data flow is unchanged — onSelect(id) fires exactly like the old <select>. */
 export default function VenueCombobox({ options, value, onSelect }: VenueComboboxProps) {
-  const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.id === value);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+
+  // While the field is focused the user sees their live search; when it's
+  // closed it falls back to showing the chosen bar's name.
+  const inputValue = open ? query : selected?.name ?? "";
+
+  // Filter by the typed text (case-insensitive). An empty query — e.g. right
+  // after focusing — shows the whole list to scroll through.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.name.toLowerCase().includes(q));
+  }, [options, query]);
+
+  const choose = (o: VenueOption) => {
+    onSelect(o.id);
+    setQuery("");
+    setOpen(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          role="combobox"
-          aria-expanded={open}
-          className="flex w-full h-11 items-center justify-between gap-2 px-3 bg-background border-2 border-foreground font-serif text-base text-left outline-none focus:bg-card transition-colors"
-        >
-          <span className={cn("truncate", !selected && "text-foreground/30")}>
-            {selected ? selected.name : "Search bar…"}
-          </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-[var(--radix-popover-trigger-width)] p-0 rounded-none border-2 border-foreground"
-      >
-        {/* Match only against the bar name (the keywords below), so the id we
-         * use as each item's value never pollutes the search results. */}
-        <Command
-          className="rounded-none"
-          filter={(_value, search, keywords) => {
-            const text = (keywords?.join(" ") ?? "").toLowerCase();
-            return text.includes(search.toLowerCase()) ? 1 : 0;
+    <div className="relative">
+      <label className="flex items-center gap-2 h-11 px-3 bg-background border-2 border-foreground focus-within:bg-card transition-colors">
+        <Search className="h-4 w-4 shrink-0 opacity-50" />
+        <input
+          type="text"
+          value={inputValue}
+          placeholder="Search bar…"
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
           }}
-        >
-          <CommandInput placeholder="Search bar…" />
-          <CommandList>
-            <CommandEmpty>No bar found.</CommandEmpty>
-            {options.map((v) => (
-              <CommandItem
-                key={v.id}
-                value={v.id}
-                keywords={[v.name]}
-                onSelect={() => {
-                  onSelect(v.id);
-                  setOpen(false);
-                }}
-                className="rounded-none data-[selected='true']:bg-foreground data-[selected=true]:text-background"
-              >
-                <Check
-                  className={cn("mr-2 h-4 w-4 shrink-0", value === v.id ? "opacity-100" : "opacity-0")}
-                />
-                <span className="truncate">{v.name}</span>
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          onFocus={() => {
+            window.clearTimeout(closeTimer.current);
+            setQuery("");
+            setOpen(true);
+          }}
+          // Close a tick after blur so a click on a list item still registers.
+          onBlur={() => {
+            closeTimer.current = window.setTimeout(() => setOpen(false), 120);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setOpen(false);
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-full bg-transparent font-serif text-base outline-none placeholder:text-foreground/30"
+        />
+      </label>
+
+      {open && (
+        <ul className="absolute left-0 right-0 z-50 mt-1 max-h-[300px] overflow-y-auto bg-popover border-2 border-foreground">
+          {filtered.length === 0 ? (
+            <li className="px-3 py-6 text-center text-sm text-foreground/50">No bar found.</li>
+          ) : (
+            filtered.map((o) => (
+              <li key={o.id}>
+                <button
+                  type="button"
+                  // onMouseDown (not onClick) so the choice lands before the
+                  // input's blur closes the list.
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    choose(o);
+                  }}
+                  className={cn(
+                    "block w-full px-3 py-2 text-left font-serif text-base transition-colors hover:bg-foreground hover:text-background",
+                    o.id === value && "bg-foreground text-background",
+                  )}
+                >
+                  {o.name}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
