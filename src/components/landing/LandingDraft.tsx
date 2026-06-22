@@ -186,10 +186,14 @@ export default function LandingDraft() {
   // 0 = auto-cycle (plain crossfade, no horizontal slide).
   const [swipeDir, setSwipeDir] = useState(0);
   useEffect(() => {
-    // Both mobile and desktop auto-cycle: mobile crossfades to the next card
-    // every CYCLE_MS (5s), desktop keeps its slow continuous drift. The card
-    // can no longer be advanced by hand — it only changes on the auto-cycle.
-    if (heroPool.length < 2) return;
+    // Desktop-only continuous drift. The motion-probe watchdog, reanchor
+    // remount and remaining-time resume below all exist to heal the rAF drift
+    // that browsers freeze on tab-hide — they assume the cards are *always*
+    // moving. Mobile crossfades are discrete (the card sits still between
+    // ticks) and the desktop cards are display:none below lg, so that probe
+    // would read a permanent "stall" and re-anchor every ~600ms. Mobile gets
+    // its own simple interval effect instead (below).
+    if (heroPool.length < 2 || isMobile) return;
     let pendingTick: ReturnType<typeof setTimeout> | undefined;
     let interval: ReturnType<typeof setInterval> | undefined;
     // Wall-clock bookkeeping for the *currently pending* wait, so stop() can
@@ -324,6 +328,38 @@ export default function LandingDraft() {
       window.removeEventListener("focus", reanchor);
       window.removeEventListener("pageshow", reanchor);
       clearInterval(watchdog);
+      stop();
+    };
+  }, [heroPool.length, CYCLE_MS, isMobile]);
+
+  // Mobile auto-cycle — a plain interval that crossfades to the next card
+  // every CYCLE_MS. No watchdog/reanchor machinery: the mobile card is a
+  // discrete crossfade, not a continuous drift, so there's nothing for a
+  // motion-probe to "heal" (and probing the display:none desktop cards would
+  // misfire). Just pause while the tab is hidden and resume on return.
+  useEffect(() => {
+    if (heroPool.length < 2 || !isMobile) return;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const tick = () => {
+      setSwipeDir(0); // plain crossfade, no horizontal slide
+      setCycleIndex((i) => i + 1);
+    };
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(tick, CYCLE_MS);
+    };
+    const stop = () => {
+      if (interval) clearInterval(interval);
+      interval = undefined;
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       stop();
     };
   }, [heroPool.length, CYCLE_MS, isMobile]);
