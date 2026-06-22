@@ -322,7 +322,13 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 				settle(false);
 				recover();
 			} else {
+				// Tiles painted (or budget spent on a partial map). Only NOW do we
+				// start the pulse ripple — its per-frame setPaintProperty keeps the
+				// map permanently rendering, so starting it before this point would
+				// stop `idle` from ever firing and make the tile watchdog rebuild
+				// on a loop.
 				settle(true);
+				startPulse();
 			}
 		};
 		map.on("error", onError);
@@ -330,6 +336,31 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		// requestAnimationFrame id for the pulse animation — closed over the
 		// useEffect cleanup so it gets cancelled on unmount / retry.
 		let pulseRafId: number | null = null;
+
+		// Pulse ripple for live venues — outward ripple: radius grows linearly
+		// from 18→33px over each 2200ms cycle, while opacity follows a sine curve
+		// (0 → 0.32 → 0). The sin opacity hides the radius reset at the cycle
+		// boundary so there's no jerky stop. Started from onIdle (NOT here / not
+		// in the layer setup): the per-frame setPaintProperty marks the map dirty
+		// every tick, so if it ran before the first `idle` the map would never go
+		// idle and the tile watchdog would tear down + rebuild on a loop. The
+		// getLayer guard lets it spin harmlessly until the pulse layer is added.
+		const startPulse = () => {
+			const pulseStart = performance.now();
+			const animatePulse = (now: number) => {
+				const t = ((now - pulseStart) / 2200) % 1;
+				if (map.getLayer(LAYER_PULSE)) {
+					// Clamp opacity to [0, 1] — MapLibre's validator rejects
+					// near-zero values produced by floating-point edges of
+					// sin(t·π) at the cycle boundaries on Android WebView.
+					const opacity = Math.max(0, Math.min(1, 0.32 * Math.sin(t * Math.PI)));
+					map.setPaintProperty(LAYER_PULSE, "circle-radius", 18 + t * 28);
+					map.setPaintProperty(LAYER_PULSE, "circle-opacity", opacity);
+				}
+				pulseRafId = requestAnimationFrame(animatePulse);
+			};
+			pulseRafId = requestAnimationFrame(animatePulse);
+		};
 
 		// Cache the view in module state on every settled pan/zoom so navigating
 		// away (e.g. to an event detail) and back restores the user's exact
@@ -432,26 +463,9 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					},
 				});
 
-				// Pulse animation — outward ripple: radius grows linearly from
-				// 18→33px over each 2200ms cycle, while opacity follows a sine
-				// curve (0 → 0.32 → 0). The sin opacity hides the radius reset
-				// at the cycle boundary so there's no jerky stop — the pulse
-				// fades in at the start, peaks mid-cycle, fades out at the end,
-				// and the next cycle starts fresh from radius 18.
-				const pulseStart = performance.now();
-				const animatePulse = (now: number) => {
-					const t = ((now - pulseStart) / 2200) % 1;
-					if (map.getLayer(LAYER_PULSE)) {
-						// Clamp opacity to [0, 1] — MapLibre's validator rejects
-						// near-zero values produced by floating-point edges of
-						// sin(t·π) at the cycle boundaries on Android WebView.
-						const opacity = Math.max(0, Math.min(1, 0.32 * Math.sin(t * Math.PI)));
-						map.setPaintProperty(LAYER_PULSE, "circle-radius", 18 + t * 28);
-						map.setPaintProperty(LAYER_PULSE, "circle-opacity", opacity);
-					}
-					pulseRafId = requestAnimationFrame(animatePulse);
-				};
-				pulseRafId = requestAnimationFrame(animatePulse);
+				// Pulse animation is started from onIdle once tiles confirm
+				// painted (see startPulse above) — not here, or the per-frame
+				// repaint would block the `idle` the tile watchdog waits on.
 
 				map.on("mouseenter", LAYER_ICONS, () => { map.getCanvas().style.cursor = "pointer"; });
 				map.on("mouseleave", LAYER_ICONS, () => { map.getCanvas().style.cursor = ""; });
