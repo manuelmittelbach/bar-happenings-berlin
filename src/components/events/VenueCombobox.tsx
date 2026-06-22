@@ -72,7 +72,7 @@ export default function VenueCombobox({ options, value, onSelect, onEnterManual 
       </label>
 
       {open && (
-        <ul className="absolute left-0 right-0 z-50 mt-1 max-h-[300px] overflow-y-auto bg-popover border-2 border-foreground">
+        <ul className="absolute left-0 right-0 z-50 mt-1 max-h-[340px] overflow-y-auto overscroll-none bg-popover border-2 border-foreground">
           {filtered.length === 0 ? (
             <li className="px-3 py-6 text-center">
               <p className="text-sm text-foreground/50">No bar found.</p>
