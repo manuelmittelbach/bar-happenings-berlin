@@ -162,11 +162,13 @@
    opens the bar page) is well-established. */
 @media (hover: hover) {
   .map-popup-venue-link:hover { color: #ED5B1C !important; }
+  .map-popup-venue-link:hover .map-popup-chevron { color: #ED5B1C !important; }
 }
 /* Touch press — there's no :hover on touch, so mirror the accent on
    :active. A press (incl. the hold before a long-press menu) then gives
    the same color feedback as the links on the events page. */
 .map-popup-venue-link:active { color: #ED5B1C !important; }
+.map-popup-venue-link:active .map-popup-chevron { color: #ED5B1C !important; }
 /* Hide the default tip — the brutalist 2px-bordered cream card reads
    as its own object against the map; a CSS-triangle tip with a white
    background would break the cream palette and look stitched-on. The
@@ -210,6 +212,7 @@ textarea:-webkit-autofill:focus {
      into the same hue. */
   .map-popup-btn:hover .map-popup-disc { background: #f8f5ef !important; }
   .map-popup-btn:hover .map-popup-disc svg { stroke: var(--hover-color, #ED5B1C) !important; }
+  .map-popup-btn:hover .map-popup-row-chevron { color: white !important; }
 }
 /* Touch press — :active mirrors the row hover so a press (and the hold
    before a long-press menu) shows the category color, matching the
@@ -219,6 +222,7 @@ textarea:-webkit-autofill:focus {
 .map-popup-btn:active .map-popup-meta { color: rgba(255,255,255,0.85) !important; }
 .map-popup-btn:active .map-popup-disc { background: #f8f5ef !important; }
 .map-popup-btn:active .map-popup-disc svg { stroke: var(--hover-color, #ED5B1C) !important; }
+.map-popup-btn:active .map-popup-row-chevron { color: white !important; }
 
 @layer utilities {
   .grayscale-hover {

@@ -30,6 +30,11 @@ const LAYER_PULSE = "venue-live-pulse";
 // MapLibre popup is built with vanilla DOM, not React.
 const PERSON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></svg>`;
 
+// Right-pointing chevron — the "this opens a page" affordance shared by
+// the venue-name link and each event row, so both read as tappable. Drawn
+// with currentColor so a parent style/hover rule can flip its hue.
+const CHEVRON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+
 // Module-level cache: survives in-tab navigation (Liste↔Map) but dies on
 // refresh, so a hard reload returns to Berlin-Default. Intentionally not
 // sessionStorage — that would persist across refresh too.
@@ -257,7 +262,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		const watchdogMs = hasAutoRetriesLeft
 			? 3000
 			: Capacitor.isNativePlatform() ? 20000 : 10000;
-		const watchdogId = window.setTimeout(() => {
+
+		// Tear the map down and either silently rebuild (auto-retry budget
+		// left) or surface the manual retry UI. Shared by every failure
+		// detector below: the style/load watchdog, the tile watchdog, and the
+		// idle-with-errors check.
+		const recover = () => {
 			if (mapRef.current === map) {
 				map.remove();
 				mapRef.current = null;
@@ -271,7 +281,51 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 			} else {
 				setLoadFailed(true);
 			}
-		}, watchdogMs);
+		};
+
+		// Phase 1 — style/engine watchdog: fires if MapLibre never reaches the
+		// "load" event (style JSON unreachable, GL context failed, or a
+		// backgrounded tab that stalled on resume).
+		const watchdogId = window.setTimeout(recover, watchdogMs);
+
+		// Phase 2 — tile watchdog + error tally. `load` only means the style
+		// JSON arrived; the actual map tiles paint afterwards over the network.
+		// A blocked/slow tile CDN leaves the map blank with just our markers
+		// floating on white — the exact "sometimes loads like this" bug. So we
+		// DON'T treat `load` as success: we wait for the map to go `idle`
+		// (initial tiles settled) and confirm no tile fetch errored along the
+		// way. `idle` clears its pending set on BOTH success and failure, so
+		// the error tally is what distinguishes a painted map from a blank one.
+		let tilesWatchdogId: number | null = null;
+		let tileErrors = 0;
+		const onError = (e: { sourceId?: string }) => {
+			// Our own GeoJSON markers load locally and never fetch, so any
+			// errored source here is the background tiles/sprite/glyphs.
+			if (e?.sourceId === SOURCE_ID) return;
+			tileErrors += 1;
+		};
+		const settle = (ok: boolean) => {
+			if (tilesWatchdogId !== null) window.clearTimeout(tilesWatchdogId);
+			tilesWatchdogId = null;
+			map.off("idle", onIdle);
+			map.off("error", onError);
+			// Only a fully-painted map refreshes the auto-retry budget for the
+			// next resume; a blank/failed one leaves it spent.
+			if (ok) autoRetryRef.current = 0;
+		};
+		const onIdle = () => {
+			if (tileErrors > 0 && autoRetryRef.current < MAX_AUTO_RETRIES) {
+				// Engine settled but tiles failed to fetch → blank map. Rebuild
+				// silently while budget remains (a retry usually hits warm
+				// tiles). Once budget's spent we accept whatever painted rather
+				// than flashing an error over a map that may be partly there.
+				settle(false);
+				recover();
+			} else {
+				settle(true);
+			}
+		};
+		map.on("error", onError);
 
 		// requestAnimationFrame id for the pulse animation — closed over the
 		// useEffect cleanup so it gets cancelled on unmount / retry.
@@ -287,8 +341,19 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 
 		map.on("load", () => {
 			window.clearTimeout(watchdogId);
-			// Loaded cleanly — give the next resume a fresh auto-retry budget.
-			autoRetryRef.current = 0;
+			// Style JSON arrived, but the tiles paint over the network next.
+			// Start the tile watchdog and wait for `idle` before declaring the
+			// map loaded (see Phase 2 above). Tiles run a touch slower than the
+			// style, so give the auto-retry pass 4s; full ceilings otherwise.
+			const tilesWatchdogMs = hasAutoRetriesLeft
+				? 4000
+				: Capacitor.isNativePlatform() ? 20000 : 10000;
+			tilesWatchdogId = window.setTimeout(() => {
+				// Tiles never settled (hung CDN) → no `idle` ever fired. Recover.
+				settle(false);
+				recover();
+			}, tilesWatchdogMs);
+			map.on("idle", onIdle);
 			(async () => {
 				// Register base category images (uses refs so we see latest data
 				// even though this callback was captured at mount time)
@@ -459,6 +524,17 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
 					nameEl.className = "map-popup-venue-link";
 					nameEl.textContent = props.venueName;
+					// Chevron right after the name — same "opens a page" cue the
+					// event rows carry, so the bar reads as tappable too. Kept
+					// inline (vertical-align:middle) so it trails the last line
+					// when a long name wraps. Muted ink by default; the
+					// .map-popup-chevron hover/active rule flips it to accent.
+					const nameChevron = document.createElement("span");
+					nameChevron.className = "map-popup-chevron";
+					nameChevron.style.cssText =
+						"display:inline-flex;vertical-align:middle;margin-left:5px;color:#9a958a;transition:color 0.12s ease;";
+					nameChevron.innerHTML = CHEVRON_SVG;
+					nameEl.appendChild(nameChevron);
 					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
 					nameEl.addEventListener("click", (ev) => {
@@ -473,6 +549,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// matches the event-row delay so bar + event taps feel
 						// identical, and stays inside the "feels instant" window.
 						nameEl.style.color = "#ED5B1C";
+						nameChevron.style.color = "#ED5B1C";
 						setTimeout(() => onVenueClickRef.current(props.venueId), 80);
 					});
 					nameRow.appendChild(nameEl);
@@ -597,6 +674,18 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						txtCol.appendChild(metaP);
 						btn.appendChild(txtCol);
 
+						// Trailing chevron — mirrors the venue-name cue so both
+						// levels of the popup read as tappable. The event still
+						// out-weights the bar visually via its colored disc; this
+						// just confirms the row navigates. Flips to white when the
+						// row fills with its category color on hover/press.
+						const rowChevron = document.createElement("span");
+						rowChevron.className = "map-popup-row-chevron";
+						rowChevron.style.cssText =
+							"flex:0 0 auto;display:inline-flex;align-items:center;color:#9a958a;transition:color 0.12s ease;";
+						rowChevron.innerHTML = CHEVRON_SVG;
+						btn.appendChild(rowChevron);
+
 						btn.addEventListener("click", (ev) => {
 							// Let the browser open a new tab on modified clicks; only
 							// intercept a plain left-click to stay SPA + keep the flash.
@@ -605,6 +694,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 							btn.style.background = evt.categoryColor;
 							titleP.style.color = "white";
 							metaP.style.color = "rgba(255,255,255,0.8)";
+							rowChevron.style.color = "white";
 							setTimeout(() => onEventClickRef.current(evt.id), 80);
 						});
 						scrollEl.appendChild(btn);
@@ -654,9 +744,10 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 
 					// Header padding contribution: 14L + 44R (44R reserves space
 					// for the absolutely-positioned close button). Row text-
-					// column is offset by 14L padding + 36 disc + 12 gap + 14R.
+					// column is offset by 14L padding + 36 disc + 12 gap to text
+					// + 12 gap to chevron + 16 chevron + 14R.
 					const HEADER_CHROME = 14 + 44;
-					const ROW_CHROME = 14 + 36 + 12 + 14;
+					const ROW_CHROME = 14 + 36 + 12 + 12 + 16 + 14;
 					const computed = Math.max(
 						widestHeaderLine + HEADER_CHROME,
 						widestRowTextLine + ROW_CHROME,
@@ -727,6 +818,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 		mapRef.current = map;
 		return () => {
 			window.clearTimeout(watchdogId);
+			if (tilesWatchdogId !== null) window.clearTimeout(tilesWatchdogId);
 			if (pulseRafId !== null) cancelAnimationFrame(pulseRafId);
 			if (mapRef.current === map) {
 				map.remove();
