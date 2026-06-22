@@ -447,33 +447,28 @@ export default function EventForm({
         {venueOptions && (
           <div className="space-y-3">
             <label className={labelClass}>Location <span className="text-accent">*</span></label>
-            <div className="flex gap-2">
-              {(["existing", "manual"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => changeVenueMode(mode)}
-                  className={`h-9 px-3 border-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
-                    venueMode === mode
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-foreground hover:bg-foreground hover:text-background"
-                  }`}
-                >
-                  {mode === "existing" ? "Choose a bar" : "Enter manually"}
-                </button>
-              ))}
-            </div>
             {venueMode === "existing" ? (
               <VenueCombobox
                 options={venueOptions}
                 value={formData.venueId ?? ""}
                 onSelect={selectVenue}
+                onEnterManual={() => changeVenueMode("manual")}
               />
             ) : (
-              <VenueAddressFields
-                value={{ name: formData.venue, street: manualStreet, plz: manualPlz, city: manualCity }}
-                onChange={setManualVenue}
-              />
+              <div className="space-y-3">
+                <VenueAddressFields
+                  value={{ name: formData.venue, street: manualStreet, plz: manualPlz, city: manualCity }}
+                  onChange={setManualVenue}
+                />
+                {/* No toggle anymore — let the user slip back to the search. */}
+                <button
+                  type="button"
+                  onClick={() => changeVenueMode("existing")}
+                  className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 hover:text-foreground transition-colors"
+                >
+                  ← Search for a bar instead
+                </button>
+              </div>
             )}
           </div>
         )}

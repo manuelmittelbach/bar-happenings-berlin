@@ -8,12 +8,15 @@ interface VenueComboboxProps {
   /* The currently selected venue id; "" means nothing is picked yet. */
   value: string;
   onSelect: (id: string) => void;
+  /* Switch the form to free-text address entry — offered when a search
+   * turns up no matching bar. */
+  onEnterManual: () => void;
 }
 
 /* Searchable + scrollable bar picker as a single field. Click it to focus,
  * then either type to filter by name OR scroll the list and click a bar. The
  * data flow is unchanged — onSelect(id) fires exactly like the old <select>. */
-export default function VenueCombobox({ options, value, onSelect }: VenueComboboxProps) {
+export default function VenueCombobox({ options, value, onSelect, onEnterManual }: VenueComboboxProps) {
   const selected = options.find((o) => o.id === value);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -71,7 +74,20 @@ export default function VenueCombobox({ options, value, onSelect }: VenueCombobo
       {open && (
         <ul className="absolute left-0 right-0 z-50 mt-1 max-h-[300px] overflow-y-auto bg-popover border-2 border-foreground">
           {filtered.length === 0 ? (
-            <li className="px-3 py-6 text-center text-sm text-foreground/50">No bar found.</li>
+            <li className="px-3 py-6 text-center">
+              <p className="text-sm text-foreground/50">No bar found.</p>
+              <button
+                type="button"
+                // onMouseDown (not onClick) so it fires before the input blurs.
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onEnterManual();
+                }}
+                className="mt-3 inline-block border-2 border-foreground px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:bg-foreground hover:text-background"
+              >
+                Enter manually
+              </button>
+            </li>
           ) : (
             filtered.map((o) => (
               <li key={o.id}>
