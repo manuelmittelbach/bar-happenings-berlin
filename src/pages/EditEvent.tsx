@@ -229,6 +229,10 @@ export default function EditEvent() {
       } else {
         toast.success("Submission withdrawn.");
       }
+      // Refresh the cached lists so the withdrawn row drops out of "Manage
+      // your events" (key ["events","by-creator",…]) instead of lingering.
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
       if (location.key !== "default") navigate(-1);
       else navigate("/profile/events", { replace: true });
     } catch {
