@@ -53,13 +53,6 @@ export default function Profile() {
 
   return (
     <div className="container max-w-2xl pt-6 md:pt-8 pb-24">
-      {/* Primary CTA — first thing on the hub: publish straight from here. */}
-      <Link
-        to="/publish"
-        className="group flex items-center justify-center gap-2 h-12 px-5 mb-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
-      >
-        <Plus className="h-4 w-4" /> {publishLabel}
-      </Link>
       <EmailConfirmedBadge className="mb-6" />
       {/* Masthead — same compact pattern as the Bars directory: a
           heading-display 24/30px on a hairline rule. */}
@@ -68,6 +61,14 @@ export default function Profile() {
           <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Account</h1>
         </div>
       </header>
+
+      {/* Primary CTA — sits under the masthead, above the nav links. */}
+      <Link
+        to="/publish"
+        className="group flex items-center justify-center gap-2 h-12 px-5 mb-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
+      >
+        <Plus className="h-4 w-4" /> {publishLabel}
+      </Link>
 
       <nav className="border-2 border-foreground divide-y-2 divide-foreground shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)]">
         {links.map((l) => (
