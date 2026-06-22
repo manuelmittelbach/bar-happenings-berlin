@@ -5,6 +5,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { LANGUAGES } from "@/data/languages";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import VenueAddressFields from "@/components/events/VenueAddressFields";
+import VenueCombobox from "@/components/events/VenueCombobox";
 import { buildVenueAddress, type VenueFields } from "@/lib/venueAddress";
 import { useCategories } from "@/hooks/useEvents";
 import { CUSTOM_ENTRY_SENTINEL, ENTRY_AMOUNTS, PREDEFINED_ENTRY_OPTIONS } from "@/data/entryOptions";
@@ -463,16 +464,11 @@ export default function EventForm({
               ))}
             </div>
             {venueMode === "existing" ? (
-              <select
+              <VenueCombobox
+                options={venueOptions}
                 value={formData.venueId ?? ""}
-                onChange={(e) => selectVenue(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Select a bar…</option>
-                {venueOptions.map((v) => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
-                ))}
-              </select>
+                onSelect={selectVenue}
+              />
             ) : (
               <VenueAddressFields
                 value={{ name: formData.venue, street: manualStreet, plz: manualPlz, city: manualCity }}
