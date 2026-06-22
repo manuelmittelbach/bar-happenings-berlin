@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDateWithDay, berlinDateString } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Plus, Users, CalendarDays, CalendarPlus, Clock, Clock3, XCircle, CheckCircle2, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
+import { Eye, Pencil, Plus, Users, CalendarDays, CalendarPlus, Clock, Clock3, XCircle, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator, fetchMyStagedSubmissions, fetchOrganizerById, extendEventSeries } from "@/lib/supabaseQueries";
@@ -10,7 +10,6 @@ import { isEventInPast, isEventStillOnline, hasEventStarted } from "@/lib/eventS
 import { formatRecurrenceLabel, parseRule, generateOccurrences, defaultUntil } from "@/lib/recurrence";
 import { Spinner } from "@/components/ui/spinner";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { consumeJustConfirmed, clearJustConfirmedSoon } from "@/lib/justConfirmed";
 import type { BarlinEvent } from "@/types/event";
 import { SHOW_INTEREST_COUNT } from "@/lib/featureFlags";
 
@@ -33,13 +32,6 @@ export default function OrganizerDashboard() {
   // owners, and now plain users (who see their own submitted events).
   const isApprovedAccess =
     role === "admin" || role === "user" || (role === "organizer" && approvalStatus === "approved");
-
-  const [justConfirmed] = useState(consumeJustConfirmed);
-
-  useEffect(() => {
-    if (!justConfirmed) return;
-    return clearJustConfirmedSoon();
-  }, [justConfirmed]);
 
   useEffect(() => {
     if (!loading && roleResolved && role !== "user" && role !== "organizer" && role !== "admin") {
@@ -185,11 +177,6 @@ export default function OrganizerDashboard() {
     return (
       <div className="flex-1 flex items-center justify-center py-16">
         <div className="w-full max-w-md mx-auto px-4 text-center space-y-5">
-          {justConfirmed && (
-              <div className="inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
-                <CheckCircle2 className="h-4 w-4" /> Email confirmed
-              </div>
-            )}
             <div className="flex justify-center">
               {rejected ? (
                 <XCircle className="h-10 w-10 text-accent" />
@@ -237,11 +224,6 @@ export default function OrganizerDashboard() {
         </div>
       </div>
     <div className="container max-w-2xl pt-4 pb-8">
-          {justConfirmed && (
-            <div className="mb-6 inline-flex items-center gap-2 border-2 border-foreground bg-green-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-green-700">
-              <CheckCircle2 className="h-4 w-4" /> Email confirmed
-            </div>
-          )}
           {/* Masthead — Bars-directory pattern: compact heading-display on
               a hairline rule. */}
           <header className="mb-6 md:mb-8">
