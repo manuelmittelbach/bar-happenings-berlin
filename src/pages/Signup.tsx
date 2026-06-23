@@ -8,8 +8,8 @@ import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { PASSWORD_MIN_LENGTH } from "@/lib/passwordStrength";
-
-type VenueOption = { id: string; name: string };
+import VenueCombobox from "@/components/events/VenueCombobox";
+import type { VenueOption } from "@/components/events/EventForm";
 
 /* Signup surface. Reached from /for-organizers → "Create account" (passes
  * `barOwner: true` via router state so the bar-owner checkbox starts
@@ -59,7 +59,7 @@ export default function Signup() {
 		let cancelled = false;
 		supabase
 			.from("venues")
-			.select("id, name")
+			.select("id, name, address, neighborhood")
 			.order("name", { ascending: true })
 			.then(({ data, error: venueErr }) => {
 				if (cancelled || venueErr || !data) return;
@@ -95,6 +95,14 @@ export default function Signup() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError("");
+
+		// The combobox isn't a native form control, so it can't carry `required`
+		// like the old <select> did — guard the empty selection by hand.
+		if (isBarOwner && !barNotInList && !selectedVenueId) {
+			setError("Please choose your bar, or enter it manually.");
+			return;
+		}
+
 		setLoading(true);
 
 		try {
@@ -190,38 +198,20 @@ export default function Signup() {
 					{!barNotInList && (
 						<div className="space-y-1.5">
 							<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar name <span className="text-accent">*</span></label>
-							<select
-								required
+							<VenueCombobox
+								options={venueOptions}
 								value={selectedVenueId}
-								onChange={(e) => setSelectedVenueId(e.target.value)}
-								className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
-							>
-								<option value="">Select your bar…</option>
-								{venueOptions.map(v => (
-									<option key={v.id} value={v.id}>{v.name}</option>
-								))}
-							</select>
+								onSelect={setSelectedVenueId}
+								onEnterManual={() => {
+									setBarNotInList(true);
+									setSelectedVenueId("");
+								}}
+							/>
 						</div>
 					)}
 
-					<div className="flex items-center gap-2">
-						<input
-							id="barNotInList"
-							type="checkbox"
-							checked={barNotInList}
-							onChange={(e) => {
-								setBarNotInList(e.target.checked);
-								if (e.target.checked) setSelectedVenueId("");
-							}}
-							className="h-4 w-4"
-						/>
-						<label htmlFor="barNotInList" className="text-sm font-medium cursor-pointer">
-							Bar not in list
-						</label>
-					</div>
-
 					{barNotInList && (
-						<>
+						<div className="space-y-4 border-l-2 border-foreground/20 pl-4">
 							<div className="space-y-1.5">
 								<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar name <span className="text-accent">*</span></label>
 								<input
@@ -271,7 +261,21 @@ export default function Signup() {
 									className="w-full h-11 px-3 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
 								/>
 							</div>
-						</>
+							{/* Mirror the event form: slip back to the bar search. */}
+							<button
+								type="button"
+								onClick={() => {
+									setBarNotInList(false);
+									setBarName("");
+									setBarStreet("");
+									setBarPostalCode("");
+									setBarCity("");
+								}}
+								className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55 hover:text-foreground transition-colors"
+							>
+								← Search for a bar instead
+							</button>
+						</div>
 					)}
 					<div className="space-y-1.5">
 						<label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">Bar website</label>
