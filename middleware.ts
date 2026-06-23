@@ -13,11 +13,10 @@
 // shell (React boots normally); crawlers read the per-event tags. Every other
 // route is untouched and falls through to the normal SPA rewrite.
 //
-// Scope (for now): a TEXT-ONLY card — title led by a compact date/time
-// ("Di 23.6., 20:00 · <event>") so it survives truncation, plus a
-// "venue — description" line, no preview image. (Adding an event/venue image or a
-// generated branded card is a deliberate later step — see
-// ~/.claude/plans/per-event-share-previews.md.)
+// Scope (for now): a TEXT-ONLY card — the event title (capped to ~2 lines) + a
+// "date · venue" line. No preview image, and the event's own "about" text is
+// never included. (Adding an event/venue image or a generated branded card is a
+// deliberate later step — see ~/.claude/plans/per-event-share-previews.md.)
 
 // Public anon credentials — identical to what already ships in the client JS
 // bundle (protected by RLS, safe to embed). Inlined rather than read from
@@ -49,6 +48,11 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
+// Rough character budget for ~2 preview lines. Clients ultimately decide the
+// line count and wrapping; this just stops an overly long title from running
+// past two lines. Tune if titles still wrap to three lines on your test device.
+const TITLE_MAX = 70;
+
 // Escape for use inside an HTML double-quoted attribute. Without this a stray
 // `"` or `<` in a user-entered title would break out of the meta tag.
 function esc(value: string): string {
@@ -60,6 +64,16 @@ function esc(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Cap a title near TITLE_MAX, breaking on a word boundary where possible and
+// appending an ellipsis so it can't run past ~2 preview lines.
+function truncateTitle(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
+  return base.trimEnd() + "…";
+}
+
 // Deterministic German date label, no Intl/ICU dependency (edge ICU coverage
 // is not guaranteed). "Do, 25. Juni" — with time: "Do, 25. Juni, 20:00 Uhr".
 function formatDate(dateStr: string | null, timeStr: string | null): string {
@@ -69,19 +83,6 @@ function formatDate(dateStr: string | null, timeStr: string | null): string {
   const d = new Date(Date.UTC(y, mo - 1, da, 12));
   let label = `${WEEKDAYS[d.getUTCDay()]}, ${da}. ${MONTHS[mo - 1]}`;
   if (timeStr) label += `, ${timeStr.slice(0, 5)} Uhr`;
-  return label;
-}
-
-// Compact variant for the title prefix: "Di 23.6., 20:00" (numeric month, no
-// "Uhr") — short enough to survive ahead of a long event name when the title
-// is truncated.
-function formatDateCompact(dateStr: string | null, timeStr: string | null): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || "");
-  if (!m) return "";
-  const y = +m[1], mo = +m[2], da = +m[3];
-  const wd = WEEKDAYS[new Date(Date.UTC(y, mo - 1, da, 12)).getUTCDay()];
-  let label = `${wd} ${da}.${mo}.`;
-  if (timeStr) label += `, ${timeStr.slice(0, 5)}`;
   return label;
 }
 
@@ -110,25 +111,17 @@ function setMeta(html: string, selector: string, value: string): string {
 
 function injectMeta(html: string, id: string, event: EventRow): string {
   const title = event.title?.trim() || "Inside Bars";
+  const dateLabel = formatDate(event.date, event.start_time);
+  // Description is only date/time + venue. The event's own "about" text is
+  // deliberately never included.
+  const description = [dateLabel, event.venue?.trim()].filter(Boolean).join(" · ");
   const url = `${SITE}/event/${encodeURIComponent(id)}`;
-  const eTitle = esc(title);
 
-  // Card headline leads with a compact date/time, so when a long title is
-  // truncated the day + time survive — clients show the title but often drop or
-  // trim the description, where the date used to live. e.g.
-  // "Di 23.6., 20:00 · <event name>".
-  const compact = formatDateCompact(event.date, event.start_time);
-  const cardTitle = compact ? `${esc(compact)} · ${eTitle}` : eTitle;
-
-  // Description = venue + a snippet of the event's own text. The date is NOT
-  // repeated here — it now lives in the title.
-  let description = event.venue?.trim() || "";
-  const snippet = event.description?.replace(/\s+/g, " ").trim();
-  if (snippet) {
-    const trimmed = snippet.length > 110 ? snippet.slice(0, 109) + "…" : snippet;
-    description = description ? `${description} — ${trimmed}` : trimmed;
-  }
   const eDesc = esc(description);
+  // Full title for the browser tab / SEO; a length-capped title for the card so
+  // an overly long name can't run past ~2 preview lines.
+  const eTitleFull = esc(title);
+  const eTitle = esc(truncateTitle(title, TITLE_MAX));
 
   // No preview image for events (for now) — a text-only card. Strip every
   // og:image* / twitter:image tag and downgrade the Twitter card to "summary"
@@ -137,15 +130,16 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   html = html.replace(/\s*<meta\s+name="twitter:image"[^>]*>/gi, "");
   html = setMeta(html, 'name="twitter:card"', "summary");
 
-  // Card title = date-led cardTitle (no "· Inside Bars" — clients show the iB
-  // favicon + og:site_name already). The <title> keeps the brand suffix for
-  // the browser tab / SEO.
-  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitle} · Inside Bars</title>`);
+  // The card headline is the bare event name. Clients already show the "iB"
+  // favicon + og:site_name for branding, so a "· Inside Bars" suffix on the
+  // title just clutters the line ("…konzert I · Inside Bars"). The brand stays
+  // in <title> only (browser tab / SEO).
+  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitleFull} · Inside Bars</title>`);
   html = setMeta(html, 'name="description"', eDesc);
   html = setMeta(html, 'property="og:url"', esc(url));
-  html = setMeta(html, 'property="og:title"', cardTitle);
+  html = setMeta(html, 'property="og:title"', eTitle);
   html = setMeta(html, 'property="og:description"', eDesc);
-  html = setMeta(html, 'name="twitter:title"', cardTitle);
+  html = setMeta(html, 'name="twitter:title"', eTitle);
   html = setMeta(html, 'name="twitter:description"', eDesc);
   return html;
 }
