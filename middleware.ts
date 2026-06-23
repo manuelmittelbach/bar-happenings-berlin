@@ -13,10 +13,10 @@
 // shell (React boots normally); crawlers read the per-event tags. Every other
 // route is untouched and falls through to the normal SPA rewrite.
 //
-// Scope (for now): a TEXT-ONLY card — the event title (capped to ~2 lines) + a
-// "date · venue" line. No preview image, and the event's own "about" text is
-// never included. (Adding an event/venue image or a generated branded card is a
-// deliberate later step — see ~/.claude/plans/per-event-share-previews.md.)
+// Scope: a small "summary" card — the iB logo (square thumbnail, left), the
+// event title (capped), and a "time · neighborhood · venue" line. No event
+// photo; the event's own "about" text is never included. (See
+// ~/.claude/plans/per-event-share-previews.md.)
 
 // Public anon credentials — identical to what already ships in the client JS
 // bundle (protected by RLS, safe to embed). Inlined rather than read from
@@ -36,10 +36,10 @@ export const config = { matcher: "/event/:id" };
 
 interface EventRow {
   title: string | null;
-  description: string | null;
   date: string | null;
   start_time: string | null;
   venue: string | null;
+  neighborhood: string | null;
 }
 
 const MONTHS = [
@@ -94,7 +94,7 @@ function formatDate(dateStr: string | null, timeStr: string | null): string {
 // RLS governs visibility, so a non-public id simply yields null → generic card.
 async function loadEvent(id: string): Promise<EventRow | null> {
   const headers = { apikey: SUPABASE_ANON_KEY, authorization: `Bearer ${SUPABASE_ANON_KEY}` };
-  const select = "select=title,description,date,start_time,venue&limit=1";
+  const select = "select=title,date,start_time,venue,neighborhood&limit=1";
   const query = (table: string): Promise<EventRow | null> =>
     fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&${select}`, { headers })
       .then((r) => (r.ok ? r.json() : []))
@@ -115,9 +115,10 @@ function setMeta(html: string, selector: string, value: string): string {
 function injectMeta(html: string, id: string, event: EventRow): string {
   const title = event.title?.trim() || "Inside Bars";
   const dateLabel = formatDate(event.date, event.start_time);
-  // Description is only date/time + venue. The event's own "about" text is
-  // deliberately never included.
-  const description = [dateLabel, event.venue?.trim()].filter(Boolean).join(" · ");
+  // The line under the title: time · Ort (neighborhood) · Bar (venue).
+  const description = [dateLabel, event.neighborhood?.trim(), event.venue?.trim()]
+    .filter(Boolean)
+    .join(" · ");
   const url = `${SITE}/event/${encodeURIComponent(id)}`;
 
   const eDesc = esc(description);
@@ -126,17 +127,19 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   const eTitleFull = esc(title);
   const eTitle = esc(truncateTitle(title, TITLE_MAX));
 
-  // No preview image for events (for now) — a text-only card. Strip every
-  // og:image* / twitter:image tag and downgrade the Twitter card to "summary"
-  // (a "summary_large_image" card with no image renders as a broken box).
-  html = html.replace(/\s*<meta\s+property="og:image[^"]*"[^>]*>/gi, "");
-  html = html.replace(/\s*<meta\s+name="twitter:image"[^>]*>/gi, "");
+  // Small "summary" card: the iB logo as a square thumbnail on the left, the
+  // title + description on the right. A fixed brand logo, not an event/venue
+  // photo. og:image dimensions are the asset's real 512×512.
+  const logo = `${SITE}/pwa-512x512.png`;
   html = setMeta(html, 'name="twitter:card"', "summary");
+  html = setMeta(html, 'property="og:image"', logo);
+  html = setMeta(html, 'property="og:image:width"', "512");
+  html = setMeta(html, 'property="og:image:height"', "512");
+  html = setMeta(html, 'property="og:image:alt"', "Inside Bars");
+  html = setMeta(html, 'name="twitter:image"', logo);
 
-  // The card headline is the bare event name. Clients already show the "iB"
-  // favicon + og:site_name for branding, so a "· Inside Bars" suffix on the
-  // title just clutters the line ("…konzert I · Inside Bars"). The brand stays
-  // in <title> only (browser tab / SEO).
+  // The <title> keeps the brand suffix for the browser tab / SEO; the card uses
+  // the bare (capped) event title.
   html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitleFull} · Inside Bars</title>`);
   html = setMeta(html, 'name="description"', eDesc);
   html = setMeta(html, 'property="og:url"', esc(url));
