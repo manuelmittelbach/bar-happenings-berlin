@@ -76,17 +76,6 @@ export default function VenueCombobox({ options, value, onSelect, onEnterManual 
           {filtered.length === 0 ? (
             <li className="px-3 py-6 text-center">
               <p className="text-sm text-foreground/50">No bar found.</p>
-              <button
-                type="button"
-                // onMouseDown (not onClick) so it fires before the input blurs.
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onEnterManual();
-                }}
-                className="mt-3 inline-block border-2 border-foreground px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:bg-foreground hover:text-background"
-              >
-                Enter manually
-              </button>
             </li>
           ) : (
             filtered.map((o) => (
@@ -109,6 +98,22 @@ export default function VenueCombobox({ options, value, onSelect, onEnterManual 
               </li>
             ))
           )}
+          {/* Manual-entry escape hatch, pinned to the bottom of the list. A user
+              can scroll the whole list, not find their bar, and still switch to
+              typing it in — it's no longer gated on an empty search. */}
+          <li className="sticky bottom-0 border-t-2 border-foreground/15 bg-popover">
+            <button
+              type="button"
+              // onMouseDown (not onClick) so it fires before the input blurs.
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onEnterManual();
+              }}
+              className="block w-full px-3 py-2.5 text-left font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:bg-foreground hover:text-background"
+            >
+              Not in the list? Enter manually
+            </button>
+          </li>
         </ul>
       )}
     </div>
