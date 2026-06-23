@@ -14,8 +14,8 @@
 // route is untouched and falls through to the normal SPA rewrite.
 //
 // Scope: a small "summary" card — the iB logo (square thumbnail, left), the
-// event title (capped), and a "time · neighborhood · venue" line. No event
-// photo; the event's own "about" text is never included. (See
+// full event title, and a "time · neighborhood · venue" line. No event photo;
+// the event's own "about" text is never included. (See
 // ~/.claude/plans/per-event-share-previews.md.)
 
 // Public anon credentials — identical to what already ships in the client JS
@@ -48,13 +48,6 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
-// Character budget so the card title stays within ~2 preview lines (WhatsApp).
-// A 3-line title crowds out the description line where the date/time lives, so
-// we cap aggressively and append "…". Lines are ~24–28 chars on a phone, so ~40
-// keeps it to two lines with room to spare. Tune if titles still wrap to three
-// lines (lower it) or get cut too short (raise it) on your device.
-const TITLE_MAX = 40;
-
 // Escape for use inside an HTML double-quoted attribute. Without this a stray
 // `"` or `<` in a user-entered title would break out of the meta tag.
 function esc(value: string): string {
@@ -64,17 +57,6 @@ function esc(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-// Cap a title near TITLE_MAX, breaking on a word boundary where possible and
-// appending an ellipsis so it can't run past ~2 preview lines.
-function truncateTitle(s: string, max: number): string {
-  if (s.length <= max) return s;
-  const cut = s.slice(0, max);
-  const lastSpace = cut.lastIndexOf(" ");
-  const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
-  // Drop trailing separators/punctuation so we never end on "… -" or "… :".
-  return base.replace(/[\s\-–—:·,;.]+$/u, "") + "…";
 }
 
 // Deterministic German date label, no Intl/ICU dependency (edge ICU coverage
@@ -122,10 +104,8 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   const url = `${SITE}/event/${encodeURIComponent(id)}`;
 
   const eDesc = esc(description);
-  // Full title for the browser tab / SEO; a length-capped title for the card so
-  // an overly long name can't run past ~2 preview lines.
-  const eTitleFull = esc(title);
-  const eTitle = esc(truncateTitle(title, TITLE_MAX));
+  // Full event title — shown in full on the card and the browser tab.
+  const eTitle = esc(title);
 
   // Small "summary" card: the iB logo as a square thumbnail on the left, the
   // title + description on the right. A fixed brand logo, not an event/venue
@@ -138,9 +118,9 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   html = setMeta(html, 'property="og:image:alt"', "Inside Bars");
   html = setMeta(html, 'name="twitter:image"', logo);
 
-  // The <title> keeps the brand suffix for the browser tab / SEO; the card uses
-  // the bare (capped) event title.
-  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitleFull} · Inside Bars</title>`);
+  // <title> adds the brand suffix for the browser tab / SEO; the card title
+  // (og/twitter) is the full event name.
+  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitle} · Inside Bars</title>`);
   html = setMeta(html, 'name="description"', eDesc);
   html = setMeta(html, 'property="og:url"', esc(url));
   html = setMeta(html, 'property="og:title"', eTitle);
