@@ -13,8 +13,9 @@
 // shell (React boots normally); crawlers read the per-event tags. Every other
 // route is untouched and falls through to the normal SPA rewrite.
 //
-// Scope (for now): a TEXT-ONLY card — real event title + a "date · venue —
-// description" line, no preview image. (Adding an event/venue image or a
+// Scope (for now): a TEXT-ONLY card — title led by a compact date/time
+// ("Di 23.6., 20:00 · <event>") so it survives truncation, plus a
+// "venue — description" line, no preview image. (Adding an event/venue image or a
 // generated branded card is a deliberate later step — see
 // ~/.claude/plans/per-event-share-previews.md.)
 
@@ -71,6 +72,19 @@ function formatDate(dateStr: string | null, timeStr: string | null): string {
   return label;
 }
 
+// Compact variant for the title prefix: "Di 23.6., 20:00" (numeric month, no
+// "Uhr") — short enough to survive ahead of a long event name when the title
+// is truncated.
+function formatDateCompact(dateStr: string | null, timeStr: string | null): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || "");
+  if (!m) return "";
+  const y = +m[1], mo = +m[2], da = +m[3];
+  const wd = WEEKDAYS[new Date(Date.UTC(y, mo - 1, da, 12)).getUTCDay()];
+  let label = `${wd} ${da}.${mo}.`;
+  if (timeStr) label += `, ${timeStr.slice(0, 5)}`;
+  return label;
+}
+
 // Look the event up exactly like the app's fetchEventById: try the live
 // `events` table and the `events_archive` in parallel, prefer the live row.
 // RLS governs visibility, so a non-public id simply yields null → generic card.
@@ -96,16 +110,25 @@ function setMeta(html: string, selector: string, value: string): string {
 
 function injectMeta(html: string, id: string, event: EventRow): string {
   const title = event.title?.trim() || "Inside Bars";
-  const dateLabel = formatDate(event.date, event.start_time);
-  let description = [dateLabel, event.venue?.trim()].filter(Boolean).join(" · ");
+  const url = `${SITE}/event/${encodeURIComponent(id)}`;
+  const eTitle = esc(title);
+
+  // Card headline leads with a compact date/time, so when a long title is
+  // truncated the day + time survive — clients show the title but often drop or
+  // trim the description, where the date used to live. e.g.
+  // "Di 23.6., 20:00 · <event name>".
+  const compact = formatDateCompact(event.date, event.start_time);
+  const cardTitle = compact ? `${esc(compact)} · ${eTitle}` : eTitle;
+
+  // Description = venue + a snippet of the event's own text. The date is NOT
+  // repeated here — it now lives in the title.
+  let description = event.venue?.trim() || "";
   const snippet = event.description?.replace(/\s+/g, " ").trim();
   if (snippet) {
-    description += ` — ${snippet.length > 110 ? snippet.slice(0, 109) + "…" : snippet}`;
+    const trimmed = snippet.length > 110 ? snippet.slice(0, 109) + "…" : snippet;
+    description = description ? `${description} — ${trimmed}` : trimmed;
   }
-  const url = `${SITE}/event/${encodeURIComponent(id)}`;
-
   const eDesc = esc(description);
-  const eTitle = esc(title);
 
   // No preview image for events (for now) — a text-only card. Strip every
   // og:image* / twitter:image tag and downgrade the Twitter card to "summary"
@@ -114,16 +137,15 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   html = html.replace(/\s*<meta\s+name="twitter:image"[^>]*>/gi, "");
   html = setMeta(html, 'name="twitter:card"', "summary");
 
-  // The card headline is the bare event name. Clients already show the "iB"
-  // favicon + og:site_name for branding, so a "· Inside Bars" suffix on the
-  // title just clutters the line ("…konzert I · Inside Bars"). The brand stays
-  // in <title> only (browser tab / SEO).
+  // Card title = date-led cardTitle (no "· Inside Bars" — clients show the iB
+  // favicon + og:site_name already). The <title> keeps the brand suffix for
+  // the browser tab / SEO.
   html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitle} · Inside Bars</title>`);
   html = setMeta(html, 'name="description"', eDesc);
   html = setMeta(html, 'property="og:url"', esc(url));
-  html = setMeta(html, 'property="og:title"', eTitle);
+  html = setMeta(html, 'property="og:title"', cardTitle);
   html = setMeta(html, 'property="og:description"', eDesc);
-  html = setMeta(html, 'name="twitter:title"', eTitle);
+  html = setMeta(html, 'name="twitter:title"', cardTitle);
   html = setMeta(html, 'name="twitter:description"', eDesc);
   return html;
 }
