@@ -14,7 +14,7 @@
 // route is untouched and falls through to the normal SPA rewrite.
 //
 // Scope: a small "summary" card — the iB logo (square thumbnail, left), the
-// full event title, and a "date/time. venue" line beneath it. No event photo;
+// full event title, and a "date/time · venue" line beneath it. No event photo;
 // the event's own "about" text is never included. (See
 // ~/.claude/plans/per-event-share-previews.md.)
 
@@ -96,8 +96,8 @@ function setMeta(html: string, selector: string, value: string): string {
 function injectMeta(html: string, id: string, event: EventRow): string {
   const title = event.title?.trim() || "Inside Bars";
   const dateLabel = formatDate(event.date, event.start_time);
-  // Under the title, one line: "<date/time>. <venue>".
-  const description = [dateLabel, event.venue?.trim()].filter(Boolean).join(". ");
+  // Under the title, one line: "<date/time> · <venue>" (middot separator).
+  const description = [dateLabel, event.venue?.trim()].filter(Boolean).join(" · ");
   const url = `${SITE}/event/${encodeURIComponent(id)}`;
 
   const eDesc = esc(description);
