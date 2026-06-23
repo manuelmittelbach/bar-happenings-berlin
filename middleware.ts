@@ -48,10 +48,12 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
-// Rough character budget for ~2 preview lines. Clients ultimately decide the
-// line count and wrapping; this just stops an overly long title from running
-// past two lines. Tune if titles still wrap to three lines on your test device.
-const TITLE_MAX = 70;
+// Character budget so the card title stays within ~2 preview lines (WhatsApp).
+// A 3-line title crowds out the description line where the date/time lives, so
+// we cap aggressively and append "…". Lines are ~24–28 chars on a phone, so ~40
+// keeps it to two lines with room to spare. Tune if titles still wrap to three
+// lines (lower it) or get cut too short (raise it) on your device.
+const TITLE_MAX = 40;
 
 // Escape for use inside an HTML double-quoted attribute. Without this a stray
 // `"` or `<` in a user-entered title would break out of the meta tag.
@@ -71,7 +73,8 @@ function truncateTitle(s: string, max: number): string {
   const cut = s.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
   const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
-  return base.trimEnd() + "…";
+  // Drop trailing separators/punctuation so we never end on "… -" or "… :".
+  return base.replace(/[\s\-–—:·,;.]+$/u, "") + "…";
 }
 
 // Deterministic German date label, no Intl/ICU dependency (edge ICU coverage
