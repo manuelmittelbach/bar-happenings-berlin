@@ -25,9 +25,10 @@ const SUPABASE_URL = "https://uybvrxqleutguucrifuf.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YnZyeHFsZXV0Z3V1Y3JpZnVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2MTgsImV4cCI6MjA5MDk4MDYxOH0.5QihSnNe9cwnbPdQf2Vtq4T0-GuSQbZQ1FEKRk18raU";
 
-// Canonical public origin — used for og:url and the image fallback so a shared
-// link always resolves to production, even when scraped from a preview deploy.
-const SITE = "https://insidebars.co";
+// Canonical public origin for og:url. MUST be the www host: the apex
+// (insidebars.co) 307-redirects to www, and this middleware only runs on the
+// final host — pointing at www avoids the redirect hop for crawlers.
+const SITE = "https://www.insidebars.co";
 
 // Run only on event detail pages. All other paths skip the middleware entirely
 // and keep using the SPA rewrite in vercel.json.
@@ -104,10 +105,7 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   const url = `${SITE}/event/${encodeURIComponent(id)}`;
 
   const eDesc = esc(description);
-  // Brand the title line itself ("Event · Inside Bars") so the brand shows even
-  // on text-only cards (WhatsApp shows the host, not og:site_name) — without a
-  // preview image.
-  const cardTitle = `${esc(title)} · Inside Bars`;
+  const eTitle = esc(title);
 
   // No preview image for events (for now) — a text-only card. Strip every
   // og:image* / twitter:image tag and downgrade the Twitter card to "summary"
@@ -116,12 +114,16 @@ function injectMeta(html: string, id: string, event: EventRow): string {
   html = html.replace(/\s*<meta\s+name="twitter:image"[^>]*>/gi, "");
   html = setMeta(html, 'name="twitter:card"', "summary");
 
-  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${cardTitle}</title>`);
+  // The card headline is the bare event name. Clients already show the "iB"
+  // favicon + og:site_name for branding, so a "· Inside Bars" suffix on the
+  // title just clutters the line ("…konzert I · Inside Bars"). The brand stays
+  // in <title> only (browser tab / SEO).
+  html = html.replace(/<title>[^<]*<\/title>/i, () => `<title>${eTitle} · Inside Bars</title>`);
   html = setMeta(html, 'name="description"', eDesc);
   html = setMeta(html, 'property="og:url"', esc(url));
-  html = setMeta(html, 'property="og:title"', cardTitle);
+  html = setMeta(html, 'property="og:title"', eTitle);
   html = setMeta(html, 'property="og:description"', eDesc);
-  html = setMeta(html, 'name="twitter:title"', cardTitle);
+  html = setMeta(html, 'name="twitter:title"', eTitle);
   html = setMeta(html, 'name="twitter:description"', eDesc);
   return html;
 }

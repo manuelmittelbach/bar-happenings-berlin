@@ -12,8 +12,11 @@ import { PageSpinner } from "@/components/ui/page-spinner";
 
 /* Production origin for shareable URLs. In Capacitor the app runs at
  * `capacitor://localhost`, which is unshareable — so we hardcode the
- * public web origin for any URL that's going to leave the device. */
-const PUBLIC_ORIGIN = "https://insidebars.co";
+ * public web origin for any URL that's going to leave the device. Use the www
+ * host: the apex (insidebars.co) 307-redirects to www, and the share-preview
+ * middleware only runs on the final host — linking straight to www skips the
+ * redirect hop so link crawlers reach the per-event tags directly. */
+const PUBLIC_ORIGIN = "https://www.insidebars.co";
 
 export default function EventDetail() {
 	const { id } = useParams();
