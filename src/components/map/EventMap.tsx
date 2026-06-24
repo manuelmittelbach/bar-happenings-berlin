@@ -603,7 +603,12 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						if (min <= 15) {
 							walkEl = document.createElement("span");
 							walkEl.style.cssText =
-								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;text-transform:uppercase;letter-spacing:0.08em;";
+								// translateY(-2px) lifts the chip a tick: nameRow is
+								// flex-end, so the chip's bottom otherwise sits on the
+								// name block's bottom — below the name's visual text
+								// (line-height:1.15) — leaving it looking slightly low.
+								// Same lift the chevron uses to seat against the text.
+								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;text-transform:uppercase;letter-spacing:0.08em;transform:translateY(-2px);";
 							walkEl.setAttribute("title", `~${min} min walking from your location`);
 							walkEl.innerHTML = `${PERSON_SVG}<span>${min} MIN</span>`;
 							nameRow.appendChild(walkEl);
