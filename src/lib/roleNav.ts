@@ -30,7 +30,7 @@ export function homeForRole(role: Role): string {
 export function accountLinks(role: Role): { label: string; to: string }[] {
   const links: { label: string; to: string }[] = [];
   if (role === "user" || role === "organizer") {
-    links.push({ label: "Manage your events", to: "/profile/events" });
+    links.push({ label: "Your events", to: "/profile/events" });
   }
   if (role === "organizer") {
     links.push({ label: "Your bar", to: "/profile/bar" });

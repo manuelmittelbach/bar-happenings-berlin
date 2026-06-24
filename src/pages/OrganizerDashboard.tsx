@@ -39,10 +39,12 @@ export default function OrganizerDashboard() {
   // `events`, so merge their own staging rows (pending) with their approved
   // events. Organizers/admins publish straight to `events` and have none.
   //
-  // Keyed under ["events", …] so the invalidateQueries(["events"]) that
-  // PublishEvent (on create) and the event editor (on save/cancel/delete)
-  // already fire refetches this list — that's what makes a freshly submitted
-  // event appear here without a manual page refresh.
+  // refetchOnMount: "always" so opening this page always pulls the current DB
+  // state. Publish (PublishEvent) and cancel/delete (the event editor) happen
+  // on other routes, then navigate here — relying on invalidateQueries(["events"])
+  // alone left the list stale until a manual refresh, since the remounting query
+  // could still serve its cache (global staleTime is 1h). "always" refetches
+  // regardless, so a freshly published or canceled event shows up immediately.
   const {
     data: myEvents = [],
     isLoading: eventsLoading,
@@ -51,6 +53,7 @@ export default function OrganizerDashboard() {
   } = useQuery({
     queryKey: ["events", "by-creator", user?.id, role],
     enabled: !!user && isApprovedAccess,
+    refetchOnMount: "always",
     queryFn: async () => {
       const [approvedEvents, pendingSubmissions] = await Promise.all([
         fetchEventsByCreator(user!.id),
@@ -188,7 +191,7 @@ export default function OrganizerDashboard() {
               a hairline rule. */}
           <header className="mb-6 md:mb-8">
             <div className="pt-2.5 pb-2.5 border-b-2 border-border">
-              <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Manage your events</h1>
+              <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your events</h1>
             </div>
           </header>
           {/* Stats */}
