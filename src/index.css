@@ -124,6 +124,11 @@
   }
   html, body {
     overflow-x: clip;
+    /* App-shell: the document never scrolls (the inner <main> does). Kill the iOS
+       Safari overscroll/rubber-band so dragging at the top can't pull the fixed
+       header/frame down. overscroll-behavior (NOT overflow:hidden) leaves the
+       keyboard / address-bar behaviour untouched. */
+    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;

@@ -177,7 +177,7 @@ export default function OrganizerDashboard() {
     <>
       {/* Sticky Back row — mirrors BarAccount/detail pages so the back
           affordance sits at the same screen position. */}
-      <div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+      <div className="sticky z-40 bg-background" style={{ top: 0 }}>
         <div className="container flex items-center py-2">
           <button
             type="button"

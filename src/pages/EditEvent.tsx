@@ -298,7 +298,7 @@ export default function EditEvent() {
           so they have a clear way back to their account. Admins navigate via
           the admin dashboard, so they don't get it here. */}
       {!isAdmin && (
-        <div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+        <div className="sticky z-40 bg-background" style={{ top: 0 }}>
           <div className="container flex items-center py-2">
             <button
               type="button"

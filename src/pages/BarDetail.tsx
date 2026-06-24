@@ -151,7 +151,7 @@ export default function BarDetail() {
           dashboard's "View" link) — `navigate(-1)` would close the tab. */}
       <div
         className="sticky z-40 bg-background"
-        style={{ top: "var(--header-h)" }}
+        style={{ top: 0 }}
       >
         <div className="container flex items-center justify-between py-2">
           {canGoBack ? (

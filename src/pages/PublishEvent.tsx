@@ -140,7 +140,7 @@ export default function PublishEvent() {
 	return (
 		<>
 			{/* Sticky Back row — same affordance as the dashboard / detail pages. */}
-			<div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+			<div className="sticky z-40 bg-background" style={{ top: 0 }}>
 				<div className="container flex items-center py-2">
 					<button
 						type="button"

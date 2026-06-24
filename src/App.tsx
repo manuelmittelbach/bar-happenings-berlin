@@ -1,8 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, useParams } from "react-router-dom";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,40 +11,6 @@ import { homeForRole } from "@/lib/roleNav";
 import { Spinner } from "@/components/ui/spinner";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-
-function ScrollManager() {
-  const location = useLocation();
-  const navigationType = useNavigationType();
-  const positions = useRef(new Map<string, number>());
-  const prevPathname = useRef(location.pathname);
-
-  useEffect(() => {
-    const key = location.key;
-    const handleScroll = () => {
-      positions.current.set(key, window.scrollY);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [location.key]);
-
-  useLayoutEffect(() => {
-    const pathnameChanged = prevPathname.current !== location.pathname;
-    prevPathname.current = location.pathname;
-    // Filter-only updates (?q=, ?c=, etc) don't change pathname — leave scroll
-    // where the user is. Page navigations behave as before.
-    if (!pathnameChanged) return;
-    if (navigationType === "POP") {
-      const saved = positions.current.get(location.key) ?? 0;
-      window.scrollTo(0, saved);
-    } else {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }
-  }, [location.key, location.pathname, navigationType]);
-
-  return null;
-}
 
 function detectAuthCallback(): boolean {
   const s = window.location.search;
@@ -256,7 +222,6 @@ const App = () => (
       {!Capacitor.isNativePlatform() && <Analytics />}
       {!Capacitor.isNativePlatform() && <FaviconSpinner />}
       <BrowserRouter>
-        <ScrollManager />
         <AuthCallbackGate>
         <Routes>
           <Route element={<Layout />}>

@@ -232,7 +232,7 @@ export default function ProfileDetails() {
   return (
     <div>
       {/* Back row — chevron-back pattern shared with the detail pages */}
-      <div className="sticky z-40 bg-background" style={{ top: "var(--header-h)" }}>
+      <div className="sticky z-40 bg-background" style={{ top: 0 }}>
         <div className="container flex items-center py-2">
           <button
             onClick={() => navigate(-1)}

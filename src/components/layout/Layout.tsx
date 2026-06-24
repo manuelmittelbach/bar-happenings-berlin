@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BottomTabBar from "@/components/layout/BottomTabBar";
 import { useIsNative } from "@/hooks/useIsNative";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useVenues, useEvents } from "@/hooks/useEvents";
 import { usePrefetchImages } from "@/hooks/usePrefetchImages";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -53,8 +54,16 @@ export default function Layout() {
   const lockedViewport = isMap || isIndex;
   const isNative = useIsNative();
 
+  // The single app-shell scroller. Layout is a persistent layout route (it does
+  // NOT unmount across sibling route changes), so this ref points at one durable
+  // node for the whole session — the centralized restoration hook saves/restores
+  // against it. On locked pages (/events, /map) <main> is overflow-hidden, so its
+  // scrollTop is pinned at 0 and the hook's writes are harmless no-ops there.
+  const mainRef = useRef<HTMLElement>(null);
+  useScrollRestoration(mainRef);
+
   return (
-    <div className={`flex flex-col ${lockedViewport ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}>
+    <div className="flex flex-col h-[100dvh] overflow-hidden">
       {/* Native context drops the top header entirely — `--header-h` is
           overridden to just env(safe-area-inset-top) so notch-aware stickies
           (category bar) still pin at the right height with nothing above.
@@ -71,12 +80,38 @@ export default function Layout() {
         <Header />
       )}
       <main
-        className="flex-1 flex flex-col min-h-0"
-        style={isNative && !lockedViewport ? { paddingBottom: "var(--tab-bar-h)" } : undefined}
+        ref={mainRef}
+        className={
+          lockedViewport
+            ? "flex-1 flex flex-col min-h-0 overflow-hidden"
+            : "flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+        }
+        style={
+          isNative && !lockedViewport
+            ? { paddingBottom: "var(--tab-bar-h)", overscrollBehavior: "contain" }
+            : { overscrollBehavior: "contain" }
+        }
       >
-        <Outlet />
+        {lockedViewport ? (
+          // Locked pages (/events, /map) own their inner scroller + footer.
+          <Outlet />
+        ) : (
+          // App-shell pages scroll inside <main>. The min-h-full wrapper lets the
+          // footer pin to the bottom on short pages (mt-auto) and sit at the natural
+          // end on tall ones.
+          <div className="flex flex-col min-h-full">
+            <div className="flex-1">
+              <Outlet />
+            </div>
+            {!isNative && (
+              <div className="mt-auto">
+                <Footer />
+              </div>
+            )}
+          </div>
+        )}
       </main>
-      {isNative ? <BottomTabBar /> : !lockedViewport && <Footer />}
+      {isNative ? <BottomTabBar /> : null}
     </div>
   );
 }
