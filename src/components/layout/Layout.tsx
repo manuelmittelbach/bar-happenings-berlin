@@ -4,9 +4,11 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BottomTabBar from "@/components/layout/BottomTabBar";
 import { useIsNative } from "@/hooks/useIsNative";
-import { useVenues } from "@/hooks/useEvents";
+import { useVenues, useEvents } from "@/hooks/useEvents";
 import { usePrefetchImages } from "@/hooks/usePrefetchImages";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { berlinDateString } from "@/lib/dateFormat";
+import { buildTonightEventsMap, groupVenuesByHood } from "@/lib/venueDisplayOrder";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -17,28 +19,28 @@ export default function Layout() {
   // renders its first screen instantly from cache. Everything below the
   // fold loads lazily on scroll once the user is actually there.
   //
-  // We deliberately prefetch only this handful, not all ~200 covers:
-  // Layout wraps every route (incl. the landing page most visitors never
-  // click past), so prefetching the full set warmed 200 full-res images on
-  // every visit and was the bulk of Supabase "cached egress". Note the
-  // slice uses raw venue order, which won't exactly match the hood-grouped
-  // order /bars displays — that's fine, it's a best-effort warm and the
-  // page's own eager/lazy loading covers any miss. useVenues shares the
-  // React Query cache with /events so this adds no extra network for the
-  // list data itself. requestIdleCallback gates the queue to genuine idle
-  // moments, so the map's tile fetches still win when the user is panning.
+  // We deliberately prefetch only this handful, not all ~200 covers.
+  // groupVenuesByHood is the exact same ordering BarsList renders (fixed
+  // hood order, tonight-active bars first within each hood), so flattening
+  // it and taking the first N gives precisely the covers that sit above the
+  // fold when the user taps the tab — the preload can't drift from the
+  // display. Prefetch is skipped on /map where map tiles compete for the
+  // same network budget. Both useVenues and useEvents share the React Query
+  // cache with /bars, so this adds no extra requests.
   const { data: venuesData = [] } = useVenues();
+  const { data: eventsData = [] } = useEvents();
   const isMobile = useIsMobile();
   const prefetchCount = isMobile ? 4 : 6;
-  const venueImageUrls = useMemo(
-    () =>
-      venuesData
-        .map((v) => v.image)
-        .filter((u): u is string => !!u)
-        .slice(0, prefetchCount),
-    [venuesData, prefetchCount],
-  );
-  usePrefetchImages(venueImageUrls);
+  const venueImageUrls = useMemo(() => {
+    const today = berlinDateString();
+    const tonightByVenue = buildTonightEventsMap(eventsData, today);
+    return groupVenuesByHood(venuesData, tonightByVenue)
+      .flatMap((h) => h.items)
+      .map((v) => v.image)
+      .filter((u): u is string => !!u)
+      .slice(0, prefetchCount);
+  }, [venuesData, eventsData, prefetchCount]);
+  usePrefetchImages(venueImageUrls, !isMap);
 
   // Index uses the same locked-viewport architecture as Map: the page
   // doesn't scroll, only an internal list container does. Locks the day +

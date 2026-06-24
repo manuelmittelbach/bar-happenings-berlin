@@ -47,6 +47,36 @@ export const ALL_NEIGHBORHOODS: readonly Neighborhood[] = [
 	...new Set(Object.values(PLZ_MAP)),
 ].sort((a, b) => a.localeCompare(b)) as Neighborhood[];
 
+// Fixed, curated display order for neighborhoods across the whole app:
+// the /bars filter pills, the /bars hood sections, and the cover-image
+// preload all follow this exact sequence. Ordered roughly by nightlife
+// density / editorial relevance rather than alphabetically or by live
+// activity, so the row never reshuffles between visits. Typed against
+// Neighborhood so a typo or a renamed hood is a compile error here.
+export const NEIGHBORHOOD_DISPLAY_ORDER: readonly Neighborhood[] = [
+	"Neukölln",
+	"Kreuzberg",
+	"Friedrichshain",
+	"Mitte",
+	"Charlottenburg",
+	"Prenzlauer Berg",
+	"Tempelhof",
+	"Wedding",
+	"Schöneberg",
+	"Lichtenberg",
+	"Moabit",
+	"Pankow",
+	"Steglitz",
+];
+
+// Sort rank of a neighborhood in the fixed display order. Any hood not in
+// the list (legacy data, the catch-all "Other" bucket) sorts after every
+// listed one; callers break ties alphabetically and pin "Other" last.
+export function neighborhoodRank(name: string): number {
+	const i = NEIGHBORHOOD_DISPLAY_ORDER.indexOf(name as Neighborhood);
+	return i === -1 ? NEIGHBORHOOD_DISPLAY_ORDER.length : i;
+}
+
 const AMBIGUOUS: Record<string, { default: Neighborhood; streetOverrides: { pattern: RegExp; value: Neighborhood }[] }> = {
 	"10315": {
 		default: "Lichtenberg",

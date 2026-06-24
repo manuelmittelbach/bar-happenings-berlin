@@ -8,9 +8,9 @@ import { useVenues, useEvents, usePrefetchVenueEvents } from "@/hooks/useEvents"
 import { setVenueActiveImage } from "@/lib/supabaseQueries";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
-import { isEventStillOnline } from "@/lib/eventStatus";
 import { berlinDateString } from "@/lib/dateFormat";
-import { ALL_NEIGHBORHOODS } from "@/lib/neighborhoodFromAddress";
+import { ALL_NEIGHBORHOODS, neighborhoodRank } from "@/lib/neighborhoodFromAddress";
+import { buildTonightEventsMap, groupVenuesByHood } from "@/lib/venueDisplayOrder";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { ErrorState } from "@/components/ui/error-state";
 import FadeInImage from "@/components/ui/FadeInImage";
@@ -90,47 +90,30 @@ export default function BarsList() {
   const today = berlinDateString();
 
   // Tonight's events grouped by venueId. Drives the per-card signal
-  // line and the live hood ordering. Sorted by start time so the
+  // line and the within-hood ordering. Sorted by start time so the
   // earliest event surfaces first when there's only one to display.
-  const eventsTonightByVenue = useMemo(() => {
-    const map = new Map<string, BarlinEvent[]>();
-    for (const e of events) {
-      if (e.date !== today) continue;
-      if (e.status === "canceled") continue;
-      if (!isEventStillOnline(e)) continue;
-      if (!e.venueId) continue;
-      const list = map.get(e.venueId) || [];
-      list.push(e);
-      map.set(e.venueId, list);
-    }
-    for (const list of map.values()) {
-      list.sort((a, b) =>
-        (a.startTime || "99:99").localeCompare(b.startTime || "99:99"),
-      );
-    }
-    return map;
-  }, [events, today]);
+  const eventsTonightByVenue = useMemo(
+    () => buildTonightEventsMap(events, today),
+    [events, today],
+  );
 
-  // Hood pill order is locked to the unfiltered dataset so the row
-  // doesn't reshuffle as the user types in name search. One-time sort:
-  // by total bar count (busiest first), then alphabetical for ties;
-  // hoods with zero bars sink to the bottom. Recomputes only when
-  // venues changes.
+  // Hood pill order is the fixed NEIGHBORHOOD_DISPLAY_ORDER, so the row
+  // reads the same on every visit and never reshuffles as the user types
+  // or as tonight's activity changes. Includes every recognized hood
+  // (empty ones render as disabled pills) plus any stray hood present in
+  // the data; unlisted hoods sort after the fixed list, alphabetically.
   const hoodOrder = useMemo(() => {
-    const totals = new Map<string, number>();
+    const names = new Set<string>([...ALL_NEIGHBORHOODS]);
     for (const v of venues) {
       const h = (v.neighborhood || "").trim();
-      if (!h) continue;
-      totals.set(h, (totals.get(h) || 0) + 1);
+      if (h) names.add(h);
     }
-    const names = new Set<string>([...ALL_NEIGHBORHOODS, ...totals.keys()]);
-    return [...names]
-      .map((name) => ({ name, total: totals.get(name) || 0 }))
-      .sort((a, b) => {
-        if ((b.total > 0) !== (a.total > 0)) return b.total > 0 ? 1 : -1;
-        if (b.total !== a.total) return b.total - a.total;
-        return a.name.localeCompare(b.name);
-      });
+    return [...names].sort((a, b) => {
+      const ra = neighborhoodRank(a);
+      const rb = neighborhoodRank(b);
+      if (ra !== rb) return ra - rb;
+      return a.localeCompare(b);
+    });
   }, [venues]);
 
   // Name + hood filter pass. Both filters compose, mirroring how
@@ -163,76 +146,23 @@ export default function BarsList() {
       if (!h) continue;
       barCounts.set(h, (barCounts.get(h) || 0) + 1);
     }
-    return hoodOrder.map(({ name }) => ({
+    return hoodOrder.map((name) => ({
       name,
       count: barCounts.get(name) || 0,
       hasBars: (barCounts.get(name) || 0) > 0,
     }));
   }, [hoodOrder, venues, nameQuery]);
 
-  // Group venues by neighborhood, then sort hoods by tonight-activity.
-  // Within each hood:
-  //   1. Bars with events tonight come first, sorted by earliest
-  //      start time ascending (bars without a known start time go to
-  //      the END of this tonight-active group).
-  //   2. The rest follow, alphabetical, case-insensitive.
-  // Venues without a hood land in an "Other" bucket pinned to the
-  // bottom so nothing disappears.
-  const hoods = useMemo(() => {
-    const groups = new Map<string, Venue[]>();
-    for (const v of filteredVenues) {
-      const h = (v.neighborhood || "").trim() || "Other";
-      const list = groups.get(h) || [];
-      list.push(v);
-      groups.set(h, list);
-    }
-
-    const earliestStart = (id: string): string | null => {
-      const list = eventsTonightByVenue.get(id);
-      if (!list || list.length === 0) return null;
-      for (const e of list) {
-        if (e.startTime) return e.startTime;
-      }
-      return null;
-    };
-
-    return [...groups.entries()]
-      .map(([name, items]) => {
-        const sorted = [...items].sort((a, b) => {
-          const aHas = (eventsTonightByVenue.get(a.id)?.length || 0) > 0;
-          const bHas = (eventsTonightByVenue.get(b.id)?.length || 0) > 0;
-          if (aHas !== bHas) return aHas ? -1 : 1;
-          if (aHas && bHas) {
-            // Both have tonight events: earliest startTime first;
-            // unknown start times sink to the bottom of this group.
-            const aTime = earliestStart(a.id);
-            const bTime = earliestStart(b.id);
-            if (aTime !== null && bTime === null) return -1;
-            if (aTime === null && bTime !== null) return 1;
-            if (aTime !== null && bTime !== null && aTime !== bTime) {
-              return aTime.localeCompare(bTime);
-            }
-            // Same (or both unknown) → tiebreak by name.
-            return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
-          }
-          // Neither has tonight events → alphabetical.
-          return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
-        });
-        const dayBars = sorted.filter(
-          (v) => (eventsTonightByVenue.get(v.id)?.length || 0) > 0,
-        ).length;
-        return { name, items: sorted, dayBars };
-      })
-      .sort((a, b) => {
-        if (a.name === "Other") return 1;
-        if (b.name === "Other") return -1;
-        // Primary: hoods with tonight activity first.
-        if (a.dayBars !== b.dayBars) return b.dayBars - a.dayBars;
-        // Secondary: by total bar count (denser hood breaks ties).
-        if (a.items.length !== b.items.length) return b.items.length - a.items.length;
-        return a.name.localeCompare(b.name);
-      });
-  }, [filteredVenues, eventsTonightByVenue]);
+  // Group filtered venues into hood sections in display order: hoods follow
+  // the fixed NEIGHBORHOOD_DISPLAY_ORDER ("Other" pinned last), and within
+  // each hood the bars with events tonight come first (earliest start time
+  // first, unknown times last), the rest alphabetical. Shared with Layout's
+  // cover-image preload so the first cards here match the images warmed
+  // ahead of the tab tap.
+  const hoods = useMemo(
+    () => groupVenuesByHood(filteredVenues, eventsTonightByVenue),
+    [filteredVenues, eventsTonightByVenue],
+  );
 
   // Mark the first 6 cards (in document order across all hoods) as
   // high-priority so the browser fetches them eagerly with elevated
