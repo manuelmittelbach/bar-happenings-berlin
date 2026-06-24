@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDateWithDay, berlinDateString } from "@/lib/dateFormat";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Pencil, Users, CalendarDays, CalendarPlus, Clock, Repeat, ChevronDown, ChevronLeft } from "lucide-react";
+import { Eye, Pencil, Users, CalendarDays, CalendarPlus, Clock, Repeat, ChevronDown, ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchEventsByCreator, fetchMyStagedSubmissions, extendEventSeries } from "@/lib/supabaseQueries";
@@ -194,6 +194,15 @@ export default function OrganizerDashboard() {
               <h1 className="heading-display text-2xl md:text-[30px] leading-none m-0">Your events</h1>
             </div>
           </header>
+          {/* Primary CTA — same affordance as the Account hub, so publishing is
+              reachable straight from this list. Organizers post to their own
+              bar; everyone else picks a location in the form. */}
+          <Link
+            to="/publish"
+            className="group flex items-center justify-center gap-2 h-12 px-5 mb-6 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground transition-colors"
+          >
+            <Plus className="h-4 w-4" /> {role === "organizer" ? "Publish an event in your bar" : "Publish an event"}
+          </Link>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
