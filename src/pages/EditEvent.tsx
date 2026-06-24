@@ -161,7 +161,9 @@ export default function EditEvent() {
           await updateEvent(id, dataWithVenueId, imageUrl);
           toast.success("Event updated!");
         }
-        queryClient.invalidateQueries({ queryKey: ["events"] });
+        // refetchType: "all" refetches the (inactive) event lists now instead of
+        // lazily on next mount, so the change is reflected before we navigate.
+        await queryClient.invalidateQueries({ queryKey: ["events"], refetchType: "all" });
         queryClient.invalidateQueries({ queryKey: ["event", id] });
         // Mirror Cancel exactly: step back to wherever the editor was opened
         // from — the admin recurring/approved list, the event detail, "Your
@@ -202,7 +204,9 @@ export default function EditEvent() {
         await cancelEvent(id, by);
         toast.success("Event marked as canceled.");
       }
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      // refetchType: "all" refetches the (inactive) event lists now instead of
+      // lazily on next mount, so the change is reflected before we navigate.
+      await queryClient.invalidateQueries({ queryKey: ["events"], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       if (isAdmin) {
         // Event still exists (now canceled) but the editor is stale. Replace
@@ -231,7 +235,9 @@ export default function EditEvent() {
       }
       // Refresh the cached lists so the withdrawn row drops out of "Manage
       // your events" (key ["events","by-creator",…]) instead of lingering.
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      // refetchType: "all" refetches the (inactive) event lists now instead of
+      // lazily on next mount, so the change is reflected before we navigate.
+      await queryClient.invalidateQueries({ queryKey: ["events"], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       if (location.key !== "default") navigate(-1);
       else navigate("/profile/events", { replace: true });
@@ -249,7 +255,9 @@ export default function EditEvent() {
     if (!window.confirm(confirmMsg)) return;
     try {
       await deleteApprovedEvent(id, seriesId);
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      // refetchType: "all" refetches the (inactive) event lists now instead of
+      // lazily on next mount, so the change is reflected before we navigate.
+      await queryClient.invalidateQueries({ queryKey: ["events"], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: ["event", id] });
       toast.success(seriesId ? "Series deleted" : "Event deleted");
       // The event is gone for good — never route back to /event/:id (would be

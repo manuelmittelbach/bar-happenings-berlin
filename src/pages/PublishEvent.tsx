@@ -80,7 +80,10 @@ export default function PublishEvent() {
 					const resolvedVenueId = data.venueId || venueId || undefined;
 					await createEvent({ ...data, venueId: resolvedVenueId, status: "approved" }, user.id, imageUrl);
 				}
-				queryClient.invalidateQueries({ queryKey: ["events"] });
+				// refetchType: "all" refetches the (inactive) "Your events" list now,
+				// so a freshly published event is already in cache when it's opened.
+				// Not awaited: we navigate to the account hub, not the list itself.
+				queryClient.invalidateQueries({ queryKey: ["events"], refetchType: "all" });
 				const isSeries = !!(data.recurrence && data.recurrenceUntil);
 				const count = isSeries
 					? generateOccurrences(data.date, data.recurrence as RecurrenceFreq, data.recurrenceUntil).length

@@ -39,12 +39,11 @@ export default function OrganizerDashboard() {
   // `events`, so merge their own staging rows (pending) with their approved
   // events. Organizers/admins publish straight to `events` and have none.
   //
-  // refetchOnMount: "always" so opening this page always pulls the current DB
-  // state. Publish (PublishEvent) and cancel/delete (the event editor) happen
-  // on other routes, then navigate here — relying on invalidateQueries(["events"])
-  // alone left the list stale until a manual refresh, since the remounting query
-  // could still serve its cache (global staleTime is 1h). "always" refetches
-  // regardless, so a freshly published or canceled event shows up immediately.
+  // Keyed under ["events", …]. The mutations that change a user's events —
+  // PublishEvent (create) and the event editor (save/cancel/withdraw/delete) —
+  // invalidate ["events"] with refetchType "all", which refetches this list
+  // immediately (even while it's inactive), so a changed event shows up here
+  // without a manual page refresh.
   const {
     data: myEvents = [],
     isLoading: eventsLoading,
@@ -53,7 +52,6 @@ export default function OrganizerDashboard() {
   } = useQuery({
     queryKey: ["events", "by-creator", user?.id, role],
     enabled: !!user && isApprovedAccess,
-    refetchOnMount: "always",
     queryFn: async () => {
       const [approvedEvents, pendingSubmissions] = await Promise.all([
         fetchEventsByCreator(user!.id),
