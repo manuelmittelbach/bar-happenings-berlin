@@ -111,7 +111,7 @@ export default function VenueCombobox({ options, value, onSelect, onEnterManual 
               }}
               className="block w-full px-3 py-2.5 text-left font-mono text-[11px] font-bold uppercase tracking-[0.12em] transition-colors hover:bg-foreground hover:text-background"
             >
-              Not in the list? Enter manually
+              Not in the list? Enter manually!
             </button>
           </li>
         </ul>
