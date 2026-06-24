@@ -3,10 +3,7 @@
     "playwright": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest",
-        "--headed",
-        "--config",
-        "playwright-mcp.config.json"
+        "@playwright/mcp@latest"
       ]
     }
   }
