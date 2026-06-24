@@ -1214,7 +1214,7 @@ export default function AdminDashboard() {
                   : tab === "manual"
                   ? manualLoading ? "Manual Events" : `Manual Events (${manualEvents.length})`
                   : tab === "user"
-                  ? userPendingCount === null ? "User Events" : `User Events (${userPendingCount})`
+                  ? userLoading ? "User Events" : `User Events (${userEvents.length})`
                   : recurringLoading ? "Recurring Events" : `Recurring Events (${recurringEvents.length})`}
               </button>
             ))}
