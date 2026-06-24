@@ -531,6 +531,14 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					// affordance.
 					// Real anchor (href=/bar/<id>) so Cmd/Ctrl/middle-click opens
 					// the bar in a new tab, matching the links on the event page.
+					// leftCluster is a block (not flex) and flex:1 as a nameRow
+					// child, so it fills the row, pushes the walk chip to the far
+					// right, and gives the name a normal inline formatting context
+					// to wrap inside.
+					const leftCluster = document.createElement("div");
+					leftCluster.style.cssText =
+						"display:block;flex:1 1 auto;min-width:0;";
+
 					const nameEl = document.createElement("a");
 					nameEl.style.cssText =
 						// overflow-wrap:break-word (not :anywhere) — only break
@@ -540,71 +548,68 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						// inside otherwise-fitting words, leaving lots of empty
 						// horizontal space. `break-word` keeps words intact when
 						// they can fit and only breaks them as a last resort.
-						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;flex:1 1 auto;min-width:0;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
+						"font-family:Georgia,'Charter','Iowan Old Style',serif;font-weight:700;font-size:20px;line-height:1.15;margin:0;color:#0f0f0f;overflow-wrap:break-word;cursor:pointer;transition:color 0.12s ease;text-decoration:none;-webkit-touch-callout:default;-webkit-user-select:text;user-select:text;";
 					nameEl.className = "map-popup-venue-link";
-					nameEl.textContent = props.venueName;
-					// Real anchor (href=/bar/<id>) for Cmd/Ctrl/middle-click → new
-					// tab + keyboard/screen-reader access. The plain-click handling
-					// lives on the whole header (see below) so tapping anywhere in
-					// the header opens the bar, not only the name itself.
-					if (props.venueId) nameEl.setAttribute("href", `/bar/${props.venueId}`);
+					// The chevron lives INSIDE this one anchor (a separate <a> can't
+					// nest in an <a>) so it can be glued to the last word with a
+					// nowrap wrapper — that's what guarantees it flows after the
+					// LAST wrapped line and never orphans onto a line of its own.
+					// The whole-header tap + this anchor's href already cover plain
+					// click + Cmd/Ctrl-click, so a plain <span> cue is enough here.
+					if (props.venueId) {
+						const words = props.venueName.trim().split(/\s+/);
+						const lastWord = words.pop() ?? props.venueName;
+						const lead = words.join(" ");
+						// Leading words wrap normally; the last word + chevron are one
+						// nowrap unit, so a line break can land before the last word
+						// but never between it and the chevron.
+						if (lead) nameEl.appendChild(document.createTextNode(lead + " "));
+						const tail = document.createElement("span");
+						tail.style.cssText = "white-space:nowrap;";
+						tail.appendChild(document.createTextNode(lastWord));
+						const chevronIcon = document.createElement("span");
+						chevronIcon.className = "map-popup-chevron";
+						chevronIcon.style.cssText =
+							// Inline cue glued to the last word. vertical-align:
+							// text-bottom seats it on the text's bottom edge and
+							// translateY(-2px) lifts it a tick from there.
+							"display:inline-flex;align-items:center;color:#6b6b6b;transition:color 0.12s ease;margin-left:8px;vertical-align:text-bottom;transform:translateY(-2px);";
+						chevronIcon.innerHTML = CHEVRON_SVG;
+						tail.appendChild(chevronIcon);
+						nameEl.appendChild(tail);
+						// Real anchor (href=/bar/<id>) for Cmd/Ctrl/middle-click → new
+						// tab + keyboard/screen-reader access. Plain clicks are handled
+						// by the whole-header handler below.
+						nameEl.setAttribute("href", `/bar/${props.venueId}`);
+					} else {
+						nameEl.textContent = props.venueName;
+					}
 					nameEl.setAttribute("aria-label", `Open ${props.venueName} page`);
-					nameRow.appendChild(nameEl);
+					leftCluster.appendChild(nameEl);
 
-					// Right cluster — walk-distance then chevron, kept together as
-					// one nowrap flex sibling of the name. Because nameRow is a
-					// single (non-wrapping) flex line, this cluster always shares
-					// the line with the venue name: the chevron is never orphaned
-					// on its own row, and the walk-distance stays glued to the
-					// chevron's left. The name itself may still wrap internally
-					// inside its own flex:1 column. The chevron sits LAST (trailing
-					// edge) so its right-pointing tip reads as "open / onward"
-					// rather than pointing at the walk-distance beside it — same
-					// trailing-chevron position the event rows use.
-					const rightGroup = document.createElement("div");
-					rightGroup.style.cssText =
-						"display:flex;align-items:center;gap:8px;flex-shrink:0;";
+					nameRow.appendChild(leftCluster);
 
+					// Walk-distance chip — far-right element of the row, after the
+					// name+chevron cluster. Bottom-aligned (nameRow is flex-end) so
+					// it sits on the name's last line. Only surfaced when the venue
+					// is within ~15 min walking; past that users U-Bahn/bike and the
+					// cue just clutters. Same 15min threshold powers the index
+					// page's "Nearby tonight" section, kept in sync deliberately.
+					let walkEl: HTMLSpanElement | null = null;
 					const ul = userLocationRef.current;
 					if (ul) {
 						const meters = haversineMeters(ul.lat, ul.lng, coords[1], coords[0]);
 						const min = walkingMinutes(meters);
-						// Only surface the chip when the venue is genuinely within
-						// walking range. Past ~15 min users would U-Bahn/bike, so
-						// the indicator stops being useful and just clutters the
-						// header. Same 15min threshold powers the "Nearby tonight"
-						// section on the index page, kept in sync deliberately.
 						if (min <= 15) {
-							const walkEl = document.createElement("span");
+							walkEl = document.createElement("span");
 							walkEl.style.cssText =
 								"display:inline-flex;align-items:center;gap:4px;font-family:'Space Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:700;color:#ED5B1C;white-space:nowrap;flex-shrink:0;line-height:1;text-transform:uppercase;letter-spacing:0.08em;";
 							walkEl.setAttribute("title", `~${min} min walking from your location`);
 							walkEl.innerHTML = `${PERSON_SVG}<span>${min} MIN</span>`;
-							rightGroup.appendChild(walkEl);
+							nameRow.appendChild(walkEl);
 						}
 					}
 
-					// Chevron is its own link to /bar/<id> — the trailing "opens a
-					// page" cue for the venue. Reuses .map-popup-venue-link so the
-					// existing hover/active rule flips the inner .map-popup-chevron
-					// to accent. Only rendered when we have a venue to open.
-					if (props.venueId) {
-						const chevronLink = document.createElement("a");
-						chevronLink.className = "map-popup-venue-link";
-						chevronLink.style.cssText =
-							"display:inline-flex;align-items:center;text-decoration:none;cursor:pointer;flex-shrink:0;";
-						chevronLink.setAttribute("href", `/bar/${props.venueId}`);
-						chevronLink.setAttribute("aria-label", `Open ${props.venueName} page`);
-						const chevronIcon = document.createElement("span");
-						chevronIcon.className = "map-popup-chevron";
-						chevronIcon.style.cssText =
-							"display:inline-flex;color:#6b6b6b;transition:color 0.12s ease;";
-						chevronIcon.innerHTML = CHEVRON_SVG;
-						chevronLink.appendChild(chevronIcon);
-						rightGroup.appendChild(chevronLink);
-					}
-
-					nameRow.appendChild(rightGroup);
 					headerEl.appendChild(nameRow);
 
 					// Whole-header tap → open the bar. Tapping anywhere in the
@@ -795,6 +800,26 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 						if (w > widestRowTextLine) widestRowTextLine = w;
 					});
 
+					// The venue name is an <a> (so Cmd/Ctrl-click opens a new tab),
+					// so the "p, h3" sweep above never measured it. Left out, the
+					// box was free to settle at its 300px min-width while a long
+					// title got squeezed by what shares its line — narrow enough
+					// that overflow-wrap snapped a word mid-letter ("Undergroun" /
+					// "d"). Measure the title with mid-word breaking OFF so each word
+					// is sized whole. The chevron lives inside nameEl now, so its
+					// width is already part of widestNameLine (it sits in the nowrap
+					// last-word unit); we only reserve for the far-right walk chip
+					// (+10px row gap, absent when out of range) so the box widens,
+					// up to the 320 cap, enough to keep words — and the chevron's
+					// last-word unit — intact.
+					nameEl.style.overflowWrap = "normal";
+					const widestNameLine = widestLineIn(nameEl);
+					nameEl.style.overflowWrap = "break-word";
+					const NAME_ROW_GAP = 10;
+					const walkReserve = walkEl
+						? walkEl.getBoundingClientRect().width + NAME_ROW_GAP
+						: 0;
+
 					// Header padding contribution: 14L + 44R (44R reserves space
 					// for the absolutely-positioned close button). Row text-
 					// column is offset by 14L padding + 36 disc + 12 gap to text
@@ -803,6 +828,7 @@ export default function EventMap({ events, venueMap, userLocation, onEventClick,
 					const ROW_CHROME = 14 + 36 + 12 + 12 + 16 + 14;
 					const computed = Math.max(
 						widestHeaderLine + HEADER_CHROME,
+						widestNameLine + walkReserve + HEADER_CHROME,
 						widestRowTextLine + ROW_CHROME,
 						220,
 					);
