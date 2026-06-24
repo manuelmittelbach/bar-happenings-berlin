@@ -525,7 +525,13 @@ function BarCard({
       // the time it mounts — no "Upcoming events" spinner on the common path.
       onPointerEnter={() => prefetchVenueEvents(venue.id)}
       onPointerDown={() => prefetchVenueEvents(venue.id)}
-      className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)]"
+      // content-visibility: skip layout + paint for off-screen cards so a long
+      // unvirtualized grid doesn't repaint everything on every scroll frame
+      // (mobile scroll jank). contain-intrinsic-size reserves a placeholder
+      // height so the scrollbar stays stable; `auto` then remembers each card's
+      // real size after its first render. Heights differ by breakpoint
+      // (2-col mobile ~220px, 3-col desktop ~320px with address line + bigger type).
+      className="group relative bg-background border-2 border-foreground hover:border-accent transition-all overflow-hidden shadow-[0_18px_40px_-28px_hsla(18,85%,52%,0.3)] hover:shadow-[0_22px_50px_-28px_hsla(18,85%,52%,0.4)] [content-visibility:auto] [contain-intrinsic-size:auto_220px] md:[contain-intrinsic-size:auto_320px]"
     >
       {/* Admin-only image-source toggle. Sits OUTSIDE the cover-link area
           (the Link below only covers the visual block), so the button is
