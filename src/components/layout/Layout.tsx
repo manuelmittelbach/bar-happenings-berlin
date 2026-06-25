@@ -100,7 +100,11 @@ export default function Layout() {
           // footer pin to the bottom on short pages (mt-auto) and sit at the natural
           // end on tall ones.
           <div className="flex flex-col min-h-full">
-            <div className="flex-1">
+            {/* flex flex-col min-h-0 (not just flex-1) so pages that fill the
+                viewport via their own flex-1 — Signin/Landing centering their
+                content vertically — keep a flex-column parent. A plain block
+                here breaks that chain and collapses them to content height. */}
+            <div className="flex-1 flex flex-col min-h-0">
               <Outlet />
             </div>
             {!isNative && (
