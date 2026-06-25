@@ -48,7 +48,11 @@ export default function OrganizerDashboard() {
   //    user's submission in a different session — invalidate nothing here, so
   //    the cached list would still look "fresh" and the default wouldn't
   //    refetch on remount. refetchOnMount: "always" forces a refetch every time
-  //    the page opens, so those show up without a manual refresh too.
+  //    the page opens, so those show up without a manual refresh too. This
+  //    relies on auth being resolved up-front by <AuthProvider>: when useAuth
+  //    was a per-component hook this query remounted with enabled=false (user/
+  //    role momentarily null), which silently skipped the refetch-on-open and
+  //    left a stale list (e.g. a just-canceled event) until a full reload.
   const {
     data: myEvents = [],
     isLoading: eventsLoading,

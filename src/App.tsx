@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/AuthProvider";
 import { markEmailJustConfirmed, markEmailJustChanged } from "@/lib/justConfirmed";
 import { homeForRole } from "@/lib/roleNav";
 import { Spinner } from "@/components/ui/spinner";
@@ -215,6 +216,7 @@ const App = () => (
       },
     }}
   >
+    <AuthProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -279,6 +281,7 @@ const App = () => (
         </AuthCallbackGate>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </PersistQueryClientProvider>
 );
 
