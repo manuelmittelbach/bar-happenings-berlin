@@ -3,12 +3,12 @@
 **Datum:** 2026-07-06 · **Status:** angenommen · nach Grill-Session, alle Fragen
 entschieden. **Umgesetzt am 2026-07-07** (Phase 0–3 + MCP-Config; Adapter B / Phase 4
 bewusst offen, End-to-End-Scrape steht aus). Bau-Details:
-`scripts/WEBSITE_SCRAPE_SCHEDULER_HANDOFF.md` → „Umsetzungsstand".
+`scripts/website_scrape/WEBSITE_SCRAPE_SCHEDULER_HANDOFF.md` → „Umsetzungsstand".
 
 ## Kontext
 
 Der Website-(„visual"-)Scrape läuft heute als JS-Workflow
-(`scripts/visual-scrape.workflow.js`): ein Sub-Agent pro Venue, sequenziell,
+(`scripts/website_scrape/website-scrape.workflow.js`): ein Sub-Agent pro Venue, sequenziell,
 jeder schreibt selbst in die DB. Wir wollten ihn — wie zuvor den IG-Scrape
 (`scrape_scheduler.py`) und Verify (`verify_scheduler.py`) — **modell-frei**
 machen: ein Python-Scheduler + ein austauschbarer Worker-Adapter, lauffähig auf
@@ -49,7 +49,7 @@ Die konkreten Abweichungen vom IG-Scheduler (alle einzeln gegrillt):
 
 - **Browser/Auth = Verify, nicht IG.** Read-only öffentliche Seiten, **kein
   Login.** Adapter A dockt ans geteilte, echte Chrome auf CDP-Port 9222 an
-  (eigene Sibling-Config `scripts/playwright-website.mcp.json`, `--output-dir
+  (eigene Sibling-Config `scripts/website_scrape/playwright-website.mcp.json`, `--output-dir
   /tmp/playwright-website`) — Anti-Bot-403 trifft beliebige Venue-Domains hart,
   das gepinnte Chrome kommt durch. Der Scheduler macht **keinen Login-Preflight**,
   sondern den nativen `ensure_cdp_browser`-Check (HTTP-Ping auf
@@ -98,6 +98,6 @@ zu einem generischen `--source`-Monolithen „aufräumen" — die Trennung ist
 gewollt (Robustheit des IG-Sweeps + saubere, quellen-spezifische Defaults). Der
 Website-Scraper ist im Kern **ein Verify-Scheduler mit dem Importer/Placeholder-
 Ende des IG-Schedulers**: Verify-Browser-Modell (9222, kein Login), IG-Crash-
-Recovery (Exit 75), keine Pausen. Der JS-Workflow `visual-scrape.workflow.js`
+Recovery (Exit 75), keine Pausen. Der JS-Workflow `website-scrape.workflow.js`
 bleibt vorerst als Referenz für die Sub-Agent-Prozedur (`subAgentPrompt()` →
 `venue_prompt()` des neuen Adapters, verbatim gespiegelt).
