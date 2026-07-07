@@ -62,6 +62,31 @@ Login-Prüfung (nur Instagram; ohne Login bricht der Sweep ab).
 (Website + Verify, read-only, kein Login) und failt früh mit „starte den
 Browser" statt N `unreachable`.
 
+**Scraped-Verify**:
+Der Verify-Sweep über **einmalige (one-off), noch nicht freigegebene** Events im
+Staging: prüft vor der Freigabe read-only, ob jedes Event an seinem
+gespeicherten Datum wirklich noch auf der Quell-Seite steht. Ergebnis ist ein
+Report für den Admin, keine DB-Änderung. Nicht verwechseln mit
+Recurring-Verify.
+_Avoid_: Verify (unqualifiziert), Event-Check.
+
+**Recurring-Verify**:
+Der Verify-Sweep über **wiederkehrende Serien** (deren Wurzel-Events, bereits
+freigegeben): prüft read-only, ob die Serie noch regelmäßig stattfindet.
+Eigenständiger Geschwister-Workflow von Scraped-Verify mit eigenen Dateien.
+_Avoid_: Serien-Check.
+
+**Serien-Root** (engl. root):
+Das freigegebene Wurzel-Event einer wiederkehrenden Serie, aus dem die
+Kind-Termine abgeleitet werden. Recurring-Verify prüft NUR Roots — steht die
+Serie nicht mehr auf der Seite, sind alle Kinder mit-veraltet.
+_Avoid_: Serie (unqualifiziert), Parent-Event, Mutter-Event.
+
+**Kadenz** (engl. cadence):
+Die menschenlesbare Wiederholungsregel einer Serie („2. Samstag im Monat"),
+gegen die Recurring-Verify die Quell-Seite prüft.
+_Avoid_: Rhythmus, Frequenz, Turnus.
+
 **Infra-Halt** (Exit 75):
 Ein Worker meldet einen SWEEP-WEITEN Infrastruktur-Ausfall (Token-/Usage-Limit,
 Netz weg, CLI fehlt) über Exit-Code 75 und schreibt KEIN Ergebnis. Der Scheduler
