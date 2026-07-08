@@ -5,7 +5,7 @@ entschieden.
 
 ## Kontext
 
-Der Scraped-One-Off-Verify-Sweep (`scripts/verify_scheduler.py` + der
+Der Scraped-One-Off-Verify-Sweep (`scripts/scraped_verify/scraped_verify_scheduler.py` + der
 `claude`-Adapter) prüft bis zu ~346 Events **streng nacheinander** (ADR 0001).
 Bei einem vollen Lauf wird irgendwann das Claude-**Token-/Session-Limit**
 erreicht — oder das **WLAN** fällt aus. Vorher passierte dann dreierlei, alles
@@ -34,7 +34,7 @@ Ein Worker meldet einen **Sweep-weiten Infra-Fehler** durch **Exit-Code 75**
 3. macht er **kein** `cleanup` (die partielle JSONL bleibt liegen),
 4. rendert er trotzdem den **Teil-Report** + druckt einen Resume-Hinweis.
 
-Ein normaler Neustart (`python3 scripts/verify_scheduler.py`) macht dann an der
+Ein normaler Neustart (`python3 scripts/scraped_verify/scraped_verify_scheduler.py`) macht dann an der
 Abbruchstelle weiter — kein `--fresh`, kein Sonderflag nötig.
 
 **Der Scheduler bleibt modell-agnostisch:** er prüft nur den Exit-Code, nie das
@@ -63,7 +63,7 @@ Wege getrennt:
 - **Kein CLI-/Netz-Preflight im Scheduler** — das hielte ihn nicht
   modell-agnostisch; die Erkennung bleibt im Worker.
 - **Kein neuer 5. Verdict**, keine Änderung am Verdict-Shape → der Consumer
-  `verify_scraped_helper.py report` bleibt unangetastet.
+  `scraped_verify_helper.py report` bleibt unangetastet.
 - **`124`** (Einzel-Timeout einer lahmen Venue) und **`126`** (exec-format
   während CLI-Auto-Update, transient) → bleiben `unreachable` + weiter. Kein Halt.
 - **`VERIFY_CLAUDE_TIMEOUT`** bleibt 900 s (bewusst großzügig; Keep-Bias > schnelles

@@ -1,21 +1,21 @@
 # Verify-Sweep bleibt sequenziell — jetzt zwingend wegen des geteilten 9222-Chrome
 
 Der Scraped-One-Off-Verify-Sweep prüft seine Events **streng nacheinander**. Im
-alten JS-Workflow (`scripts/scraped-verify.workflow.js`) war das *erzwungen*:
+alten JS-Workflow (`scripts/scraped_verify/scraped-verify.workflow.js`) war das *erzwungen*:
 alle Sub-Agents liefen in **einer** Claude-Session mit **einem** geteilten
 Playwright-Tab, und parallele Agents navigierten denselben Tab durcheinander —
 Agent A las still die Seite von Agent B und fällte ein falsches Urteil (real
-passiert, siehe `scripts/SCRAPED_VERIFY_KNOWN_BUGS.md` und die „Shared browser"-
+passiert, siehe `scripts/scraped_verify/SCRAPED_VERIFY_KNOWN_BUGS.md` und die „Shared browser"-
 Sektion im Runbook).
 
-Beim Umbau auf `verify_scheduler.py` war der Zwang kurz **weg**: ein erster
+Beim Umbau auf `scraped_verify_scheduler.py` war der Zwang kurz **weg**: ein erster
 Entwurf gab jedem Event einen eigenen `claude -p`-Subprozess mit **eigenem
 Wegwerf-Browser** — technisch wäre Parallelität da sicher gewesen, sequenziell
 nur eine Ressourcen-Wahl.
 
-**Das gilt nicht mehr.** Der `claude`-Adapter (`verify_workers/claude.py`) dockt
+**Das gilt nicht mehr.** Der `claude`-Adapter (`scraped_verify_workers/claude.py`) dockt
 inzwischen — genau wie der Instagram-Scraper — über
-`scripts/playwright-verify.mcp.json` an **ein geteiltes, echtes Chrome auf CDP
+`scripts/scraped_verify/playwright-verify.mcp.json` an **ein geteiltes, echtes Chrome auf CDP
 Port 9222** an, statt einen Wegwerf-Browser zu starten. Gründe:
 
 1. **Anti-Bot.** Viele Venue-Seiten sperren Headless-/Automations-Browser hart
