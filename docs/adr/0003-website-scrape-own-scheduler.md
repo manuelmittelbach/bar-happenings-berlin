@@ -10,7 +10,7 @@ bewusst offen, End-to-End-Scrape steht aus). Bau-Details:
 Der Website-(„visual"-)Scrape läuft heute als JS-Workflow
 (`scripts/website_scrape/website-scrape.workflow.js`): ein Sub-Agent pro Venue, sequenziell,
 jeder schreibt selbst in die DB. Wir wollten ihn — wie zuvor den IG-Scrape
-(`scrape_scheduler.py`) und Verify (`verify_scheduler.py`) — **modell-frei**
+(`instagram_scrape_scheduler.py`) und Verify (`verify_scheduler.py`) — **modell-frei**
 machen: ein Python-Scheduler + ein austauschbarer Worker-Adapter, lauffähig auf
 `python3` ohne Claude-Runtime.
 
@@ -21,7 +21,7 @@ Skripte, und `visual_scrape_helper.py list` (wird zu `website_scrape_helper.py`
 umbenannt) baut die Work-Liste bereits. Nur die
 **Mitte** (der eigentliche Scrape pro Venue) steckt noch im JS-Workflow.
 
-Kernfrage: den bestehenden `scrape_scheduler.py` **generalisieren**
+Kernfrage: den bestehenden `instagram_scrape_scheduler.py` **generalisieren**
 (`--source instagram|website`), oder einen **eigenen** Scheduler bauen?
 
 ## Entscheidung
@@ -81,7 +81,7 @@ usage?}` wie IG, nur ohne `reason:"not-logged-in"`.
 
 ## Bewusst NICHT gemacht
 
-- **Keine Generalisierung** von `scrape_scheduler.py` (`--source`) — die
+- **Keine Generalisierung** von `instagram_scrape_scheduler.py` (`--source`) — die
   Unterschiede sind zu groß, der laufende IG-Pfad bleibt so risikofrei.
 - **Kein Login-Preflight, keine Pausen, kein Lookback** — siehe oben.
 - **Kein neuer Importer / Placeholder / Helper** — die portablen Enden sind schon
