@@ -499,6 +499,9 @@ export type Database = {
           start_time: string | null
           title: string | null
           venue_id: string | null
+          verified_at: string | null
+          verify_evidence: string
+          verify_verdict: string
         }
         Insert: {
           category?: string | null
@@ -527,6 +530,9 @@ export type Database = {
           start_time?: string | null
           title?: string | null
           venue_id?: string | null
+          verified_at?: string | null
+          verify_evidence?: string
+          verify_verdict?: string
         }
         Update: {
           category?: string | null
@@ -555,6 +561,9 @@ export type Database = {
           start_time?: string | null
           title?: string | null
           venue_id?: string | null
+          verified_at?: string | null
+          verify_evidence?: string
+          verify_verdict?: string
         }
         Relationships: [
           {
