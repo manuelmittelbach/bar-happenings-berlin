@@ -1140,6 +1140,7 @@ function mapStagedEventRow(row: StagedEventRow): StagedEvent {
     recurrence: row.recurrence ?? "",
     recurrenceUntil: row.recurrence_until ?? null,
     replacesEventId: row.replaces_event_id ?? null,
+    verifyVerdict: row.verify_verdict ?? "",
     createdBy: row.created_by ?? null,
     image: row.image ?? null,
     imagePosition: row.image_position ?? "50% 50%",
@@ -1681,7 +1682,12 @@ const MULTI_EVENT_PER_DAY_VENUE_IDS = new Set<string>([
 ]);
 
 // Bulk-handles pending scraped staging rows without per-card review, but ONLY
-// the unambiguous ones. Two row kinds:
+// the unambiguous ones. Gate zero: a row is eligible at all only when the
+// verify sweep flagged it `confirmed` (title AND date re-checked on the source
+// page — ADR 0005). Everything else — unverified, confirmed_weak, not_found,
+// unreachable — is skipped with a reason; the operating order is scrape →
+// verify → auto-approve, so right after a scrape the button correctly releases
+// nothing. Then two row kinds:
 //   • Update rows (replacesEventId set): the scraper matched this to a live
 //     event, so it patches the diverging fields onto that event instead of
 //     inserting a new one. These "clash" with the very event they replace by
@@ -1712,6 +1718,19 @@ export async function autoApproveScrapedEvents(
   for (const s of staged) {
     const label = s.title || "(untitled)";
     try {
+      // Verify gate — applies to new AND update rows. confirmed_weak stays out
+      // deliberately: the unconfirmed date is exactly the risk the sweep exists
+      // to catch.
+      if (s.verifyVerdict !== "confirmed") {
+        result.skipped.push({
+          title: label,
+          reason: s.verifyVerdict
+            ? `verify verdict "${s.verifyVerdict}" — review manually`
+            : "not verified yet — run the verify sweep first",
+        });
+        continue;
+      }
+
       // Update rows patch an existing event — never insert, never clash-skip.
       if (s.replacesEventId) {
         const live = await fetchEventById(s.replacesEventId);

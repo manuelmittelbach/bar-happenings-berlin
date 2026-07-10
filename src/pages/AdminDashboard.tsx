@@ -99,6 +99,9 @@ function approvedItemToAdminStaged(item: ApprovedEventListItem): StagedEvent {
     recurrence: parsedRule?.freq ?? "",
     recurrenceUntil: parsedRule?.until ?? null,
     replacesEventId: null,
+    // Verdicts live on staging rows only; an approved event was already
+    // released, so the adapter never shows a verify badge.
+    verifyVerdict: "",
     createdBy: event.createdBy ?? null,
     image: event.image ?? null,
     imagePosition: event.imagePosition,
@@ -692,7 +695,10 @@ export default function AdminDashboard() {
     }
   };
 
-  // Bulk auto-approve for the Scraped tab. Two kinds of rows are handled:
+  // Bulk auto-approve for the Scraped tab. Releases ONLY rows the verify sweep
+  // flagged `confirmed` (ADR 0005) — right after a scrape everything is
+  // unflagged and the button correctly does nothing until verify has run.
+  // Among the confirmed rows, two kinds are handled:
   //   • Update rows (replacesEventId set) patch their diverging fields onto the
   //     existing live event — they share that event's day by definition, so the
   //     same-bar/same-day clash check is skipped for them.
@@ -711,17 +717,20 @@ export default function AdminDashboard() {
     }
     // Quick preview from cached live events (the function recomputes a fresh
     // map for the actual writes). Updates are previewed by count only.
-    const updates = pending.filter(s => s.replacesEventId);
-    const newRows = pending.filter(s => !s.replacesEventId);
+    const confirmed = pending.filter(s => s.verifyVerdict === "confirmed");
+    const unconfirmed = pending.length - confirmed.length;
+    const updates = confirmed.filter(s => s.replacesEventId);
+    const newRows = confirmed.filter(s => !s.replacesEventId);
     let clashes = 0;
     for (const s of newRows) {
       if ((liveEventsByVenue[s.venueId] ?? []).some(e => e.date === s.date)) clashes++;
     }
     const willApprove = newRows.length - clashes;
     if (!window.confirm(
-      `Auto-approve ${willApprove} new scraped event${willApprove === 1 ? "" : "s"}`
-      + (updates.length > 0 ? ` and apply ${updates.length} update${updates.length === 1 ? "" : "s"} to existing events` : "")
-      + `? ${clashes} clash with an existing event (same bar, same day) and will be skipped.`,
+      `Auto-approve ${willApprove} verified new scraped event${willApprove === 1 ? "" : "s"}`
+      + (updates.length > 0 ? ` and apply ${updates.length} verified update${updates.length === 1 ? "" : "s"} to existing events` : "")
+      + `? Skipped: ${clashes} clash${clashes === 1 ? "" : "es"} with an existing event (same bar, same day), `
+      + `${unconfirmed} not verified as confirmed.`,
     )) return;
 
     try {
@@ -2129,6 +2138,17 @@ const PLACEHOLDER_REASONS: Record<string, { label: string; tone: "warn" | "neutr
   unparseable: { label: "Couldn't read page", tone: "warn" },
 };
 
+// Verify-sweep verdicts → badge on the Scraped tab (ADR 0005). Just the
+// verdict, deliberately no evidence and no filter; "" (unverified) shows no
+// badge at all. Labels keep the verdict vocabulary verbatim so the badge,
+// report and CONTEXT.md speak the same language.
+const VERIFY_VERDICT_BADGES: Record<string, { label: string; className: string }> = {
+  confirmed:      { label: "confirmed",      className: "bg-emerald-500/10 text-emerald-600" },
+  confirmed_weak: { label: "confirmed_weak", className: "bg-amber-500/10 text-amber-600" },
+  not_found:      { label: "not_found",      className: "bg-red-500/10 text-red-600" },
+  unreachable:    { label: "unreachable",    className: "bg-muted text-muted-foreground" },
+};
+
 function StagedEventCard({
   staged,
   liveEvents,
@@ -2787,6 +2807,14 @@ function StagedEventCard({
           {staged.createdByAdmin && (
             <span className="text-xs px-2 py-0.5 rounded-sm font-medium bg-blue-500/10 text-blue-600">
               Created manually
+            </span>
+          )}
+          {scope === "scraped" && isPending && VERIFY_VERDICT_BADGES[staged.verifyVerdict] && (
+            <span
+              title="Verify-sweep verdict for this row"
+              className={`text-xs px-2 py-0.5 rounded-sm font-medium font-mono ${VERIFY_VERDICT_BADGES[staged.verifyVerdict].className}`}
+            >
+              {VERIFY_VERDICT_BADGES[staged.verifyVerdict].label}
             </span>
           )}
           {!isPending && (

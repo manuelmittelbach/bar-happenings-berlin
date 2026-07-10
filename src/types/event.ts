@@ -120,6 +120,11 @@ export interface StagedEvent {
   // approving applies selected fields to the live event row instead of
   // creating a new one. Null for normal new-event staging rows.
   replacesEventId: string | null;
+  // Verdict the scraped-verify sweep flagged onto this row ("" = unverified;
+  // confirmed / confirmed_weak / not_found / unreachable). A scraper refresh
+  // resets it to "". Drives the badge on the Scraped tab, and auto-approve
+  // releases ONLY "confirmed" rows.
+  verifyVerdict: string;
   // Submitter (auth uid) for plain-user submissions; null for scraper/admin
   // rows. Preserved into events.created_by on approve so the approved view can
   // still resolve the original submitter.
