@@ -57,3 +57,13 @@ Details (alle einzeln gegrillt):
   in **vier** Schedulern nachgezogen werden — bewusst in Kauf genommen.
 - Änderungen an den Judging-Regeln erfordern das Nachziehen des gespiegelten
   Worker-Prompts (ein Sync-Hinweis steht an beiden Stellen).
+
+## Nachtrag 2026-07-10 (Umsetzung)
+
+- **Naming revidiert:** Nicht `verify_recurring_*` (wie oben), sondern
+  `recurring_verify_*` im eigenen Ordner `scripts/recurring_verify/` —
+  Sibling-Konvention „Ordnername = Dateipräfix" (wie `scraped_verify/`). Der
+  geteilte Helper bleibt flach als `scripts/verify_recurring_helper.py` (hängt an
+  `recurring-images.workflow.js`), der Scheduler referenziert ihn eine Ebene höher.
+- **Read-only bestätigt:** Die seit ADR 0005 in der Kopiervorlage vorhandene
+  DB-Flag-Maschinerie wird NICHT übernommen — siehe ADR 0006.
