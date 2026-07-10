@@ -64,11 +64,31 @@ Browser" statt N `unreachable`.
 
 **Scraped-Verify**:
 Der Verify-Sweep über **einmalige (one-off), noch nicht freigegebene** Events im
-Staging: prüft vor der Freigabe read-only, ob jedes Event an seinem
-gespeicherten Datum wirklich noch auf der Quell-Seite steht. Ergebnis ist ein
-Report für den Admin, keine DB-Änderung. Nicht verwechseln mit
+Staging: prüft vor der Freigabe, ob jedes Event an seinem gespeicherten Datum
+wirklich noch auf der Quell-Seite steht. Ergebnis ist ein Report für den Admin
+plus ein Flag an jeder geprüften Staging-Zeile; Event-Daten ändert der Sweep
+nie. Bereits geflaggte Events überspringt der nächste Sweep — außer
+`unreachable` (ergebnislos, wird erneut versucht). Nicht verwechseln mit
 Recurring-Verify.
 _Avoid_: Verify (unqualifiziert), Event-Check.
+
+**Verdikt** (engl. verdict):
+Das Urteil des Verify-Workers über GENAU EIN Event, aus einem festen Vokabular:
+`confirmed` (Titel UND Datum auf der Quell-Seite bestätigt), `confirmed_weak`
+(Titel gefunden, Datum nicht explizit), `not_found` (Seite geladen, Event fehlt),
+`unreachable` (Prüfung ergebnislos — Seite kaputt/blockiert). Ein Verdikt gehört
+zum Event, nie zur Venue. Keep-Bias: alles außerhalb des Vokabulars wird zu
+`unreachable`, nie zu `not_found`.
+_Avoid_: Status, Ergebnis, Confirmation.
+
+**Flag** (Verb: flaggen):
+Das an der Staging-Zeile persistierte Verify-Ergebnis: Verdikt + Begründung
+(Evidence) + Prüfzeitpunkt. Flaggen markiert nur — es ändert nie Event-Daten und
+gibt nie frei; die Freigabe-Entscheidung bleibt beim Admin bzw. Auto-Approve.
+Ändert der Scraper eine geflaggte Zeile, erlischt ihr Flag (wieder ungeprüft).
+Auto-Approve gibt AUSSCHLIESSLICH `confirmed` geflaggte Zeilen frei — auch
+Update-Zeilen.
+_Avoid_: Markierung, Verify-Status.
 
 **Recurring-Verify**:
 Der Verify-Sweep über **wiederkehrende Serien** (deren Wurzel-Events, bereits
