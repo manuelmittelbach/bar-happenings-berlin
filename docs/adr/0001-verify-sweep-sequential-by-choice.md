@@ -5,8 +5,7 @@ alten JS-Workflow (`scripts/scraped_verify/scraped-verify.workflow.js`) war das 
 alle Sub-Agents liefen in **einer** Claude-Session mit **einem** geteilten
 Playwright-Tab, und parallele Agents navigierten denselben Tab durcheinander —
 Agent A las still die Seite von Agent B und fällte ein falsches Urteil (real
-passiert, siehe `scripts/scraped_verify/SCRAPED_VERIFY_KNOWN_BUGS.md` und die „Shared browser"-
-Sektion im Runbook).
+passiert, siehe die „Shared browser"-Sektion im Runbook).
 
 Beim Umbau auf `scraped_verify_scheduler.py` war der Zwang kurz **weg**: ein erster
 Entwurf gab jedem Event einen eigenen `claude -p`-Subprozess mit **eigenem
