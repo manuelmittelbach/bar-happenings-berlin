@@ -1,9 +1,8 @@
 # Der geteilte Scrape-Kern bleibt flach im `scripts/`-Root
 
 Beim Aufräumen des `scripts/`-Ordners (2026-07) sind die handbetriebenen Tools in
-Unterordner gewandert — `tools/` (Venue-/Recurring-Utilities), `icons/`
-(PWA-Asset-Generatoren) und `dormant/` (der schlafende Ollama-Auto-Scraper
-`scrape_venue_events.py`). Der **geteilte Kern** ist bewusst **nicht**
+Unterordner gewandert — `tools/` (Venue-/Recurring-Utilities) und `icons/`
+(PWA-Asset-Generatoren). Der **geteilte Kern** ist bewusst **nicht**
 mitgewandert und liegt weiter flach im Root: `import_visual_events.py`,
 `scrape_helpers.py`, `event_image.py`, `image_utils.py`,
 `stage_visual_placeholder.py` und `verify_recurring_helper.py`.
@@ -22,8 +21,7 @@ Flach zu bleiben kostet dagegen nichts: Der Kern ist das gemeinsame Fundament,
 und flach am Root ist dafür die konventionelle, bruchfreie Stelle. Nur die
 **wenigen verschobenen Tools**, die selbst ein Kern-Modul importieren
 (`tools/scrape_venue_og_images.py` → `image_utils`,
-`tools/apply_recurring_images.py` → `event_image`,
-`dormant/scrape_venue_events.py` → `scrape_helpers`), tragen dafür oben eine
+`tools/apply_recurring_images.py` → `event_image`), tragen dafür oben eine
 kleine, in sich geschlossene Zeile, die den `scripts/`-Root auf `sys.path` legt:
 
 ```python
@@ -34,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 Wer künftig den „inkonsistenten" flachen Kern sieht, soll ihn **nicht**
 „aufräumen", indem er ihn nach `lib/` zieht — und die `sys.path`-Zeilen in den
-Tools **nicht** als überflüssig löschen. Genau diese Zeilen sind es, die
-`tools/` und `dormant/` den flachen Kern finden lassen. Ein Verschieben des Kerns
+Tools **nicht** als überflüssig löschen. Genau diese Zeilen sind es, die den
+`tools/`-Ordner den flachen Kern finden lassen. Ein Verschieben des Kerns
 wäre kein lokaler Edit, sondern ein Alles-oder-nichts-Sweep über jeden nackten
 Import und jeden `SCRIPTS_DIR`-Join in allen Workflow-Ordnern.
