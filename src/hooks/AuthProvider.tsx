@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfileRoleAndStatus } from "@/lib/supabaseQueries";
 import { markEmailJustChanged } from "@/lib/justConfirmed";
 
 type ApprovalStatus = "pending" | "approved" | "rejected";
@@ -41,17 +42,13 @@ export interface AuthContextValue extends AuthState {
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 async function fetchRoleAndStatus(user: User): Promise<{ role: "user" | "organizer" | "admin"; approvalStatus: ApprovalStatus }> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("role, approval_status")
-    .eq("id", user.id)
-    .maybeSingle();
   // A failed query must NOT be read as "this user has no elevated role" — that
   // would silently downgrade an admin/organizer to "user" and bounce them off
-  // role-gated pages on a transient network blip. Throw so the caller retries.
-  if (error) throw error;
+  // role-gated pages on a transient network blip. fetchProfileRoleAndStatus
+  // throws on error so the caller retries.
+  const data = await fetchProfileRoleAndStatus(user.id);
   const r = data?.role;
-  const rawStatus = data?.approval_status;
+  const rawStatus = data?.approvalStatus;
   const approvalStatus: ApprovalStatus =
     rawStatus === "pending" || rawStatus === "rejected" ? rawStatus : "approved";
   if (r === "organizer" || r === "admin") return { role: r, approvalStatus };

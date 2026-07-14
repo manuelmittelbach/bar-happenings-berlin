@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsNative } from "@/hooks/useIsNative";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchVenueOptions } from "@/lib/supabaseQueries";
 import { deriveNeighborhood } from "@/lib/neighborhoodFromAddress";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
@@ -57,13 +57,13 @@ export default function Signup() {
 
 	useEffect(() => {
 		let cancelled = false;
-		supabase
-			.from("venues")
-			.select("id, name, address, neighborhood")
-			.order("name", { ascending: true })
-			.then(({ data, error: venueErr }) => {
-				if (cancelled || venueErr || !data) return;
-				setVenueOptions(data as VenueOption[]);
+		fetchVenueOptions()
+			.then((venues) => {
+				if (!cancelled) setVenueOptions(venues);
+			})
+			.catch(() => {
+				// Non-critical: on failure the dropdown just stays empty and the
+				// user can still add a bar via "not in list".
 			});
 		return () => { cancelled = true; };
 	}, []);

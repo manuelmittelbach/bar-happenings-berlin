@@ -544,6 +544,21 @@ export async function fetchVenues(): Promise<Venue[]> {
   return data.map(mapVenueRow);
 }
 
+// Lean venue list for the signup bar-owner dropdown — every venue (not just
+// visible ones, so an owner can claim a not-yet-published bar), name-ordered.
+// Kept separate from fetchVenues() on purpose: that one filters is_visible and
+// returns the full Venue shape. This owns the dropdown's exact query.
+export async function fetchVenueOptions(): Promise<
+  Pick<Venue, "id" | "name" | "address" | "neighborhood">[]
+> {
+  const { data, error } = await supabase
+    .from("venues")
+    .select("id, name, address, neighborhood")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Pick<Venue, "id" | "name" | "address" | "neighborhood">[];
+}
+
 export interface CategoryRow {
   id: string;
   label: string;
@@ -583,6 +598,24 @@ export async function fetchUserRole(userId: string): Promise<"user" | "organizer
   const r = data?.role;
   if (r === "admin" || r === "organizer") return r;
   return "user";
+}
+
+// Role + approval status for AuthProvider's role resolution. Unlike
+// fetchProfile, this THROWS on a query error instead of swallowing it: a
+// transient failure must not be read as "no elevated role" (that would
+// silently downgrade an admin/organizer and bounce them off role-gated pages).
+// The caller keeps the metadata-fallback and normalization logic.
+export async function fetchProfileRoleAndStatus(
+  userId: string,
+): Promise<{ role: string | null; approvalStatus: string | null } | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role, approval_status")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { role: data.role, approvalStatus: data.approval_status };
 }
 
 export async function fetchProfile(userId: string): Promise<{ firstName: string; lastName: string; role: string; approvalStatus: string } | null> {
