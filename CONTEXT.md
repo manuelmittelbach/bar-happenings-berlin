@@ -114,3 +114,34 @@ hält daraufhin an, behält den Fortschritt und nennt den `--offset` zum
 Weitermachen. Ausdrücklich KEIN Urteil über die Seite — „gar nicht erst
 versucht". Siehe `docs/adr/0002-…` und `docs/adr/0003-…`.
 _Avoid_: Crash, Absturz, Fehler.
+
+## Freigabe (Approval)
+
+**Auto-Approve**:
+Die Stapel-Freigabe der gescrapten Staging-Zeilen ohne Einzel-Prüfung — gibt aber
+NUR eindeutige Zeilen frei: Verdikt `confirmed`, Pflichtfelder da, Venue
+verknüpft, kein Clash (außer Mehr-Event-Bar). Alles andere bleibt mit Grund
+liegen. Neue Zeilen werden als neues Event eingefügt, Update-Zeilen patchen ein
+bestehendes.
+_Avoid_: Bulk-Approve, Massen-Freigabe, Auto-Publish.
+
+**Clash** (dt. Konflikt):
+Gleiche Bar + gleicher Tag — der (Bar, Tag)-Slot ist schon belegt (durch ein
+Live-Event oder eine früher im selben Lauf freigegebene Zeile). Ein Clash
+blockiert beim Auto-Approve das Einfügen einer NEUEN Zeile (sie bleibt liegen,
+nichts wird je überschrieben). Ausgenommen: Update-Zeilen (zeigen auf genau das
+belegte Event) und Mehr-Event-Bars.
+_Avoid_: Kollision, Duplikat, Overlap.
+
+**Mehr-Event-Bar** (die Whitelist):
+Eine Venue, die legitim mehrere Events am selben Tag hat (Club, große Location,
+Programm mit mehreren Acts) und deshalb von der Clash-Regel ausgenommen ist. Als
+`MULTI_EVENT_PER_DAY_VENUE_IDS` per Venue-UUID gepflegt.
+_Avoid_: Ausnahme-Bar, VIP-Bar, Multi-Venue.
+
+**Freigabe-Entscheidung** (engl. approval decision):
+Das reine Urteil, was mit einer Staging-Zeile beim Auto-Approve geschehen soll —
+`insert` (neues Event), `update` (bestehendes patchen) oder `skip` (+Grund). Ein
+Wert, kein Seiteneffekt; Vorschau und echter Write teilen sich dasselbe Urteil,
+damit die Vorschau dem Effekt IMMER entspricht.
+_Avoid_: Freigabe-Regel, Approval-Check, Validierung.
