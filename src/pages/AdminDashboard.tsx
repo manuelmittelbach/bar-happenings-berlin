@@ -5,6 +5,7 @@ import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, formatRecurrenceLabel, describeRule, parseRule, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
+import { decideApproval } from "@/lib/approvalDecision";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -715,20 +716,36 @@ export default function AdminDashboard() {
       toast.error("No pending scraped events to approve.");
       return;
     }
-    // Quick preview from cached live events (the function recomputes a fresh
-    // map for the actual writes). Updates are previewed by count only.
+    // Preview via the SAME decision function the write uses (whitelist and
+    // all), so the numbers shown match what actually happens — the previous
+    // hand-rolled clash loop omitted the multi-event whitelist, so a
+    // whitelisted bar's rows were previewed as "clash" yet approved for real.
+    // claimedSlots is seeded from the cached live events (the write recomputes
+    // a fresh map) and extended per insert, mirroring the run.
+    const claimedSlots = new Set<string>();
+    for (const [venueId, events] of Object.entries(liveEventsByVenue)) {
+      for (const e of events) claimedSlots.add(`${venueId}|${e.date}`);
+    }
     const confirmed = pending.filter(s => s.verifyVerdict === "confirmed");
     const unconfirmed = pending.length - confirmed.length;
-    const updates = confirmed.filter(s => s.replacesEventId);
-    const newRows = confirmed.filter(s => !s.replacesEventId);
+    let willApprove = 0;
+    let updates = 0;
     let clashes = 0;
-    for (const s of newRows) {
-      if ((liveEventsByVenue[s.venueId] ?? []).some(e => e.date === s.date)) clashes++;
+    for (const s of confirmed) {
+      const { action } = decideApproval(s, { claimedSlots });
+      if (action === "update") {
+        updates++;
+      } else if (action === "insert") {
+        willApprove++;
+        claimedSlots.add(`${s.venueId}|${s.date}`);
+      } else {
+        // A confirmed new row can only be skipped by the same-bar/same-day clash.
+        clashes++;
+      }
     }
-    const willApprove = newRows.length - clashes;
     if (!window.confirm(
       `Auto-approve ${willApprove} verified new scraped event${willApprove === 1 ? "" : "s"}`
-      + (updates.length > 0 ? ` and apply ${updates.length} verified update${updates.length === 1 ? "" : "s"} to existing events` : "")
+      + (updates > 0 ? ` and apply ${updates} verified update${updates === 1 ? "" : "s"} to existing events` : "")
       + `? Skipped: ${clashes} clash${clashes === 1 ? "" : "es"} with an existing event (same bar, same day), `
       + `${unconfirmed} not verified as confirmed.`,
     )) return;

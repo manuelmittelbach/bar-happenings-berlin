@@ -4,6 +4,7 @@ import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, Venu
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { berlinDateStringOffset } from "@/lib/dateFormat";
 import { geocodeAddress } from "@/lib/geocoding";
+import { decideApproval } from "@/lib/approvalDecision";
 
 // Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
 // also contain seconds. Normalize everything to HH:MM at every read/write
@@ -1665,22 +1666,6 @@ function autoUpdatePatch(staged: StagedEvent, live: BarlinEvent): EventUpdatePat
   return patch;
 }
 
-// Venues that are allowed to have MORE than one event on the same day during
-// auto-approve. By default a bar that already has an event that day blocks any
-// new same-day row (it gets left for manual review). For the venues listed
-// here that same-day check is skipped, so every scraped row is approved even
-// when the bar already has events that day — useful for multi-stage venues,
-// festivals, or programmes with several acts per night.
-//
-// Keyed by venue UUID (not name) so accents/typos can't break the match — same
-// pattern as the category overrides in scripts/scrape_helpers.py. Add the
-// venue's id from the `bars`/`venues` table to allow same-day stacking.
-const MULTI_EVENT_PER_DAY_VENUE_IDS = new Set<string>([
-  "e905bf80-afdb-417a-bba4-6aaa6962097d", // Comedy Café Berlin
-  "54609d56-759b-444c-88ac-4766bf2ec71c", // Mein Freund Harvey
-  "a4855d6d-2f68-4c97-bd98-759e4628aa8b", // Paloma Bar
-]);
-
 // Bulk-handles pending scraped staging rows without per-card review, but ONLY
 // the unambiguous ones. Gate zero: a row is eligible at all only when the
 // verify sweep flagged it `confirmed` (title AND date re-checked on the source
@@ -1718,22 +1703,21 @@ export async function autoApproveScrapedEvents(
   for (const s of staged) {
     const label = s.title || "(untitled)";
     try {
-      // Verify gate — applies to new AND update rows. confirmed_weak stays out
-      // deliberately: the unconfirmed date is exactly the risk the sweep exists
-      // to catch.
-      if (s.verifyVerdict !== "confirmed") {
-        result.skipped.push({
-          title: label,
-          reason: s.verifyVerdict
-            ? `verify verdict "${s.verifyVerdict}" — review manually`
-            : "not verified yet — run the verify sweep first",
-        });
+      // All the gates (verdict, venue, required fields, clash+whitelist) and
+      // the insert/update/skip verdict live in the one pure function — the
+      // preview in AdminDashboard calls the exact same thing, so the two can't
+      // diverge. Only the DB I/O below is caller-specific.
+      const decision = decideApproval(s, { claimedSlots });
+
+      if (decision.action === "skip") {
+        result.skipped.push({ title: label, reason: decision.reason ?? "skipped" });
         continue;
       }
 
-      // Update rows patch an existing event — never insert, never clash-skip.
-      if (s.replacesEventId) {
-        const live = await fetchEventById(s.replacesEventId);
+      // Update rows patch an existing event — the fetch/diff/patch I/O that
+      // decideApproval deliberately leaves out happens here.
+      if (decision.action === "update") {
+        const live = s.replacesEventId ? await fetchEventById(s.replacesEventId) : null;
         if (!live) {
           result.skipped.push({ title: label, reason: "live event to update no longer exists" });
           continue;
@@ -1750,27 +1734,10 @@ export async function autoApproveScrapedEvents(
         continue;
       }
 
-      if (!s.venueId) {
-        result.skipped.push({ title: label, reason: "no venue linked" });
-        continue;
-      }
-      if (!s.title.trim() || !s.date || !s.category) {
-        result.skipped.push({ title: label, reason: "missing title, date or category" });
-        continue;
-      }
-
-      const slot = `${s.venueId}|${s.date}`;
-      // Whitelisted venues may stack multiple events on the same day, so the
-      // clash check is bypassed for them.
-      if (!MULTI_EVENT_PER_DAY_VENUE_IDS.has(s.venueId) && claimedSlots.has(slot)) {
-        // The bar already has an event that day (live, or another row approved
-        // earlier in this run) — skip, never overwrite.
-        result.skipped.push({ title: label, reason: "another event already exists in this bar that day" });
-        continue;
-      }
-
+      // insert — approve as a new live event and claim the (bar|day) slot so a
+      // later row in this same run can't double-book it.
       await approveStagedEvent(s, adminUserId);
-      claimedSlots.add(slot);
+      claimedSlots.add(`${s.venueId}|${s.date}`);
       result.approved++;
     } catch (err) {
       const reason = err instanceof Error ? err.message : "approve failed";
