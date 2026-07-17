@@ -4,7 +4,7 @@ import type { BarlinEvent, StagedEvent, StagedEventEdits, StagedEventScope, Venu
 import { formatRule, generateOccurrences, type RecurrenceFreq } from "@/lib/recurrence";
 import { berlinDateStringOffset } from "@/lib/dateFormat";
 import { geocodeAddress } from "@/lib/geocoding";
-import { decideApproval } from "@/lib/approvalDecision";
+import { buildClaimedSlots, decideApproval, slotKey } from "@/lib/approvalDecision";
 
 // Postgres `time` columns return "HH:MM:SS"; legacy text rows in `events` may
 // also contain seconds. Normalize everything to HH:MM at every read/write
@@ -1724,14 +1724,10 @@ export async function autoApproveScrapedEvents(
   const liveByVenue = await fetchLiveEventsByVenue();
   const result: AutoApproveResult = { approved: 0, updated: 0, skipped: [] };
 
-  // Occupied (bar|day) slots. Seeded from every existing live event — approved
-  // OR canceled both count as "the bar already has an event that day" — then
-  // extended as we approve, so two scraped rows for the same new slot can't
-  // both land.
-  const claimedSlots = new Set<string>();
-  for (const [venueId, events] of Object.entries(liveByVenue)) {
-    for (const e of events) claimedSlots.add(`${venueId}|${e.date}`);
-  }
+  // Occupied (bar|day) slots — seeded from every existing live event, then
+  // extended as we approve so two scraped rows for the same new slot can't both
+  // land.
+  const claimedSlots = buildClaimedSlots(liveByVenue);
 
   for (const s of staged) {
     const label = s.title || "(untitled)";
@@ -1770,7 +1766,7 @@ export async function autoApproveScrapedEvents(
       // insert — approve as a new live event and claim the (bar|day) slot so a
       // later row in this same run can't double-book it.
       await approveStagedEvent(s, adminUserId);
-      claimedSlots.add(`${s.venueId}|${s.date}`);
+      claimedSlots.add(slotKey(s.venueId, s.date));
       result.approved++;
     } catch (err) {
       const reason = err instanceof Error ? err.message : "approve failed";

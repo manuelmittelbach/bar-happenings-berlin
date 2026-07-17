@@ -16,6 +16,56 @@ export const MULTI_EVENT_PER_DAY_VENUE_IDS = new Set<string>([
   "a4855d6d-2f68-4c97-bd98-759e4628aa8b", // Paloma Bar
 ]);
 
+// The one answer to "may this bar hold more than one event on a day?". Both
+// the unattended batch (through decideApproval) and the admin card's clash
+// warning ask here, so a Mehr-Event-Bar can't be a clash on one path and a
+// legitimate stack on the other.
+function stacksSameDay(venueId: string, whitelist: Set<string>): boolean {
+  return whitelist.has(venueId);
+}
+
+// A (bar|day) slot key. One format, so a slot claimed by one caller is read as
+// claimed by the next.
+export function slotKey(venueId: string, date: string): string {
+  return `${venueId}|${date}`;
+}
+
+// Seeds the occupied (bar|day) slots from a live-events-by-venue map. Approved
+// OR canceled both count as "the bar already has an event that day" — the
+// caller decides which events to hand in; every one of them claims its slot.
+// The batch extends the returned set as it approves, so two staged rows for the
+// same new slot can't both land.
+export function buildClaimedSlots(
+  liveByVenue: Record<string, { date: string }[]>,
+): Set<string> {
+  const slots = new Set<string>();
+  for (const [venueId, events] of Object.entries(liveByVenue)) {
+    for (const e of events) slots.add(slotKey(venueId, e.date));
+  }
+  return slots;
+}
+
+// The clash question for the attended path: which of `events` sit on a day this
+// row wants? Returns the events themselves — the admin card links them so a
+// human can compare — where decideApproval only needs a yes/no. `dates` is a
+// set of days because a recurring row claims its whole series at once.
+//
+// A whitelisted venue never clashes, exactly as in decideApproval's gate 4.
+// `events` are assumed to be the live events of `venueId` already.
+//
+// `dates` is deliberately NOT Iterable<string>: a bare date string satisfies
+// that, and iterating it would yield characters and silently match nothing.
+export function findSameDayClashes<E extends { date: string }>(
+  venueId: string,
+  dates: readonly string[] | ReadonlySet<string>,
+  events: E[],
+  whitelist: Set<string> = MULTI_EVENT_PER_DAY_VENUE_IDS,
+): E[] {
+  if (stacksSameDay(venueId, whitelist)) return [];
+  const wanted = new Set(dates);
+  return events.filter(e => wanted.has(e.date));
+}
+
 export type ApprovalAction = "insert" | "update" | "skip";
 
 export interface ApprovalDecision {
@@ -81,8 +131,10 @@ export function decideApproval(
     return { action: "skip", reason: "missing title, date or category" };
   }
 
-  const slot = `${staged.venueId}|${staged.date}`;
-  if (!whitelist.has(staged.venueId) && claimedSlots.has(slot)) {
+  if (
+    !stacksSameDay(staged.venueId, whitelist) &&
+    claimedSlots.has(slotKey(staged.venueId, staged.date))
+  ) {
     return { action: "skip", reason: "another event already exists in this bar that day" };
   }
 

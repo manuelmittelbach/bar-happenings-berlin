@@ -5,7 +5,12 @@ import { addDays, addMonths, differenceInDays, format, parse } from "date-fns";
 import { generateOccurrences, formatRecurrenceLabel, describeRule, parseRule, type RecurrenceFreq } from "@/lib/recurrence";
 import { formatDateShort, formatDateWithDay, formatTimestampAsBerlinDate } from "@/lib/dateFormat";
 import { isEventInPast } from "@/lib/eventStatus";
-import { decideApproval } from "@/lib/approvalDecision";
+import {
+  buildClaimedSlots,
+  decideApproval,
+  findSameDayClashes,
+  slotKey,
+} from "@/lib/approvalDecision";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, X, Building2, Shield, Globe, Instagram, Phone, Edit, CalendarDays, ExternalLink, Plus, Copy, Repeat, ChevronDown, Eye, Trash2, Ban, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -722,10 +727,7 @@ export default function AdminDashboard() {
     // whitelisted bar's rows were previewed as "clash" yet approved for real.
     // claimedSlots is seeded from the cached live events (the write recomputes
     // a fresh map) and extended per insert, mirroring the run.
-    const claimedSlots = new Set<string>();
-    for (const [venueId, events] of Object.entries(liveEventsByVenue)) {
-      for (const e of events) claimedSlots.add(`${venueId}|${e.date}`);
-    }
+    const claimedSlots = buildClaimedSlots(liveEventsByVenue);
     const confirmed = pending.filter(s => s.verifyVerdict === "confirmed");
     const unconfirmed = pending.length - confirmed.length;
     let willApprove = 0;
@@ -737,7 +739,7 @@ export default function AdminDashboard() {
         updates++;
       } else if (action === "insert") {
         willApprove++;
-        claimedSlots.add(`${s.venueId}|${s.date}`);
+        claimedSlots.add(slotKey(s.venueId, s.date));
       } else {
         // A confirmed new row can only be skipped by the same-bar/same-day clash.
         clashes++;
@@ -2391,8 +2393,10 @@ function StagedEventCard({
     }
     return [date];
   })();
-  const seriesDateSet = new Set(seriesDates);
-  const sameDayEvents = liveEvents.filter(e => seriesDateSet.has(e.date));
+  // The same clash question the auto-approve batch asks, whitelist and all — a
+  // Mehr-Event-Bar stacks same-day events by design, so it must not warn here
+  // while the batch inserts the identical row without a word.
+  const sameDayEvents = findSameDayClashes(staged.venueId, seriesDates, liveEvents);
 
   const isPending = staged.status === "pending";
   const isApproved = staged.status === "approved";

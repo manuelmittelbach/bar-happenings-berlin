@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { decideApproval, MULTI_EVENT_PER_DAY_VENUE_IDS } from "./approvalDecision";
+import {
+  buildClaimedSlots,
+  decideApproval,
+  findSameDayClashes,
+  MULTI_EVENT_PER_DAY_VENUE_IDS,
+} from "./approvalDecision";
 
 type StagedInput = Parameters<typeof decideApproval>[0];
 
@@ -95,5 +100,78 @@ describe("decideApproval", () => {
     );
     expect(decideApproval(makeStaged({ date: "" }), noSlots()).action).toBe("skip");
     expect(decideApproval(makeStaged({ category: null }), noSlots()).action).toBe("skip");
+  });
+});
+
+describe("buildClaimedSlots", () => {
+  it("keys every live event as venue|date", () => {
+    const slots = buildClaimedSlots({
+      "venue-1": [{ date: "2026-08-01" }, { date: "2026-08-02" }],
+      "venue-2": [{ date: "2026-08-01" }],
+    });
+    expect(slots).toEqual(
+      new Set(["venue-1|2026-08-01", "venue-1|2026-08-02", "venue-2|2026-08-01"]),
+    );
+  });
+
+  it("collapses two events in the same bar on the same day into one slot", () => {
+    const slots = buildClaimedSlots({
+      "venue-1": [{ date: "2026-08-01" }, { date: "2026-08-01" }],
+    });
+    expect(slots.size).toBe(1);
+  });
+
+  it("returns an empty set for an empty map", () => {
+    expect(buildClaimedSlots({}).size).toBe(0);
+  });
+
+  it("produces slots decideApproval reads as a clash", () => {
+    const slots = buildClaimedSlots({ "venue-1": [{ date: "2026-08-01" }] });
+    expect(decideApproval(makeStaged(), { claimedSlots: slots }).action).toBe("skip");
+  });
+});
+
+describe("findSameDayClashes", () => {
+  const live = [
+    { id: "a", date: "2026-08-01" },
+    { id: "b", date: "2026-08-05" },
+    { id: "c", date: "2026-08-09" },
+  ];
+
+  it("returns the live events that occupy a wanted day", () => {
+    expect(findSameDayClashes("venue-1", ["2026-08-01"], live)).toEqual([live[0]]);
+  });
+
+  it("returns every clash across a multi-date series", () => {
+    expect(findSameDayClashes("venue-1", ["2026-08-01", "2026-08-09"], live)).toEqual([
+      live[0],
+      live[2],
+    ]);
+  });
+
+  it("returns nothing when no live event shares a wanted day", () => {
+    expect(findSameDayClashes("venue-1", ["2026-08-02"], live)).toEqual([]);
+  });
+
+  // The leak this module closes: the admin card warned on a Mehr-Event-Bar
+  // while auto-approve stacked the same row without a murmur.
+  it("returns nothing for a whitelisted venue even when the day is occupied", () => {
+    expect(
+      findSameDayClashes("venue-1", ["2026-08-01"], live, new Set(["venue-1"])),
+    ).toEqual([]);
+  });
+
+  it("falls back to MULTI_EVENT_PER_DAY_VENUE_IDS when no whitelist is passed", () => {
+    const whitelisted = [...MULTI_EVENT_PER_DAY_VENUE_IDS][0];
+    expect(findSameDayClashes(whitelisted, ["2026-08-01"], live)).toEqual([]);
+  });
+
+  it("agrees with decideApproval on the same whitelisted venue", () => {
+    const whitelisted = [...MULTI_EVENT_PER_DAY_VENUE_IDS][0];
+    const slots = buildClaimedSlots({ [whitelisted]: [{ date: "2026-08-01" }] });
+    expect(findSameDayClashes(whitelisted, ["2026-08-01"], live)).toEqual([]);
+    expect(
+      decideApproval(makeStaged({ venueId: whitelisted }), { claimedSlots: slots }).action,
+    ).toBe("insert");
   });
 });
