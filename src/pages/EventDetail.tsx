@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsNative } from "@/hooks/useIsNative";
 import { formatRecurrenceLabel } from "@/lib/recurrence";
 import EventDetailView from "@/components/events/EventDetailView";
+import CalendarMenu from "@/components/events/CalendarMenu";
 import { PageSpinner } from "@/components/ui/page-spinner";
 
 /* Production origin for shareable URLs. In Capacitor the app runs at
@@ -153,16 +154,28 @@ export default function EventDetail() {
 					) : (
 						<div />
 					)}
-					<button
-						onClick={handleShare}
-						className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
-						aria-label="Share"
-					>
-						<Share className="h-3.5 w-3.5" />
-						<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
-							Share
-						</span>
-					</button>
+					<div className="flex items-center gap-2">
+						<CalendarMenu
+							uid={event.id}
+							title={event.title}
+							venue={event.venue}
+							address={event.address}
+							date={event.date}
+							startTime={event.startTime}
+							endTime={event.endTime}
+							pageUrl={`${PUBLIC_ORIGIN}/event/${event.id}`}
+						/>
+						<button
+							onClick={handleShare}
+							className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full md:rounded-none border-2 border-foreground text-foreground hover:bg-foreground hover:text-background active:scale-95 active:opacity-80 transition-all"
+							aria-label="Share"
+						>
+							<Share className="h-3.5 w-3.5" />
+							<span className="font-mono text-[11px] font-bold uppercase tracking-[0.12em]">
+								Share
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
