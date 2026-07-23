@@ -244,7 +244,10 @@ export default function Index() {
       activeDate === "Tomorrow" ? "tomorrow"
       : activeDate === "Upcoming" ? "upcoming"
       : "today";
-    result = result.filter((e) => daySlot(e) === slot);
+    // One `now` snapshot for the whole pass so every event is bucketed
+    // against the same instant (the memo re-runs when today/tomorrow roll).
+    const now = new Date();
+    result = result.filter((e) => daySlot(e, now) === slot);
     // Chronological — over events are already filtered out by isEventStillOnline.
     result.sort(compareChronological);
     return result;
