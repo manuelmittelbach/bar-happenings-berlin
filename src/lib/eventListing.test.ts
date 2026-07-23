@@ -47,7 +47,7 @@ describe("isShowable", () => {
 });
 
 describe("daySlot", () => {
-  // now = 2026-07-23 12:00 Berlin → today 07-23, tomorrow 07-24, cutoff 08-06.
+  // now = 2026-07-23 12:00 Berlin → today 07-23, tomorrow 07-24, cutoff 08-05.
   const now = new Date("2026-07-23T12:00:00+02:00");
 
   it("buckets by date relative to now", () => {
@@ -58,8 +58,8 @@ describe("daySlot", () => {
   });
 
   it("puts the horizon day in upcoming and the day after in beyond", () => {
-    expect(daySlot({ date: "2026-08-06" }, now)).toBe("upcoming"); // today+14
-    expect(daySlot({ date: "2026-08-07" }, now)).toBe("beyond");
+    expect(daySlot({ date: "2026-08-05" }, now)).toBe("upcoming"); // today+13
+    expect(daySlot({ date: "2026-08-06" }, now)).toBe("beyond");
   });
 });
 

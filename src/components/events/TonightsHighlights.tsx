@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cleanEventTitle } from "@/lib/cleanTitle";
+import { compareByStartTime } from "@/lib/eventListing";
 import EventMeta from "@/components/events/EventMeta";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
@@ -28,9 +29,7 @@ export default function TonightsHighlights({
       .sort((a, b) => {
         const p = a.highlightPriority - b.highlightPriority;
         if (p !== 0) return p;
-        const tA = a.startTime || "99:99";
-        const tB = b.startTime || "99:99";
-        return tA.localeCompare(tB);
+        return compareByStartTime(a, b);
       })
       .slice(0, limit);
   }, [events, limit]);

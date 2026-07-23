@@ -9,6 +9,7 @@ import EventMap from "@/components/map/EventMap";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/ui/error-state";
 import { isEventStillOnline } from "@/lib/eventStatus";
+import { daySlot } from "@/lib/eventListing";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
@@ -70,8 +71,6 @@ export default function MapPage() {
 
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
-  // Mirror Index.tsx — Later spans from day-after-tomorrow to today+14
-  const cutoffDate = berlinDateStringOffset(14);
 
   // Map activeDate (shared URL state with Index) to DaySwitcher tab so
   // navigating Index → Map keeps the user on the same day view.
@@ -97,17 +96,15 @@ export default function MapPage() {
     if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
-    // Day scoping — same mapping as Index so Tonight/Tomorrow/Upcoming
-    // means the same set across both pages.
-    if (activeDate === "All" || activeDate === "Today") {
-      result = result.filter((e) => e.date === today);
-    } else if (activeDate === "Tomorrow") {
-      result = result.filter((e) => e.date === tomorrow);
-    } else if (activeDate === "Upcoming") {
-      result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
-    }
+    // Day scoping via daySlot so Tonight/Tomorrow/Upcoming means the exact
+    // same set as Index (both now share the one Upcoming horizon).
+    const slot =
+      activeDate === "Tomorrow" ? "tomorrow"
+      : activeDate === "Upcoming" ? "upcoming"
+      : "today";
+    result = result.filter((e) => daySlot(e) === slot);
     return result;
-  }, [eventsData, activeCategory, activeNeighborhood, activeDate, searchQuery, today, tomorrow, cutoffDate]);
+  }, [eventsData, activeCategory, activeNeighborhood, activeDate, searchQuery, today, tomorrow]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">

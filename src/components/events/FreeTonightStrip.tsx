@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import EventMeta from "@/components/events/EventMeta";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
+import { compareByStartTime } from "@/lib/eventListing";
 import type { BarlinEvent } from "@/types/event";
 import type { CategoryRow } from "@/lib/supabaseQueries";
 
@@ -41,11 +42,7 @@ export default function FreeTonightStrip({
       // free event hidden by a slice here would vanish from the page
       // entirely (shown nowhere, yet still counted on the map). Render
       // every free event so the section stays the complete free list.
-      .sort((a, b) => {
-        const tA = a.startTime || "99:99";
-        const tB = b.startTime || "99:99";
-        return tA.localeCompare(tB);
-      });
+      .sort(compareByStartTime);
   }, [events]);
 
   if (freeEvents.length === 0) return null;

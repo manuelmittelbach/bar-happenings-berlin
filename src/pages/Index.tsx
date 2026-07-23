@@ -17,6 +17,7 @@ import type { BarlinEvent, Venue } from "@/types/event";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { isEventStillOnline } from "@/lib/eventStatus";
+import { daySlot, compareByStartTime, compareChronological } from "@/lib/eventListing";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { isFreeOrDonation } from "@/lib/entryInfo";
@@ -94,9 +95,9 @@ export default function Index() {
   // Yesterday is only relevant for the "Since yesterday" strip — events
   // that started before midnight and are still running into early today.
   const yesterday = berlinDateStringOffset(-1);
-  // Fixed 2-week horizon: today + tomorrow + 12 more days. Anything past
-  // this date is hidden — no "show more" affordance, no infinite scroll.
-  const cutoffDate = berlinDateStringOffset(13);
+  // Day scoping (today / tomorrow / upcoming) is delegated to daySlot, which
+  // owns the fixed 2-week "Upcoming" horizon. Anything past it is hidden — no
+  // "show more" affordance, no infinite scroll.
 
   const {
     data: eventsData = [],
@@ -220,7 +221,7 @@ export default function Index() {
             isEventStillOnline(e) &&
             matchesFilters(e),
         )
-        .sort((a, b) => (a.startTime || "99:99").localeCompare(b.startTime || "99:99")),
+        .sort(compareByStartTime),
     [eventsData, yesterday, matchesFilters],
   );
 
@@ -239,23 +240,15 @@ export default function Index() {
       result = result.filter((e) => fuzzyMatchAny([e.venue, e.neighborhood], searchQuery));
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    if (activeDate === "Today" || activeDate === "All") {
-      result = result.filter((e) => e.date === today);
-    } else if (activeDate === "Tomorrow") {
-      result = result.filter((e) => e.date === tomorrow);
-    } else if (activeDate === "Upcoming") {
-      result = result.filter((e) => e.date > tomorrow && e.date <= cutoffDate);
-    }
+    const slot =
+      activeDate === "Tomorrow" ? "tomorrow"
+      : activeDate === "Upcoming" ? "upcoming"
+      : "today";
+    result = result.filter((e) => daySlot(e) === slot);
     // Chronological — over events are already filtered out by isEventStillOnline.
-    result.sort((a, b) => {
-      const dateCmp = a.date.localeCompare(b.date);
-      if (dateCmp !== 0) return dateCmp;
-      const tA = a.startTime || "99:99";
-      const tB = b.startTime || "99:99";
-      return tA.localeCompare(tB);
-    });
+    result.sort(compareChronological);
     return result;
-  }, [searchQuery, activeCategory, activeDate, today, tomorrow, eventsData, cutoffDate]);
+  }, [searchQuery, activeCategory, activeDate, today, tomorrow, eventsData]);
 
   // Restore the internal scroll position ONLY on back/forward navigation
   // (POP) — that's the browser-native convention. A fresh PUSH/REPLACE into

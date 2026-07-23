@@ -17,8 +17,10 @@ import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 const TIMELESS = "99:99";
 
 // How many days ahead "Upcoming" reaches: today+UPCOMING_HORIZON is the last
-// day still counted as upcoming (mirrors the +14 cutoff Index/MapPage used).
-export const UPCOMING_HORIZON = 14;
+// day still counted as upcoming — a 2-week window (today + tomorrow + 12 more
+// days). Index used +13 for this; MapPage had drifted to +14, which this now
+// reconciles to the single documented horizon.
+export const UPCOMING_HORIZON = 13;
 
 export type DaySlot = "past" | "today" | "tomorrow" | "upcoming" | "beyond";
 

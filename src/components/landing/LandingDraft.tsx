@@ -5,7 +5,8 @@ import { /* Apple, ArrowUpRight, Play, */ ArrowRight } from "lucide-react"; // A
 import { useEvents, useCategories, useVenues } from "@/hooks/useEvents";
 import { setFilter } from "@/lib/useFilterParams";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
-import { isEventStillOnline, isLiveNow } from "@/lib/eventStatus";
+import { isLiveNow } from "@/lib/eventStatus";
+import { isShowable, compareByStartTime } from "@/lib/eventListing";
 import { isFreeEntry, isDonationEntry } from "@/lib/entryInfo";
 import { cleanEventTitle } from "@/lib/cleanTitle";
 import type { BarlinEvent } from "@/types/event";
@@ -42,10 +43,7 @@ export default function LandingDraft() {
   // both the carousel pool and the visible copy further down.
   const { pool, count, mode } = useMemo(() => {
     const todays = eventsData.filter(
-      (e) =>
-        e.date === today &&
-        isEventStillOnline(e) &&
-        e.status !== "canceled",
+      (e) => e.date === today && isShowable(e),
     );
     if (todays.length > 0)
       return { pool: todays, count: todays.length, mode: "tonight" as const };
@@ -111,7 +109,7 @@ export default function LandingDraft() {
       .sort((a, b) => {
         const p = a.highlightPriority - b.highlightPriority;
         if (p !== 0) return p;
-        return (a.startTime || "99:99").localeCompare(b.startTime || "99:99");
+        return compareByStartTime(a, b);
       });
     // First pass: one card per distinct venue, in shuffled order, so the start
     // of the loop never repeats a bar. Second pass: append everything still

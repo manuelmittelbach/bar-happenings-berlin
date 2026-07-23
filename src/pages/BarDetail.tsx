@@ -7,7 +7,7 @@ import { Share as CapacitorShare } from "@capacitor/share";
 import { useVenueById, useEventsByVenue } from "@/hooks/useEvents";
 import { useIsNative } from "@/hooks/useIsNative";
 import { berlinDateString } from "@/lib/dateFormat";
-import { isEventStillOnline } from "@/lib/eventStatus";
+import { isShowable, compareChronological } from "@/lib/eventListing";
 import { addSoftHyphens } from "@/lib/cleanTitle";
 import UpcomingAgenda from "@/components/bars/UpcomingAgenda";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -83,14 +83,8 @@ export default function BarDetail() {
   // (isEventStillOnline) instead of just checking the date — so an event
   // with no start time falls off at 22:00 here too, not at midnight.
   const upcomingEvents = venueEvents
-    .filter((e) => e.status !== "canceled" && isEventStillOnline(e))
-    .sort((a, b) => {
-      const dateCmp = a.date.localeCompare(b.date);
-      if (dateCmp !== 0) return dateCmp;
-      const tA = a.startTime || "99:99";
-      const tB = b.startTime || "99:99";
-      return tA.localeCompare(tB);
-    });
+    .filter((e) => isShowable(e))
+    .sort(compareChronological);
 
   const cleanAddress = venue.address.replace(/,\s*(Germany|Deutschland)\s*$/i, "");
   // Standard external link — plain <a target="_blank">; let the OS decide

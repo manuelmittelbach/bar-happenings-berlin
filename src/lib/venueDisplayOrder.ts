@@ -1,5 +1,5 @@
 import type { Venue, BarlinEvent } from "@/types/event";
-import { isEventStillOnline } from "@/lib/eventStatus";
+import { isShowable, compareByStartTime } from "@/lib/eventListing";
 import { neighborhoodRank } from "@/lib/neighborhoodFromAddress";
 
 // Shared ordering for the Bars directory. BarsList renders these groups as
@@ -25,17 +25,14 @@ export function buildTonightEventsMap(
   const map = new Map<string, BarlinEvent[]>();
   for (const e of events) {
     if (e.date !== today) continue;
-    if (e.status === "canceled") continue;
-    if (!isEventStillOnline(e)) continue;
+    if (!isShowable(e)) continue;
     if (!e.venueId) continue;
     const list = map.get(e.venueId) || [];
     list.push(e);
     map.set(e.venueId, list);
   }
   for (const list of map.values()) {
-    list.sort((a, b) =>
-      (a.startTime || "99:99").localeCompare(b.startTime || "99:99"),
-    );
+    list.sort(compareByStartTime);
   }
   return map;
 }
