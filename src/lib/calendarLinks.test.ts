@@ -74,10 +74,14 @@ describe("buildIcs", () => {
     expect(ics).toContain("DTEND:20260115T210000Z");
   });
 
-  it("sets a stable UID and the URL property", () => {
+  it("sets a stable UID", () => {
     const ics = buildIcs(base);
     expect(ics).toContain("UID:abc123@insidebars.co");
-    expect(ics).toContain("URL:https://www.insidebars.co/event/abc123");
+  });
+
+  it("puts the event link only in the notes, not a separate URL property", () => {
+    const ics = buildIcs(base);
+    expect(ics).not.toMatch(/^URL:/m);
   });
 
   it("escapes commas in the location", () => {

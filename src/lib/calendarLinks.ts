@@ -111,8 +111,10 @@ export function buildIcs(ev: CalendarEventInput): string {
     `DTEND:${utcStamp(end)}`,
     `SUMMARY:${escapeIcsText(ev.title)}`,
     `LOCATION:${escapeIcsText(locationLine(ev))}`,
+    // The event link lives only in the notes — it's visible and auto-linked in
+    // every client, whereas the ICS URL property is inconsistently surfaced
+    // (Google drops it on import). One place, no redundancy.
     `DESCRIPTION:${escapeIcsText(ev.pageUrl)}`,
-    `URL:${ev.pageUrl}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];
