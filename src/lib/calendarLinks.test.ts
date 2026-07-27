@@ -95,6 +95,45 @@ describe("buildIcs", () => {
   });
 });
 
+describe("missing start time → all-day entry", () => {
+  // An event with no known start time can't be a precise timed calendar
+  // entry. Instead of throwing (Invalid Date → RangeError, which used to
+  // blank the whole EventDetail page via the render-time googleCalendarUrl
+  // call), it degrades to an all-day entry on the event's date.
+  it("googleCalendarUrl does not throw and emits a date-only range for empty startTime", () => {
+    const url = googleCalendarUrl({ ...base, startTime: "", endTime: null });
+    // Google all-day: dates=YYYYMMDD/YYYYMMDD, end date EXCLUSIVE (next day).
+    expect(url).toContain("dates=20260115%2F20260116");
+    // No timed "…THHMMSSZ" stamp leaked into the dates value.
+    expect(url).not.toMatch(/dates=[^&]*T\d{6}Z/);
+  });
+
+  it("googleCalendarUrl treats a null startTime as all-day too", () => {
+    const url = googleCalendarUrl({
+      ...base,
+      startTime: null as unknown as string,
+      endTime: null,
+    });
+    expect(url).toContain("dates=20260115%2F20260116");
+  });
+
+  it("googleCalendarUrl treats a whitespace-only startTime as all-day", () => {
+    const url = googleCalendarUrl({ ...base, startTime: "   ", endTime: null });
+    expect(url).toContain("dates=20260115%2F20260116");
+  });
+
+  it("buildIcs does not throw and emits VALUE=DATE for empty startTime", () => {
+    const ics = buildIcs({ ...base, startTime: "", endTime: null });
+    expect(ics).toContain("DTSTART;VALUE=DATE:20260115");
+    // End date is exclusive → the next day.
+    expect(ics).toContain("DTEND;VALUE=DATE:20260116");
+    // DTSTAMP must still be a valid UTC timestamp, not an invalid date.
+    expect(ics).toMatch(/DTSTAMP:\d{8}T\d{6}Z/);
+    // No timed DTSTART leaks in.
+    expect(ics).not.toMatch(/DTSTART:\d{8}T/);
+  });
+});
+
 describe("icsFilename", () => {
   it("slugifies the title", () => {
     expect(icsFilename("Jazz Night!")).toBe("jazz-night.ics");

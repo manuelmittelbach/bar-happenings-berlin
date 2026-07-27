@@ -32,6 +32,21 @@ function nextDay(dateStr: string): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** "YYYY-MM-DD" → "YYYYMMDD" — the date-only stamp for all-day entries. */
+function dateStamp(dateStr: string): string {
+  return dateStr.replace(/-/g, "");
+}
+
+/**
+ * An event with no usable start time (missing, null, or whitespace-only)
+ * can't be a precise timed calendar entry. We render it as an all-day entry
+ * instead — which also avoids the `fromZonedTime("…T:00")` → Invalid Date →
+ * RangeError that used to throw during render and blank the EventDetail page.
+ */
+function isAllDay(ev: CalendarEventInput): boolean {
+  return !ev.startTime || ev.startTime.trim() === "";
+}
+
 /** Format a UTC instant as an ICS/Google "YYYYMMDDTHHMMSSZ" stamp. */
 function utcStamp(instant: Date): string {
   return formatInTimeZone(instant, "UTC", "yyyyMMdd'T'HHmmss'Z'");
@@ -69,11 +84,19 @@ function locationLine(ev: CalendarEventInput): string {
  * user's Google account (web or app) — no download involved.
  */
 export function googleCalendarUrl(ev: CalendarEventInput): string {
-  const { start, end } = resolveInstants(ev);
+  // All-day: Google takes a date-only range "YYYYMMDD/YYYYMMDD" with the end
+  // date EXCLUSIVE, so a single-day event ends on the next calendar day.
+  let dates: string;
+  if (isAllDay(ev)) {
+    dates = `${dateStamp(ev.date)}/${dateStamp(nextDay(ev.date))}`;
+  } else {
+    const { start, end } = resolveInstants(ev);
+    dates = `${utcStamp(start)}/${utcStamp(end)}`;
+  }
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: ev.title,
-    dates: `${utcStamp(start)}/${utcStamp(end)}`,
+    dates,
     location: locationLine(ev),
     details: ev.pageUrl,
   });
@@ -95,7 +118,24 @@ function escapeIcsText(s: string): string {
  * app (Outlook, Thunderbird, …). Lines are CRLF-joined per spec.
  */
 export function buildIcs(ev: CalendarEventInput): string {
-  const { start, end } = resolveInstants(ev);
+  // DTSTAMP is "when this file was made"; we need a stable, deterministic
+  // instant. DTSTART/DTEND then describe the event itself. All-day events use
+  // date-only VALUE=DATE properties (end date EXCLUSIVE → next day) and, having
+  // no valid start instant, anchor DTSTAMP to Berlin midnight of the event's
+  // date. Timed events resolve once and reuse the instants for all three.
+  let dtstamp: string;
+  let dtStartEnd: string[];
+  if (isAllDay(ev)) {
+    dtstamp = utcStamp(fromZonedTime(`${ev.date}T00:00:00`, BERLIN_TZ));
+    dtStartEnd = [
+      `DTSTART;VALUE=DATE:${dateStamp(ev.date)}`,
+      `DTEND;VALUE=DATE:${dateStamp(nextDay(ev.date))}`,
+    ];
+  } else {
+    const { start, end } = resolveInstants(ev);
+    dtstamp = utcStamp(start);
+    dtStartEnd = [`DTSTART:${utcStamp(start)}`, `DTEND:${utcStamp(end)}`];
+  }
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -104,11 +144,8 @@ export function buildIcs(ev: CalendarEventInput): string {
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${ev.uid}@insidebars.co`,
-    // DTSTAMP is "when this file was made"; the start instant is a stable,
-    // deterministic value that keeps the output reproducible.
-    `DTSTAMP:${utcStamp(start)}`,
-    `DTSTART:${utcStamp(start)}`,
-    `DTEND:${utcStamp(end)}`,
+    `DTSTAMP:${dtstamp}`,
+    ...dtStartEnd,
     `SUMMARY:${escapeIcsText(ev.title)}`,
     `LOCATION:${escapeIcsText(locationLine(ev))}`,
     // The event link lives only in the notes — it's visible and auto-linked in
