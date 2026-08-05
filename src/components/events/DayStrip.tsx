@@ -85,17 +85,19 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
-          the DaySwitcher look. Same scroll model as CategoryRowPills: every
-          tab keeps its fixed natural width (shrink-0, no grow — any grow
-          would visibly resize the tabs while the window changes), the row
-          scrolls horizontally, and a right-edge fade hints at the days
-          sliding out of view on narrower windows. */}
+          the DaySwitcher look. The row has a min-width floor: above it the
+          seven tabs share the full page width (flex-1), below it the row
+          stops shrinking and scrolls horizontally like CategoryRowPills —
+          so the tabs fill wide windows AND never get visibly squeezed on
+          narrow ones. The right-edge fade hints at the days sliding out of
+          view. */}
       <div className="relative hidden md:block">
-        <div
-          role="tablist"
-          aria-label="Day"
-          className="flex gap-0 mt-5 overflow-x-auto scrollbar-hide"
-        >
+        <div className="overflow-x-auto scrollbar-hide">
+          <div
+            role="tablist"
+            aria-label="Day"
+            className="flex gap-0 mt-5 min-w-[72rem]"
+          >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
           return (
@@ -104,7 +106,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(c.value)}
-              className="shrink-0 text-left px-6 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
+              className="flex-1 text-left px-6 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
             >
               <div
                 className={`font-serif font-bold leading-[1.05] text-[22px] ${
@@ -135,6 +137,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
             </button>
           );
         })}
+          </div>
         </div>
         {/* Right-edge fade — same affordance as CategoryRowPills, hints at
             the days scrolled out of view. pointer-events-none so the last
