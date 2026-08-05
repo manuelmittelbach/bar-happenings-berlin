@@ -105,18 +105,19 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
-          the DaySwitcher look. The row has a min-width floor: above it the
-          seven tabs share the full page width (flex-1), below it the row
-          stops shrinking and scrolls horizontally like CategoryRowPills —
-          so the tabs fill wide windows AND never get visibly squeezed on
-          narrow ones. Edge fades appear only while days are actually
-          hidden in that direction — a fully visible row shows none. */}
+          the DaySwitcher look. The min-width floor equals the container's
+          max content width (1280px cap − 2×1.5rem padding = 77rem), so the
+          seven tabs ALWAYS render at the same width: at full window width
+          they exactly fill the row (Tue flush right), and any narrower
+          window scrolls immediately instead of squeezing the tabs
+          together. Edge fades appear only while days are actually hidden
+          in that direction — a fully visible row shows none. */}
       <div className="relative hidden md:block">
         <div ref={desktopEdges.ref} className="overflow-x-auto scrollbar-hide">
           <div
             role="tablist"
             aria-label="Day"
-            className="flex gap-0 mt-5 min-w-[72rem]"
+            className="flex gap-0 mt-5 min-w-[77rem]"
           >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
