@@ -100,13 +100,15 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
           >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
+          // first:pl-0 — the "Tonight" label starts flush at the container
+          // edge, lining up with the "All" category pill in the row below.
           return (
             <button
               key={c.iso}
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(c.value)}
-              className="flex-1 text-left px-6 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
+              className="flex-1 text-left px-6 first:pl-0 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
             >
               <div
                 className={`font-serif font-bold leading-[1.05] text-[22px] ${
