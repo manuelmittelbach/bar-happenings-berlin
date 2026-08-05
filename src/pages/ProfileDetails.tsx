@@ -229,15 +229,19 @@ export default function ProfileDetails() {
       ? "border-red-600/60 bg-red-500/10 text-red-700"
       : "border-yellow-600/60 bg-yellow-500/10 text-yellow-700";
 
+  // Pop in-app history when this tab has one, else fall back to the Account
+  // hub: the password-reset and email-confirm flows enter this page via a
+  // replace-redirect, where history-back would leave the app. React Router
+  // v6 tracks position via history.state.idx; idx === 0 means first entry.
+  const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
+
   return (
     <div>
-      {/* Back row — fixed route to the Account hub, NOT navigate(-1): the
-          password-reset and email-confirm flows enter this page via a
-          replace-redirect, so history-back would leave the app. */}
+      {/* Back row — chevron-back pattern shared with the detail pages */}
       <div className="sticky z-40 bg-background" style={{ top: 0 }}>
         <div className="container flex items-center py-2">
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => (canGoBack ? navigate(-1) : navigate("/profile"))}
             className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
             aria-label="Back"
           >
