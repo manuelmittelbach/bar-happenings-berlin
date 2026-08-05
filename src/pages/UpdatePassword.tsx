@@ -83,7 +83,7 @@ export default function UpdatePassword() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">New password</label>
+                <label className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/55">New password</label>
                 <div className="relative">
                   <input
                     type={showPass ? "text" : "password"}
@@ -93,7 +93,7 @@ export default function UpdatePassword() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-10 px-3 pr-10 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:border-foreground transition-colors"
+                    className="w-full h-11 px-3 pr-10 bg-background border-2 border-foreground font-serif text-base outline-none focus:bg-card transition-colors placeholder:text-foreground/30"
                   />
                   <button
                     type="button"
@@ -113,7 +113,7 @@ export default function UpdatePassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 bg-foreground text-background text-sm font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-60"
+                className="w-full h-11 border-2 border-foreground bg-foreground font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-background hover:bg-background hover:text-foreground active:scale-[0.98] transition-colors disabled:opacity-60"
               >
                 {loading ? "..." : "Update password"}
               </button>
