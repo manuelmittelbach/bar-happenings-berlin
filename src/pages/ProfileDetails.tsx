@@ -231,11 +231,13 @@ export default function ProfileDetails() {
 
   return (
     <div>
-      {/* Back row — chevron-back pattern shared with the detail pages */}
+      {/* Back row — fixed route to the Account hub, NOT navigate(-1): the
+          password-reset and email-confirm flows enter this page via a
+          replace-redirect, so history-back would leave the app. */}
       <div className="sticky z-40 bg-background" style={{ top: 0 }}>
         <div className="container flex items-center py-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/profile")}
             className="inline-flex items-center gap-1 p-2 -ml-2 text-foreground active:opacity-60 hover:opacity-70 transition-opacity"
             aria-label="Back"
           >
