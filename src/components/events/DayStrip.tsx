@@ -85,11 +85,14 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
-          the DaySwitcher look. flex-1 min-w-0 so all seven share the row. */}
+          the DaySwitcher look. Tabs never shrink below their natural width
+          (shrink-0, nowrap sublines): on wide windows they share the row
+          via flex-1, on narrow ones the row scrolls horizontally instead
+          of compressing the tabs. */}
       <div
         role="tablist"
         aria-label="Day"
-        className="hidden md:flex gap-0 mt-5"
+        className="hidden md:flex gap-0 mt-5 overflow-x-auto scrollbar-hide"
       >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
@@ -99,7 +102,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(c.value)}
-              className="flex-1 min-w-0 text-left px-3 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
+              className="flex-1 shrink-0 text-left px-3 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
             >
               <div
                 className={`font-serif font-bold leading-[1.05] text-[22px] ${
@@ -122,7 +125,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
                 </span>
               </div>
               <div
-                className="font-mono font-normal uppercase text-muted-foreground mt-1 truncate"
+                className="font-mono font-normal uppercase text-muted-foreground mt-1 whitespace-nowrap"
                 style={{ fontSize: 10, letterSpacing: "0.12em" }}
               >
                 {c.sub}
