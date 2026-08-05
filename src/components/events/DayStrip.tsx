@@ -1,5 +1,6 @@
 import { berlinDateStringOffset } from "@/lib/dateFormat";
 import { VISIBLE_HORIZON } from "@/lib/eventListing";
+import { useScrollEdges } from "@/hooks/useScrollEdges";
 
 interface DayStripProps {
   // Resolved ISO date of the selected day — compute it with
@@ -32,6 +33,9 @@ interface DayChip {
  * so the dates stay correct if the page stays open across midnight.
  */
 export default function DayStrip({ activeIso, onChange }: DayStripProps) {
+  const mobileEdges = useScrollEdges<HTMLDivElement>();
+  const desktopEdges = useScrollEdges<HTMLDivElement>();
+
   const chips: DayChip[] = Array.from({ length: VISIBLE_HORIZON + 1 }, (_, offset) => {
     const iso = berlinDateStringOffset(offset);
     const d = new Date(iso + "T00:00:00");
@@ -58,11 +62,14 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
   return (
     <>
       {/* Mobile — rounded-full mono pills, horizontally scrollable now
-          that there are seven of them. */}
+          that there are seven of them. Edge fades appear only while pills
+          are actually hidden in that direction. */}
+      <div className="relative md:hidden">
       <div
+        ref={mobileEdges.ref}
         role="tablist"
         aria-label="Day"
-        className="md:hidden flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide"
+        className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide"
       >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
@@ -83,16 +90,29 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
           );
         })}
       </div>
+      {!mobileEdges.atStart && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 left-0 bottom-0 w-10 bg-gradient-to-r from-background to-transparent"
+        />
+      )}
+      {!mobileEdges.atEnd && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent"
+        />
+      )}
+      </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
           the DaySwitcher look. The row has a min-width floor: above it the
           seven tabs share the full page width (flex-1), below it the row
           stops shrinking and scrolls horizontally like CategoryRowPills —
           so the tabs fill wide windows AND never get visibly squeezed on
-          narrow ones. The right-edge fade hints at the days sliding out of
-          view. */}
+          narrow ones. Edge fades appear only while days are actually
+          hidden in that direction — a fully visible row shows none. */}
       <div className="relative hidden md:block">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div ref={desktopEdges.ref} className="overflow-x-auto scrollbar-hide">
           <div
             role="tablist"
             aria-label="Day"
@@ -141,13 +161,20 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
         })}
           </div>
         </div>
-        {/* Right-edge fade — same affordance as CategoryRowPills, hints at
-            the days scrolled out of view. pointer-events-none so the last
-            tab stays clickable underneath. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
-        />
+        {/* Edge fades — pointer-events-none so the tabs underneath stay
+            clickable. */}
+        {!desktopEdges.atStart && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 left-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent"
+          />
+        )}
+        {!desktopEdges.atEnd && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
+          />
+        )}
       </div>
     </>
   );
