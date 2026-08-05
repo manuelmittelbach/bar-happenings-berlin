@@ -60,7 +60,7 @@ export default function LandingDraft() {
   // in sessionStorage, so a stale value from a previous visit would otherwise
   // override the CTA's promise.
   const goToEvents = () => {
-    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "Tonight");
     setFilter("activeCategory", "");
     navigate("/events");
   };
@@ -76,7 +76,7 @@ export default function LandingDraft() {
   // and hand the event id to Index via router state so it scrolls the list
   // straight to (and briefly flags) the matching card.
   const goToEvent = (eventId: string) => {
-    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "All");
+    setFilter("activeDate", mode === "tomorrow" ? "Tomorrow" : "Tonight");
     setFilter("activeCategory", "");
     navigate("/events", { state: { scrollToEventId: eventId } });
   };

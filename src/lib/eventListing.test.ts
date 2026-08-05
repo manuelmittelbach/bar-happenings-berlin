@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   isShowable,
-  daySlot,
+  resolveActiveDay,
   compareByStartTime,
   compareChronological,
 } from "./eventListing";
@@ -46,20 +46,31 @@ describe("isShowable", () => {
   });
 });
 
-describe("daySlot", () => {
-  // now = 2026-07-23 12:00 Berlin → today 07-23, tomorrow 07-24, cutoff 08-05.
+describe("resolveActiveDay", () => {
+  // now = 2026-07-23 12:00 Berlin → today 07-23, strip covers 07-23…07-29.
   const now = new Date("2026-07-23T12:00:00+02:00");
 
-  it("buckets by date relative to now", () => {
-    expect(daySlot({ date: "2026-07-22" }, now)).toBe("past");
-    expect(daySlot({ date: "2026-07-23" }, now)).toBe("today");
-    expect(daySlot({ date: "2026-07-24" }, now)).toBe("tomorrow");
-    expect(daySlot({ date: "2026-07-30" }, now)).toBe("upcoming");
+  it("maps the named values to today and tomorrow", () => {
+    expect(resolveActiveDay("Tonight", now)).toBe("2026-07-23");
+    expect(resolveActiveDay("Tomorrow", now)).toBe("2026-07-24");
   });
 
-  it("puts the horizon day in upcoming and the day after in beyond", () => {
-    expect(daySlot({ date: "2026-08-05" }, now)).toBe("upcoming"); // today+13
-    expect(daySlot({ date: "2026-08-06" }, now)).toBe("beyond");
+  it("keeps a concrete date inside the visible strip", () => {
+    expect(resolveActiveDay("2026-07-26", now)).toBe("2026-07-26");
+    expect(resolveActiveDay("2026-07-29", now)).toBe("2026-07-29"); // last strip day
+  });
+
+  it("falls back to today for a stale (past) date", () => {
+    expect(resolveActiveDay("2026-07-22", now)).toBe("2026-07-23");
+  });
+
+  it("falls back to today for a date beyond the strip", () => {
+    expect(resolveActiveDay("2026-07-30", now)).toBe("2026-07-23"); // today+7
+  });
+
+  it("falls back to today for unknown values (e.g. legacy 'Upcoming')", () => {
+    expect(resolveActiveDay("Upcoming", now)).toBe("2026-07-23");
+    expect(resolveActiveDay("garbage", now)).toBe("2026-07-23");
   });
 });
 

@@ -1,7 +1,7 @@
-# Inside-Bars — Scrape-Pipeline
+# Inside-Bars
 
-Die gemeinsame Sprache der Scrape-/Verify-Pipeline: die Begriffe, mit denen wir
-über das Einsammeln von Venue-Events reden. Nur Domänen-Vokabular, keine
+Die gemeinsame Sprache des Projekts: die Begriffe, mit denen wir über das
+Einsammeln und Anzeigen von Venue-Events reden. Nur Domänen-Vokabular, keine
 Implementierungsdetails (die stehen in den ADRs unter `docs/adr/`).
 
 ## Scrape-Pipeline
@@ -114,6 +114,31 @@ hält daraufhin an, behält den Fortschritt und nennt den `--offset` zum
 Weitermachen. Ausdrücklich KEIN Urteil über die Seite — „gar nicht erst
 versucht". Siehe `docs/adr/0002-…` und `docs/adr/0003-…`.
 _Avoid_: Crash, Absturz, Fehler.
+
+## Event-Anzeige
+
+**Tages-Leiste** (engl. day strip):
+Die Reihe aus 7 gleichrangigen, einzeln wählbaren Tages-Chips (Tonight,
+Tomorrow, dann 5 Wochentage) über der Events-Liste und der Map — beide Seiten
+teilen sich dieselbe Leiste und dieselbe Auswahl. Jeder Chip meint GENAU EINEN
+Tag; einen Sammel-Bucket über mehrere Tage gibt es nicht mehr. Leere Tage
+bleiben wählbar und zeigen einen Empty-State.
+_Avoid_: Upcoming, Kalender, Datums-Tabs.
+
+**Sichtfenster** (engl. visible horizon):
+Die 7 Tage, die die Tages-Leiste anzeigt — bewusst kürzer als das
+Scrape-**Fenster** (14 Tage). Events dazwischen existieren in der DB, sind aber
+unsichtbar, bis sie ins Sichtfenster hineinrollen (Best-Effort, akzeptiert).
+_Avoid_: Horizont, Upcoming-Window.
+
+**Tonight** / **Tomorrow**:
+Die ersten beiden Chips der Tages-Leiste — benannt statt datiert, weil sie
+RELATIV gemeint sind: Bleibt die Seite über Mitternacht offen, meint „Tonight"
+weiterhin den (neuen) heutigen Abend. Konkrete Tage dahinter sind absolut
+datiert; ein abgelaufener oder unbekannter Wert fällt stillschweigend auf
+Tonight zurück. Noch laufende Events von gestern erscheinen in der
+Events-Liste als eigener „Still running"-Streifen über Tonight.
+_Avoid_: Heute/Morgen (gemischt mit den englischen Labels).
 
 ## Freigabe (Approval)
 

@@ -4,9 +4,9 @@ import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 
 // The "listable event" — given an event and `now`, this module answers the
 // three questions every list/map/detail view kept re-deriving on its own:
-//   - isShowable: should the event still appear at all?
-//   - daySlot:    which day bucket (today / tomorrow / upcoming …) is it in?
-//   - compare*:   how do two events sort against each other?
+//   - isShowable:       should the event still appear at all?
+//   - resolveActiveDay: which concrete day does the day-strip filter mean?
+//   - compare*:         how do two events sort against each other?
 // Keeping them here means Index, MapPage, BarDetail and the venue directory
 // can't drift, and the fiddly parts (cross-midnight cutoffs via
 // isEventStillOnline, the timeless-sort sentinel) are defined and tested once.
@@ -16,13 +16,11 @@ import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 // copy-pasted as the bare string "99:99" at ~a dozen call sites.
 const TIMELESS = "99:99";
 
-// How many days ahead "Upcoming" reaches: today+UPCOMING_HORIZON is the last
-// day still counted as upcoming — a 2-week window (today + tomorrow + 12 more
-// days). Index used +13 for this; MapPage had drifted to +14, which this now
-// reconciles to the single documented horizon.
-export const UPCOMING_HORIZON = 13;
-
-export type DaySlot = "past" | "today" | "tomorrow" | "upcoming" | "beyond";
+// The day strip's visible horizon: today+VISIBLE_HORIZON is the last
+// selectable day (7 days total: Tonight, Tomorrow, 5 more). Deliberately
+// shorter than the 14-day scrape window — events beyond it stay hidden until
+// they roll into the strip (see CONTEXT.md "Sichtfenster").
+export const VISIBLE_HORIZON = 6;
 
 // Should this event still be shown in a public list? Canceled events drop out,
 // and already-over events fall off via isEventStillOnline (endTime, or
@@ -36,21 +34,24 @@ export function isShowable(
   return event.status !== "canceled" && isEventStillOnline(event, now);
 }
 
-// Which day bucket the event's date falls in, relative to `now` (Berlin time).
-// Drives the Tonight / Tomorrow / Upcoming day filter shared by Index and
-// MapPage — filter with `daySlot(e, now) === slot`.
-export function daySlot(
-  event: Pick<BarlinEvent, "date">,
+// Resolve the stored day-filter value to the concrete Berlin date it means.
+// "Tonight" (the default) and "Tomorrow" are named values — they stay
+// relative, so a session kept open across midnight still means "today".
+// A concrete "YYYY-MM-DD" inside the visible strip resolves to itself;
+// anything else (past, beyond the strip, legacy "Upcoming") silently falls
+// back to today — the Tonight view, no error surface. Filter with
+// `e.date === resolveActiveDay(activeDate, now)`.
+export function resolveActiveDay(
+  activeDate: string,
   now: Date = new Date(),
-): DaySlot {
+): string {
   const today = berlinDateString(now);
-  const tomorrow = berlinDateStringOffset(1, now);
-  const cutoff = berlinDateStringOffset(UPCOMING_HORIZON, now);
-  if (event.date < today) return "past";
-  if (event.date === today) return "today";
-  if (event.date === tomorrow) return "tomorrow";
-  if (event.date <= cutoff) return "upcoming";
-  return "beyond";
+  if (activeDate === "Tomorrow") return berlinDateStringOffset(1, now);
+  const horizon = berlinDateStringOffset(VISIBLE_HORIZON, now);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(activeDate) && activeDate >= today && activeDate <= horizon) {
+    return activeDate;
+  }
+  return today;
 }
 
 // Start-time sort key with the timeless sentinel baked in.

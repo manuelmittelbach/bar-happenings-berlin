@@ -53,7 +53,7 @@ export default function FreeTonightStrip({
           tomorrow") bringt ihr eigenes pt-6 mit, also würden zwei
           gestapelte py den Abstand doppelt machen. So bleibt der Spacing
           zwischen FreeTonight-Cards und dem nächsten Header genauso
-          groß wie zwischen DaySwitcher und FreeTonight-Header. */}
+          groß wie zwischen DayStrip und FreeTonight-Header. */}
       <div className="container py-6 md:py-8">
         {/* Mobile: section header pins below the day+category chrome.
             Top-padding lives on the container, NOT on this sticky wrapper —

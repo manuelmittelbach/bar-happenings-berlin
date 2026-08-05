@@ -24,7 +24,7 @@ const DEFAULTS = {
   searchQuery: "",
   activeCategory: "",
   activeNeighborhood: "",
-  activeDate: "All",
+  activeDate: "Tonight",
 } as const;
 
 type FilterKey = keyof typeof KEYS;

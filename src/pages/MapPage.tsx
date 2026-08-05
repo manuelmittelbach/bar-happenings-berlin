@@ -4,12 +4,12 @@ import { Search, MapPin, X } from "lucide-react";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { CategoryIconBar, CategoryRowPills } from "@/components/events/CategoryPill";
-import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
+import DayStrip from "@/components/events/DayStrip";
 import EventMap from "@/components/map/EventMap";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/ui/error-state";
 import { isEventStillOnline } from "@/lib/eventStatus";
-import { daySlot } from "@/lib/eventListing";
+import { resolveActiveDay } from "@/lib/eventListing";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { fuzzyMatchAny } from "@/lib/fuzzySearch";
@@ -72,17 +72,13 @@ export default function MapPage() {
   const today = berlinDateString();
   const tomorrow = berlinDateStringOffset(1);
 
-  // Map activeDate (shared URL state with Index) to DaySwitcher tab so
-  // navigating Index → Map keeps the user on the same day view.
-  const dayTab: DayTab =
-    activeDate === "Tomorrow" ? "tomorrow"
-    : activeDate === "Upcoming" ? "upcoming"
-    : "tonight";
+  // Resolve activeDate (shared filter state with Index) to the concrete day
+  // so navigating Index → Map keeps the user on the same day view; stale or
+  // out-of-strip values silently fall back to today.
+  const activeIso = resolveActiveDay(activeDate);
 
-  const handleDayTabChange = useCallback((t: DayTab) => {
-    if (t === "tonight") setActiveDate("All");
-    else if (t === "tomorrow") setActiveDate("Tomorrow");
-    else setActiveDate("Upcoming");
+  const handleDayChange = useCallback((value: string) => {
+    setActiveDate(value);
   }, [setActiveDate]);
 
   const filtered = useMemo(() => {
@@ -96,54 +92,26 @@ export default function MapPage() {
     if (searchQuery) result = result.filter((e) => fuzzyMatchAny([e.venue], searchQuery));
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
     if (activeNeighborhood) result = result.filter((e) => e.neighborhood === activeNeighborhood);
-    // Day scoping via daySlot so Tonight/Tomorrow/Upcoming means the exact
-    // same set as Index (both now share the one Upcoming horizon).
-    const slot =
-      activeDate === "Tomorrow" ? "tomorrow"
-      : activeDate === "Upcoming" ? "upcoming"
-      : "today";
-    // One `now` snapshot for the whole pass so every event is bucketed
+    // Day scoping via resolveActiveDay so a strip day means the exact same
+    // set as Index (both share the one resolution + fallback).
+    // One `now` snapshot for the whole pass so every event is matched
     // against the same instant (the memo re-runs when today/tomorrow roll).
     const now = new Date();
-    result = result.filter((e) => daySlot(e, now) === slot);
+    const dayIso = resolveActiveDay(activeDate, now);
+    result = result.filter((e) => e.date === dayIso);
     return result;
   }, [eventsData, activeCategory, activeNeighborhood, activeDate, searchQuery, today, tomorrow]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Day filter: rectangle buttons on mobile (compact, dense), the
-          full DaySwitcher tab-style on desktop so the day chrome reads
-          consistently with Index. Filters drawer was deliberately
-          removed from the Map. */}
+      {/* Day filter: the shared DayStrip (matches Index) on every viewport.
+          Filters drawer was deliberately removed from the Map. */}
       <div className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0 z-[50]">
         {/* Mobile keeps the 2px foreground rule as the map's hard top edge.
             Desktop drops the rule — the map fades into the background via
             the gradient overlay below for a softer editorial feel. */}
-        <div>
-          {/* Mobile — rectangle buttons */}
-          <div className="md:hidden container flex items-center gap-2 py-2.5">
-            {([
-              { id: "tonight",  label: "Tonight"  },
-              { id: "tomorrow", label: "Tomorrow" },
-              { id: "upcoming", label: "Upcoming" },
-            ] as { id: DayTab; label: string }[]).map((d) => (
-              <button
-                key={d.id}
-                onClick={() => handleDayTabChange(d.id)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
-                  dayTab === d.id
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-          {/* Desktop — DaySwitcher (matches Index) */}
-          <div className="hidden md:block container">
-            <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
-          </div>
+        <div className="container">
+          <DayStrip activeIso={activeIso} onChange={handleDayChange} />
         </div>
 
         {/* Category filters — sits closer to the map as the secondary filter. */}
@@ -183,7 +151,12 @@ export default function MapPage() {
             the cache-restore pause on refresh) before any are counted. */}
         {!eventsPending && (
           <div className="absolute top-2 right-2 z-[9999] bg-black/70 text-white text-xs px-2 py-1 font-mono pointer-events-none">
-            {filtered.length} {filtered.length === 1 ? "event" : "events"} {dayTab}
+            {filtered.length} {filtered.length === 1 ? "event" : "events"}{" "}
+            {activeIso === today
+              ? "tonight"
+              : activeIso === tomorrow
+              ? "tomorrow"
+              : `on ${new Date(activeIso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}`}
           </div>
         )}
         {(searchQuery || activeNeighborhood) && (

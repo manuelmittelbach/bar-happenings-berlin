@@ -9,7 +9,7 @@ import TonightsHighlights from "@/components/events/TonightsHighlights";
 import FreeTonightStrip from "@/components/events/FreeTonightStrip";
 import StillRunningStrip from "@/components/events/StillRunningStrip";
 import NearbyStrip from "@/components/events/NearbyStrip";
-import DaySwitcher, { type DayTab } from "@/components/events/DaySwitcher";
+import DayStrip from "@/components/events/DayStrip";
 import Footer from "@/components/layout/Footer";
 import { useIsNative } from "@/hooks/useIsNative";
 
@@ -17,7 +17,7 @@ import type { BarlinEvent, Venue } from "@/types/event";
 import { useEvents, useVenues, useCategories } from "@/hooks/useEvents";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { isEventStillOnline } from "@/lib/eventStatus";
-import { daySlot, compareByStartTime, compareChronological } from "@/lib/eventListing";
+import { resolveActiveDay, compareByStartTime, compareChronological } from "@/lib/eventListing";
 import { berlinDateString, berlinDateStringOffset } from "@/lib/dateFormat";
 import { useFilterParams } from "@/lib/useFilterParams";
 import { isFreeOrDonation } from "@/lib/entryInfo";
@@ -41,10 +41,9 @@ export default function Index() {
     activeDate, setActiveDate,
   } = useFilterParams();
 
-  const dayTab: DayTab =
-    activeDate === "Tomorrow" ? "tomorrow"
-    : activeDate === "Upcoming" ? "upcoming"
-    : "tonight";
+  // The concrete Berlin date the day strip is on — stale or out-of-strip
+  // stored values silently resolve to today (the Tonight view).
+  const activeIso = resolveActiveDay(activeDate);
 
   // Resetting scroll on tab/category change targets the internal list
   // container — the page-level window scroll no longer exists. Inline
@@ -53,11 +52,9 @@ export default function Index() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
-  const handleDayTabChange = useCallback((t: DayTab) => {
-    if (t === "tonight") setActiveDate("All");
-    else if (t === "tomorrow") setActiveDate("Tomorrow");
-    else setActiveDate("Upcoming");
-    // Every tab switch resets to the top — scroll position from the
+  const handleDayChange = useCallback((value: string) => {
+    setActiveDate(value);
+    // Every day switch resets to the top — scroll position from the
     // previous day's list isn't meaningful against the new day's content.
     resetScroll();
   }, [setActiveDate, resetScroll]);
@@ -95,9 +92,9 @@ export default function Index() {
   // Yesterday is only relevant for the "Since yesterday" strip — events
   // that started before midnight and are still running into early today.
   const yesterday = berlinDateStringOffset(-1);
-  // Day scoping (today / tomorrow / upcoming) is delegated to daySlot, which
-  // owns the fixed 2-week "Upcoming" horizon. Anything past it is hidden — no
-  // "show more" affordance, no infinite scroll.
+  // Day scoping is a plain date match against activeIso — the DayStrip only
+  // offers the 7-day visible horizon (see VISIBLE_HORIZON), anything beyond
+  // stays hidden until it rolls into the strip.
 
   const {
     data: eventsData = [],
@@ -141,7 +138,8 @@ export default function Index() {
   // already shows them with line-through + "Canceled" pill, and filtering
   // them out hid free-tomorrow cancellations entirely (user expected to see
   // them so they know not to show up). `filtered` (used by More tonight /
-  // tomorrow and Upcoming) still drops canceled events more than a day out.
+  // tomorrow and the weekday views) still drops canceled events more than a
+  // day out.
   const todayEvents = useMemo(
     () =>
       eventsData.filter(
@@ -196,7 +194,7 @@ export default function Index() {
   );
   // Walking-minutes by event id for every event whose venue is within the
   // 15-min cutoff — unrelated to whether that event made the top-6 Nearby
-  // strip. Used by the DayList / UpcomingAgenda so a walking-chip surfaces on
+  // strip. Used by the DayList so a walking-chip surfaces on
   // any walkable event in any list, including the category-filtered
   // single-flat-list view where the Nearby strip itself doesn't render.
   const walkingMinByEventId = useMemo(() => {
@@ -240,14 +238,11 @@ export default function Index() {
       result = result.filter((e) => fuzzyMatchAny([e.venue, e.neighborhood], searchQuery));
     }
     if (activeCategory) result = result.filter((e) => e.category === activeCategory);
-    const slot =
-      activeDate === "Tomorrow" ? "tomorrow"
-      : activeDate === "Upcoming" ? "upcoming"
-      : "today";
-    // One `now` snapshot for the whole pass so every event is bucketed
+    // One `now` snapshot for the whole pass so every event is matched
     // against the same instant (the memo re-runs when today/tomorrow roll).
     const now = new Date();
-    result = result.filter((e) => daySlot(e, now) === slot);
+    const dayIso = resolveActiveDay(activeDate, now);
+    result = result.filter((e) => e.date === dayIso);
     // Chronological — over events are already filtered out by isEventStillOnline.
     result.sort(compareChronological);
     return result;
@@ -394,7 +389,9 @@ export default function Index() {
     navigate(`/event/${eventId}`);
   }, [navigate]);
 
-  const showEditorial = dayTab === "tonight";
+  const isTonight = activeIso === today;
+  const isTomorrow = activeIso === tomorrow;
+  const showEditorial = isTonight;
 
   return (
     /* Map-style locked viewport — the outer container fills Layout's main
@@ -403,42 +400,15 @@ export default function Index() {
        (no mobile-URL-bar drift, no backdrop-blur jitter), and matches
        the architecture the user already knows from the Map page. */
     <div className="flex flex-col flex-1 overflow-hidden overscroll-x-none">
-      {/* Chrome — Day filter + Category filter at the top, no longer
-          sticky/fixed (just sits at the top of the flex column). Mobile
-          shows rounded-full Tonight/Tomorrow/Upcoming buttons; desktop
-          shows the editorial DaySwitcher above the category pills. */}
+      {/* Chrome — Day strip + Category filter at the top, no longer
+          sticky/fixed (just sits at the top of the flex column). The
+          DayStrip is one shared surface for mobile and desktop, matching
+          MapPage exactly. */}
       <div
         className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0"
       >
-        {/* Mobile — rounded-full Tonight/Tomorrow/Upcoming buttons. */}
-        <div className="md:hidden">
-          <div id="date-filter-bar" className="container flex items-center gap-2 py-2.5">
-            {([
-              { id: "tonight",  label: "Tonight"  },
-              { id: "tomorrow", label: "Tomorrow" },
-              { id: "upcoming", label: "Upcoming" },
-            ] as { id: DayTab; label: string }[]).map((d) => (
-              <button
-                key={d.id}
-                onClick={() => handleDayTabChange(d.id)}
-                className={`shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-full font-mono text-[10px] uppercase tracking-wider border-2 transition-all ${
-                  dayTab === d.id
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-foreground hover:bg-foreground hover:text-background"
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Desktop — DaySwitcher tab strip above the category pills.
-            Padding-top intentionally absent: MapPage's chrome doesn't
-            have it either, so dropping it here keeps the two surfaces
-            visually aligned on PC. scrollMarginTop is unnecessary now
-            that the chrome isn't part of the document scroll context. */}
-        <div className="hidden md:block container">
-          <DaySwitcher active={dayTab} onChange={handleDayTabChange} />
+        <div className="container">
+          <DayStrip activeIso={activeIso} onChange={handleDayChange} />
         </div>
         <div className="container py-1.5 md:py-3">
           <div className="md:hidden">
@@ -528,7 +498,7 @@ export default function Index() {
             // No category filter — full editorial structure. When every
             // strip collapses (e.g. nothing free + nothing highlighted),
             // the list isn't "more than" anything, so drop the section
-            // header entirely — the DaySwitcher chrome already supplies
+            // header entirely — the DayStrip chrome already supplies
             // the "Tonight" context.
             const hasFreeTonight = todayEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const hasEditorialAbove =
@@ -605,7 +575,7 @@ export default function Index() {
             );
           })()}
 
-          {dayTab === "tomorrow" && (() => {
+          {isTomorrow && (() => {
             const activeCategoryLabel = activeCategory
               ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
               : null;
@@ -660,25 +630,43 @@ export default function Index() {
                   onEventClick={handleEventClick}
                   walkingMinByEventId={walkingMinByEventId}
                 />
+                {/* No CTA (unlike tonight's "see tomorrow" handoff) — with
+                    single-day chips there is no one obvious next view to
+                    point at; the strip above holds the alternatives. */}
                 {tomorrowAllEmpty && (
                   <section className="container py-12 md:py-16 text-center">
-                    <ClosingBlock
-                      message="That's it for tomorrow."
-                      cta={{ label: "See what's upcoming →", onClick: () => setActiveDate("Upcoming") }}
-                    />
+                    <ClosingBlock message="That's it for tomorrow." />
                   </section>
                 )}
               </>
             );
           })()}
 
-          {dayTab === "upcoming" && (
-            <UpcomingAgenda
-              events={filtered}
-              onEventClick={handleEventClick}
-              walkingMinByEventId={walkingMinByEventId}
-            />
-          )}
+          {/* Weekday chips (day after tomorrow onwards) — a plain flat list,
+              no editorial strips; the strip chip supplies the day context.
+              Empty days stay selectable and show a calm empty state. */}
+          {!isTonight && !isTomorrow && (() => {
+            const activeCategoryLabel = activeCategory
+              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
+              : null;
+            return (
+              <DayList
+                events={filtered}
+                onEventClick={handleEventClick}
+                emptyMessage={
+                  activeCategoryLabel
+                    ? `No ${activeCategoryLabel} on this day.`
+                    : "Nothing posted for this day yet."
+                }
+                onEmptyCta={
+                  activeCategoryLabel
+                    ? { label: "Clear filter →", onClick: () => handleCategoryChange("") }
+                    : undefined
+                }
+                walkingMinByEventId={walkingMinByEventId}
+              />
+            );
+          })()}
           </>
         )}
           </div>
@@ -707,7 +695,7 @@ interface DayListProps {
   // Section title — when omitted the list renders header-less. We drop the
   // header in filtered views where no editorial strip rendered above:
   // pairing "More tonight" with an empty space above reads as if the
-  // word "More" lost its referent, and the DaySwitcher already supplies
+  // word "More" lost its referent, and the DayStrip already supplies
   // the day context.
   title?: string;
   events: BarlinEvent[];
@@ -765,9 +753,6 @@ function DayList({ title, events, onEventClick, emptyMessage, onEmptyCta, walkin
           style={{ top: 0 }}
         >
           <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
-            {/* Same size as the weekday separators in the Upcoming section so all
-                list headings ("More tonight", "Tomorrow", …) read at the
-                same typographic weight. */}
             <h2 className="heading-display text-2xl md:text-[30px] leading-none m-0">{title}</h2>
             <span className="flex-1" />
             {/* Counter — auf Mobile nur die Zahl, auf Desktop „N more"
@@ -817,101 +802,3 @@ function ClosingBlock({ message, cta }: ClosingBlockProps) {
   );
 }
 
-/* ─────────────────────────  Upcoming  ─────────────────────────
- * Day-grouped agenda — each date gets its own header (weekday + DOM Month +
- * count) over a 2px black rule, then a list of EventCards. Renders inside
- * the Upcoming tab (events from day+2 through the cutoff). */
-
-interface UpcomingAgendaProps {
-  events: BarlinEvent[];
-  onEventClick: (id: string) => void;
-  // Same role as DayList's walkingMinByEventId — Upcoming events that
-  // happen to be at a walkable venue still get the chip, so the walking
-  // signal stays consistent across the index.
-  walkingMinByEventId?: Map<string, number>;
-}
-
-function UpcomingAgenda({ events, onEventClick, walkingMinByEventId }: UpcomingAgendaProps) {
-  const groups = useMemo(() => {
-    const out: { date: string; events: BarlinEvent[] }[] = [];
-    for (const e of events) {
-      const last = out[out.length - 1];
-      if (last && last.date === e.date) last.events.push(e);
-      else out.push({ date: e.date, events: [e] });
-    }
-    return out;
-  }, [events]);
-
-  if (!groups.length) {
-    return (
-      <section className="container py-6 md:py-8">
-        <p className="font-body italic text-[16px] text-muted-foreground pt-8 m-0">
-          Nothing posted. Check back tomorrow morning.
-        </p>
-      </section>
-    );
-  }
-
-  return (
-    /* Each weekday gets its own <section> as the containing block for
-       its sticky header, AND the inter-day visual gap lives INSIDE the
-       previous section as pb-7 (instead of mt-7 between sections). The
-       sections butt up flush, so when Friday's section.bottom reaches
-       chrome-bottom, Saturday's section.top is there at the same
-       instant — Saturday sticks, Friday gets pushed up by section-end.
-       Visually: Saturday rises from Friday's bottom hairline upward,
-       pushing Friday up by its own height. */
-    <div className="container pb-6 md:pb-8">
-      {groups.map((g) => {
-        const d = new Date(g.date + "T00:00:00");
-        // Long weekday name on every viewport — matches "Tonight" /
-        // "Tomorrow" labels in the day switcher, which are also fully
-        // spelled out, so the visual rhythm stays consistent.
-        const wdLong = d.toLocaleDateString("en-GB", { weekday: "long" });
-        const dom = d.getDate();
-        const mon = d.toLocaleDateString("en-GB", { month: "short" });
-        return (
-          <section key={g.date} className="mt-20 first:mt-0 pt-6 md:pt-8">
-            {/* Sticky weekday header — pins below the day+category chrome
-                while its section scrolls past. Top-padding lives on the
-                <section> (not the sticky wrapper), so when pinned the
-                weekday hugs the chrome's bottom edge instead of sitting
-                ~34px lower. Inner pt-2.5 keeps 10px breathing room above
-                the text when stuck. Each section is the implicit scroll
-                container for its sticky, so the next weekday cleanly
-                pushes the previous one out as it scrolls into view. */}
-            <div
-              className="mb-2.5 sticky z-30 bg-background"
-              style={{ top: 0 }}
-            >
-              <div className="pt-2.5 pb-2.5 flex items-baseline gap-3.5 flex-wrap border-b-2 border-border">
-                <h3 className="heading-display text-2xl md:text-[30px] leading-none m-0">
-                  {wdLong}
-                </h3>
-                <span className="mono-label text-muted-foreground">{dom} {mon}</span>
-                <span className="flex-1" />
-                {/* Counter — auf Mobile nur die Zahl, auf Desktop „N
-                    events" (Platz da, also explizit). */}
-                <span className="mono-label text-muted-foreground">
-                  <span className="md:hidden">{g.events.length}</span>
-                  <span className="hidden md:inline">
-                    {g.events.length} {g.events.length === 1 ? "event" : "events"}
-                  </span>
-                </span>
-              </div>
-            </div>
-            {g.events.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                layout="list"
-                onClick={onEventClick}
-                walkingMin={walkingMinByEventId?.get(event.id)}
-              />
-            ))}
-          </section>
-        );
-      })}
-    </div>
-  );
-}
