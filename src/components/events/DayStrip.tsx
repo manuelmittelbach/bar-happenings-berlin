@@ -54,7 +54,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       iso,
       label: weekday,
       sub: dayMonth,
-      labelMobile: `${weekday} ${d.getDate()}`,
+      labelMobile: `${weekday} ${dayMonth}`,
       value: iso,
     };
   });
@@ -62,14 +62,18 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
   return (
     <>
       {/* Mobile — rounded-full mono pills, horizontally scrollable now
-          that there are seven of them. Edge fades appear only while pills
-          are actually hidden in that direction. */}
-      <div className="relative md:hidden">
+          that there are seven of them. Same full-bleed pattern as
+          CategoryIconBar: the -mx-4 wrapper lets the row scroll out past
+          the container padding, so pills slide softly under the edge
+          fades instead of clipping hard at the container's inner edge.
+          Fades appear only while pills are actually hidden in that
+          direction. */}
+      <div className="relative -mx-4 md:hidden">
       <div
         ref={mobileEdges.ref}
         role="tablist"
         aria-label="Day"
-        className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide"
+        className="flex items-center gap-2 py-2.5 px-4 overflow-x-auto scrollbar-hide"
       >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
@@ -93,13 +97,13 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       {!mobileEdges.atStart && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 left-0 bottom-0 w-10 bg-gradient-to-r from-background to-transparent"
+          className="pointer-events-none absolute top-0 left-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent"
         />
       )}
       {!mobileEdges.atEnd && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent"
+          className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
         />
       )}
       </div>
