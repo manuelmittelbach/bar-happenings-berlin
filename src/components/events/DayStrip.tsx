@@ -85,10 +85,11 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
-          the DaySwitcher look. Tabs never shrink below their natural width
-          (shrink-0, nowrap sublines): on wide windows they share the row
-          via flex-1, on narrow ones the row scrolls horizontally instead
-          of compressing the tabs. */}
+          the DaySwitcher look. Every tab sits at its fixed natural width
+          (no flex-grow: growing from a 0% basis would visually shrink the
+          tabs again as the window narrows — grow-redistribution, which
+          shrink-0 can't prevent). When the window gets too narrow for all
+          seven, the row scrolls horizontally instead. */}
       <div
         role="tablist"
         aria-label="Day"
@@ -102,7 +103,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(c.value)}
-              className="flex-1 shrink-0 text-left px-3 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
+              className="shrink-0 text-left px-4 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
             >
               <div
                 className={`font-serif font-bold leading-[1.05] text-[22px] ${
