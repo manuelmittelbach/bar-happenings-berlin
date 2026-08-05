@@ -401,9 +401,9 @@ export default function Index() {
        the architecture the user already knows from the Map page. */
     <div className="flex flex-col flex-1 overflow-hidden overscroll-x-none">
       {/* Chrome — Day strip + Category filter at the top, no longer
-          sticky/fixed (just sits at the top of the flex column). The
-          DayStrip is one shared surface for mobile and desktop, matching
-          MapPage exactly. */}
+          sticky/fixed (just sits at the top of the flex column). DayStrip
+          renders rounded pills on mobile and the serif tabs on desktop,
+          matching MapPage exactly. */}
       <div
         className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0"
       >

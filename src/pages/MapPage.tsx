@@ -104,8 +104,9 @@ export default function MapPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Day filter: the shared DayStrip (matches Index) on every viewport.
-          Filters drawer was deliberately removed from the Map. */}
+      {/* Day filter: the shared DayStrip (matches Index) — rounded pills
+          on mobile, serif tabs on desktop. Filters drawer was deliberately
+          removed from the Map. */}
       <div className="shrink-0 bg-background border-b-2 border-foreground md:border-b-0 z-[50]">
         {/* Mobile keeps the 2px foreground rule as the map's hard top edge.
             Desktop drops the rule — the map fades into the background via
