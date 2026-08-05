@@ -85,16 +85,17 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
       </div>
 
       {/* Desktop — editorial serif tabs with the accent underline, exactly
-          the DaySwitcher look. grow + basis-auto (NOT flex-1, whose 0%
-          basis lets narrowing eat into the labels): tabs spread across the
-          full row on wide windows, but can never drop below their natural
-          width — once all seven no longer fit, the row scrolls
-          horizontally instead of compressing them. */}
-      <div
-        role="tablist"
-        aria-label="Day"
-        className="hidden md:flex gap-0 mt-5 overflow-x-auto scrollbar-hide"
-      >
+          the DaySwitcher look. Same scroll model as CategoryRowPills: every
+          tab keeps its fixed natural width (shrink-0, no grow — any grow
+          would visibly resize the tabs while the window changes), the row
+          scrolls horizontally, and a right-edge fade hints at the days
+          sliding out of view on narrower windows. */}
+      <div className="relative hidden md:block">
+        <div
+          role="tablist"
+          aria-label="Day"
+          className="flex gap-0 mt-5 overflow-x-auto scrollbar-hide"
+        >
         {chips.map((c) => {
           const isActive = c.iso === activeIso;
           return (
@@ -103,7 +104,7 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange(c.value)}
-              className="grow shrink-0 basis-auto text-left px-4 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
+              className="shrink-0 text-left px-6 pt-3.5 pb-4 bg-transparent font-serif transition-colors"
             >
               <div
                 className={`font-serif font-bold leading-[1.05] text-[22px] ${
@@ -134,6 +135,14 @@ export default function DayStrip({ activeIso, onChange }: DayStripProps) {
             </button>
           );
         })}
+        </div>
+        {/* Right-edge fade — same affordance as CategoryRowPills, hints at
+            the days scrolled out of view. pointer-events-none so the last
+            tab stays clickable underneath. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent"
+        />
       </div>
     </>
   );
