@@ -150,14 +150,20 @@ export default function Index() {
       ),
     [eventsData, today, matchesFilters],
   );
-  const tomorrowEvents = useMemo(
+  // Events on the active day when that day is NOT today — tomorrow and the
+  // weekday pages share one editorial structure (Nearby + Free + More
+  // events), so this single pool powers the Free strip and the Nearby
+  // dedupe for all of them. Canceled events stay visible on tomorrow only,
+  // mirroring the rule in `filtered`; further out they're dropped.
+  const activeDayEvents = useMemo(
     () =>
       eventsData.filter(
         (e) =>
-          e.date === tomorrow &&
+          e.date === activeIso &&
+          (e.status !== "canceled" || activeIso === tomorrow) &&
           matchesFilters(e),
       ),
-    [eventsData, tomorrow, matchesFilters],
+    [eventsData, activeIso, tomorrow, matchesFilters],
   );
   const highlightedTonightEvents = useMemo(
     () => todayEvents.filter((e) => e.isHighlight),
@@ -177,20 +183,20 @@ export default function Index() {
         : [],
     [todayEvents, venueMap, userLocation],
   );
-  const nearbyTomorrow = useMemo(
+  const nearbyActiveDay = useMemo(
     () =>
       userLocation
-        ? computeNearbyEvents(tomorrowEvents, venueMap, userLocation)
+        ? computeNearbyEvents(activeDayEvents, venueMap, userLocation)
         : [],
-    [tomorrowEvents, venueMap, userLocation],
+    [activeDayEvents, venueMap, userLocation],
   );
   const nearbyTonightIds = useMemo(
     () => new Set(nearbyTonight.map((n) => n.event.id)),
     [nearbyTonight],
   );
-  const nearbyTomorrowIds = useMemo(
-    () => new Set(nearbyTomorrow.map((n) => n.event.id)),
-    [nearbyTomorrow],
+  const nearbyActiveDayIds = useMemo(
+    () => new Set(nearbyActiveDay.map((n) => n.event.id)),
+    [nearbyActiveDay],
   );
   // Walking-minutes by event id for every event whose venue is within the
   // 15-min cutoff — unrelated to whether that event made the top-6 Nearby
@@ -575,10 +581,16 @@ export default function Index() {
             );
           })()}
 
-          {isTomorrow && (() => {
+          {/* TOMORROW + WEEKDAYS — every non-today page shares the same
+              editorial structure as tonight minus the today-only strips
+              (Since yesterday, Highlights): Nearby + Free + More events,
+              with the same category-filter flat-list short-circuit. Only
+              the wording differs between tomorrow and the weekday pages. */}
+          {!isTonight && (() => {
             const activeCategoryLabel = activeCategory
               ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
               : null;
+            const dayWord = isTomorrow ? "tomorrow" : "on this day";
 
             // Same flat-list short-circuit as tonight when a category
             // filter is active.
@@ -590,33 +602,33 @@ export default function Index() {
                   // surfaces the active category).
                   events={filtered}
                   onEventClick={handleEventClick}
-                  emptyMessage={`No ${activeCategoryLabel} tomorrow.`}
+                  emptyMessage={`No ${activeCategoryLabel} ${dayWord}.`}
                   onEmptyCta={{ label: "Clear filter →", onClick: () => handleCategoryChange("") }}
                   walkingMinByEventId={walkingMinByEventId}
                 />
               );
             }
 
-            const hasFreeTomorrow = tomorrowEvents.some((e) => isFreeOrDonation(e.entryInfo));
+            const hasFreeDay = activeDayEvents.some((e) => isFreeOrDonation(e.entryInfo));
             const hasEditorialAbove =
-              nearbyTomorrow.length > 0 || hasFreeTomorrow;
-            const moreEventsTomorrow = filtered.filter(
+              nearbyActiveDay.length > 0 || hasFreeDay;
+            const moreEventsDay = filtered.filter(
               (e) =>
                 !isFreeOrDonation(e.entryInfo) &&
-                !nearbyTomorrowIds.has(e.id),
+                !nearbyActiveDayIds.has(e.id),
             );
-            const tomorrowAllEmpty =
-              nearbyTomorrow.length === 0 &&
-              !hasFreeTomorrow &&
-              moreEventsTomorrow.length === 0;
+            const dayAllEmpty =
+              nearbyActiveDay.length === 0 &&
+              !hasFreeDay &&
+              moreEventsDay.length === 0;
             return (
               <>
                 <NearbyStrip
-                  nearby={nearbyTomorrow}
+                  nearby={nearbyActiveDay}
                   onEventClick={handleEventClick}
                 />
                 <FreeTonightStrip
-                  events={tomorrowEvents}
+                  events={activeDayEvents}
                   categories={categoriesData}
                   onEventClick={handleEventClick}
                   walkingMinByEventId={walkingMinByEventId}
@@ -624,47 +636,29 @@ export default function Index() {
                 <DayList
                   title={hasEditorialAbove ? "More events" : undefined}
                   /* Same dedup as More events tonight — drop free/donation
-                     events and anything Nearby Tomorrow already surfaced,
-                     so the master list reads as "what else is on tomorrow". */
-                  events={moreEventsTomorrow}
+                     events and anything the Nearby strip already surfaced,
+                     so the master list reads as "what else is on". */
+                  events={moreEventsDay}
                   onEventClick={handleEventClick}
                   walkingMinByEventId={walkingMinByEventId}
                 />
                 {/* No CTA (unlike tonight's "see tomorrow" handoff) — with
                     single-day chips there is no one obvious next view to
-                    point at; the strip above holds the alternatives. */}
-                {tomorrowAllEmpty && (
+                    point at; the strip above holds the alternatives.
+                    Weekday pages get the softer "yet" wording since a day
+                    that far out may simply not be scraped/posted yet. */}
+                {dayAllEmpty && (
                   <section className="container py-12 md:py-16 text-center">
-                    <ClosingBlock message="That's it for tomorrow." />
+                    <ClosingBlock
+                      message={
+                        isTomorrow
+                          ? "That's it for tomorrow."
+                          : "Nothing posted for this day yet."
+                      }
+                    />
                   </section>
                 )}
               </>
-            );
-          })()}
-
-          {/* Weekday chips (day after tomorrow onwards) — a plain flat list,
-              no editorial strips; the strip chip supplies the day context.
-              Empty days stay selectable and show a calm empty state. */}
-          {!isTonight && !isTomorrow && (() => {
-            const activeCategoryLabel = activeCategory
-              ? categoriesData.find((c) => c.id === activeCategory)?.label ?? activeCategory
-              : null;
-            return (
-              <DayList
-                events={filtered}
-                onEventClick={handleEventClick}
-                emptyMessage={
-                  activeCategoryLabel
-                    ? `No ${activeCategoryLabel} on this day.`
-                    : "Nothing posted for this day yet."
-                }
-                onEmptyCta={
-                  activeCategoryLabel
-                    ? { label: "Clear filter →", onClick: () => handleCategoryChange("") }
-                    : undefined
-                }
-                walkingMinByEventId={walkingMinByEventId}
-              />
             );
           })()}
           </>
