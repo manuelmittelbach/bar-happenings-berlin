@@ -46,8 +46,9 @@ Tipsy Tiger/
 __pycache__/
 *.pyc
 
-# Scraper secrets
-scripts/.env
+# Scraper-Tooling lebt jetzt in einem separaten privaten Repo
+# (bar-happenings-scrapers). Lokale Reste trotzdem nie committen.
+scripts/
 
 # Claude Code local permissions (per-machine, not shared)
 .claude/settings.local.json
