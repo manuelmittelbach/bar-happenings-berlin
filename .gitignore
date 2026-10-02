@@ -50,6 +50,9 @@ __pycache__/
 # (bar-happenings-scrapers). Lokale Reste trotzdem nie committen.
 scripts/
 
+# Interne Marketing-Notizen — lokal behalten, nicht öffentlich
+REDDIT_KIEZ_CREATOR_POST.*
+
 # Claude Code local permissions (per-machine, not shared)
 .claude/settings.local.json
 **/.claude/settings.local.json
